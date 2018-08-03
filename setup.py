@@ -6,8 +6,8 @@ setup(
     version='0.0.01',
     author='Justin Furuness',
     author_email='jfuruness@gmail.com',
-    url='https://github.com/jfuruness/lib_bgpstream_parser.git',
-    download_url='https://github.com/jfuruness/lib_bgpstream_parser.git',
+    url='https://github.com/jfuruness/lib_bgp_data.git',
+    download_url='https://github.com/jfuruness/lib_bgp_data.git',
     keywords=['Furuness', 'furuness', 'pypi', 'package'],  # arbitrary keywords
     install_requires=[
         'requests',

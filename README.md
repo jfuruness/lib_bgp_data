@@ -1,21 +1,18 @@
 # Justin-Furuness
 
-A program that parses data from bgpstream.com
+A program that parses BGP/AS data from multiple sources
 
 ## Installation
 
-git clone https://github.com/jfuruness/lib_bgpstream_parser.git 
+For development:
+git clone https://github.com/jfuruness/lib_bgp_data.git
+
+For normal usage in a script:
+pip3 install lib_bgp_data
 
 ## Usage
 
-Once you have installed it with pip3 install lib_bgpstream_parser:
-On the command line you can type parse_bgpstream.com to print all data from bgpstream.com
-
-Or you can use it in a script by:
-
-import lib_bgpstream_parser
-parser = lib_bgpstream_parser.bgpstream_website_announcements.BGPStream_Website_Parser()
-parser.parallel_parse()
+Once you have installed it with pip3 install lib_bgp_data
 
 ## Contributing
 
@@ -27,7 +24,7 @@ parser.parallel_parse()
 
 ## History
 
-* 0.1.0 - Initial setup
+* 0.0.1 - Initial setup
 
 ## Credits
 
