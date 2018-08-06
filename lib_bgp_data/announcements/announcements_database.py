@@ -56,4 +56,33 @@ class Announcements_DB:
                ]
         self.cursor.execute(sql, data)
         return True
-    
+
+    def select_record(self, record_id=None):
+        if record_id is None:
+            sql = "SELECT * FROM records;"
+            self.cursor.execute(sql)
+        else:
+            sql = "SELECT * FROM records WHERE record_id = %s"
+            data = [record_id]
+            self.cursor.execute(sql, data)
+        return self.cursor.fetchall()
+
+    def select_community(self, community_id=None):
+        if community_id is None:
+            sql = "SELECT * FROM communities"
+            self.cursor.execute(sql)
+        else:
+            sql = "SELECT * FROM communities WHERE community_id = %s"
+            data = [community_id]
+            self.cursor.execute(sql, data)
+        return self.cursor.fetchall()
+
+    def select_element(self, element_id=None):
+        if element_id is None:
+            sql = "SELECT * FROM elements;"
+            self.cursor.execute(sql)
+        else:
+            sql = "SELECT * FROM elements WHERE element_id = %s;"
+            data = [element_id]
+            self.cursor.execute(sql, data)
+        return self.cursor.fetchall()

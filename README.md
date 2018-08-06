@@ -8,11 +8,11 @@ For development:
 git clone https://github.com/jfuruness/lib_bgp_data.git
 
 For normal usage in a script:
-pip3 install lib_bgp_data
+COMING SOON: pip3 install lib_bgp_data
 
 ## Usage
 
-Once you have installed it with pip3 install lib_bgp_data
+COMING SOON: Once you have installed it with pip3 install lib_bgp_data
 
 ## Contributing
 
