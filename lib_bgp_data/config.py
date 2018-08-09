@@ -7,7 +7,7 @@ from configparser import SafeConfigParser as SCP
 
 
 class Config:
-    """interact with config file"""
+    """Interact with config file"""
 
     def __init__(self, logger, path='/etc/bgp/bgp.conf'):
         """Initializes path for config file"""

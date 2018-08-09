@@ -42,7 +42,7 @@ class Parser(Logger):
             self.logger, as_relationship_args)
 
     def run_bgpstream_parser(self, max_processes=multiprocessing.cpu_count()):
-        """parses bgpstream.com and inserts into the database"""
+        """Parses bgpstream.com and inserts into the database"""
 
         try:
             self.logger.info("Running bgpstream website parser")

@@ -375,7 +375,7 @@ Coming Soon
 > log\_stream\_level = logging.INFO  # Logging level for printing   
 > This will cause any errors to be appended to the log file   
 > This will also cause any information (and higher) to be printed.   
-> See logging description for more details   
+> See [logging description](#logging-description) for more details   
 
 Initialize with default logging:
 ```python

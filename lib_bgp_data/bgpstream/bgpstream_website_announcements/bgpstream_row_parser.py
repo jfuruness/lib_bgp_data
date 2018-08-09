@@ -20,6 +20,7 @@ class BGPStream_Row_Parser:
 
         The funcs in this class are for BGPStream_Website_Parser
         """
+
         pass
 
     def _parse_row(self, row):

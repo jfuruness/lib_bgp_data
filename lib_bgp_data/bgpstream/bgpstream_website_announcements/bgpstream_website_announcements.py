@@ -47,6 +47,7 @@ class BGPStream_Website_Parser(BGPStream_Row_Parser):
 
     def parse(self, max_processes=multiprocessing.cpu_count()):
         """Parses html into a returned dict (in parallel if self.parallel)"""
+
         try:
             rows = self._get_tags("https://bgpstream.com", "tr")
             if self.row_limit is None or self.row_limit > (len(rows) - 3):
@@ -76,18 +77,18 @@ class BGPStream_Website_Parser(BGPStream_Row_Parser):
     def _parallel_parse(self, rows, max_processes):
         """Processes html into a returned dict in parallel
 
-        Note that we can't use multiprocessing.pool here
-        because it can't pickle properly, and pathos.multiprocessing is full
-        of bugs. Because of this we impliment our own pool that cannot have
-        more than the max amount of processes running at any given time. Note
-        that if self.parallel=None, parallel parsing will not occur.
+        Note that we can't use multiprocessing.pool here because it can't
+        pickle properly, and pathos.multiprocessing is full of bugs. Because
+        of this we impliment our own pool that cannot have more than the max
+        amount of processes running at any given time. Note that if
+        self.parallel=None, parallel parsing will not occur.
         """
 
         vals = []
         self.processes = []
         self.num_running = 0
         self.latest_unjoined = 0
-        self.logger.info("total number of rows: {}".format(self.row_limit))
+        self.logger.info("Total number of rows: {}".format(self.row_limit))
         # This is the for loop to start the processes
         for i in range(self.row_limit):
             self._start_process(rows[i])

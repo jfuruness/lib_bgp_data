@@ -3,8 +3,8 @@
 
 """This module contains class Leak_DB
 
-Leak_DB has database functionality for bgpstream events.
-It can select, insert, or update leak events.
+Leak_DB has database functionality for bgpstream events
+It can select, insert, or update leak events
 """
 
 from .helper import format_error
@@ -21,6 +21,7 @@ class Leak_DB:
 
         The funcs in this class are meant to be added to a Database class
         """
+
         pass
 
 
@@ -88,6 +89,7 @@ class Leak_DB:
 
     def _get_leak_data(self, event, leak_id=None):
         """Returns a list of data from a leak event"""
+
         data = [event.get("country"),
                 event.get("detected_by_bgpmon_peers"),
                 event.get("end_time"),

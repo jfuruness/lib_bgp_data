@@ -20,16 +20,16 @@ class AS_Relationship_DB(AS_Relationships_DB_Wrapper):
         pass
 
     def add_as_relationship(self, row):
-        """inserts a dict of as_relationship into db if it doesn't exist"""
+        """Inserts a dict of as_relationship into db if it doesn't exist"""
 
-        action = "updated"
+        action = "Updated"
         if not self._as_relationship_exists(row):
             self._insert_as_relationship(row)
-            action = "inserted"
+            action = "Inserted"
         self.logger.debug("{} as_relationship".format(action))
 
     def _get_as_relationship_data(self, row):
-        """returns data dict for a sql query from as_relationship dict"""
+        """Returns data dict for a sql query from as_relationship dict"""
 
         customers = row.get("customer_as")
         # Must convert the list of strings to a list of ints
@@ -74,7 +74,7 @@ class AS_Relationship_DB(AS_Relationships_DB_Wrapper):
             raise e
 
     def _insert_as_relationship(self, row):
-        """inserts as_relationship data into database"""
+        """Inserts as_relationship data into database"""
         try:
             sql = """INSERT INTO as_relationships
                      (cone_as, customer_as, provider_as, peer_as_1,

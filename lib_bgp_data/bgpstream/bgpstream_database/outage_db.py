@@ -3,8 +3,8 @@
 
 """This module contains class Outage_DB
 
-Outage_DB has database functionality for bgpstream events.
-It can select, insert, or update outage events.
+Outage_DB has database functionality for bgpstream events
+It can select, insert, or update outage events
 """
 
 from .helper import format_error
@@ -21,6 +21,7 @@ class Outage_DB:
 
         The funcs in this class are meant to be added to a Database class
         """
+
         pass
 
     def add_outage_event(self, event):

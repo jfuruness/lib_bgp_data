@@ -12,6 +12,7 @@ from .announcements import Announcements_DB
 from .config import Config
 from .logger import Logger
 
+
 class Database(AS_Relationship_DB, BGPStream_DB, Announcements_DB, Logger):
     """Interact with the database to populate them"""
 
@@ -31,6 +32,7 @@ class Database(AS_Relationship_DB, BGPStream_DB, Announcements_DB, Logger):
 
     def _connect(self):
         """Connects to db"""
+
         username, password, host, database = self.config.get_db_creds()
         try:
             conn = psycopg2.connect(user=username,

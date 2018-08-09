@@ -3,8 +3,8 @@
 
 """This module contains class Hijack_DB
 
-Hijack_DB has database functionality for bgpstream events.
-It can select, insert, or update hijack events.
+Hijack_DB has database functionality for bgpstream events
+It can select, insert, or update hijack events
 """
 
 from .helper import format_error
@@ -21,6 +21,7 @@ class Hijack_DB:
 
         The funcs in this class are meant to be added to a Database class
         """
+
         pass
 
 

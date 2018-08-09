@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 """This module contains a function that prints and raises formatted errors"""
+
 import pprint
 
 

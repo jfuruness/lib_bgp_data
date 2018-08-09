@@ -36,7 +36,7 @@ class Announcements_DB(Announcements_DB_Wrapper):
             self._add_element(element, record_id)
 
     def _add_element(self, element, record_id):
-        """adds an element to the database and it's communities"""
+        """Adds an element to the database and it's communities"""
 
         # Inserts element and returns element_id
         element_id = self._insert_element(element, record_id)
@@ -106,6 +106,7 @@ class Announcements_DB(Announcements_DB_Wrapper):
 
     def _insert_community(self, info, element_id):
         """Inserts community info into the database"""
+
         try:
             sql = """INSERT INTO communities
                      (asn, value, element_id)

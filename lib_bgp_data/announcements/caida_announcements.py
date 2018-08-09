@@ -25,6 +25,7 @@ class BGP_Records:
 
     def _input_validation(self, start, end):
         """If start or end is not datetime.datetime, raises exception"""
+
         try:
             if None in [start, end]:
                 raise Exception("Start, end required")
@@ -39,7 +40,7 @@ class BGP_Records:
             raise e
 
     def _start_stream(self, **filters):
-        """initializes, starts, and returns bgp stream with filters"""
+        """Initializes, starts, and returns bgp stream with filters"""
 
         # Create a new bgpstream instance
         stream = BGPStream()
@@ -109,7 +110,7 @@ class DB_Info:
     """
 
     def __init__(self, record):
-        """initializes a DB_Info instance with record information"""
+        """Initializes a DB_Info instance with record information"""
 
         self._add_record(record)
         self.elements = []

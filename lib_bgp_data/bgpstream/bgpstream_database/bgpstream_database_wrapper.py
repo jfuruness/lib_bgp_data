@@ -13,11 +13,13 @@ class BGPStream_DB_Wrapper:
 
     leaks, hijacks, or outages can be selected using this class
     """
+
     def __init__(self):
         """This function should never be called
 
         The funcs in this class are meant to be added to a Database class
         """
+
         pass
 
 
@@ -25,8 +27,9 @@ class BGPStream_DB_Wrapper:
         """Returns all hijacks from the database in a list of dictionaries
 
         If hijack_id is input then all hijacks with that corresponding id
-        are returned. If there are no results an empty list will be returned
+        are returned. If there are no results an empty list will be returned.
         """
+
         try:
             if hijack_id is None:
                 self.cursor.execute("SELECT * FROM hijack;")
@@ -46,8 +49,9 @@ class BGPStream_DB_Wrapper:
         """Returns all leaks from the database in a list of dictionaries
 
         If leak_id is input then all leaks with that corresponding id
-        are returned. If there are no results an empty list will be returned
+        are returned. If there are no results an empty list will be returned.
         """
+
         try:
             if leak_id is None:
                 self.cursor.execute("SELECT * FROM leak;")
@@ -66,8 +70,9 @@ class BGPStream_DB_Wrapper:
         """Returns all outages from the database in a list of dictionaries
 
         If outage_id is input then all outages with that corresponding id
-        are returned. If there are no results an empty list will be returned
+        are returned. If there are no results an empty list will be returned.
         """
+
         try:
             if outage_id is None:
                 self.cursor.execute("SELECT * FROM outage;")

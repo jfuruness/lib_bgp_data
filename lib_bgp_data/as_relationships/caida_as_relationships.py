@@ -3,9 +3,9 @@
 
 """This module contains class Caida_AS_Relationships_Parser
 
-Caida_AS_Relationships_Parser first downloads all files from caida website.
-Then it unzips all these files.
-Then is parses all these files for their as_relationships.
+Caida_AS_Relationships_Parser first downloads all files from caida website
+Then it unzips all these files
+Then is parses all these files for their as_relationships
 Then it deletes all the files that it downloaded
 """
 
@@ -129,6 +129,7 @@ class Caida_AS_Relationships_Parser:
 
     def clean_up(self):
         """Permanently deletes all the files in paths specified"""
+
         try:
             if os.path.exists(self.path):
                 # rm -rf self.path
@@ -239,17 +240,7 @@ class Caida_AS_Relationships_Parser:
 ##############################
 
     def _get_file_names(self, path):
-        """
-        Gets the file names in a given path
+        """Returns a list of file names within a given path"""
 
-        Input
-            self     class object
-            path     string          path for files
-        Output
-            files    list of str     list of file_names
-        """
-
-        # This may look too small to be a function, but outside a function
-        # it becomes a couple lines longer
         for (_, _, files) in os.walk(path):
             return files

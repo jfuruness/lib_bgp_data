@@ -26,7 +26,7 @@ class AS_Relationships_DB_Wrapper:
 
         If relationship_id is input, then all as_relationships with that
         as_relationship_id are returned. If no results, then an empty list
-        will be returned
+        will be returned.
         """
 
         try:        
@@ -37,7 +37,7 @@ class AS_Relationships_DB_Wrapper:
                 sql = "SELECT * FROM as_relationships WHERE relationships_id = %s"
                 self.cursor.execute(sql, [relationships_id])
                 results = self.cursor.fetchone()
-            self.logger.debug("selected as_relationship")
+            self.logger.debug("Selected as_relationship")
             return results
         except Exception as e:
             self.logger.error("Problem in select_relationship: {}".format(e))

@@ -13,6 +13,7 @@ class Announcements_DB_Wrapper:
 
     records, elements, or communities can be selected using this class
     """
+
     def __init__(self, verbose=False):
         """This function should never be called
 
@@ -24,7 +25,7 @@ class Announcements_DB_Wrapper:
         """Returns all records from the database in a list of dictionaries
 
         If record_id is input then all records with that corresponding id
-        are returned. If there are no results an empty list will be returned
+        are returned. If there are no results an empty list will be returned.
         """
 
         try:
@@ -45,7 +46,7 @@ class Announcements_DB_Wrapper:
         """Returns all elements from the database in a list of dicts
 
         If element_id is input then all elements with that corresponding id
-        are returned. If there are no results an empty list will be returned
+        are returned. If there are no results an empty list will be returned.
         """
 
         try:
@@ -66,7 +67,7 @@ class Announcements_DB_Wrapper:
         """Returns all communities from the database in a list of dicts
 
         If community_id is input then all communities with that id
-        are returned. If there are no results an empty list will be returned
+        are returned. If there are no results an empty list will be returned.
         """
 
         try:

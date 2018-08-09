@@ -22,8 +22,8 @@ class Logger:
         logging.INFO
         logging.DEBUG
 
-        anything equal to or higher than file_level will be appended to path
-        anything equal to or higher than stream_level will be printed
+        Anything equal to or higher than file_level will be appended to path
+        Anything equal to or higher than stream_level will be printed
         """
 
         path = os.path.join(log_dir, log_name)
