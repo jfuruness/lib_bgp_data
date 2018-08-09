@@ -29,7 +29,7 @@ class Logger:
         path = os.path.join(log_dir, log_name)
         # Initialize logging
         self.logger = logging.getLogger(__name__)
-        logger.setLevel(logging.DEBUG)
+        self.logger.setLevel(logging.DEBUG)
 
         # Initialize File Handler
         file_handler = self.logging.FileHandler('path')
