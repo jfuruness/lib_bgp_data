@@ -1,4 +1,7 @@
-* [Lib\_bgp\_data](#lib_bgp_data)
+# lib\_bgp\_data
+This package parses bgp data and inserts the raw data into a database. The data is parsed from bgpstream.com, http://data.caida.org/datasets/as-relationships/, and from the BGP Stream using https://bgpstream.caida.org/docs/api/pybgpstream/_pybgpstream.html. The entirety of this data can be inserted into the database upon processing.
+
+* [lib\_bgp\_data](#lib_bgp_data)
 * [Description](#description)
     * [Parser Description](#parser)
     * [Database Description](#database)
@@ -30,8 +33,6 @@
 * [Todo](#todo)
 
 
-# lib\_bgp\_data
-This package parses bgp data and inserts the raw data into a database. The data is parsed from bgpstream.com, http://data.caida.org/datasets/as-relationships/, and from the BGP Stream using https://bgpstream.caida.org/docs/api/pybgpstream/_pybgpstream.html. The entirety of this data can be inserted into the database upon processing.
 ## Description
 There are two main classes in the package, Parser and Database. The parser parses information while the database is used to insert/update/select information.
 ### Parser
