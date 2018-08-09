@@ -2,7 +2,7 @@
 
 
 
-# libi\_bgp\_data
+# lib\_bgp\_data
 This package parses bgp data and inserts the raw data into a database. The data is parsed from bgpstream.com, http://data.caida.org/datasets/as-relationships/, and from the BGP Stream using https://bgpstream.caida.org/docs/api/pybgpstream/_pybgpstream.html. The entirety of this data can be inserted into the database upon processing.
 ## Description
 There are two main classes in the package, Parser and Database. The parser parses information while the database is used to insert/update/select information.
@@ -290,11 +290,11 @@ to be reachable following a customer link.
 ### Logging Description
 * Quick Explanation of logging below:
     * There are five logging levels:
-        5. (highest) logging.CRITICAL *Serious error, program cannot continue to run*
-        4. logging.ERROR *Serious problem, software cannot complete a task*
-        3. logging.WARNING *Something unexpected has happened, but software is still working*
-        2. logging.INFO *Confirms that things are working as expected*
-        1. (lowest) logging.DEBUG *Detailed info, only of interest when diagnosing problems*
+        * (highest) logging.CRITICAL *Serious error, program cannot continue to run*
+        * logging.ERROR *Serious problem, software cannot complete a task*
+        * logging.WARNING *Something unexpected has happened, but software is still working*
+        * logging.INFO *Confirms that things are working as expected*
+        * (lowest) logging.DEBUG *Detailed info, only of interest when diagnosing problems*
     * When a logging level is set, it will log everything at that log level and higher
         * For example, if logging is set to logging.ERROR, it will only log logging.ERROR and logging.CRITICAL
 
