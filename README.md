@@ -1,5 +1,33 @@
-- [Database](#database)
-
+- [Lib\_bgp\_data](#lib_bgp_data)
+- [Description](#description)
+- [Parser Description](#parser)
+- [Database Description](#database)
+- [Database Schema](#database-schema)
+- [as\_relationships Schema](#as_relationships-schema)
+- [hijack Schema](#hijack-schema)
+- [leak Schema](#leak-schema)
+- [outage Schema](#outage-schema)
+- [records Schema](#records-schema)
+- [elements Schema](#elements-schema)
+- [communities Schema](#communities-schema)
+- [Logging Description](#logging-description)
+- [Installation](#installation)
+- [Database Installation](#database-installation)
+- [pybgpstream Installation](#pybgpstream-installation)
+- [lib\_bgp\_data Installation](#lib_bgp_data-installation)
+- [Testing your installation](#testing-your-installation)
+- [Usage](#usage)
+- [In a Script](#in-a-script)
+- [Initializing the Database and Parser](#initializing-the-database-and-parser)
+- [How to Run BGPStream\_Website\_Parser](#how-to-run-bgpstream_website_parser)
+- [How to Run Caida\_AS\_Relationships\_Parser](how-to-run-caida_as_relationships_parser)
+- [How to Run BGP\_Records to get BGPStream data](how-to-run-bgp_records-to-get-bgpstream-data)
+- [From the Command Line](#from-the-command-line)
+- [Development/Contributing](#developmentcontributing)
+- [History](#history)
+- [Credits](#credits)
+- [Liscence](#liscence)
+- [Todo](#todo)
 
 
 # lib\_bgp\_data
@@ -362,8 +390,8 @@ database = Database(log_stream_level=logging.ERROR)
 parser = Parser(database, log_stream_level=logging.ERROR)
 ```
 Initialize for debugging:
-> This will print all debug statements and above
-> This will also log all info statements and above
+> This will print all debug statements and above   
+> This will also log all info statements and above   
 ```python
 from lib_bgp_data import Database, Parser
 import logging
