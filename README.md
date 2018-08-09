@@ -339,14 +339,14 @@ Coming Soon
 ### In a Script
 ##### Initializing the Database and Parser
 
-> The default params for the database and parser are:
-> log\_name = "database.log"  # For Database
-> log\_name = "parser.log"  # For Parser
-> log\_file\_level = logging.ERROR  # Logging level for file
-> log\_stream\_level = logging.INFO  # Logging level for printing
-> This will cause any errors to be appended to the log file
-> This will also cause any information (and higher) to be printed.
-> See logging description for more details
+> The default params for the database and parser are:   
+> log\_name = "database.log"  # For Database   
+> log\_name = "parser.log"  # For Parser   
+> log\_file\_level = logging.ERROR  # Logging level for file   
+> log\_stream\_level = logging.INFO  # Logging level for printing   
+> This will cause any errors to be appended to the log file   
+> This will also cause any information (and higher) to be printed.   
+> See logging description for more details   
 
 Initialize with default logging:
 ```python
