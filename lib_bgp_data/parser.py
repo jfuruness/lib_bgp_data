@@ -21,9 +21,9 @@ class Parser(Logger):
 
     def __init__(self,
                  database,
-                 **bgpstream_args,
-                 **announcements_args,
-                 **as_relationships_args,
+                 **bgpstream_args={},
+                 **announcements_args={},
+                 **as_relationships_args={},
                  log_name="parser.log",
                  log_file_level=logging.ERROR,
                  log_stream_level=logging.INFO
@@ -60,13 +60,14 @@ class Parser(Logger):
                 "Problem running bgpstream parser: {}".format(e))
             raise e
 
-    def run_as_relationship_parser(self, clean_up=True):
+    def run_as_relationship_parser(self, downloaded=False, clean_up=True):
         """Parses as relationships and inserts them into database"""
 
         try:
             self.logger.info("Running as relationship parser")
-            self.as_relationships_parser.download_files()
-            self.as_relationships_parser.unzip_files()
+            if downloaded is False:
+                self.as_relationships_parser.download_files()
+                self.as_relationships_parser.unzip_files()
             lines = self.as_relationships_parser.parse_files()
             total_lines = len(lines)
             for i in range(total_lines):

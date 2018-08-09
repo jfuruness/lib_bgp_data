@@ -40,6 +40,8 @@ class Caida_AS_Relationships_Parser:
         """Downloads all .bz2 files from caida websites into self.path"""
 
         try:
+            # Delete any files that are already in there
+            self.clean_up()
             # Create directory if it does not exist
             if not os.path.exists(self.path):
                 os.makedirs(self.path)
@@ -251,8 +253,3 @@ class Caida_AS_Relationships_Parser:
         # it becomes a couple lines longer
         for (_, _, files) in os.walk(path):
             return files
-
-# parser = Caida_AS_Relationships_Parser()
-# parser.download_files()
-# parser.unzip_files()
-# parser.parse_files()

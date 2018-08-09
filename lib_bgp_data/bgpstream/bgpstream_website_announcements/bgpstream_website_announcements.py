@@ -122,6 +122,3 @@ class BGPStream_Website_Parser(BGPStream_Row_Parser):
         # After we are done starting processes, we have to join any remaining
         for i in range(self.latest_unjoined, self.row_limit):
             self.processes[i].join()
-
-# parser = BGPStream_Website_Parser()
-# parser.parallel_parse()

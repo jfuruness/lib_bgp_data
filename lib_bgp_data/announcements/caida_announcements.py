@@ -140,7 +140,3 @@ class DB_Info:
         element_info["next_hop"] = fields.get("next-hop")
         element_info["communities"] = fields.get("communities")
         self.elements.append(element_info)
-# start = datetime.datetime(2015, 8, 1, 8, 20, 11)
-# end = start
-# records = BGP_Records()
-# records.get_records(start, end)
