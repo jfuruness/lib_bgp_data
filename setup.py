@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 setup(
     name='lib_bgp_data',
     packages=find_packages(),
-    version='0.0.01',
+    version='0.1.0',
     author='Justin Furuness',
     author_email='jfuruness@gmail.com',
     url='https://github.com/jfuruness/lib_bgp_data.git',

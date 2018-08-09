@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-"""This package can parse bgpstream events and has db functionality"""
+"""This package has functionality to parse bgpstream.com data"""
 
-from .bgpstream_database import BGPStream_DB
 from .bgpstream_website_announcements import BGPStream_Website_Parser

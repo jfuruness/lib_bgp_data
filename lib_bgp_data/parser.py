@@ -1,40 +1,94 @@
-from . import Database
-from . import BGPStream_Website_Parser
-from . import BGP_Records
-from . import Caida_AS_Relationships_Parser
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 
-class Parser:
-    def __init__(self):
-        self.database = Database()
-        self.bgpstream_parser = BGPStream_Website_Parser()
-        self.announcements_parser = BGP_Records()
-        self.as_relationships_parser = Caida_AS_Relationships_Parser()
+"""This module contains class parser that can parse bgp data"""
+
+from .logger import Logging
+from .announcements import BGP_Records
+from .as_relationships import Caida_AS_Relationships_Parser
+from .bgpstream import BGPStream_Website_Parser
+from . import Database
+
+
+class Parser(Logging):
+    """Parses bgp data into a database
+
+    parses data from bgpstream.com, caida as relationships,
+    and caida announcements and inserts it into a database
+    """
+
+    def __init__(self,
+                 database,
+                 log_name="parser.log",
+                 log_file_level=logging.ERROR,
+                 log_stream_level=logging.INFO
+                 ):
+        """Initializes database and parsers"""
+
+        # Function can be found in logger.Logger class
+        # sets self.logger
+        self._intialize_logger(log_path, file_level, stream_level)
+        self.database = database
+        self.bgpstream_parser = BGPStream_Website_Parser(self.logger)
+        self.announcements_parser = BGP_Records(self.logger)
+        self.as_relationships_parser = Caida_AS_Relationships_Parser(self.logger)
 
     def run_bgpstream_parser(self):
-        "parses bgpstream.com and inserts into the database"
-        events = self.bgpstream_parser.parallel_parse()
-        for event in events:
-            if event.get("event_type")=='BGP Leak':
-                self.database.add_leak_event(event)
-            elif event.get("event_type")=='Outage':
-                self.database.add_outage_event(event)
-            elif event.get("event_type")=='Possible Hijack':
-                self.database.add_hijack_event(event)
+        """parses bgpstream.com and inserts into the database"""
 
-    def run_as_relationship_parser(self):
-        self.as_relationships_parser.download_files()
-        self.as_relationships_parser.unzip_files()
-        lines = self.as_relationships_parser.parse_files()
-        total_lines = len(lines)
-        for i in range(total_lines):
-            self.database.add_as_relationship(lines[i])
-            print("{}/{} relationships resolved".format(i, total_lines))
-        self.as_relationships_parser.clean_up()
+        try:
+            self.logger.info("Running bgpstream website parser")
+            events = self.bgpstream_parser.parse()
+            for event in events:
+                if event.get("event_type") == 'BGP Leak':
+                    self.database.add_leak_event(event)
+                elif event.get("event_type") == 'Outage':
+                    self.database.add_outage_event(event)
+                elif event.get("event_type") == 'Possible Hijack':
+                    self.database.add_hijack_event(event)
+            self.logger.info("Done running bgpstream website parser")
+        except Exception as e:
+            self.logger.critical(
+                "Problem running bgpstream parser: {}".format(e))
+            raise e
 
-    def run_as_announcements_parser(self):
-        start = datetime.datetime(2015, 8, 1, 8, 20, 11)
-        end = start
-        announcements = self.announcements_parser.get_records(start, end)
-        for announcement in announcements:
-            self.database.insert_announcement_info(announcement)
+    def run_as_relationship_parser(self, clean_up=True):
+        """Parses as relationships and inserts them into database"""
+
+        try:
+            self.logger.info("Running as relationship parser")
+            self.as_relationships_parser.download_files()
+            self.as_relationships_parser.unzip_files()
+            lines = self.as_relationships_parser.parse_files()
+            total_lines = len(lines)
+            for i in range(total_lines):
+                self.database.add_as_relationship(lines[i])
+                self.logger.info(
+                    "{}/{} relationships resolved".format(i, total_lines))
+            if clean_up:
+                self.as_relationships_parser.clean_up()
+            self.logger.info("Done running as relationship parser")
+        except Exception as e:
+            self.logger.critical(
+                "Problem running as_relationship_parser: {}".format(e))
+            if clean_up:
+                self.as_relationships_parser.clean_up()
+            raise e
+
+
+    def run_as_announcements_parser(self, start, end):
+        """Parses bgp announcements and inserts them into the database"""
+
+        try:
+            # start = datetime.datetime(2015, 8, 1, 8, 20, 11)
+            # end = start
+            self.logger.info("Running as announcements parser")
+            announcements = self.announcements_parser.get_records(start, end)
+            for announcement in announcements:
+                self.database.insert_announcement_info(announcement)
+            self.logger.info("Done running as announcements parser")
+        except Exception as e:
+            self.logger.critical(
+                "Problem running as_announcements_parser: {}".format(e))
+            raise e
 

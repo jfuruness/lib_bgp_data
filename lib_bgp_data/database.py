@@ -1,16 +1,30 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+"""This module contains class Database that interacts with a database"""
+
 import psycopg2
 from psycopg2.extras import RealDictCursor
-from . import AS_Relationship_DB
-from . import BGPStream_DB
-from . import Announcements_DB
-from . import Config
+from .as_relationships import AS_Relationship_DB
+from .bgpstream import BGPStream_DB
+from .announcements import Announcements_DB
+from .config import Config
+from .logger import Logger
 
-class Database(AS_Relationship_DB, BGPStream_DB, Announcements_DB):
+class Database(AS_Relationship_DB, BGPStream_DB, Announcements_DB, Logger):
     """Interact with the database to populate them"""
-    def __init__(self, verbose=False):
+
+    def __init__(self,
+                 log_name="database.log",
+                 log_file_level=logging.ERROR,
+                 log_stream_level=logging.INFO
+                 ):
         """Create a new connection with the databse"""
-        self.verbose = verbose
-        self.config = Config()
+
+        # Function can be found in logger.Logger class
+        # Initializes self.logger
+        self._initialize_logger(log_path, log_file_level, log_stream_level)
+        self.config = Config(self.logger)
         self.conn, self.cursor = self._connect()
         self.conn.autocommit = True
 
@@ -23,9 +37,8 @@ class Database(AS_Relationship_DB, BGPStream_DB, Announcements_DB):
                                     host=host,
                                     database=database,
                                     cursor_factory=RealDictCursor)
-            if self.verbose:
-                print("Database Connected")
+            self.logger.info("Database Connected")
             return conn, conn.cursor()
         except Exception as e:
+            self.logger.critical('Postgres connection failure: {0}'.format(e))
             raise ('Postgres connection failure: {0}'.format(e))
-

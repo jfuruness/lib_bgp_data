@@ -1,9 +1,7 @@
-from .announcements import Announcements_DB
-from .announcements import BGP_Records
-from .as_relationships import AS_Relationship_DB
-from .as_relationships import Caida_AS_Relationships_Parser
-from .bgpstream import BGPStream_DB
-from .bgpstream import BGPStream_Website_Parser
-from .config import Config
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+"""This package contains a parser and database to parse bgp data"""
+
 from .database import Database
 from .parser import Parser
