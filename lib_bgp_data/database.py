@@ -24,7 +24,7 @@ class Database(AS_Relationship_DB, BGPStream_DB, Announcements_DB, Logger):
 
         # Function can be found in logger.Logger class
         # Initializes self.logger
-        self._initialize_logger(log_path, log_file_level, log_stream_level)
+        self._initialize_logger(log_name, log_file_level, log_stream_level)
         self.config = Config(self.logger)
         self.conn, self.cursor = self._connect()
         self.conn.autocommit = True
