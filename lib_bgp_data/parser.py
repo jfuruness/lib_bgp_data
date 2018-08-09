@@ -28,7 +28,7 @@ class Parser(Logger):
 
         # Function can be found in logger.Logger class
         # sets self.logger
-        self._initialize_logger(log_name, file_level, stream_level)
+        self._initialize_logger(log_name, log_file_level, log_stream_level)
         self.database = database
         self.bgpstream_parser = BGPStream_Website_Parser(self.logger)
         self.announcements_parser = BGP_Records(self.logger)
