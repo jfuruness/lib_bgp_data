@@ -35,7 +35,7 @@ class BGPStream_Row_Parser:
                 self._parse_hijack(row_vals, children)
             elif row_vals["event_type"] == "BGP Leak":
                 self._parse_leak(row_vals, children)
-            if self.parallel:
+            if self.parallel is not None:
                 self.q.put(row_vals)
             else:
                 return row_vals

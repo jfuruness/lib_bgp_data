@@ -3,6 +3,7 @@
 
 """This module contains class parser that can parse bgp data"""
 
+import multiprocessing
 import logging
 from .logger import Logger
 from .announcements import BGP_Records
@@ -20,6 +21,9 @@ class Parser(Logger):
 
     def __init__(self,
                  database,
+                 **bgpstream_args,
+                 **announcements_args,
+                 **as_relationships_args,
                  log_name="parser.log",
                  log_file_level=logging.ERROR,
                  log_stream_level=logging.INFO
@@ -30,16 +34,19 @@ class Parser(Logger):
         # sets self.logger
         self._initialize_logger(log_name, log_file_level, log_stream_level)
         self.database = database
-        self.bgpstream_parser = BGPStream_Website_Parser(self.logger)
-        self.announcements_parser = BGP_Records(self.logger)
-        self.as_relationships_parser = Caida_AS_Relationships_Parser(self.logger)
+        self.bgpstream_parser = BGPStream_Website_Parser(self.logger,
+                                                         bgpstream_args)
+        self.announcements_parser = BGP_Records(self.logger,
+                                                announcements_args)
+        self.as_relationships_parser = Caida_AS_Relationships_Parser(
+            self.logger, as_relationship_args)
 
-    def run_bgpstream_parser(self):
+    def run_bgpstream_parser(self, max_processes=multiprocessing.cpu_count()):
         """parses bgpstream.com and inserts into the database"""
 
         try:
             self.logger.info("Running bgpstream website parser")
-            events = self.bgpstream_parser.parse()
+            events = self.bgpstream_parser.parse(max_processes)
             for event in events:
                 if event.get("event_type") == 'BGP Leak':
                     self.database.add_leak_event(event)

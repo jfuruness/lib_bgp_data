@@ -18,7 +18,7 @@ class BGPStream_Website_Parser(BGPStream_Row_Parser):
     Also contains function from BGPStream_Row_Parser that parse rows
     """
 
-    def __init__(self, logger, parallel=False, row_limit=None):
+    def __init__(self, logger, args):
         """Initializes regex expressions and arguments
 
         Row limit is the amount of entries to parse from bgpstream.com
@@ -36,10 +36,10 @@ class BGPStream_Website_Parser(BGPStream_Row_Parser):
         # This is for a queue to collect results from multithreaded module
         self.q = Queue()
         # The amount of entries from bgpstream.com to parse, mainly for testing
-        self.row_limit = row_limit
+        self.row_limit = args.get("row_limit")  # Can be None
         self.logger = logger
         # I think you can only do about 100 in parallel then website cuts off
-        self.parallel = parallel
+        self.parallel = args.get("parallel")
 
 #################################
 ### Parsing Process Functions ###
@@ -53,7 +53,7 @@ class BGPStream_Website_Parser(BGPStream_Row_Parser):
                 # The - 3 is because the last couple of rows in the website are
                 # screwed up, probably an html error or something who knows
                 self.row_limit = len(rows) - 3
-            if self.parallel:
+            if self.parallel is not None:
                 return self._parallel_parse(rows, max_processes)
             else:
                 return self._single_threaded_parse(rows)
@@ -80,7 +80,7 @@ class BGPStream_Website_Parser(BGPStream_Row_Parser):
         because it can't pickle properly, and pathos.multiprocessing is full
         of bugs. Because of this we impliment our own pool that cannot have
         more than the max amount of processes running at any given time. Note
-        that if self.parallel=False, parallel parsing will not occur.
+        that if self.parallel=None, parallel parsing will not occur.
         """
 
         vals = []

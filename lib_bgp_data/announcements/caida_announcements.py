@@ -17,7 +17,7 @@ class BGP_Records:
     non valid records is not collected.
     """
 
-    def __init__(self, logger):
+    def __init__(self, logger, args):
         """Initializes a reusable BGPRecord instance"""
 
         self.rec = BGPRecord()

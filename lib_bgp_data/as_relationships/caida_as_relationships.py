@@ -21,11 +21,12 @@ import bz2
 class Caida_AS_Relationships_Parser:
     """This class downloads, unzips, parses, and deletes files from Caida"""
 
-    def __init__(self, logger, path="/tmp/bgp"):
+    def __init__(self, logger, args):
         """Initializes urls, regexes, and path variables"""
 
-        # Path to where all files will go. It does not have to exist
-        self.path = path
+        # Path to where all files willi go. It does not have to exist
+        if args.get("path") is None:
+            self.path = "/tmp/bgp"
         self.unzipped_path = os.path.join(self.path + "unzipped")
         # URLs fom the caida websites to pull data from
         url_1 = 'http://data.caida.org/datasets/as-relationships/serial-1/'
