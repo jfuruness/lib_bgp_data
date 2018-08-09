@@ -327,7 +327,7 @@ $ make check
 $ sudo make install
 $ sudo ldconfig
 ```
-##### lib_bgp_data installation:
+##### lib\_bgp\_data installation:
 Once postgresql database is set up, and pybgpstream is set up:
 ```sh
 pip3 install lib_bgp_data
@@ -379,19 +379,19 @@ parser = Parser(database,
 #### How to Run BGPStream\_Website\_Parser
 This will get data from bgpstream.com and insert it into the database
 Default arguments for the bgpstream parser:
-> parellel = None
-> This doesn't run in parallel even though it can, because
-> bgpstream.com cuts off the program after about 100 rows.
-> If you are doing a very small amount of rows, then you can parse in parallel for speed.
-
-> row\_limit = None
-> The row\_limit is how many rows of data from bgpstream.com to parse
-> This was mainly added for testing purposes
-
-Default argument for running the bgpstream parser:
-> max\_processes=multiprocessing.cpu\_count()
-> Note that this argument will only be used if parallel argument is not None
-> Defines the number of processes to run at any given time
+> parellel = None   
+> This doesn't run in parallel even though it can, because   
+> bgpstream.com cuts off the program after about 100 rows.   
+> If you are doing a very small amount of rows, then you can parse in parallel for speed.   
+   
+> row\_limit = None   
+> The row\_limit is how many rows of data from bgpstream.com to parse   
+> This was mainly added for testing purposes   
+   
+Default argument for running the bgpstream parser:   
+> max\_processes=multiprocessing.cpu\_count()   
+> Note that this argument will only be used if parallel argument is not None   
+> Defines the number of processes to run at any given time   
 To parse data from bgpstream.com with defaults (recommended):
 ```python
 from lib_bgp_data import Database, Parser
@@ -412,14 +412,14 @@ parser.run_bgpstream_parser(max_processes=5)
 #### How to Run Caida\_AS\_Relationships\_Parser
 This will get data from http://data.caida.org/datasets/as-relationships/ and insert it into the database
 Default arguments for the as\_relationships parser:
-> path = "/tmp/bgp"
-> This is the default path for the files to be downloaded to
+> path = "/tmp/bgp"   
+> This is the default path for the files to be downloaded to   
 
 Default argument for running the as\_relationships parser:
-> clean\_up=True
-> If clean\_up == True, downloaded files will be deleted after parsing
-> downloaded=False
-> If downloaded == False, the directory will be deleted and the files will be downloaded again
+> clean\_up=True   
+> If clean\_up == True, downloaded files will be deleted after parsing   
+> downloaded=False   
+> If downloaded == False, the directory will be deleted and the files will be downloaded again   
 To parse as\_relationships data with defaults (recommended):
 ```python
 from lib_bgp_data import Database, Parser
@@ -437,8 +437,8 @@ parser = Parser(database,  as_relationships_args=as_relationships_args)
 parser.run_as_relationship_parser(downloaded=True, clean_up=False)
 ```
 #### How to Run BGP\_Records to get BGPStream data
-This will get data from BGPStream and insert it into the database
-Start and end must be entered as a datatime object
+This will get data from BGPStream and insert it into the database   
+Start and end must be entered as a datatime object   
 To parse bgpstream data with start and end:
 ```python
 from datetime import datetime
