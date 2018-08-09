@@ -20,13 +20,13 @@
 - [In a Script](#in-a-script)
 - [Initializing the Database and Parser](#initializing-the-database-and-parser)
 - [How to Run BGPStream\_Website\_Parser](#how-to-run-bgpstream_website_parser)
-- [How to Run Caida\_AS\_Relationships\_Parser](how-to-run-caida_as_relationships_parser)
-- [How to Run BGP\_Records to get BGPStream data](how-to-run-bgp_records-to-get-bgpstream-data)
+- [How to Run Caida\_AS\_Relationships\_Parser](#how-to-run-caida_as_relationships_parser)
+- [How to Run BGP\_Records to get BGPStream data](#how-to-run-bgp_records-to-get-bgpstream-data)
 - [From the Command Line](#from-the-command-line)
 - [Development/Contributing](#developmentcontributing)
 - [History](#history)
 - [Credits](#credits)
-- [Liscence](#liscence)
+- [Licence](#licence)
 - [Todo](#todo)
 
 
