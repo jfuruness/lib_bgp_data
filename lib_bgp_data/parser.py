@@ -21,9 +21,9 @@ class Parser(Logger):
 
     def __init__(self,
                  database,
-                 **bgpstream_args={},
-                 **announcements_args={},
-                 **as_relationships_args={},
+                 **bgpstream_args,
+                 **announcements_args,
+                 **as_relationships_args,
                  log_name="parser.log",
                  log_file_level=logging.ERROR,
                  log_stream_level=logging.INFO
