@@ -23,7 +23,7 @@ class Parser(Logger):
                  database,
                  bgpstream_args={},
                  announcements_args={},
-                 as_relationships_args={},
+                 as_relationship_args={},
                  log_name="parser.log",
                  log_file_level=logging.ERROR,
                  log_stream_level=logging.INFO
