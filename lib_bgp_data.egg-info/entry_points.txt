@@ -1,3 +1,0 @@
-[console_scripts]
-parse_bgpstream.com = lib_bgpstream_parser.__main__:main
-
