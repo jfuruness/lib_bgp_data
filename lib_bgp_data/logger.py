@@ -3,6 +3,8 @@
 
 """This module contains class Logger with logging functionality"""
 
+__author__ = "Justin Furuness"
+
 import logging
 import os
 

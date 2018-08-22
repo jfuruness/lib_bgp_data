@@ -3,6 +3,8 @@
 
 """This module contains class Config that can parse a config file"""
 
+__author__ = "Justin Furuness"
+
 from configparser import SafeConfigParser as SCP
 
 

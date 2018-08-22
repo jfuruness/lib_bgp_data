@@ -3,6 +3,9 @@
 
 """This module contains class Database that interacts with a database"""
 
+__author__ = "Justin Furuness"
+
+
 import logging
 import psycopg2
 from psycopg2.extras import RealDictCursor
