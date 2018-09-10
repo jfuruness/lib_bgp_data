@@ -129,7 +129,7 @@ to be reachable following a customer link.
     ```sql
     CREATE TABLE customer_providers (
         customer_providers_id serial PRIMARY KEY,
-        customer_as integer ARRAY,
+        customer_as integer,
         provider_as integer,
         unique(customer_as, provider_as)
     );
@@ -158,7 +158,7 @@ to be reachable following a customer link.
     ```sql
     CREATE TABLE peers (
         peers_id serial PRIMARY KEY,
-        peer_as_1 integer ARRAY,
+        peer_as_1 integer,
         peer_as_2 integer,
         unique(peer_as_1, peer_as_2)
     );
