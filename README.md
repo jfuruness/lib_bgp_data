@@ -308,6 +308,7 @@ to be reachable following a customer link.
 * as\_path: list of ASNs in AS path *(integer[])*
 * prefix: prefix *(varchar(25))*
 * next\_hop: The next hop IP address *(varchar(25))*
+* time: time that pertains to the element
 * record\_id: Corresponding record's id *(integer)*
 * Create Table SQL commands:
     ```sql
@@ -319,6 +320,7 @@ to be reachable following a customer link.
         as_path integer ARRAY,
         prefix varchar (25),
         next_hop varchar (25),
+        time integer,
         record_id integer   
     );
     ```

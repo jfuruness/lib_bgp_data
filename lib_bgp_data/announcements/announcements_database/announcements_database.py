@@ -84,7 +84,7 @@ class Announcements_DB(Announcements_DB_Wrapper):
         try:
             sql = """INSERT INTO elements
                      (element_type, element_peer_asn, element_peer_address,
-                     as_path, prefix, next_hop, record_id)
+                     as_path, prefix, next_hop, time, record_id)
                      VALUES (%s, %s, %s, %s, %s, %s, %s)
                      RETURNING element_id"""
             data = [element.get("element_type"),
@@ -93,6 +93,7 @@ class Announcements_DB(Announcements_DB_Wrapper):
                     element.get("as_path"),
                     element.get("prefix"),
                     element.get("next_hop"),
+                    element.get("time"),
                     record_id
                     ]
             self.cursor.execute(sql, data)

@@ -140,4 +140,5 @@ class DB_Info:
         element_info["prefix"] = fields.get("prefix")
         element_info["next_hop"] = fields.get("next-hop")
         element_info["communities"] = fields.get("communities")
+        element_info["time"] = element.time
         self.elements.append(element_info)
