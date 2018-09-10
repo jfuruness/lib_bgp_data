@@ -6,7 +6,8 @@ This package parses bgp data and inserts the raw data into a database. The data 
     * [Parser Description](#parser)
     * [Database Description](#database)
         * [Database Schema](#database-schema)
-            * [as\_relationships Schema](#as_relationships-schema)
+            * [customer_providers Schema](#customer_providers-schema)
+            * [peers Schema](#peer-schema)
             * [hijack Schema](#hijack-schema)
             * [leak Schema](#leak-schema)
             * [outage Schema](#outage-schema)
@@ -105,7 +106,7 @@ to be reachable following a customer link.
 * The Database class can add information to the database, and also select information for usability in other scripts
 #### Database Schema
 All tables are stored in database bgp, with test tables in bgp\_test
-##### as\_relationships Schema
+##### customer\providers Schema
 * Note that because there are multiple different formats, some fields may be empty
     * The 'serial-1' as-rel files contain p2p and p2c relationships. 
         * The format is:
@@ -121,25 +122,48 @@ inferred for each AS.
 to be reachable following a customer link.  
         * The format is:
             * \<cone-as\> \<customer-1-as\> \<customer-2-as\> .. \<customer-N-as\>
-* relationships\_id: id of relationship object in table *(primary key)*
-* cone\_as: AS number *(integer)*
+* customer\_providers\_id: id of relationship object in table *(primary key)*
 * customer\_as: List of AS numbers *(integer[])*
 * provider\_as: AS number *(integer)*
+* Create Table SQL commands:
+    ```sql
+    CREATE TABLE customer_providers (
+        customer_providers_id serial PRIMARY KEY,
+        customer_as integer ARRAY,
+        provider_as integer,
+        unique(customer_as, provider_as)
+    );
+    ```
+##### peers Schema
+* Note that because there are multiple different formats, some fields may be empty
+    * The 'serial-1' as-rel files contain p2p and p2c relationships.
+        * The format is:
+            * \<provider-as\>|\<customer-as\>|-1
+            * \<peer-as\>|\<peer-as\>|0
+    * The 'serial-2' as-rel files add the source of the inference
+        * The Format is:
+            * \<provider-as\>|\<customer-as\>|-1|\<source\>
+            * \<peer-as\>|\<peer-as\>|0|\<source\>
+    * The 'serial-1' ppdc-ases files contain the provider-peer customer cones
+inferred for each AS.
+        * Each line specifies an AS and all ASes we infer
+to be reachable following a customer link.
+        * The format is:
+            * \<cone-as\> \<customer-1-as\> \<customer-2-as\> .. \<customer-N-as\>
+* peers\_id: id of relationship object in table *(primary key)*
 * peer\_as\_1: AS number *(integer)*
 * peer\_as\_2: AS number *(integer)*
 * Source: *(character varying(25))*
 * Create Table SQL commands:
     ```sql
-    CREATE TABLE as_relationships (
-        relationships_id serial PRIMARY KEY,
-        cone_as integer,
-        customer_as integer ARRAY,
-        provider_as integer,
-        peer_as_1 integer,
+    CREATE TABLE customer_providers (
+        peers_id serial PRIMARY KEY,
+        peer_as_1 integer ARRAY,
         peer_as_2 integer,
-        source varchar (25)
+        unique(peer_as_1, peer_as_2)
     );
     ```
+
 ##### hijack Schema
 * This data comes from bgpstream.com possible hijack events
 * hijack\_id: id of hijack object in table *(primary key)*
