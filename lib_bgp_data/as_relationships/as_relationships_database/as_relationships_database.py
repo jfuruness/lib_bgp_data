@@ -23,7 +23,7 @@ class AS_Relationship_DB(AS_Relationships_DB_Wrapper):
         """Inserts a dict of as_relationship into db if it doesn't exist"""
 
         action = "Updated"
-        if row.get("cone_as" is None:
+        if row.get("cone_as") is None:
             if row.get("peer_as_1") is not None:
                 #insert into peers
                 self._insert_peers(row)
