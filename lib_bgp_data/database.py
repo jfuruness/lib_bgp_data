@@ -41,8 +41,8 @@ class Database(AS_Relationship_DB, BGPStream_DB, Announcements_DB, Logger):
             conn = psycopg2.connect(user=username,
                                     password=password,
                                     host=host,
-                                    database=database,
-                                    cursor_factory=RealDictCursor)
+                                    database=database)#,
+                                    #cursor_factory=RealDictCursor)
             self.logger.info("Database Connected")
             return conn, conn.cursor()
         except Exception as e:
