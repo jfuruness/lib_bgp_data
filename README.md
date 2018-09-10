@@ -156,7 +156,7 @@ to be reachable following a customer link.
 * Source: *(character varying(25))*
 * Create Table SQL commands:
     ```sql
-    CREATE TABLE customer_providers (
+    CREATE TABLE peers (
         peers_id serial PRIMARY KEY,
         peer_as_1 integer ARRAY,
         peer_as_2 integer,
