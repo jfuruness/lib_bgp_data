@@ -48,3 +48,10 @@ class Database(AS_Relationship_DB, BGPStream_DB, Announcements_DB, Logger):
         except Exception as e:
             self.logger.critical('Postgres connection failure: {0}'.format(e))
             raise ('Postgres connection failure: {0}'.format(e))
+
+    def execute(self, sql, data=None):
+        if data is None:
+            self.cursor.execute(sql)
+        else:
+            self.cursor.execute(sql, data)
+        return self.cursor.fetchall()
