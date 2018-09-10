@@ -7,7 +7,7 @@ This package parses bgp data and inserts the raw data into a database. The data 
     * [Database Description](#database)
         * [Database Schema](#database-schema)
             * [customer_providers Schema](#customer_providers-schema)
-            * [peers Schema](#peer-schema)
+            * [peers Schema](#peers-schema)
             * [hijack Schema](#hijack-schema)
             * [leak Schema](#leak-schema)
             * [outage Schema](#outage-schema)
@@ -106,7 +106,7 @@ to be reachable following a customer link.
 * The Database class can add information to the database, and also select information for usability in other scripts
 #### Database Schema
 All tables are stored in database bgp, with test tables in bgp\_test
-##### customer\providers Schema
+##### customer\_providers Schema
 * Note that because there are multiple different formats, some fields may be empty
     * The 'serial-1' as-rel files contain p2p and p2c relationships. 
         * The format is:
