@@ -22,7 +22,8 @@ class Database(AS_Relationship_DB, BGPStream_DB, Announcements_DB, Logger):
     def __init__(self,
                  log_name="database.log",
                  log_file_level=logging.ERROR,
-                 log_stream_level=logging.INFO
+                 log_stream_level=logging.INFO,
+                 cursor_factory=None
                  ):
         """Create a new connection with the databse"""
 
@@ -30,19 +31,22 @@ class Database(AS_Relationship_DB, BGPStream_DB, Announcements_DB, Logger):
         # Initializes self.logger
         self._initialize_logger(log_name, log_file_level, log_stream_level)
         self.config = Config(self.logger)
-        self.conn, self.cursor = self._connect()
+        self.conn, self.cursor = self._connect(cursor_factory)
         self.conn.autocommit = True
 
-    def _connect(self):
+    def _connect(self, cursor_factory):
         """Connects to db"""
 
         username, password, host, database = self.config.get_db_creds()
         try:
-            conn = psycopg2.connect(user=username,
-                                    password=password,
-                                    host=host,
-                                    database=database)#,
-                                    #cursor_factory=RealDictCursor)
+            kwargs = {"user": username,
+                      "password": password,
+                      "host": host,
+                      "database": database
+                      }
+            if cursor_factory:
+                kwargs["cursor_factory"] = cursor_factory
+            conn = psycopg2.connect(**kwargs)
             self.logger.info("Database Connected")
             return conn, conn.cursor()
         except Exception as e:

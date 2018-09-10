@@ -21,6 +21,7 @@ class Parser(Logger):
 
     def __init__(self,
                  database,
+                 cursor_factory=None,
                  bgpstream_args={},
                  announcements_args={},
                  as_relationship_args={},
