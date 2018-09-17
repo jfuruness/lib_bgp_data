@@ -128,7 +128,7 @@ to be reachable following a customer link.
 * provider\_as: AS number *(bigint)*
 * Create Table SQL commands:
     ```sql
-    CREATE TABLE customer_providers (
+    CREATE TABLE customer_provider_pairs (
         customer_providers_id serial PRIMARY KEY,
         customer_as bigint,
         provider_as bigint,
