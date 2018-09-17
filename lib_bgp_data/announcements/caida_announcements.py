@@ -74,7 +74,11 @@ class BGP_Records:
             # Input validation
             self._input_validation(start, end)
 
-            stream = self._start_stream(start, end, collector, peer_asn, prefix)
+            stream = self._start_stream(start=start,
+                                        end=end,
+                                        collector=collector,
+                                        peer_asn=peer_asn,
+                                        prefix=prefix)
 
             information = []
 
