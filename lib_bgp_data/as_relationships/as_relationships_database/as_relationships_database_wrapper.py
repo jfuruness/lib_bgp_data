@@ -42,3 +42,48 @@ class AS_Relationships_DB_Wrapper:
         except Exception as e:
             self.logger.error("Problem in select_relationship: {}".format(e))
             raise e
+
+    def select_customer_provider(self, customer_provider_id=None):
+        """Returns all as_relationships from the database in a list of dicts
+
+        If relationship_id is input, then all as_relationships with that
+        as_relationship_id are returned. If no results, then an empty list
+        will be returned.
+        """
+
+        try:
+            if customer_provider_id is None:
+                self.cursor.execute("SELECT * FROM customer_provider_pairs")
+                results = self.cursor.fetchall()
+            else:
+                sql = "SELECT * FROM customer_provider_pairs WHERE customer_provider_id = %s"
+                self.cursor.execute(sql, [customer_provider_id])
+                results = self.cursor.fetchone()
+            self.logger.debug("Selected customer_provider_pair")
+            return results
+        except Exception as e:
+            self.logger.error("Problem in select_customer_provider: {}".format(e))
+            raise e
+
+    def select_peers(self, peer_id=None):
+        """Returns all as_relationships from the database in a list of dicts
+
+        If relationship_id is input, then all as_relationships with that
+        as_relationship_id are returned. If no results, then an empty list
+        will be returned.
+        """
+
+        try:
+            if customer_provider_id is None:
+                self.cursor.execute("SELECT * FROM peers")
+                results = self.cursor.fetchall()
+            else:
+                sql = "SELECT * FROM peers WHERE peer_id = %s"
+                self.cursor.execute(sql, [customer_provider_id])
+                results = self.cursor.fetchone()
+            self.logger.debug("Selected peers")
+            return results
+        except Exception as e:
+            self.logger.error("Problem in select_peers: {}".format(e))
+            raise e
+

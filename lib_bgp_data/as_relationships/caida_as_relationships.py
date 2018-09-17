@@ -53,15 +53,20 @@ class Caida_AS_Relationships_Parser:
             total_files = file_counter = 0
             for element_list in elements_lists:
                 total_files += len(element_list)
+            elements = []
+            for element_list in element_lists:
+                elements.extend(element_list)
 
-            for elements in element_lists:
-                for element in elements:
-                    # Only look at links with bz2 files
-                    if "bz2" in element["href"]:
-                        self._download_file(url, element["href"])
-                        self.logger.info("{} / {} downloaded".format(
-                            file_couner + 1, total_files))
-                        file_counter += 1
+            hrefs = [x["href"] for x in elements
+                     if "bz2" in x["href"]
+                     ]
+            if parse_ppdc is False:
+                hrefs = [x for x in hrefs if "ppdc" not in x]
+
+            for href in hrefs:
+                self._download_file(url, href)
+                self.logger.info("{} / {} downloaded".format(file_counter + 1, total_files))
+                file_counter += 1
         except Exception as e:
             self.logger.critical(
                 "Problem downloading caida as_relationship files: {}"\
@@ -89,13 +94,14 @@ class Caida_AS_Relationships_Parser:
             raise e
 
 
-    def parse_files(self):
+    def parse_files(self, parse_duplicates=False, parse_cones=False):
         """Returns a list of dicts of info from as_relationship files
 
         There are three different formats of files that are downloaded.
         Each helper function retrieves data from a different file format
         """
         try:
+            self.parse_duplicates = parse_duplicates
             data = []
             files_names = self._get_file_names(self.unzipped_path)
             # We do this so we don't have to call len for every iteration
@@ -110,7 +116,8 @@ class Caida_AS_Relationships_Parser:
                 lines = temp_file.readlines()
 
                 # Parse non comment lines depending on file format
-                if "ppdc" in file_names[i]:
+                # ppdc files contain cones which we do not need typically
+                if "ppdc" in file_names[i] and parse_cones:
                     temp = [self._parse_ppdc(x) for x in lines if "#" not in x]
                 elif "as-rel.txt" in file_names[i]:
                     temp = [self._parse_as(x) for x in lines if "#" not in x]
@@ -229,9 +236,12 @@ class Caida_AS_Relationships_Parser:
         if classifier == '-1':
             return {"provider_as": groups[0], "customer_as": groups[1]}
         elif classifier == '0':
-            return {"peer_as_1": groups[0],
-                    "peer_as_2": groups[1],
-                    "source": groups[3]}
+            if self.parse_duplicates:
+                return {"peer_as_1": groups[0],
+                        "peer_as_2": groups[1],
+                        "source": groups[3]}
+            else:
+                return None
         else:
             raise Exception("classifier unknown: {}".format(classifier))
 

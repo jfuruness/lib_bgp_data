@@ -22,7 +22,8 @@ This package parses bgp data and inserts the raw data into a database. The data 
     * [Testing your installation](#testing-your-installation)
 * [Usage](#usage)
     * [In a Script](#in-a-script)
-        * [Initializing the Database and Parser](#initializing-the-database-and-parser)
+        * [Initializing the Database and Parser With Cursor Factory and Logging](#initializing-the-database-and-parser)
+        * [Database Wrapper Functions](#How-to-use-Database-Wrapper-Functions)
         * [How to Run BGPStream\_Website\_Parser](#how-to-run-bgpstream_website_parser)
         * [How to Run Caida\_AS\_Relationships\_Parser](#how-to-run-caida_as_relationships_parser)
         * [How to Run BGP\_Records to get BGPStream data](#how-to-run-bgp_records-to-get-bgpstream-data)
@@ -402,7 +403,14 @@ Coming Soon
 > This will cause any errors to be appended to the log file   
 > This will also cause any information (and higher) to be printed.   
 > See [logging description](#logging-description) for more details   
-
+Initialize with a cursor factory:
+```python
+from lib_bgp_data import Database, Parser
+import psycopg2
+import psycopg2.extras
+database = Database(cursor_factory=psycopg2.extras.DictCursor)  # Can do any other cursor factory
+parser = Parser(database)
+```
 Initialize with default logging:
 ```python
 from lib_bgp_data import Database, Parser
@@ -429,6 +437,83 @@ parser = Parser(database,
                 log_file_level=logging.INFO,
                 log_stream_level=logging.DEBUG
                 )
+```
+#### How to use Database Wrapper Functions
+These are wrapper functions designed to make it easier to use the database in a script.
+To see possible arguments for database initialization (such as a cursor factory, like RealDictCursor or NamedTupleCursor) see initializing with database and parser
+To execute queries (Note, this will be removed later because wrapper funcs should only be readonly):
+```python
+from lib_bgp_data import Database
+database = Database()
+sql = "SELECT * FROM records;
+records = database.execute(sql)
+sql = "SELECT * FROM records WHERE record_id = %s"
+data = [1]
+records = database.execute(sql, data)
+```
+To access data from the as\_announcements table:
+```python
+from lib_bgp_data import Database
+database = Database()
+
+# Selects all rows in records table
+db_output = database.select_record()
+# Selects specific record in record table
+db_output = database.select_record(record_id=1)
+
+# Selects all rows in elements table:
+db_output = database.select_element()
+# Selects specific element in elements table:
+db_output = database.select_element(element_id=1)
+
+# Selects all rows in communities table:
+db_output = database.select_community()
+# Selects specifc community in communities table:
+db_output = database.select_community(community_id=1)
+```
+
+To access relationship data:
+```python
+from lib_bgp_data import Database
+database = Database()
+# Selects all rows in customer_provider_pairs table:
+db_output = database.select_customer_provider()
+# Selects specific customer_provider pair:
+db_output = database.select_customer_provider(customer_provider_id=1)
+
+# Selects all rows in peers table:
+db_output = database.select_peers()
+# Selects a specific peer to peer pair:
+db_output = database.select_peers(peer_id=1)
+```
+
+To access bgp hijack data:
+```python
+from lib_bgp_data import Database
+database = Database()
+# Selects all rows in hijack table:
+db_output = database.select_hijack()
+# Selects specific hijack event:
+db_output = database.select_hijack(hijack_id=1)
+```
+
+To access bgp outage data:
+```python
+from lib_bgp_data import Database
+database = Database()
+# Selects all rows in ouatge table:
+db_output = database.select_outage()
+# Selects specific outage event:
+db_output = database.select_outage(outage_id=1)
+```
+To access bgp leak data:
+```python
+from lib_bgp_data import Database
+database = Database()
+# Selects all rows in leak table:
+db_output = database.select_leak()
+# Selects specific leak event:
+db_output = database.select_leak(leak_id=1)
 ```
 
 #### How to Run BGPStream\_Website\_Parser
@@ -534,4 +619,3 @@ https://bgpstream.caida.org/docs/tutorials/pybgpstream
 MIT
 
 ## TODO
-

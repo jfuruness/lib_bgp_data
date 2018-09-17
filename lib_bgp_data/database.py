@@ -58,4 +58,7 @@ class Database(AS_Relationship_DB, BGPStream_DB, Announcements_DB, Logger):
             self.cursor.execute(sql)
         else:
             self.cursor.execute(sql, data)
-        return self.cursor.fetchall()
+        try:
+            return self.cursor.fetchall()
+        except Exception as e:
+            return e
