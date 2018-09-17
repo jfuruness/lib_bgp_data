@@ -190,7 +190,7 @@ to be reachable following a customer link.
     CREATE TABLE hijack (
         hijack_id serial PRIMARY KEY,
         country varchar (50),
-        detected_as_path varchar bigint ARRAY,
+        detected_as_path bigint ARRAY,
         detected_by_bgpmon_peers integer,
         detected_origin_name varchar (100),
         detected_origin_number bigint,
@@ -200,8 +200,8 @@ to be reachable following a customer link.
         event_type varchar (50),
         expected_origin_name varchar (100),
         expected_origin_number bigint,
-        expected_prefix varchar inet,
-        more_specific_prefix varchar inet,
+        expected_prefix inet,
+        more_specific_prefix inet,
         url varchar (250)
     );
     ```
@@ -237,7 +237,7 @@ to be reachable following a customer link.
         event_number integer,
         event_type varchar (50),
         example_as_path bigint ARRAY,
-        leaked_prefix varchar inet,
+        leaked_prefix inet,
         leaked_to_name varchar (200) ARRAY,
         leaked_to_number bigint ARRAY,
         leaker_as_name varchar (100),
