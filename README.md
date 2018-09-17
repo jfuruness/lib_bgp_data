@@ -124,14 +124,14 @@ to be reachable following a customer link.
         * The format is:
             * \<cone-as\> \<customer-1-as\> \<customer-2-as\> .. \<customer-N-as\>
 * customer\_providers\_id: id of relationship object in table *(primary key)*
-* customer\_as: List of AS numbers *(integer[])*
-* provider\_as: AS number *(integer)*
+* customer\_as: AS number *(bigint)*
+* provider\_as: AS number *(bigint)*
 * Create Table SQL commands:
     ```sql
     CREATE TABLE customer_providers (
         customer_providers_id serial PRIMARY KEY,
-        customer_as integer,
-        provider_as integer,
+        customer_as bigint,
+        provider_as bigint,
         unique(customer_as, provider_as)
     );
     ```
@@ -152,15 +152,14 @@ to be reachable following a customer link.
         * The format is:
             * \<cone-as\> \<customer-1-as\> \<customer-2-as\> .. \<customer-N-as\>
 * peers\_id: id of relationship object in table *(primary key)*
-* peer\_as\_1: AS number *(integer)*
-* peer\_as\_2: AS number *(integer)*
-* Source: *(character varying(25))*
+* peer\_as\_1: AS number *(bigint)*
+* peer\_as\_2: AS number *(bigint)*
 * Create Table SQL commands:
     ```sql
     CREATE TABLE peers (
         peers_id serial PRIMARY KEY,
-        peer_as_1 integer,
-        peer_as_2 integer,
+        peer_as_1 bigint,
+        peer_as_2 bigint,
         unique(peer_as_1, peer_as_2)
     );
     ```
@@ -169,20 +168,20 @@ to be reachable following a customer link.
 * This data comes from bgpstream.com possible hijack events
 * hijack\_id: id of hijack object in table *(primary key)*
 * country: string of country, usually two letters *(character varying(50))*
-* detected\_as\_path: string of ASNs *(character varying(250))*
+* detected\_as\_path: string of ASNs *(bigint ARRAY)*
     * Example: '38719 8932 39216 205906 205906 202055'
 * detected\_by\_bgpmon\_peers: number of BGPMon peers detected by *(integer)*
 * detected\_origin\_name: origin AS name *(character varying(100))*
-* detected\_origin\_number: origin ASN *(integer)*
+* detected\_origin\_number: origin ASN *(bigint)*
 * start\_time: start time in utc *(timestamp without time zone)*
 * end\_time: end time in utc *(timestamp without time zone)*
 * event\_number: number assigned to each event by bgpstream.com *(integer)* 
 * event\_type: 'Possible Hijack' *(character varying(50))*
 * expected\_origin\_name: expected origin AS name *(character varying(100))*
-* expected\_origin\_number: expected origin ASN *(integer)*
-* expected\_prefix: prefix that was expected *(character varying(100))*
+* expected\_origin\_number: expected origin ASN *(bigint)*
+* expected\_prefix: prefix that was expected *(inet)*
     * Example: '103.243.5.0/24'
-* more\_specific\_prefix: prefix that was used *(character varying(100))*
+* more\_specific\_prefix: prefix that was used *(inet)*
     * Example: '103.243.5.0/24'
 * url: link to in depth details on event *(character varying(250))*
     * Example: '/event/143947'
@@ -191,18 +190,18 @@ to be reachable following a customer link.
     CREATE TABLE hijack (
         hijack_id serial PRIMARY KEY,
         country varchar (50),
-        detected_as_path varchar (250),
+        detected_as_path varchar bigint ARRAY,
         detected_by_bgpmon_peers integer,
         detected_origin_name varchar (100),
-        detected_origin_number integer,
+        detected_origin_number bigint,
         start_time timestamp,
         end_time timestamp,
         event_number integer,
         event_type varchar (50),
         expected_origin_name varchar (100),
-        expected_origin_number integer,
-        expected_prefix varchar (100),
-        more_specific_prefix varchar (100),
+        expected_origin_number bigint,
+        expected_prefix varchar inet,
+        more_specific_prefix varchar inet,
         url varchar (250)
     );
     ```
@@ -215,16 +214,16 @@ to be reachable following a customer link.
 * end\_time: end time in utc *(timestamp without time zone)*
 * event\_number: number assigned to each event by bgpstream.com *(integer)* 
 * event\_type: 'BGP Leak' *(character varying(50))*
-* example\_as\_path: AS path *(character varying(250))*
+* example\_as\_path: AS path *(bigint ARRAY)*
     * Example: '135646 64515 65534 20473 3356 6453 10089 9587 15932 4788 1299 7473 132167 136975 133524 133384'
-* leaked\_prefix: prefix that was leaked *(character varying(250))*
+* leaked\_prefix: prefix that was leaked *(inet)*
     * Example: '103.243.5.0/24'
 * leaked\_to\_name: list of AS names *(character varying(200)[])*
-* leaked\_to\_number: list of AS numbers *(integer[])*
+* leaked\_to\_number: list of AS numbers *(bigint[])*
 * leaker\_as\_name: Leaker AS name *(character varying(100))*
-* leaker\_as\_number: Leaker ASN *(integer)*
+* leaker\_as\_number: Leaker ASN *(bigint)*
 * origin\_as\_name: Origin AS name *(character varying(100))*
-* origin\_as\_number: Origin ASN *(integer)*
+* origin\_as\_number: Origin ASN *(bigint)*
 * url: link to in depth details on event *(character varying(250))*
     * Example: '/event/143947'
 * Create Table SQL commands:
@@ -237,14 +236,14 @@ to be reachable following a customer link.
         end_time timestamp,
         event_number integer,
         event_type varchar (50),
-        example_as_path varchar (250),
-        leaked_prefix varchar (250),
+        example_as_path bigint ARRAY,
+        leaked_prefix varchar inet,
         leaked_to_name varchar (200) ARRAY,
-        leaked_to_number integer ARRAY,
+        leaked_to_number bigint ARRAY,
         leaker_as_name varchar (100),
-        leaker_as_number integer,
+        leaker_as_number bigint,
         origin_as_name varchar (100),
-        origin_as_number integer,
+        origin_as_number bigint,
         url varchar (250)
     );
     ```
@@ -267,7 +266,7 @@ to be reachable following a customer link.
     CREATE TABLE outage (
         outage_id serial PRIMARY KEY,
         as_name varchar (150),
-        as_number integer,
+        as_number bigint,
         country varchar (25),
         start_time timestamp,
         end_time timestamp,
@@ -304,11 +303,11 @@ to be reachable following a customer link.
 * For each record there are multiple elements
 * element\_id: id of element object in table *(primary key)*
 * element\_type: 'R' (rib), 'A' (announcement), 'W' (withdrawal), 'S' (peerstate), ''(unknown) *(varchar(50))*
-* element\_peer\_asn: ASN if the peer this element was recieved from *(integer)*
-* element\_peer\_address: The IP address of the peer that this element was recieved from *(varchar(25))*
-* as\_path: list of ASNs in AS path *(integer[])*
-* prefix: prefix *(varchar(25))*
-* next\_hop: The next hop IP address *(varchar(25))*
+* element\_peer\_asn: ASN if the peer this element was recieved from *(bigint)*
+* element\_peer\_address: The IP address of the peer that this element was recieved from *(inet)*
+* as\_path: list of ASNs in AS path *(bigint[])*
+* prefix: prefix *(inet)*
+* next\_hop: The next hop IP address *(inet)*
 * time: time that pertains to the element
 * record\_id: Corresponding record's id *(integer)*
 * Create Table SQL commands:
@@ -316,11 +315,11 @@ to be reachable following a customer link.
     CREATE TABLE elements (
         element_id serial PRIMARY KEY,
         element_type varchar(50),
-        element_peer_asn integer,
-        element_peer_address varchar (25),
-        as_path integer ARRAY,
-        prefix varchar (25),
-        next_hop varchar (25),
+        element_peer_asn bigint,
+        element_peer_address inet,
+        as_path bigint ARRAY,
+        prefix inet,
+        next_hop inet,
         time integer,
         record_id integer   
     );
@@ -331,15 +330,15 @@ to be reachable following a customer link.
 * For each record there are multiple elements
 * Each element contains a community, a list of ASNs and Values
 * community\_id: id of community object in table *(primary key)*
-* asn: ASN *(integer)*
-* value: value of ASN *(integer)*
+* asn: ASN *(bigint)*
+* value: value of ASN *(bigint)*
 * element_id: corresponding element id *(integer)*
 * Create Table SQL commands:
     ```sql
     CREATE TABLE communities (
         community_id serial PRIMARY KEY,
-        asn integer,
-        value integer,
+        asn bigint,
+        value bigint,
         element_id integer
     );
     ```
