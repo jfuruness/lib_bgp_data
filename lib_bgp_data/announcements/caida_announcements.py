@@ -84,14 +84,13 @@ class BGP_Records:
             times = []
             for result in perdelta(start , end, datetime.timedelta(seconds=1)):
                 times.append(result)
+            information = []
             for i in range(len(times)-1):
                 stream = self._start_stream(start=times[i],
                                             end=times[i + 1],
                                             collector=collector,
                                             peer_asn=peer_asn,
                                             prefix=prefix)
-
-                information = []
 
                 self.logger.info("Parsing Records Now")
                 # Get next record
