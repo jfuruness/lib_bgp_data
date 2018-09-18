@@ -85,7 +85,7 @@ class Announcements_DB(Announcements_DB_Wrapper):
             sql = """INSERT INTO elements
                      (element_type, element_peer_asn, element_peer_address,
                      as_path, prefix, next_hop, time, record_id)
-                     VALUES (%s, %s, %s, %s, %s, %s, %s)
+                     VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
                      RETURNING element_id"""
             data = [element.get("element_type"),
                     element.get("element_peer_asn"),

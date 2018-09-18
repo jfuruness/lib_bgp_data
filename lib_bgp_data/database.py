@@ -31,7 +31,7 @@ class Database(AS_Relationship_DB, BGPStream_DB, Announcements_DB, Logger):
         # Initializes self.logger
         self._initialize_logger(log_name, log_file_level, log_stream_level)
         self.config = Config(self.logger)
-        self.conn, self.cursor = self._connect(cursor_factory)
+        self.conn, self.cursor = self._connect(cursor_factory=cursor_factory)
         self.conn.autocommit = True
 
     def _connect(self, cursor_factory):
@@ -48,7 +48,7 @@ class Database(AS_Relationship_DB, BGPStream_DB, Announcements_DB, Logger):
                 kwargs["cursor_factory"] = cursor_factory
             conn = psycopg2.connect(**kwargs)
             self.logger.info("Database Connected")
-            return conn, conn.cursor()
+            return conn, conn.cursor(cursor_factory)
         except Exception as e:
             self.logger.critical('Postgres connection failure: {0}'.format(e))
             raise ('Postgres connection failure: {0}'.format(e))

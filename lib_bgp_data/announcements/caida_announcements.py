@@ -7,7 +7,7 @@ from _pybgpstream import BGPStream, BGPRecord
 import datetime
 import calendar
 import re
-
+import gc
 
 class BGP_Records:
     """This class uses pybgpstream to collect caida announcements
@@ -62,7 +62,7 @@ class BGP_Records:
         return stream
 
     def get_records(self, start=None, end=None, collector=None,
-                    peer_asn=None, prefix=None):
+                    peer_asn=None, prefix=None, db=None):
         """Uses pybgpstream to get info from BGP records and BGP elems
 
         start and end must be datetime.datetime objects and are required.
@@ -85,8 +85,14 @@ class BGP_Records:
             self.logger.info("Parsing Records Now")
             # Get next record
             while(stream.get_next_record(self.rec)):
+                # Frees memory
+                gc.collect
                 # Creates a new instance of DB_Info with record info
-                information.append(DB_Info(self.rec))
+                if db:
+                    current = DB_Info(self.rec)
+                else:
+                    information.append(DB_Info(self.rec))
+                
                 # If record is not valid there is no other info to add, so pass
                 if self.rec.status != "valid":
                     pass
@@ -95,8 +101,13 @@ class BGP_Records:
                     elem = self.rec.get_next_elem()
                     # While there are elements, add them to the last DB_Info
                     while(elem):
-                        information[-1].add_element(elem)
+                        if db:
+                            current.add_element(elem)
+                        else:
+                            information[-1].add_element(elem)
                         elem = self.rec.get_next_elem()
+                if db:
+                    db.insert_announcement_info(current)  
             # Return a list of DB_Info
             return information
         except Exception as e:
