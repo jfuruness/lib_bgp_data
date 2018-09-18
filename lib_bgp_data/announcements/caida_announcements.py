@@ -84,7 +84,11 @@ class BGP_Records:
             times = []
             for result in perdelta(start , end, datetime.timedelta(seconds=1)):
                 times.append(result)
+            if len(times) == 0:
+                times.append(start)
+            times.append(times[-1]) # that way it runs for the last second
             information = []
+            # must separate times or else it times out
             for i in range(len(times)-1):
                 stream = self._start_stream(start=times[i],
                                             end=times[i + 1],
