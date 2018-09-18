@@ -97,7 +97,7 @@ class BGP_Records:
                 # Get next record
                 while(stream.get_next_record(self.rec)):
                     # Frees memory
-                    gc.collect
+#                    gc.collect
                     # Creates a new instance of DB_Info with record info
                     if db:
                         current = DB_Info(self.rec)
