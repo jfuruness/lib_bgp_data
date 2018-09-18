@@ -86,16 +86,21 @@ class Parser(Logger):
             raise e
 
 
-    def run_as_announcements_parser(self, start, end):
+    def run_as_announcements_parser(self, start, end, db=True):
         """Parses bgp announcements and inserts them into the database"""
 
         try:
             # start = datetime.datetime(2015, 8, 1, 8, 20, 11)
             # end = start
             self.logger.info("Running as announcements parser")
-            announcements = self.announcements_parser.get_records(start, end)
-            for announcement in announcements:
-                self.database.insert_announcement_info(announcement)
+            if db is True:
+                db = self.database
+            else:
+                db = None
+            announcements = self.announcements_parser.get_records(start, end, db=db)
+            if not db:
+                for announcement in announcements:
+                    self.database.insert_announcement_info(announcement)
             self.logger.info("Done running as announcements parser")
         except Exception as e:
             self.logger.critical(

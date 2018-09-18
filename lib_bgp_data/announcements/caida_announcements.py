@@ -74,40 +74,51 @@ class BGP_Records:
             # Input validation
             self._input_validation(start, end)
 
-            stream = self._start_stream(start=start,
-                                        end=end,
-                                        collector=collector,
-                                        peer_asn=peer_asn,
-                                        prefix=prefix)
+            # https://stackoverflow.com/questions/40815648/get-all-the-times-in-between-two-datetime-in-list
+            def perdelta(start, end, delta):
+                curr = start
+                while curr <= end:
+                    yield curr
+                    curr += delta
 
-            information = []
+            times = []
+            for result in perdelta(start , end, datetime.timedelta(seconds=1)):
+                times.append(result)
+            for i in range(len(times)-1):
+                stream = self._start_stream(start=times[i],
+                                            end=times[i + 1],
+                                            collector=collector,
+                                            peer_asn=peer_asn,
+                                            prefix=prefix)
 
-            self.logger.info("Parsing Records Now")
-            # Get next record
-            while(stream.get_next_record(self.rec)):
-                # Frees memory
-                gc.collect
-                # Creates a new instance of DB_Info with record info
-                if db:
-                    current = DB_Info(self.rec)
-                else:
-                    information.append(DB_Info(self.rec))
-                
-                # If record is not valid there is no other info to add, so pass
-                if self.rec.status != "valid":
-                    pass
-                # If record is valid, get all corresponding elements
-                else:
-                    elem = self.rec.get_next_elem()
-                    # While there are elements, add them to the last DB_Info
-                    while(elem):
-                        if db:
-                            current.add_element(elem)
-                        else:
-                            information[-1].add_element(elem)
+                information = []
+
+                self.logger.info("Parsing Records Now")
+                # Get next record
+                while(stream.get_next_record(self.rec)):
+                    # Frees memory
+                    gc.collect
+                    # Creates a new instance of DB_Info with record info
+                    if db:
+                        current = DB_Info(self.rec)
+                    else:
+                        information.append(DB_Info(self.rec))
+                    
+                    # If record is not valid there is no other info to add, so pass
+                    if self.rec.status != "valid":
+                        pass
+                    # If record is valid, get all corresponding elements
+                    else:
                         elem = self.rec.get_next_elem()
-                if db:
-                    db.insert_announcement_info(current)  
+                        # While there are elements, add them to the last DB_Info
+                        while(elem):
+                            if db:
+                                current.add_element(elem)
+                            else:
+                                information[-1].add_element(elem)
+                            elem = self.rec.get_next_elem()
+                    if db:
+                        db.insert_announcement_info(current)  
             # Return a list of DB_Info
             return information
         except Exception as e:
