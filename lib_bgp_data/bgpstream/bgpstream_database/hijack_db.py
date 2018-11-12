@@ -92,7 +92,7 @@ class Hijack_DB:
         """Returns a list of data from an event"""
 
         detected_as_path = event.get("detected_as_path").split()
-        [long(x) for x in detected_as_path]
+        [int(x) for x in detected_as_path]
 
         data = [event.get("country"),
                 detected_as_path,
