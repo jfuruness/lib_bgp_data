@@ -20,4 +20,4 @@ def format_error(err_info, error):
         else:
             print(key)
             print(val)
-    raise error
+#    raise error !!!!!!!!!!!!!!!!!!!! TAKE OUT LATER!!!!!!!!!!!!!!!!!!!!!!!!!!
