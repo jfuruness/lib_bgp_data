@@ -92,7 +92,7 @@ class Hijack_DB:
         """Returns a list of data from an event"""
 
         data = [event.get("country"),
-                event.get("detected_as_path"),
+                event.get("detected_as_path").split(),  # Splits the string of paths into array of paths based on whitespace
                 event.get("detected_by_bgpmon_peers"),
                 event.get("detected_origin_name"),
                 event.get("detected_origin_number"),
