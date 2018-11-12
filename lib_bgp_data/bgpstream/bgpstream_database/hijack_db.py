@@ -91,8 +91,7 @@ class Hijack_DB:
     def _get_hijack_data(self, event, hijack_id=None):
         """Returns a list of data from an event"""
 
-        detected_as_path = event.get("detected_as_path").split()
-        [int(x) for x in detected_as_path]
+        detected_as_path = [int(x) for x in event.get("detected_as_path").split()]
 
         data = [event.get("country"),
                 detected_as_path,
