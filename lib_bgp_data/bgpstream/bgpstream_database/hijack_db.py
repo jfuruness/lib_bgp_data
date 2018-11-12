@@ -91,8 +91,11 @@ class Hijack_DB:
     def _get_hijack_data(self, event, hijack_id=None):
         """Returns a list of data from an event"""
 
+        detected_as_path = event.get("detected_as_path").split()
+        [long(x) for x in detected_as_path]
+
         data = [event.get("country"),
-                [long(x) for x in event.get("detected_as_path").split()],  # Splits the string of paths into array of paths based on whitespace
+                detected_as_path,
                 event.get("detected_by_bgpmon_peers"),
                 event.get("detected_origin_name"),
                 event.get("detected_origin_number"),
