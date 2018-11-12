@@ -29,7 +29,7 @@ class Outage_DB:
 
         try:
             outage_id = self._select_outage(event.get("event_number"))
-            data = self.get_outage_data(event, outage_id)
+            data = self._get_outage_data(event, outage_id)
             if outage_id is None:
                 self._insert_outage(event)
             else:
