@@ -29,7 +29,7 @@ class AS_Relationship_DB(AS_Relationships_DB_Wrapper):
                 self._insert_peers(row)
             else:
                 #insert into customer providers
-                self._insert_customer_provider_pair(row)
+                self._insert_customer_provider(row)
         self.logger.debug("{} as_relationship".format(action))
 
     def _insert_peers(self, row):
@@ -54,7 +54,7 @@ class AS_Relationship_DB(AS_Relationships_DB_Wrapper):
             sql = """INSERT INTO customer_provider_pairs
                      (cutomer_as, provider_as)
                      VALUES (%s, %s)"""
-            data = [row.get("cutomer_as"), row.get("provider_as")]
+            data = [row.get("customer_as"), row.get("provider_as")]
             data = [x if x != '' else None for x in data]
             self.cursor.execute(sql, data)
             self.logger.debug("Inserted as_relationship")

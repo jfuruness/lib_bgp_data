@@ -28,6 +28,9 @@ class Logger:
         Anything equal to or higher than stream_level will be printed
         """
 
+        if not os.path.exists(log_dir):
+                os.makedirs(log_dir)
+
         path = os.path.join(log_dir, log_name)
         # Initialize logging
         self.logger = logging.getLogger(__name__)

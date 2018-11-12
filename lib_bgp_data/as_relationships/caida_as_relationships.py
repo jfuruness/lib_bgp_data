@@ -103,12 +103,12 @@ class Caida_AS_Relationships_Parser:
         try:
             self.parse_duplicates = parse_duplicates
             data = []
-            files_names = self._get_file_names(self.unzipped_path)
+            file_names = self._get_file_names(self.unzipped_path)
             # We do this so we don't have to call len for every iteration
             len_file_names = len(file_names)
 
             # for all files in self.path_unzipped
-            for i in range(file_names):
+            for i in range(len_file_names):
 
                 # Open file for read only
                 temp_file = open(
@@ -126,7 +126,7 @@ class Caida_AS_Relationships_Parser:
                 data.extend(temp)
     
                 temp_file.close()
-                self.logger.info("Parsed {}/{} files".format(i + 1, len_files))
+                self.logger.info("Parsed {}/{} files".format(i + 1, len_file_names))
             return data
         except Exception as e:
             self.logger.critical(
