@@ -6,7 +6,7 @@
 import pprint
 
 
-def format_error(self, err_info, error):
+def format_error(err_info, error):
     """Prints errors with most local variables and raises"""
     # Hacky ik
     for key, val in err_info.items():
