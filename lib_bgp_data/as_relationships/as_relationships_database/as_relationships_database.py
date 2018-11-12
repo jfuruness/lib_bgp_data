@@ -45,7 +45,7 @@ class AS_Relationship_DB(AS_Relationships_DB_Wrapper):
             self.logger.debug("Inserted as_relationship")
         except Exception as e:
             self.logger.error("Problem inserting as_relationship".format(e))
-            raise e
+#            raise e
 
     def _insert_customer_provider(self, row):
         """insert customer provider relationship into db"""
@@ -60,5 +60,5 @@ class AS_Relationship_DB(AS_Relationships_DB_Wrapper):
             self.logger.debug("Inserted as_relationship")
         except Exception as e:
             self.logger.error("Problem inserting as_relationship".format(e))
-            raise e
+#            raise e
 
