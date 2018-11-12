@@ -52,7 +52,7 @@ class AS_Relationship_DB(AS_Relationships_DB_Wrapper):
 
         try:
             sql = """INSERT INTO customer_provider_pairs
-                     (cutomer_as, provider_as)
+                     (customer_as, provider_as)
                      VALUES (%s, %s)"""
             data = [row.get("customer_as"), row.get("provider_as")]
             data = [x if x != '' else None for x in data]
