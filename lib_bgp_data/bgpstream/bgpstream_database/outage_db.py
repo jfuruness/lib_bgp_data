@@ -62,7 +62,7 @@ class Outage_DB:
         self.cursor.execute(sql, self._get_outage_data(event))
         self.logger.debug("Inserted outage")
 
-    def _update_outage(self, event, leak_id):
+    def _update_outage(self, event, outage_id):
         """Updates outage event"""
 
         sql = """UPDATE outage SET
@@ -78,7 +78,7 @@ class Outage_DB:
               url = %s
               WHERE outage_id = %s
               """
-        self.cursor.execute(sql, self._get_outage_data(event), leak_id)
+        self.cursor.execute(sql, self._get_outage_data(event, outage_id=outage_id))
         self.logger.debug("Updated outage")
 
     def _get_outage_data(self, event, outage_id=None):
