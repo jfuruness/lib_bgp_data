@@ -533,15 +533,17 @@ Default argument for running the bgpstream parser:
 > Defines the number of processes to run at any given time   
 To parse data from bgpstream.com with defaults (recommended):
 ```python
+import psycopg2.extras
 from lib_bgp_data import Database, Parser
-database = Database()
+database = Database(cursor_factory=psycopg2.extras.RealDictCursor)
 parser = Parser(database)
 parser.run_bgpstream_parser()
 ```
 To parse data from bgpstream.com in parallel for testing:
 ```python
+import psycopg2.extras
 from lib_bgp_data import Database, Parser
-database = Database()
+database = Database(cursor_factory=psycopg2.extras.RealDictCursor)
 # Will make the bgpstream_parser run in parallel for 10 rows
 bgp_stream_args = {"parallel": True, "row_limit": 10}
 parser = Parser(database, bgp_stream_args=bgp_stream_args)
@@ -561,15 +563,17 @@ Default argument for running the as\_relationships parser:
 > If downloaded == False, the directory will be deleted and the files will be downloaded again   
 To parse as\_relationships data with defaults (recommended):
 ```python
+import psycopg2.extras
 from lib_bgp_data import Database, Parser
-database = Database()
+database = Database(cursor_factory=psycopg2.extras.RealDictCursor)
 parser = Parser(database)
 parser.run_as_relationship_parser()
 ```
 To parse as\_relationships data in non default location, without deleting files, after they have already been downloaded:
 ```python
+import psycopg2.extras
 from lib_bgp_data import Database, Parser
-database = Database()
+database = Database(cursor_factory=psycopg2.extras.RealDictCursor)
 # Will make the bgpstream_parser run in parallel for 10 rows
 as_relationships_args = {"path": "/tmp/not_default/"}
 parser = Parser(database,  as_relationships_args=as_relationships_args)
@@ -580,9 +584,10 @@ This will get data from BGPStream and insert it into the database
 Start and end must be entered as a datatime object   
 To parse bgpstream data with start and end:
 ```python
+import psycopg2.extras
 from datetime import datetime
 from lib_bgp_data import Database, Parser
-database = Database()
+database = Database(cursor_factory=psycopg2.extras.RealDictCursor)
 parser = Parser(database)
 start = datetime(2015, 8, 1, 8, 20, 11)
 end = start
