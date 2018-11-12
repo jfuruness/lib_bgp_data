@@ -60,7 +60,7 @@ class Leak_DB:
               origin_as_name, origin_as_number, start_time, url) VALUES
               (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
               """
-        self.cursor.execute(sql, self.get_leak_data(event))
+        self.cursor.execute(sql, self._get_leak_data(event))
         self.logger.debug("Inserted Leak event")
 
     def _update_leak_event(self, event, leak_id):
@@ -84,7 +84,7 @@ class Leak_DB:
               url = %s
               WHERE leak_id = %s
               """
-        self.cursor.execute(sql, self.get_leak_data(event, leak_id))
+        self.cursor.execute(sql, self._get_leak_data(event, leak_id))
         self.logger.debug("Updated leak event")
 
     def _get_leak_data(self, event, leak_id=None):
