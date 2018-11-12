@@ -44,7 +44,7 @@ class AS_Relationship_DB(AS_Relationships_DB_Wrapper):
             self.cursor.execute(sql, data)
             self.logger.debug("Inserted as_relationship")
         except Exception as e:
-            self.logger.error("Problem inserting as_relationship".format(e))
+            self.logger.error("Problem inserting as_relationship {}".format(e))
 #            raise e
 
     def _insert_customer_provider(self, row):
@@ -59,6 +59,6 @@ class AS_Relationship_DB(AS_Relationships_DB_Wrapper):
             self.cursor.execute(sql, data)
             self.logger.debug("Inserted as_relationship")
         except Exception as e:
-            self.logger.error("Problem inserting as_relationship".format(e))
+            self.logger.error("Problem inserting as_relationship {}".format(e))
 #            raise e
 
