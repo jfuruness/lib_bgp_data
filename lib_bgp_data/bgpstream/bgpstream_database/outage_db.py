@@ -59,7 +59,7 @@ class Outage_DB:
               percent_prefixes_affected, start_time, url)
               VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
               """
-        self.cursor.execute(sql, self.get_outage_data(event))
+        self.cursor.execute(sql, self._get_outage_data(event))
         self.logger.debug("Inserted outage")
 
     def _update_outage(self, event, leak_id):
@@ -78,7 +78,7 @@ class Outage_DB:
               url = %s
               WHERE outage_id = %s
               """
-        self.cursor.execute(sql, self.get_outage_data(event), leak_id)
+        self.cursor.execute(sql, self._get_outage_data(event), leak_id)
         self.logger.debug("Updated outage")
 
     def _get_outage_data(self, event, outage_id=None):
