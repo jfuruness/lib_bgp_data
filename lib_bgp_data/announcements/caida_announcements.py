@@ -33,6 +33,7 @@ class BGP_Records:
                 raise Exception("Start is not a datetime object")
             if not isinstance(end, datetime.datetime):
                 raise Exception("End is not a datetime object")
+            self.logger.info("START: {} END: {}".format(start, end))
         except Exception as e:
             self.logger.error(
                 "Problem in caida announcements input validation: {}"\
@@ -59,6 +60,7 @@ class BGP_Records:
         # Start the stream
         stream.start()
         self.logger.debug("Started stream for caida announcements")
+        self.logger.info("START: {} END: {}".format(start_epoch, end_epoch))
         return stream
 
     def get_records(self, start=None, end=None, collector=None,
@@ -148,8 +150,6 @@ class DB_Info:
         """Formats a record to be added to the DB_Info class as a dict"""
 
         self.record = {"record_project": record.project,
-                       "record_collector": record.collector,
-                       "record_type": record.type,
                        "record_time": record.time,
                        "record_status": record.status
                        }
