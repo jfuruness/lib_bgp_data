@@ -3,62 +3,75 @@
 
 """This module contains class Database that interacts with a database"""
 
-__author__ = "Justin Furuness"
-
-
-import logging
 import psycopg2
 from psycopg2.extras import RealDictCursor
-from .as_relationships import AS_Relationship_DB
-from .bgpstream import BGPStream_DB
-from .announcements import Announcements_DB
 from .config import Config
-from .logger import Logger
+from .logger import error_catcher
+
+__author__ = "Justin Furuness"
+__credits__ = ["Justin Furuness"]
+__Lisence__ = "MIT"
+__Version__ = "0.1.0"
+__maintainer__ = "Justin Furuness"
+__email__ = "jfuruness@gmail.com"
+__status__ = "Development"
 
 
-class Database(AS_Relationship_DB, BGPStream_DB, Announcements_DB, Logger):
-    """Interact with the database to populate them"""
+class Database:
+    """Interact with the database"""
 
-    def __init__(self,
-                 log_name="database.log",
-                 log_file_level=logging.ERROR,
-                 log_stream_level=logging.INFO,
-                 cursor_factory=None
-                 ):
+    __slots__ = ['logger', 'config', 'conn', 'cursor', 'test']
+
+    @error_catcher()
+    def __init__(self, logger, cursor_factory=RealDictCursor, test=False):
         """Create a new connection with the databse"""
 
-        # Function can be found in logger.Logger class
         # Initializes self.logger
-        self._initialize_logger(log_name, log_file_level, log_stream_level)
+        self.logger = logger
         self.config = Config(self.logger)
-        self.conn, self.cursor = self._connect(cursor_factory=cursor_factory)
-        self.conn.autocommit = True
+        self.test = test
+        self._connect(cursor_factory)
 
+    @error_catcher()
     def _connect(self, cursor_factory):
         """Connects to db"""
 
-        username, password, host, database = self.config.get_db_creds()
-        try:
-            kwargs = {"user": username,
-                      "password": password,
-                      "host": host,
-                      "database": database
-                      }
-            if cursor_factory:
-                kwargs["cursor_factory"] = cursor_factory
-            conn = psycopg2.connect(**kwargs)
-            self.logger.info("Database Connected")
-            return conn, conn.cursor()
-        except Exception as e:
-            self.logger.critical('Postgres connection failure: {0}'.format(e))
-            raise ('Postgres connection failure: {0}'.format(e))
+        kwargs = self.config.get_db_creds()
+        if cursor_factory:
+            kwargs["cursor_factory"] = cursor_factory
+        conn = psycopg2.connect(**kwargs)
+        self.logger.info("Database Connected")
+        self.conn = conn
+        self.conn.autocommit = True
+        self.cursor = conn.cursor()
+        # Creates tables if do not exist
+        self._create_tables()
 
+    def _create_tables(self):
+        """Method that is overwritten when inherited"""
+
+        pass
+
+    @error_catcher()
     def execute(self, sql, data=None):
+        """Executes a query"""
+
         if data is None:
             self.cursor.execute(sql)
         else:
             self.cursor.execute(sql, data)
         try:
             return self.cursor.fetchall()
-        except Exception as e:
-            return e
+        except psycopg2.ProgrammingError:
+            self.logger.warning("No results to fetch")
+            return None
+
+    @error_catcher()
+    def close(self):
+        """Closes the database connection correctly"""
+
+        # If testing delete test table
+        if self.test:
+            self._drop_tables()
+        self.cursor.close()
+        self.conn.close()

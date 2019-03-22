@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-"""This package contains all parsers neccessary to parse bgp data"""
+"""This package contains a parser to parse bgp relationships data"""
 
 from .relationships_parser import Relationships_Parser
-from .roas_collector import ROAs_Collector
 
 __author__ = "Justin Furuness"
 __credits__ = ["Justin Furuness"]
