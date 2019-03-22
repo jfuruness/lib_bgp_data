@@ -73,7 +73,7 @@ class Customer_Providers_Table(Database):
         return ['provider_as', 'customer_as']
 
     @property
-    def table(self):
+    def name(self):
         """Returns the table name"""
 
         return "customer_providers"
@@ -132,7 +132,7 @@ class Peers_Table(Database):
         return ['peer_as_1', 'peer_as_2']
 
     @property
-    def table(self):
+    def name(self):
         """Returns the table name"""
 
         return "peers"

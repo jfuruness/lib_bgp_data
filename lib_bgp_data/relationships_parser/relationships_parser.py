@@ -33,7 +33,8 @@ __status__ = "Development"
 class Relationships_Parser:
     """This class downloads, unzips, parses, and deletes files from Caida"""
 
-    __slots__ = ['path', 'csv_directory', 'args', 'url', 'logger', 'config']
+    __slots__ = ['path', 'csv_dir', 'args', 'url', 'logger', 'config',
+                 'all_files']
 
     @error_catcher()
     def __init__(self, args={}):
@@ -52,13 +53,14 @@ class Relationships_Parser:
         self.url = 'http://data.caida.org/datasets/as-relationships/serial-2/'
         self.logger = Logger(args).logger
         self.config = Config(self.logger)
+        self.all_files = [self.path, self.csv_dir]
         self.logger.info("Initialized Relationships Parser at {}".format(
             datetime.datetime.now()))
 
     # Note that the utils.run_parser decorator deletes/creates all paths,
     # records start/end time, and upon end or error deletes everything
     @error_catcher()
-    @utils.run_parser([self.path, self.csv_dir])
+    @utils.run_parser()
     def parse_files(self, db=True):
         """Downloads, unzips, and parses file"""
 
@@ -88,7 +90,7 @@ class Relationships_Parser:
         """Gets urls to download relationship files"""
 
         # Get all html tags that might have links
-        elements = [x for x in self._get_tags(self.url, 'a')]
+        elements = [x for x in utils.get_tags(self.url, 'a')]
         # Gets the last file of all bz2 files
         url = [x["href"] for x in elements if "bz2" in x["href"]][-1]
         # Returns the url and the date for the url

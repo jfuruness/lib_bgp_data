@@ -13,6 +13,7 @@ those particular files
 
 from enum import Enum
 import re
+import os
 from ..logger import error_catcher
 from .. import utils
 from .tables import Customer_Providers_Table, Peers_Table
@@ -50,7 +51,7 @@ class Relationship_File:
         self.name = "relationships.bz2"
         # os.path.join is neccessary for cross platform compatability
         self.path = os.path.join(path, self.name)
-        self.url_rename(url)
+        self._url_rename(url)
         self.csv_directory = csv_directory
         self.test = test
         self.csv_names = {}
@@ -63,7 +64,6 @@ class Relationship_File:
 
         # If the file wasn't downloaded, download it
         if not os.path.isfile(self.path):
-            self._url_rename()
             utils.download_file(self.logger,
                                 self.url,
                                 self.path,
@@ -76,15 +76,14 @@ class Relationship_File:
         if db:
             self._db_insert()
         # Deletes all paths/files that could have been created
-        utils.delete_paths(self.logger, 
-            [val for _, val in self.csv_names.items()].append(self.path))
+        utils.delete_paths(self.logger, [self.csv_directory, self.path])
 
-    def _url_rename(self, url)
+    def _url_rename(self, url):
         """Renames the url properly"""
 
-        if "as-rel2" in self.url:
+        if "as-rel2" in url:
             self.url = "http://data.caida.org/datasets/as-relationships/serial-2/{}".format(url)
-        elif "as-rel" in self.url:
+        elif "as-rel" in url:
             self.url = "http://data.caida.org/datasets/as-relationships/serial-1/{}".format(url)
 
     @error_catcher()
@@ -104,7 +103,7 @@ class Relationship_File:
         self._get_data()
         
         # For each type of csv:
-        for _, val in csv_types.items():
+        for _, val in CSV_Types.__members__.items():
             # Set the csv names
             self.csv_names[val] = "{}/{}_{}.csv".format(
                 self.csv_directory, self.name[:-13], val)
@@ -114,7 +113,7 @@ class Relationship_File:
                             self.rows.get(val),
                             self.csv_names.get(val))
         # Deletes the old path
-        utils.delete_paths(self.path)
+            utils.delete_paths(self.logger, self.path)
 
     @error_catcher()
     def _db_insert(self):
@@ -126,7 +125,7 @@ class Relationship_File:
                        CSV_Types.PEERS: Peers_Table(self.logger)}
 
         # Inserts the csvs into db and deletes them
-        for _, val in csv_types.items():
+        for _, val in CSV_Types.__members__.items():
             utils.csv_to_db(self.logger,
                             table_names.get(val),
                             self.csv_names.get(val))
@@ -135,7 +134,7 @@ class Relationship_File:
         """Method to be inherited by class"""
 
         self.rows = {CSV_Types.CUSTOMER_PROVIDERS: [],
-                     CSV_Types.PEERS: [])
+                     CSV_Types.PEERS: []}
         f = open(self.path, "r")
         lines = f.readlines()
         f.close()

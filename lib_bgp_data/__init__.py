@@ -4,7 +4,7 @@
 """This package contains all parsers neccessary to parse bgp data"""
 
 from .relationships_parser import Relationships_Parser
-from .roas_collector import ROAs_Collector
+#from .roas_collector import ROAs_Collector
 
 __author__ = "Justin Furuness"
 __credits__ = ["Justin Furuness"]
