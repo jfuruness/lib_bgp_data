@@ -43,7 +43,7 @@ class Relationship_File:
                  'divisor', 'name', 'rows']
 
     @error_catcher()
-    def __init__(self, path, csv_directory, url, logger, test=False):
+    def __init__(self, logger, path, csv_directory, url, test=False):
         """Initializes file instance and determine info about it"""
 
         self.logger = logger

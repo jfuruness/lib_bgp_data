@@ -14,6 +14,8 @@ from datetime import datetime
 import csv
 from bz2 import BZ2Decompressor
 from bs4 import BeautifulSoup as Soup
+from .logger import Logger
+from .config import Config
 
 __author__ = "Justin Furuness"
 __credits__ = ["Justin Furuness"]
@@ -34,7 +36,7 @@ def run_parser():
             # Inside the decorator
 
             # Gets the start time
-            start_time = datetime.now()
+            start_time = now()
             # Deletes everything from and creates paths
             clean_paths(self.logger, self.all_files)
             try:
@@ -51,11 +53,32 @@ def run_parser():
         return function_that_runs_func
     return my_decorator
 
+def now():
+    """Returns current time"""
 
+    return datetime.now()
 
+def set_common_init_args(self, args, parser, non_essentials=True):
+    """Sets self attributes for arguments common across many classes"""
 
-
-
+    # Path to where all files willi go. It does not have to exist
+    self.path = args.get("path") if args.get("path") else "/tmp/bgp"
+    self.csv_dir = args.get("csv_dir") if args.get("csv_dir") else\
+        "/dev/shm/bgp"
+    self.logger = args.get("logger") if args.get("logger") else\
+        Logger(args).logger
+    if non_essentials:
+        self.all_files = [self.path, self.csv_dir]
+        try:
+            self.config = Config(self.logger)
+            self.args = args
+            self.args["path"] = self.path
+            self.args["csv_dir"] = self.csv_dir
+            self.args["logger"] = self.logger
+        # Some classes won't set these
+        except AttributeError:
+            pass
+    self.logger.info("Initialized {} Parser at {}".format(parser, now()))
 
 def download_file(logger, url, path, file_num, total_files, sleep_time=0):
     """Downloads a file from a url into a path"""
@@ -122,7 +145,7 @@ def end_parser(logger, paths, start_time):
 
     delete_paths(logger, paths)
     logger.info("Parser started at {}".format(start_time))
-    logger.info("Parser completed at {}".format(datetime.now()))
+    logger.info("Parser completed at {}".format(now()))
 
 def unzip_bz2(logger, old_path, new_path):
     """Unzips a bz2 file from old_path into new_path and deletes old file"""

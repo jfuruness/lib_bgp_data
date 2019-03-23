@@ -40,22 +40,10 @@ class Relationships_Parser:
     def __init__(self, args={}):
         """Initializes urls, regexes, and path variables"""
 
-        # Path to where all files willi go. It does not have to exist
-        self.path = args.get("path")
-        if self.path is None:
-            self.path = "/tmp/bgp_relationships"
-        self.csv_dir = args.get("csv_directory")
-        if self.csv_dir is None:
-            self.csv_dir = "/dev/shm/bgp_relationships"
-        self.args = args
-        # URLs fom the caida websites to pull data from
         # URLs fom the caida websites to pull data from
         self.url = 'http://data.caida.org/datasets/as-relationships/serial-2/'
-        self.logger = Logger(args).logger
-        self.config = Config(self.logger)
-        self.all_files = [self.path, self.csv_dir]
-        self.logger.info("Initialized Relationships Parser at {}".format(
-            datetime.datetime.now()))
+        # Sets args such as path, csv_dir, logger, config, etc
+        utils.set_common_init_args(self, args, "Relationship")
 
     # Note that the utils.run_parser decorator deletes/creates all paths,
     # records start/end time, and upon end or error deletes everything
@@ -69,7 +57,8 @@ class Relationships_Parser:
         # websites file date, and so we renew our data
         if self.config.last_date < int_date:
             self._clear_tables()
-            AS_2_File(self.path, self.csv_dir, url, self.logger).parse_file(db)
+            AS_2_File(self.logger, self.path, self.csv_dir, url
+                ).parse_file(db)
             self.config.update_last_date(int_date)
         else:
             self.logger.info("old file, not parsing")

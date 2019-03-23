@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-"""This package contains all parsers neccessary to parse bgp data"""
+"""This package collects roas and stores them in a table"""
 
-from .relationships_parser import Relationships_Parser
 from .roas_collector import ROAs_Collector
 
 __author__ = "Justin Furuness"
@@ -13,3 +12,4 @@ __Version__ = "0.1.0"
 __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
+

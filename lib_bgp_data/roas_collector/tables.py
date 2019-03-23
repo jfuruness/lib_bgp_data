@@ -25,6 +25,7 @@ class ROAs_Table(Database):
     def __init__(self, logger, cursor_factory=RealDictCursor, test=False):
         """Initializes the announcement table"""
         Database.__init__(self, logger, cursor_factory, test)
+        self._clear_table()
 
     @error_catcher()
     def _create_tables(self):
@@ -45,7 +46,7 @@ class ROAs_Table(Database):
         self.cursor.execute(sql)
 
     @error_catcher()
-    def clear_table(self):
+    def _clear_table(self):
         """Clears the tables. Should be called at the start of every run"""
 
         self.logger.info("Clearing Roas")
@@ -53,7 +54,7 @@ class ROAs_Table(Database):
         self.logger.info("ROAs Table Cleared")
 
     @property
-    def table(self):
+    def name(self):
         """Returns the name of the table"""
 
         return "roas"
