@@ -80,7 +80,7 @@ def set_common_init_args(self, args, parser, non_essentials=True):
             pass
     self.logger.info("Initialized {} Parser at {}".format(parser, now()))
 
-def download_file(logger, url, path, file_num, total_files, sleep_time=0):
+def download_file(logger, url, path, file_num=1, total_files=1, sleep_time=0):
     """Downloads a file from a url into a path"""
 
     logger.info("Downloading a file.\n    Path: {}\n    Link: {}\n"
@@ -158,7 +158,7 @@ def unzip_bz2(logger, old_path, new_path):
     logger.debug("Unzipped a file: {}".format(old_path))
     delete_paths(logger, old_path)
 
-def _unzip_gz(logger, old_path, new_path):
+def unzip_gz(logger, old_path, new_path):
     """Unzips a .gz file from old_path into new_path and deletes old file"""
 
     with gzip.open(old_path, 'rb') as f_in:
@@ -186,7 +186,7 @@ def write_csv(logger, rows, csv_path, files_to_delete=None):
     if files_to_delete:
         delete_paths(logger, files_to_delete)
 
-def csv_to_db(logger, table, csv_path):
+def csv_to_db(logger, table, csv_path, delete_duplicates=False):
     """Copies csv into table and deletes csv_path
 
     Copies tab delimited csv into table and deletes csv_path
@@ -202,6 +202,9 @@ def csv_to_db(logger, table, csv_path):
 
     # Closes file
     f.close()
+    if delete_duplicates:
+        # Deletes duplicates from table
+        table.delete_duplicates()
     # Closes db connection
     table.close()
     logger.info("Done inserting {} into the database".format(csv_path))
@@ -214,4 +217,4 @@ def get_tags(url, tag):
     # Raises an exception if there was an error
     response.raise_for_status()
     # Get all tags within the beautiful soup from the html and return them
-    return [x for x in Soup(response.text, 'html.parser').select(tag)]
+    return [x for x in Soup(response.text, 'html.parser').select(tag)], response.close()

@@ -9,6 +9,10 @@ deleted.
 
 The other classes are for specific types of files and include how to parse
 those particular files
+
+NOTE: I just now realized, probably an easier way of doing this would be to
+simply delete the comments at the top of the files, and treat them as
+| delimited csvs. I assume that would work,  oh well this works too.
 """
 
 from enum import Enum
@@ -26,9 +30,8 @@ __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
-class CSV_Types(Enum):
-    """Types of CSVs"""
-
+# The two types of relationship data
+class Rel_Types(Enum):
     CUSTOMER_PROVIDERS = "Customer_Providers"
     PEERS = "Peers"
 
@@ -40,7 +43,7 @@ class Relationship_File:
     """
 
     __slots__ = ['path', 'url', 'logger', 'csv_directory', 'test', 'csv_names',
-                 'divisor', 'name', 'rows']
+                 'divisor', 'name', 'rows', 'classifiers', 'tables']
 
     @error_catcher()
     def __init__(self, logger, path, csv_directory, url, test=False):
@@ -56,6 +59,10 @@ class Relationship_File:
         self.test = test
         self.csv_names = {}
         self.divisor = re.compile(r'([^|\n\s]+)')
+        # How each csv is classified in their respective files
+        self.classifiers = {"-1": Rel_Types.CUSTOMER_PROVIDERS, "0": Rel_Types.PEERS}
+        self.tables = {Rel_Types.CUSTOMER_PROVIDERS: Customer_Providers_Table,
+                       Rel_Types.PEERS: Peers_Table}
         self.logger.debug("Initialized file instance")
 
     @error_catcher()
@@ -64,11 +71,7 @@ class Relationship_File:
 
         # If the file wasn't downloaded, download it
         if not os.path.isfile(self.path):
-            utils.download_file(self.logger,
-                                self.url,
-                                self.path,
-                                1,  # File number
-                                1)  # Total number of files
+            utils.download_file(self.logger, self.url, self.path)
         self._unzip()
         # Gets data and writes it to the csvs
         self._write_csvs()
@@ -103,7 +106,7 @@ class Relationship_File:
         self._get_data()
         
         # For each type of csv:
-        for _, val in CSV_Types.__members__.items():
+        for _, val in Rel_Types.__members__.items():
             # Set the csv names
             self.csv_names[val] = "{}/{}_{}.csv".format(
                 self.csv_directory, self.name[:-13], val)
@@ -113,32 +116,25 @@ class Relationship_File:
                             self.rows.get(val),
                             self.csv_names.get(val))
         # Deletes the old path
-            utils.delete_paths(self.logger, self.path)
+        utils.delete_paths(self.logger, self.path)
 
     @error_catcher()
     def _db_insert(self):
         """Inserts all csvs into the database"""
 
-        # Sets table names for database for each csv type
-        table_names = {CSV_Types.CUSTOMER_PROVIDERS:
-                           Customer_Providers_Table(self.logger),
-                       CSV_Types.PEERS: Peers_Table(self.logger)}
-
         # Inserts the csvs into db and deletes them
-        for _, val in CSV_Types.__members__.items():
+        for _, val in Rel_Types.__members__.items():
             utils.csv_to_db(self.logger,
-                            table_names.get(val),
+                            self.tables[val](self.logger),
                             self.csv_names.get(val))
 
     def _get_data(self):
         """Method to be inherited by class"""
 
-        self.rows = {CSV_Types.CUSTOMER_PROVIDERS: [],
-                     CSV_Types.PEERS: []}
-        f = open(self.path, "r")
-        lines = f.readlines()
-        f.close()
-        [self._parse_line(x) for x in lines if "#" not in x]
+        self.rows = {val: [] for _, val in  Rel_Types.__members__.items()}
+        # Parses all lines in the file that aren't commented out
+        with open(self.path, "r") as f:
+            [self._parse_line(x) for x in f.readlines() if "#" not in x]
         self.logger.info("Parsed through file: {}".format(self.path))
 
 class AS_File(Relationship_File):
@@ -156,17 +152,11 @@ class AS_File(Relationship_File):
         Format of an as_rel file:
         <provider_as> | <customer_as> | -1
         <peer_as> | <peer_as> | 0
+        <nums[0] | <nums[1]> | <nums[2]>
         """
 
         nums = self.divisor.findall(line)
-        classifier = nums[2]
-        if classifier == '-1':
-            self.rows.get(CSV_Types.CUSTOMER_PROVIDERS).append(
-                [nums[0], nums[1]])
-        elif classifier == '0':
-            self.rows.get(CSV_Types.PEERS).append([nums[0], nums[1]])
-        else:
-            raise Exception("classifier unknown: {}".format(classifier))
+        self.rows[self.classifiers[nums[2]]].append([nums[0], nums[1]])
         
 
 class AS_2_File(Relationship_File):
@@ -184,13 +174,8 @@ class AS_2_File(Relationship_File):
         Format of an as_rel file:
         <provider_as> | <customer_as> | -1
         <peer_as> | <peer_as> | 0 | <source>
+        <nums[0] | <nums[1]> | <nums[2]> | <nums[3]>
         """
 
-        groups = self.divisor.findall(line)
-        classifier = groups[2]
-        if classifier == '-1':
-            self.rows.get(CSV_Types.CUSTOMER_PROVIDERS).append([groups[0], groups[1]])
-        elif classifier == '0':
-            self.rows.get(CSV_Types.PEERS).append([groups[0], groups[1]])
-        else:
-            raise Exception("classifier unknown: {}".format(classifier))
+        nums = self.divisor.findall(line)
+        self.rows[self.classifiers[nums[2]]].append([nums[0], nums[1]])

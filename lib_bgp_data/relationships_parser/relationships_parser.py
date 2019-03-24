@@ -4,6 +4,8 @@
 """This module contains class Relationships_Parser which can parse an AS Graph
 
 AS_2 Files are the only ones used now since they are the most accurate
+NOTE: Upon initialization database clears old entries, so only new entries
+are created
 """
 
 import re
@@ -56,7 +58,6 @@ class Relationships_Parser:
         # If this is a new file, the config date will be less than the
         # websites file date, and so we renew our data
         if self.config.last_date < int_date:
-            self._clear_tables()
             AS_2_File(self.logger, self.path, self.csv_dir, url
                 ).parse_file(db)
             self.config.update_last_date(int_date)
@@ -67,19 +68,12 @@ class Relationships_Parser:
 ### Helper Functions ###
 ########################
 
-    def _clear_tables(self):
-        """Clears tables from db"""
-
-        for db in [Customer_Providers_Table(self.logger), Peers_Table(self.logger)]:
-            db.clear_table()
-            db.close()
-
     @error_catcher()
     def _get_url(self):
         """Gets urls to download relationship files"""
 
         # Get all html tags that might have links
-        elements = [x for x in utils.get_tags(self.url, 'a')]
+        elements = [x for x in utils.get_tags(self.url, 'a')[0]]
         # Gets the last file of all bz2 files
         url = [x["href"] for x in elements if "bz2" in x["href"]][-1]
         # Returns the url and the date for the url

@@ -29,6 +29,7 @@ class Customer_Providers_Table(Database):
     def __init__(self, logger, cursor_factory=RealDictCursor, test=False):
         """Initializes the Customer Provider table"""
         Database.__init__(self, logger, cursor_factory, test)
+        self._clear_table()
 
     @error_catcher()
     def _create_tables(self):
@@ -59,7 +60,7 @@ class Customer_Providers_Table(Database):
         self.logger.info("Duplicates deleted in customer providers")
 
     @error_catcher()
-    def clear_table(self):
+    def _clear_table(self):
         """Clears the tables. Should be called at the start of every run"""
 
         self.logger.info("Clearing customer_providers")
@@ -118,7 +119,7 @@ class Peers_Table(Database):
         self.logger.info("Deleted duplicates from peers")
 
     @error_catcher()
-    def clear_table(self):
+    def _clear_table(self):
         """Clears the tables. Should be called at the start of every run"""
 
         self.logger.info("Clearing peers")

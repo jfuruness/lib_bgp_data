@@ -1,10 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-"""This package contains all parsers neccessary to parse bgp data"""
+"""This package contains a parser to parse bgptream website data"""
 
-from .relationships_parser import Relationships_Parser
-from .roas_collector import ROAs_Collector
 from .bgpstream_website_parser import BGPStream_Website_Parser
 
 __author__ = "Justin Furuness"
