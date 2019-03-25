@@ -12,6 +12,7 @@ import sys
 import functools
 from datetime import datetime
 import csv
+import gzip
 from bz2 import BZ2Decompressor
 from bs4 import BeautifulSoup as Soup
 from .logger import Logger
@@ -70,8 +71,8 @@ def set_common_init_args(self, args, parser, non_essentials=True):
     if non_essentials:
         self.all_files = [self.path, self.csv_dir]
         try:
-            self.config = Config(self.logger)
             self.args = args
+            self.config = Config(self.logger)
             self.args["path"] = self.path
             self.args["csv_dir"] = self.csv_dir
             self.args["logger"] = self.logger
@@ -162,7 +163,7 @@ def unzip_gz(logger, old_path, new_path):
     """Unzips a .gz file from old_path into new_path and deletes old file"""
 
     with gzip.open(old_path, 'rb') as f_in:
-        with open(path, 'wb') as f_out:
+        with open(new_path, 'wb') as f_out:
             shutil.copyfileobj(f_in, f_out)
 
     logger.debug("Unzipped a file: {}".format(old_path))

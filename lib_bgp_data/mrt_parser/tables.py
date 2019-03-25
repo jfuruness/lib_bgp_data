@@ -5,8 +5,9 @@
 
 import psycopg2
 from psycopg2.extras import RealDictCursor
-from .config import Config
-from .logger import error_catcher
+from ..config import Config
+from ..logger import error_catcher
+from ..database import Database
 
 __author__ = "Justin Furuness"
 __credits__ = ["Justin Furuness"]
@@ -26,7 +27,6 @@ class Announcements_Table(Database):
     def __init__(self, logger, cursor_factory=RealDictCursor, test=False):
         """Initializes the announcement table"""
         Database.__init__(self, logger, cursor_factory, test)
-        self.clear_table()
 
     @error_catcher()
     def _create_tables(self):
@@ -50,14 +50,14 @@ class Announcements_Table(Database):
         self.cursor.execute(sql)
 
     @error_catcher()
-    def _clear_table(self):
+    def clear_table(self):
         """Clears the tables. Should be called at the start of every run"""
 
         self.logger.info("Clearing MRT Announcements")
         self.cursor.execute("DELETE FROM mrt_announcements")
         self.logger.info("MRT Announcements Table Cleared")
 
-    @propert
+    @property
     def name(self):
         """Returns the name of the table"""
 

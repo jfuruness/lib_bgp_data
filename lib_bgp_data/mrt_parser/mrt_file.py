@@ -16,9 +16,10 @@ import os
 import bz2
 import gzip
 import functools
-from .logger import error_catcher
+from ..logger import error_catcher
+from .. import utils
 from . import mrt_info
-from .database import Announcements_Table
+from .tables import Announcements_Table
 
 __author__ = "Justin Furuness"
 __credits__ = ["Justin Furuness"]
@@ -35,9 +36,9 @@ class MRT_File:
     deleted.
     """
 
-    __slots__ = ['logger', '_unzip_file', 'name', 'file_name', 'path',
+    __slots__ = ['logger', 'name', 'file_name', 'path',
                  'old_path', 'url', 'num', 'total_files', 'csv_dir',
-                 'csv_name', 'test']
+                 'csv_name', 'test', 'ext']
 
     @error_catcher()
     def __init__(self, path, csv_dir, url, num, total_files, logger):
@@ -68,14 +69,13 @@ class MRT_File:
         self.csv_name = "{}/{}.csv".format(self.csv_dir,
                                            os.path.basename(self.path))
         utils.write_csv(self.logger,
-                        mrt_info.main(self.path, IPV4, IPV6)
+                        mrt_info.main(self.path, IPV4, IPV6),
                         self.csv_name,
                         files_to_delete=self.path)
-                        IPV4, IPV6)
         if db:
             utils.csv_to_db(self.logger,
                             Announcements_Table(self.logger),
-                            self.csv_path)
+                            self.csv_name)
         utils.delete_paths(self.logger, [self.path, self.csv_name])
 
 
@@ -91,5 +91,5 @@ class MRT_File:
         self.path = "{}.decompressed".format(os.path.splitext(self.path)[0])
         args = [self.logger, old_path, self.path]
         utils.unzip_bz2(*args) if self.ext == ".bz2" else utils.unzip_gz(*args)
-        utils.delete_paths(old_path)
+        utils.delete_paths(self.logger, old_path)
         self.logger.info("Unzipped: {}".format(os.path.basename(self.path)))

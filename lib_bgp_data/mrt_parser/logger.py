@@ -47,21 +47,6 @@ class logging(Enum):
         return self.value < other
 
 
-# Compiled regex global to prevent unnessecary recompilation
-tb_re = re.compile(r'''
-                    .*?/lib_bgp_mrt_parser
-                    (?P<file_name>.*?.py)
-                    .*?line.*?
-                    (?P<line_num>\d+)
-                    .*?in\s+
-                    (?P<function>.*?)
-                    \\n\s+
-                    (?P<line>.+)
-                    \\n
-                    ''', re.VERBOSE | re.DOTALL
-                   )
-
-
 class Logger:
     """Logger class for process safe logging, explained at module header"""
 

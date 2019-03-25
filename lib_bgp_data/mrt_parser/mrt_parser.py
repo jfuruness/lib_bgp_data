@@ -32,7 +32,8 @@ from datetime import timedelta
 from multiprocessing import cpu_count
 from pathos.multiprocessing import ProcessingPool as Pool
 from .mrt_file import MRT_File
-from .logger import Logger, error_catcher
+from .logger import Logger
+from ..logger import error_catcher
 from .tables import Announcements_Table
 from .. import utils
 
@@ -45,23 +46,24 @@ __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
 
-class Caida_MRT_Parser:
+class MRT_Parser:
     """This class downloads, unzips, parses, and deletes files from Caida
     Deeper explanation at the top of module
     """
 
-    __slots__ = ['path', 'csv_directory', 'args', 'url', 'logger',
-                 'start_time', 'download_pool', 'parse_pool']
+    __slots__ = ['path', 'csv_dir', 'args', 'url', 'logger', 'start_time',
+                 'dl_pool', 'p_pool', 'all_files']
 
     @error_catcher()
     def __init__(self, args={}):
         """Initializes urls, regexes, and path variables"""
 
         # Sets path vars, logger, config, etc
-        utils.set_common_init_args(args, "mrt")
+        utils.set_common_init_args(self, args, "mrt")
         # URLs fom the caida websites to pull data from
         self.url = 'https://bgpstream.caida.org/broker/data'
         self.logger = Logger(args.get("stream_level"))
+        Announcements_Table(self.logger).clear_table()
 
     @error_catcher()
     @utils.run_parser()
@@ -85,9 +87,9 @@ class Caida_MRT_Parser:
         # Get downloaded instances of mrt files using multiprocessing
         mrt_files = self._multiprocess_download(download_threads, urls)
         # Parses files using multiprocessing in descending order by size
-        self.multiprocess_parse_dls(parse_threads, mrt_files, IPV4, IPV6, db)
+        self._multiprocess_parse_dls(parse_threads, mrt_files, IPV4, IPV6, db)
         # Cleans up all multiprocessing objects
-        [p.close(), p.join() for p in [self.download_pool, self.parse_pool]]
+        [(p.close(), p.join()) for p in [self.dl_pool, self.p_pool]]
 
 ########################
 ### Helper Functions ###
@@ -97,7 +99,7 @@ class Caida_MRT_Parser:
         """Downloads files in parallel. Explanation at the top, dl=download"""
 
         mrt_files = [MRT_File(self.path,
-                              self.csv_directory,
+                              self.csv_dir,
                               urls[i],
                               i + 1,
                               len(urls),
@@ -105,11 +107,11 @@ class Caida_MRT_Parser:
                      for i in range(len(urls))]
         # Creates a dl pool, I/O based, so get as many threads as possible
         self.dl_pool = Pool(dl_threads if dl_threads else cpu_count() * 4)
-        self.logger.info("Created download pool"))
+        self.logger.info("Created download pool")
         # Downloads files in parallel
         self.logger.debug("About to start downloading files")
-        self.dl_pool.map(lambda f: utils.download_file(f.url, f.path, f.num,
-                                            f.total_files, f.num/5), mrt_files)
+        self.dl_pool.map(lambda f : utils.download_file(f.logger, f.url, f.path,
+            f.num, f.total_files, f.num/5), mrt_files)
         self.logger.debug("started to download files")
         return mrt_files
 
