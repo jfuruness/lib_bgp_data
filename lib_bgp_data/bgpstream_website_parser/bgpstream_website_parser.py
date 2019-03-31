@@ -62,13 +62,15 @@ class BGPStream_Website_Parser:
 
         self.data_types = data_types
         rows, _ = utils.get_tags("https://bgpstream.com", "tr")
+        # We do this because the last few rows are screwed up
+        rows = rows[:-10]
         # The last couple of rows are corrupted, so reduce rows parsed
-        if row_limit is None or row_limit > len(rows) - 10:
-            row_limit = len(rows) - 10
+        if row_limit is None or row_limit > len(rows):
+            row_limit = len(rows)
 
         # Parses all rows
-        for i in range(row_limit):
-            self._parse_row(rows[i], i, row_limit)
+        for i, row in enumerate(rows):
+            self._parse_row(row, i, len(rows))
 
         # Writes to csvs and dbs
         [self.data[x].db_insert for x in data_types]

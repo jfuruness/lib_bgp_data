@@ -50,14 +50,13 @@ class Relationship_File:
         """Initializes file instance and determine info about it"""
 
         self.logger = logger
-        # names file
         self.name = "relationships.bz2"
-        # os.path.join is neccessary for cross platform compatability
-        self.path = os.path.join(path, self.name)
-        self._url_rename(url)
         self.csv_directory = csv_directory
         self.test = test
         self.csv_names = {}
+        # os.path.join is neccessary for cross platform compatability
+        self.path = os.path.join(path, self.name)
+        self._url_rename(url)
         self.divisor = re.compile(r'([^|\n\s]+)')
         # How each csv is classified in their respective files
         self.classifiers = {"-1": Rel_Types.CUSTOMER_PROVIDERS, "0": Rel_Types.PEERS}
@@ -84,18 +83,17 @@ class Relationship_File:
     def _url_rename(self, url):
         """Renames the url properly"""
 
-        if "as-rel2" in url:
-            self.url = "http://data.caida.org/datasets/as-relationships/serial-2/{}".format(url)
-        elif "as-rel" in url:
-            self.url = "http://data.caida.org/datasets/as-relationships/serial-1/{}".format(url)
+        url_prepend = "http://data.caida.org/datasets/as-relationships/serial-"
+        serial_1 = "{}1/".format(url_prepend)
+        serial_2 = "{}2/".format(url_prepend)
+        self.url = serial_2 + url if "as-rel2" in url else serial_1 + url
 
     @error_catcher()
     def _unzip(self):
         """Unzips this .bz2 file"""
 
         old_path = self.path
-        self.path = os.path.join("{}.decompressed".format(
-                old_path[:-4]))
+        self.path = os.path.join("{}.decompressed".format(old_path[:-4]))
         self.name = "relationships.decompressed"
         utils.unzip_bz2(self.logger, old_path, self.path)
 
@@ -123,7 +121,7 @@ class Relationship_File:
         """Inserts all csvs into the database"""
 
         # Inserts the csvs into db and deletes them
-        for _, val in Rel_Types.__members__.items():
+        for val in Rel_Types.__members__.values():
             utils.csv_to_db(self.logger,
                             self.tables[val](self.logger),
                             self.csv_names.get(val))
@@ -131,7 +129,7 @@ class Relationship_File:
     def _get_data(self):
         """Method to be inherited by class"""
 
-        self.rows = {val: [] for _, val in  Rel_Types.__members__.items()}
+        self.rows = {val: [] for val in  Rel_Types.__members__.values()}
         # Parses all lines in the file that aren't commented out
         with open(self.path, "r") as f:
             [self._parse_line(x) for x in f.readlines() if "#" not in x]

@@ -56,24 +56,16 @@ class ROAs_Collector:
         url = "https://rpki-validator.ripe.net/api/export.json"
         # Need these headers so that the xml can be accepted
         headers = {"Accept":"application/xml;q=0.9,*/*;q=0.8"}
-        # Formats request
-        req = urllib.request.Request(url, headers=headers)
-        # Opens request
-        with urllib.request.urlopen(req) as url:
-            # Gets data from the json in the url
-            return json.loads(url.read().decode())["roas"]
+        # Gets the roas from the json
+        return utils.get_json(url, headers)["roas"]
 
     @error_catcher()
     def _format_roas(self, unformatted_roas):
         """Format the roas to be input to a csv"""
 
-        # I know you can use a list comp here but it's messy
+        # Returns a list of lists of formatted roas
         # Formats roas for csv
-        formatted_roas = []
-        for roa in unformatted_roas:
-            formatted_roas.append(
-                [int(re.findall('\d+', roa["asn"])[0]),  # Gets ASN
+        return [[int(re.findall('\d+', roa["asn"])[0]),  # Gets ASN
                  roa["prefix"],
-                 int(roa["maxLength"])
-                 ]) 
-        return formatted_roas
+                 int(roa["maxLength"])]
+                for roa in unformatted_roas]

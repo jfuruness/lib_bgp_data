@@ -45,13 +45,13 @@ class MRT_File:
         """Initializes file instance and determine info about it"""
 
         self.logger = logger
-        self.ext = os.path.splitext(url)[1]
-        self.path = "{}/{}{}".format(path, num, self.ext)
+        self.total_files = total_files
+        self.csv_dir = csv_dir
         self.url = url
         self.num = num
-        self.total_files = total_files
+        self.ext = os.path.splitext(url)[1]
+        self.path = "{}/{}{}".format(path, num, self.ext)
         self.logger.debug("Initialized file instance")
-        self.csv_dir = csv_dir
 
     @error_catcher()
     def __lt__(self, other):

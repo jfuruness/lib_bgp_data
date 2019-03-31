@@ -1,12 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-"""This package contains all parsers neccessary to parse bgp data"""
+"""This package runs policies on announcements and stores them in a table"""
 
-from .relationships_parser import Relationships_Parser
-from .roas_collector import ROAs_Collector
-from .bgpstream_website_parser import BGPStream_Website_Parser
-from .mrt_parser import MRT_Parser
 from .what_if_analysis import What_if_Analysis
 
 __author__ = "Justin Furuness"
@@ -16,3 +12,4 @@ __Version__ = "0.1.0"
 __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
+

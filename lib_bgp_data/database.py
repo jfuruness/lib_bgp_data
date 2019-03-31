@@ -75,3 +75,8 @@ class Database:
             self._drop_tables()
         self.cursor.close()
         self.conn.close()
+
+    def vacuum(self):
+        """Vaccums db for efficiency"""
+
+        self.cursor.execute("VACUUM")

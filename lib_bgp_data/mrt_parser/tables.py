@@ -38,7 +38,7 @@ class Announcements_Table(Database):
                   peer_asn bigint,
                   peer_address inet,
                   as_path bigint ARRAY,
-                  prefix inet,
+                  prefix cidr,
                   next_hop inet,
                   time integer
                   );"""
@@ -56,6 +56,12 @@ class Announcements_Table(Database):
         self.logger.info("Clearing MRT Announcements")
         self.cursor.execute("DELETE FROM mrt_announcements")
         self.logger.info("MRT Announcements Table Cleared")
+
+    def create_index(self):
+        """Creates an index"""
+
+        self.cursor.execute(
+            "CREATE INDEX on mrt_announcements USING GIST (prefix, inet_ops);")
 
     @property
     def name(self):

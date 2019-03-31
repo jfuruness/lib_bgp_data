@@ -94,18 +94,35 @@ class Logger:
         Anything equal to or higher than stream_level will be printed
         """
 
+        # Sets different logging properties
+        self._set_properties(args)
+
+        # Inits initial logger instance
+        logger = self._init_logging(args)
+
+        # Adds file handler to logger
+        self._init_file_handler(logger, args)
+
+        # Adds stream handler if not child
+        self._init_stream_handler(logger, args)
+
+        self.logger = logger
+
+    def _set_properties(self, args):
+        """Inits different logging properties"""
+
         # Sets variables if args is not set
         log_name = args.get("log_name")
         if log_name is None:
             log_name = "lib_bgp_data.log"
 
-        file_level = args.get("file_level")
-        if file_level is None:
-            file_level = logging.WARNING
+        self.file_level = args.get("file_level")
+        if self.file_level is None:
+            self.file_level = logging.WARNING
 
-        stream_level = args.get("stream_level")
-        if stream_level is None:
-            stream_level = logging.INFO
+        self.stream_level = args.get("stream_level")
+        if self.stream_level is None:
+            self.stream_level = logging.INFO
 
         log_dir = args.get("log_dir")
         if log_dir is None:
@@ -118,27 +135,44 @@ class Logger:
 
         self.log_name = "{}_{}".format(prepend, log_name)
 
+    def _make_dir(self, path):
+        """Initializes a directory"""
+
+        if not os.path.exists(path):
+            os.makedirs(path)
+        self.log_dir = path
+
+    def _init_logging(self, args):
+        """Initializes the initial logger"""
+
         # Initialize logging
         logger = logging.getLogger(__name__)
-        if logger.hasHandlers() and args.get("ancestor") is None:
+        if logger.hasHandlers() and args.get("is_child") is None:
             logger.handlers.clear()
         # Must use multiprocessing logger to avoid locking
         # logger = multiprocessing.get_logger()
         logger.setLevel(logging.DEBUG)
+        return logger
+
+    def _init_file_handler(self, logger, args):
+        """Initializes file handler for logging"""
 
         # Initialize File Handler
-        self.file_path = os.path.join(log_dir, self.log_name)
+        self.file_path = os.path.join(self.log_dir, self.log_name)
         self.file_handler = logging.FileHandler(self.file_path)
-        self.file_handler.setLevel(file_level)
+        self.file_handler.setLevel(self.file_level)
         file_handler_formatter = logging.Formatter(
             '%(asctime)s - %(levelname)s - %(name)s - %(message)s')
         self.file_handler.setFormatter(file_handler_formatter)
         logger.addHandler(self.file_handler)
 
-        if args.get("ancestor") is None:
+    def _init_stream_handler(self, logger, args):
+        """Adds stream handler while avoiding multithreading problems"""
+
+        if args.get("is_child") is None:
             # Initialize Stream Handler
             self.stream_handler = logging.StreamHandler()
-            self.stream_handler.setLevel(stream_level)
+            self.stream_handler.setLevel(self.stream_level)
             stream_handler_formatter = logging.Formatter(
                 '%(levelname)s - %(name)s - %(message)s')
             self.stream_handler.setFormatter(stream_handler_formatter)
@@ -148,10 +182,3 @@ class Logger:
             logger.propogate = False
         else:
             logger.propogate = True
-        self.logger = logger
-
-    def _make_dir(self, path):
-        """Initializes a directory"""
-
-        if not os.path.exists(path):
-            os.makedirs(path)

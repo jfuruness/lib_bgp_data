@@ -24,6 +24,7 @@ class ROAs_Table(Database):
     @error_catcher()
     def __init__(self, logger, cursor_factory=RealDictCursor, test=False):
         """Initializes the announcement table"""
+
         Database.__init__(self, logger, cursor_factory, test)
         self._clear_table()
 
@@ -63,7 +64,4 @@ class ROAs_Table(Database):
     def columns(self):
         """Returns the columns of the table"""
 
-        return ['asn',
-                'prefix',
-                'max_length'
-                ]
+        return ['asn', 'prefix', 'max_length']

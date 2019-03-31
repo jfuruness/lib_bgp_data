@@ -13,6 +13,7 @@ import functools
 from datetime import datetime
 import csv
 import gzip
+import json
 from bz2 import BZ2Decompressor
 from bs4 import BeautifulSoup as Soup
 from .logger import Logger
@@ -112,6 +113,8 @@ def download_file(logger, url, path, file_num=1, total_files=1, sleep_time=0):
 def delete_paths(logger, paths):
     """Removes directory if directory, or removes path if path"""
 
+    if not paths:
+        paths = []
     # If a single path is passed in, convert it to a list
     if not isinstance(paths, list):
         paths = [paths]
@@ -182,7 +185,6 @@ def write_csv(logger, rows, csv_path, files_to_delete=None):
         # Writing to a csv then copying into the db
         # is the fastest way to insert files
         csv_writer.writerows(rows)
-
     # If there are old files that are no longer needed, deleted them
     if files_to_delete:
         delete_paths(logger, files_to_delete)
@@ -196,13 +198,11 @@ def csv_to_db(logger, table, csv_path, delete_duplicates=False):
 
     logger.info("Copying {} into the database".format(csv_path))
     # Opens temporary file
-    f = open(r'{}'.format(csv_path), 'r')
+    with open(r'{}'.format(csv_path), 'r') as f:
 
-    # Copies data from the csv to the db, this is the fastest way
-    table.cursor.copy_from(f, table.name, sep='\t', columns=table.columns)
+        # Copies data from the csv to the db, this is the fastest way
+        table.cursor.copy_from(f, table.name, sep='\t', columns=table.columns)
 
-    # Closes file
-    f.close()
     if delete_duplicates:
         # Deletes duplicates from table
         table.delete_duplicates()
@@ -219,3 +219,13 @@ def get_tags(url, tag):
     response.raise_for_status()
     # Get all tags within the beautiful soup from the html and return them
     return [x for x in Soup(response.text, 'html.parser').select(tag)], response.close()
+
+def get_json(url, headers={}):
+    """Gets the json from a url"""
+
+    # Formats request
+    req = urllib.request.Request(url, headers=headers)
+    # Opens request
+    with urllib.request.urlopen(req) as url:
+        # Gets data from the json in the url
+        return json.loads(url.read().decode())

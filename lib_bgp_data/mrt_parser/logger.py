@@ -65,16 +65,13 @@ class Logger:
         """
 
         # Sets stream level
-        if stream_level is None:
-            stream_level = logging.INFO
-        else:
-            stream_level = int(stream_level)
+        stream_level = int(stream_level) if stream_level else logging.INFO
         # Sets all the standard logging functions
         levels = ["notset", "debug", "info", "warning", "error", "critical"]
         # Makes log functions
         log_funcs = [self._make_log_func(stream_level, x) for x in logging]
         # Sets log functions
-        [setattr(self, levels[i], log_funcs[i]) for i in range(len(levels))]
+        [setattr(self, x, y) for x, y in zip(levels, log_funcs)]
 
     def _make_log_func(self, stream_level, log_level):
         """Dynamically creates functions"""
