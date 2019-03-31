@@ -57,6 +57,12 @@ class Hijack_Table(Database):
         self.cursor.execute(sql)
 
     @error_catcher()
+    def create_index(self):
+        sql = """CREATE INDEX IF NOT EXISTS hijack_index ON hijack
+                 USING GIST(detected_prefix inet_ops, detected_origin)"""
+        self.cursor.execute(sql)
+
+    @error_catcher()
     def delete_duplicates(self):
         """Drops all duplicates from the table"""
 

@@ -98,6 +98,10 @@ class What_if_Analysis:
                 print(total_rows)
                 print(self._get_row_count())
                 time.sleep(5) 
+        # Query the json and make a table from it
+        # make an index like the one on hijack
+        # do sql queries in word doc for policy4
+
 
         # Delete table
         # delete csv and gz files

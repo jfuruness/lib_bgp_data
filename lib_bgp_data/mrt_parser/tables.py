@@ -60,8 +60,11 @@ class Announcements_Table(Database):
     def create_index(self):
         """Creates an index"""
 
-        self.cursor.execute(
-            "CREATE INDEX on mrt_announcements USING GIST (prefix, inet_ops);")
+        self.logger.info("Creating index")
+        sql = """CREATE INDEX IF NOT EXISTS mrt_announcements_index
+                 ON mrt_announcements USING GIST (prefix inet_ops);"""
+        self.cursor.execute(sql)
+        self.logger.info("Index created")
 
     @property
     def name(self):
@@ -78,5 +81,5 @@ class Announcements_Table(Database):
                 'as_path',
                 'prefix',
                 'next_hop',
-                'time',
+                'time'
                 ]

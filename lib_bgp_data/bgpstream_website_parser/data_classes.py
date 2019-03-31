@@ -63,6 +63,7 @@ class Data:
                         self.csv_path,
                         delete_duplicates=True)
         self.table.delete_duplicates()
+        self.table.create_index()
 
 ########################
 ### Helper Functions ###
