@@ -3,6 +3,7 @@
 
 """This module contains the tables classes to store roas"""
 
+import os
 import gzip
 from psycopg2.extras import RealDictCursor
 from ..logger import error_catcher
@@ -15,7 +16,7 @@ __Version__ = "0.1.0"
 __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
-
+#MAKE VALIDITY TABLE
 
 class Unique_Prefix_Origins_Table(Database):
     """Announcements table class"""
@@ -55,6 +56,7 @@ class Unique_Prefix_Origins_Table(Database):
         self.cursor.execute(sql, [path])
         self._gzip_file(path)
         self.logger.info("Wrote validator file")
+        self.logger.info("Deleted old validator csv")
         return "{}.gz".format(path), self._get_line_count(path)
 
     @error_catcher()
@@ -86,3 +88,45 @@ class Unique_Prefix_Origins_Table(Database):
             f_out.writelines(f_in)
         self.cursor.execute("SELECT COUNT(*) FROM unique_prefix_origins")
         return self.cursor.fetchone()
+
+class Validity_Table(Database):
+    """Announcements table class"""
+
+    __slots__ = []
+
+    @error_catcher()
+    def __init__(self, logger, cursor_factory=RealDictCursor, test=False):
+        """Initializes the announcement table"""
+
+        Database.__init__(self, logger, cursor_factory, test)
+
+    @error_catcher()
+    def _create_tables(self):
+        """ Creates tables if they do not exist"""
+
+        sql = """CREATE TABLE IF NOT EXISTS validity (
+                 validity_id serial PRIMARY KEY,
+                 asn bigint,
+                 prefix cidr,
+                 validity smallint);"""
+        self.cursor.execute(sql)
+
+    @error_catcher()
+    def create_index(self):
+        """Creates index on validity_table"""
+
+        sql = """CREATE INDEX IF NOT EXISTS validity_index ON validity
+                 USING GIST(prefix inet_ops, asn)"""
+
+
+    @property
+    def name(self):
+        """Returns the name of the table"""
+
+        return "validity"
+
+    @property
+    def columns(self):
+        """Returns the columns of the table"""
+
+        return ['asn', 'prefix', 'validity']

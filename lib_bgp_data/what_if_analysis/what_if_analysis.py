@@ -69,6 +69,9 @@ def _run_rpki_validator(self, file_path, rpki_path):
         yield 
         process.terminate()
 
+#TODO Add to docs valid=1, unknown=0, invalid=-1
+
+
 class What_if_Analysis:
     """This class runs all the policies on the mrt_announcements table""" 
 
@@ -88,16 +91,38 @@ class What_if_Analysis:
         """Downloads and stores roas from a json"""
 
         unique_p_o = Unique_Prefix_Origins_Table(self.logger)
-        unique_p_o.fill_table()
-        rpki_path = "/justins_validator/rpki-validator-3.0-397/rpki-validator-3.sh"
-        new_path, total_rows = unique_p_o.write_validator_file(path="/tmp/validator.csv")
+#        unique_p_o.fill_table()
+        rpki_path = "/justins_validator/dev/rpki-validator-3.0-DEV20180902182639/rpki-validator-3.sh"
+#        new_path, total_rows = unique_p_o.write_validator_file(
+#                                    path="/tmp/validator.csv")#.format(self.path))
         new_path = "/tmp/validator.csv.gz"
-        total_rows = 936818
+        total_rows = 900000
         with _run_rpki_validator(self, new_path, rpki_path):
+            time.sleep(30)
             while self._get_row_count() < total_rows:
                 print(total_rows)
                 print(self._get_row_count())
-                time.sleep(5) 
+                time.sleep(30)
+            # optimization for later make this total rows for the page size,
+            # 10 mil is just excessively large
+            headers = {"Connection": "keep-alive","Cache-Control": "max-age=0", "Upgrade-Insecure-Requests": 1,"User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/73.0.3683.86 Safari/537.36", "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3", "Accept-Encoding": "gzip, deflate, br", "Accept-Language": "en-US,en;q=0.9"}
+            url = "http://localhost:8080/api/bgp/?pageSize=10000000"
+            json_stuff = utils.get_json(url, headers)
+            csv_rows = [
+                self._format_asn_dict(x) for x in json_stuff["data"]]
+            validity_csv_path = "{}/validity.csv".format(self.csv_dir)
+            utils.write_csv(self.logger,
+                            csv_rows,
+                            validity_csv_path,
+                            files_to_delete=new_path)
+        utils.csv_to_db(self.logger,
+                        Validity_Table(self.logger),
+                        validity_csv_path)
+        # This is misleading, this really drops the table
+#        unique_p_o._create_tables()# Do this in a separate process elsewher
+        unique_p_o.close()
+        validity_table = Validity_Table(self.logger)
+        validity_table.create_index()
         # Query the json and make a table from it
         # make an index like the one on hijack
         # do sql queries in word doc for policy4
@@ -116,11 +141,18 @@ class What_if_Analysis:
 #        self.run_pass_if_no_alternative_including_superprefixes()
 
     @error_catcher()
+    def _format_asn_dict(self, asn):
+        validity = {"VALID": 1,
+                    "UNKNOWN": 0,
+                    "INVALID_LENGTH": -1,
+                    "INVALID_ASN": -2}
+        return [int(asn[2:]), asn["prefix"], validity.get(asn["validity"])]
+
+    @error_catcher()
     def _get_row_count(self):
         """Returns row count of json object for waiting"""
 
         try:
-            return 0
             return utils.get_json("http://localhost:8080/api/bgp")["metadata"]["total_count"]
         except Exception as e:
             self.logger.warning("Problem with getting json: {}".format(e))
