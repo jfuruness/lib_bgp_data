@@ -45,8 +45,8 @@ class Hijack_Table(Database):
                   event_type varchar (50),
                   expected_origin_name varchar (200),
                   expected_origin_number bigint,
-                  expected_prefix inet,
-                  more_specific_prefix inet,
+                  expected_prefix cidr,
+                  more_specific_prefix cidr,
                   url varchar (250)
                   );"""
         else:
@@ -59,7 +59,7 @@ class Hijack_Table(Database):
     @error_catcher()
     def create_index(self):
         sql = """CREATE INDEX IF NOT EXISTS hijack_index ON hijack
-                 USING GIST(detected_prefix inet_ops, detected_origin)"""
+                 USING GIST(more_specific_prefix inet_ops, detected_origin_number)"""
         self.cursor.execute(sql)
 
     @error_catcher()
@@ -125,7 +125,7 @@ class Leak_Table(Database):
                   event_number integer,
                   event_type varchar (50),
                   example_as_path bigint ARRAY,
-                  leaked_prefix inet,
+                  leaked_prefix cidr,
                   leaked_to_name varchar (200) ARRAY,
                   leaked_to_number bigint ARRAY,
                   leaker_as_name varchar (200),

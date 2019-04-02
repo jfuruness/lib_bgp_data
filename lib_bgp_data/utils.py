@@ -189,7 +189,7 @@ def write_csv(logger, rows, csv_path, files_to_delete=None):
     if files_to_delete:
         delete_paths(logger, files_to_delete)
 
-def csv_to_db(logger, table, csv_path, delete_duplicates=False):
+def csv_to_db(logger, table, csv_path, delete_duplicates=False, close=True):
     """Copies csv into table and deletes csv_path
 
     Copies tab delimited csv into table and deletes csv_path
@@ -201,13 +201,14 @@ def csv_to_db(logger, table, csv_path, delete_duplicates=False):
     with open(r'{}'.format(csv_path), 'r') as f:
 
         # Copies data from the csv to the db, this is the fastest way
-        table.cursor.copy_from(f, table.name, sep='\t', columns=table.columns)
+        table.cursor.copy_from(f, table.name, sep='\t', columns=table.columns, null="")
 
     if delete_duplicates:
         # Deletes duplicates from table
         table.delete_duplicates()
     # Closes db connection
-    table.close()
+    if close:
+        table.close()
     logger.info("Done inserting {} into the database".format(csv_path))
     delete_paths(logger, csv_path)
 

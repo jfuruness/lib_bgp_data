@@ -70,10 +70,11 @@ class BGPStream_Website_Parser:
 
         # Parses all rows
         for i, row in enumerate(rows):
+            if i > row_limit: break
             self._parse_row(row, i, len(rows))
 
         # Writes to csvs and dbs
-        [self.data[x].db_insert for x in data_types]
+        [self.data[x].db_insert() for x in data_types]
 
     @error_catcher()
     def _parse_row(self, row, num, total):

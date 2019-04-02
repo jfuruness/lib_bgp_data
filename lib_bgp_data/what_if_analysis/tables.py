@@ -115,8 +115,12 @@ class Validity_Table(Database):
     def create_index(self):
         """Creates index on validity_table"""
 
-        sql = """CREATE INDEX IF NOT EXISTS validity_index ON validity
+        sql1 = """CREATE INDEX IF NOT EXISTS validity_index ON validity
                  USING GIST(prefix inet_ops, asn)"""
+        sql2 = """CREATE INDEX IF NOT EXISTS validity_valid_index ON validity
+                  (validity);"""
+        for sql in [sql1, sql2]:
+            self.cursor.execute(sql)
 
 
     @property

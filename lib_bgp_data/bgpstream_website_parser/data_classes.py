@@ -61,9 +61,11 @@ class Data:
         utils.csv_to_db(self.logger,
                         self.table,
                         self.csv_path,
-                        delete_duplicates=True)
+                        delete_duplicates=True,
+                        close=False)
         self.table.delete_duplicates()
         self.table.create_index()
+        self.table.close()
 
 ########################
 ### Helper Functions ###
