@@ -3,153 +3,199 @@
 
 """This module contains table sql queries"""
 
-__author__ = "Justin Furuness", "Cameron Morris"
-__credits__ = ["Justin Furuness", "Cameron Morris"]
+__author__ = "Justin Furuness"
+__credits__ = ["Justin Furuness", "Luke Malinowski"]
 __Lisence__ = "MIT"
 __Version__ = "0.1.0"
 __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
-policy_2_sql_queries = [
+# I know the lines on this file will be off, it's crazy sql man whatever
 
-]
-# Step 0: split up the validity table, and create indexes on all of them
-# We do this because we split them up multiple times in our queries,
-# And this way we only split them once, and then have the index
-# If I really felt like it I'm sure theres a way to combine this
-# all into one massive query but whatever
-"""CREATE TABLE validity_unblocked AS
-       (SELECT v.prefix, v.asn AS origin FROM validity v
-       WHERE v.validity >= 0);
-"""
-#invalid length
-"""CREATE TABLE validity_invalid_length AS
-       (SELECT v.prefix, v.asn AS origin FROM validity v
-       WHERE v.validity = -1);
-"""
-#invalid asn
-"""CREATE TABLE validity_invalid_asn AS
-       (SELECT v.prefix, v.asn AS origin FROM validity v
-       WHERE v.validity = -2);
-"""
-# Then create indexes and drop the tables
-"""CREATE INDEX ON validity_unblocked
-   USING GIST (prefix inet_ops, origin);
-"""
-"""CREATE INDEX ON validity_invalid_length
-   USING GIST (prefix inet_ops, origin);
-"""
-"""CREATE INDEX ON validity_invalid_asn
-   USING GIST (prefix inet_ops, origin);
-"""
+# Before the validator is run we can start doing this on the extrapolation results:
+get_hijack_temp_sql = [
+    """CREATE UNLOGGED TABLE hijack_temp AS
+        (SELECT h.more_specific_prefix AS prefix, h.detected_origin_number AS origin, h.url
+        FROM hijack h
+        WHERE
+            (h.start_time, COALESCE(h.end_time, now()::timestamp)) OVERLAPS
+            (%s, %s)
+        );
+     """,
+     """CREATE INDEX CONCURRENTLY ON hijack_temp USING GIST (prefix inet_ops, origin);""",
+     """CREATE INDEX CONCURRENTLY ON hijack_temp USING GIST (prefix inet_ops);"""
+    ]
+get_total_announcements_sql = [
+    """CREATE UNLOGGED TABLE total_announcements AS
+           (SELECT exr.asn, count(exr.asn) AS total FROM extrapolation_results exr
+            GROUP BY exr.asn);
+    """,
+    """CREATE INDEX CONCURRENTLY ON total_announcements USING asn;"""
+    ]
+run_after_extrapolator_sql = get_hijack_temp_sql + get_total_announcements_sql
 
-# The next thing is that the intersection between hijack data
-# and extrapolation results occurs in every query.
-# So we make those tables and index them
-"""CREATE TABLE hijack_temp AS
-       (SELECT h.more_specific_prefix AS prefix, h.detected_origin_number AS origin, h.url
-       FROM hijack h
-       WHERE
-           (h.start_time, COALESCE(h.end_time, current_time)) OVERLAPS
-           (%s, %s)
-       ),
-"""
-"""CREATE INDEX ON hijack_temp USING GIST (prefix inet_ops, origin)"""
-"""CREATE TABLE hijacked_extrapolation_results_temp AS
-       (SELECT exr.asn, h.prefix, h.origin, h.url FROM hijack_temp h
-        INNER JOIN extrapolation_results exr ON
-            h.prefix = exr.prefix AND h.origin = exr.origin);
-"""
-"""CREATE INDEX ON hijacked_extrapolation_results_temp
-   USING GIST (prefix inet_ops, origin)
-"""
-"""CREATE TABLE not_hijacked_extrapolation_results_temp AS
-       (SELECT exr.asn, h.prefix, h.origin, h.url FROM hijack_temp h
-        RIGHT JOIN extrapolation_results exr ON
-            h.prefix = exr.prefix AND h.origin = exr.origin
-            WHERE h.prefix IS NULL);
-"""
-"""CREATE INDEX ON not_hijacked_extrapolation_results_temp
-   USING GIST (prefix inet_ops, origin);
-"""
-
-# Step 2: get the four temporary tables
-# List of asns not unique invalid asn hijacked and blocked
-"""WITH iahb_tmp AS (SELECT hexr.asn, hexr.url
-      FROM validity_invalid_asn via
-      INNER JOIN hijacked_extrapolation_results hexr ON
-          hexr.prefix = via.prefix AND hexr.origin = via.origin,
-"""
-# List of asns not unique invalid_asn hijacked and not blocked
-"""WITH iahnb_tmp AS (SELECT hexr.asn, hexr.url
-       FROM validity_unblocked vu
-       INNER JOIN hijacked_extrapolation_results hexr ON
-           hexr.prefix = vu.prefix AND hexr.origin = vu.origin,
-"""
-# List of asns not unique invalid_asn not hijacked and blocked
-"""WITH ianhb_tmp AS (SELECT nhexr.asn, nhexr.url
-       FROM validity_invalid_asn via
-       INNER JOIN not_hijacked_extrapolation_results nhexr ON
-           nhexr.prefix = via.prefix AND nhexr.origin = via.origin,
-"""
-# List of asns not unique invalid_asn not hijacked and not blocked
-"""WITH ianhnb_tmp AS (SELECT nhexr.asn, nhexr.url
-       FROM validity_unblocked vu
-       INNER JOIN not_hijacked_extrapolation_results nhexr ON
-           nhexr.prefix = vu.prefix AND nhexr.origin = vu.origin,
-"""
-# NOTE: Make sure validity has an index on the asn
-# Create the policy 2 table with lots of subqueries
-
-
-
-#########
-########
-#########MUST CHANGE SOME OF THESE LEFT JOINS TO SOMETHING ELSE!!!!!
-"""CREATE TABLE policy_2 AS SELECT 
-       v.asn as asn,
-       ia_hb.total AS hijack_blocked,
-       hnb.total AS hijack_not_blocked,
-       nhb.total AS not_hijacked_blocked,
-       nhnb.total as not_hijacked_not_blocked,
-       urls.url_list
-       FROM validity v
-           LEFT JOIN (SELECT ia_hbd.asn, count(*) AS total
-                      FROM ia_hb_tmp
-                      LEFT JOIN (
-                                 SELECT DISTINCT *
-                                 FROM ia_hb_tmp
-                                ) ia_hbd
-                      ON ia_hbd.asn = ia_hb_tmp.asn
-                          GROUP BY ia_hbd.asn) ia_hb
-               ON ia_hb.asn = v.asn
-
-           LEFT JOIN (SELECT ia_hnbd.asn, count(*) AS total
-                 FROM ia_hnb_tmp
-                 LEFT JOIN (
-                            SELECT DISTINCT *
-                            FROM ia_hnb_tmp
-                           ) ia_hnbd
-                 ON ia_hnbd.asn = ia_hnb_tmp.asn
-                     GROUP BY hnbd.asn) ia_hnb
-                ON ia_hnb.asn = v.asn
-
-           LEFT JOIN (SELECT ia_nhbd.asn, count(*) AS total
-                 FROM ia_nhb_tmp
-                 LEFT JOIN (
-                            SELECT DISTINCT *
-                            FROM ia_nhb_tmp
-                           ) ia_nhbd
-                 ON ia_nhbd.asn = ia_nhb_tmp.asn
-                     GROUP BY ia_nhbd.asn) ia_nhb
-                ON ia_nhb.asn = v.asn
-
-           LEFT JOIN (get total announcements from hijacked and not hijacked extrap results and subtract other tables) ia_nhnb
-                ON ia_nhnb = v.asn
-
-           LEFT JOIN
-               (SELECT ARRAY(SELECT url FROM hijack_temp ht
-                             INNER JOIN validity v ON
-                                 ht.origin = v.asn) AS url_list) urls
-"""
+# Then, validator is run. We now have validity table. Run this query asynchronously:
+validity_parallel_split = [
+    ["""CREATE UNLOGGED TABLE unblocked AS
+           (SELECT v.prefix, v.asn AS origin FROM validity v
+           WHERE v.validity >= 0);
+     """,
+    """CREATE UNLOGGED TABLE invalid_asn AS
+           (SELECT v.prefix, v.asn AS origin FROM validity v
+           WHERE v.validity = -2);
+    """,
+    """CREATE UNLOGGED TABLE invalid_length AS
+           (SELECT v.prefix, v.asn AS origin FROM validity v
+           WHERE v.validity = -1);
+    """,
+    
+    
+    """CREATE INDEX CONCURRENTLY ON unblocked USING GIST(prefix inet_ops, origin);""",
+    """CREATE INDEX CONCURRENTLY ON unblocked USING GIST(prefix inet_ops);""",
+    """CREATE INDEX CONCURRENTLY ON invalid_asn USING GIST(prefix inet_ops, origin);""",
+    """CREATE INDEX CONCURRENTLY ON invalid_asn USING GIST(prefix inet_ops);""",
+    """CREATE INDEX CONCURRENTLY ON invalid_length USING GIST(prefix inet_ops, origin);""",
+    """CREATE INDEX CONCURRENTLY ON invalid_length USING GIST(prefix inet_ops);""",
+    ]
+    run_after_validity_split = [
+    """CREATE UNLOGGED TABLE unblocked_hijacked AS
+           (SELECT u.prefix, u.origin FROM unblocked u
+            LEFT JOIN hijack_temp h ON h.prefix = u.prefix AND h.origin = u.origin;
+    """,
+    """CREATE INDEX CONCURRENTLY ON unblocked_hijack USING (prefix inet_ops);""",
+    
+    
+    
+    """CREATE UNLOGGED TABLE invalid_asn_hijacked AS
+           (SELECT ia.prefix, ia.origin FROM invalid_asn ia
+            LEFT JOIN hijack_temp h ON h.prefix = ia.prefix AND h.origin = ia.origin;
+    """,
+    """CREATE UNLOGGED TABLE invalid_asn_not_hijacked AS
+           (SELECT ia.prefix, ia.origin FROM invalid_asn ia
+            LEFT JOIN hijack_temp h ON h.prefix = ia.prefix
+            WHERE h.prefix IS NULL;
+    """,
+    """CREATE INDEX CONCURRENTLY ON invalid_asn_hijacked USING (prefix inet_ops);""",
+    """CREATE INDEX CONCURRENTLY ON invalid_asn_hijacked USING origin;""",
+    """CREATE INDEX CONCURRENTLY ON invalid_asn_not_hijacked USING (prefix inet_ops);""",
+    
+    
+    
+    """CREATE UNLOGGED TABLE invalid_length_hijacked AS
+           (SELECT il.prefix, il.origin FROM invalid_length il
+            LEFT JOIN hijack_temp h ON h.prefix = il.prefix AND h.origin = il.origin;
+    """,
+    """CREATE UNLOGGED TABLE invalid_length_not_hijacked AS
+           (SELECT il.prefix, il.origin FROM invalid_length il
+            LEFT JOIN hijack_temp h ON h.prefix = il.prefix
+            WHERE h.prefix IS NULL;
+    """,
+    """CREATE INDEX CONCURRENTLY ON invalid_length_hijacked USING (prefix inet_ops);""",
+    """CREATE INDEX CONCURRENTLY ON invalid_length_hijacked USING origin;""",
+    """CREATE INDEX CONCURRENTLY ON invalid_length_not_hijacked USING (prefix inet_ops);""",
+    ]
+    
+    """CREATE UNLOGGED TABLE total_announcements AS
+           (SELECT exr.asn, count(exr.asn) AS total FROM extrapolation_results exr
+            GROUP BY exr.asn);
+    """,
+    """CREATE INDEX CONCURRENTLY ON total_announcements USING asn;""",
+    
+    
+    
+    # Now we have all of our tables that we need to calculate the statistics
+    """CREATE TABLE invalid_asn_hijacked_stats AS
+       SELECT final_table.asn AS asn, COUNT(final_table.asn) AS TOTAL FROM (invalid_asn_hijacked
+        LEFT JOIN
+        (SELECT exr.asn, exr.prefix, exr.origin FROM extrapolation_results exr
+        LEFT JOIN invalid_asn_hijacked iah ON exr.prefix = iah.prefix) for_index
+        ON invalid_asn_hijacked.origin = for_index.origin) final_table
+       GROUP BY final_table.asn;
+    """,
+    
+    """CREATE TABLE invalid_asn_not_hijacked_stats AS
+       SELECT exr.asn, COUNT(exr.asn) AS TOTAL FROM
+       invalid_asn_not_hijacked iah LEFT JOIN extrapolation_results exr
+       ON iah.prefix = exr.prefix;
+    """,
+    """CREATE INDEX ON invalid_asn_hijacked_stats USING asn;""",
+    """CREATE INDEX ON invalid_asn_not_hijacked_stats USING asn;""",
+    
+    
+    """CREATE TABLE invalid_length_hijacked_stats AS
+       SELECT final_table.asn AS asn, COUNT(final_table.asn) AS TOTAL FROM (invalid_length_hijacked
+        LEFT JOIN
+        (SELECT exr.asn, exr.prefix, exr.origin FROM extrapolation_results exr
+        LEFT JOIN invalid_length_hijacked ilh ON exr.prefix = ilh.prefix) for_index
+        ON invalid_length_hijacked.origin = for_index.origin) final_table
+       GROUP BY final_table.asn;
+    """,
+    
+    """CREATE TABLE invalid_length_not_hijacked_stats AS
+       SELECT exr.asn, COUNT(exr.asn) AS TOTAL FROM
+       invalid_length_not_hijacked ilh LEFT JOIN extrapolation_results exr
+       ON ilh.prefix = exr.prefix;
+    """,
+    """CREATE INDEX ON invalid_length_hijacked_stats USING asn;""",
+    """CREATE INDEX ON invalid_length_not_hijacked_stats USING asn;""",
+    
+    """CREATE TABLE unblocked_hijacked_stats AS
+       SELECT final_table.asn AS asn, COUNT(final_table.asn) AS TOTAL FROM (unblocked_hijacked uh
+        LEFT JOIN
+        (SELECT exr.asn, exr.prefix, exr.origin FROM extrapolation_results exr
+        LEFT JOIN unblocked_hijacked uh ON exr.prefix = uh.prefix) for_index
+        ON uh.origin = for_index.origin) final_table
+       GROUP BY final_table.asn;
+    """,
+    """CREATE INDEX ON unblocked_hijacked_stats USING asn;""",
+    
+    """CREATE TABLE urls_list AS (SELECT ARRAY(SELECT url FROM hijack_temp ht
+                                 INNER JOIN total_announcements ta ON
+                                     ht.origin = ta.asn) AS url_list);""",
+    
+    
+    
+    
+    
+    """CREATE TABLE invalid_asn_policy AS SELECT
+           asns.asn AS asn,
+           iahs.total AS hijack_blocked,
+           uhs.total AS hijack_not_blocked,
+           ianhs.total AS not_hijacked_blocked,
+           asns.total - iahs.total - uhs.total - ianhs.total AS not_hijacked_not_blocked,
+           urls.url_list
+           FROM total_announcements asns
+               LEFT JOIN FROM invalid_asn_hijacked_stats iahs ON iahs.asn = asns.asn
+               LEFT JOIN FROM unblocked_hijacked_stats ON uhs.asn = asns.asn
+               LEFT JOIN FROM invalid_asn_not_hijacked_stats ianhs ON ianhs.asn = asns.asn
+               LEFT JOIN urls_list ON urls_list.asn = asns.asn;
+    """,
+    """CREATE INDEX ON invalid_asn_policy USING asn""",
+    """CREATE TABLE invalid_length_policy AS SELECT
+           asns.asn AS asn,
+           ilhs.total AS hijack_blocked,
+           uhs.total AS hijack_not_blocked,
+           ilnhs.total AS not_hijacked_blocked,
+           asns.total - ilhs.total - uhs.total - ilnhs.total AS not_hijacked_not_blocked,
+           urls.url_list AS urls
+           FROM total_announcements asns
+               LEFT JOIN FROM invalid_length_hijacked_stats ilhs ON ilhs.asn = asns.asn
+               LEFT JOIN FROM unblocked_hijacked_stats ON uhs.asn = asns.asn
+               LEFT JOIN FROM invalid_length_not_hijacked_stats ilnhs ON ilnhs.asn = asns.asn
+               LEFT JOIN urls_list ON urls_list.asn = asns.asn;
+    """,
+    """CREATE INDEX ON invalid_length_policy USING asn""",
+    """CREATE TABLE rov_policy AS SELECT
+           asns.asn AS asn,
+           ilp.hijacked_blocked + iap.hijacked_blocked AS hijacked_blocked,
+           ilp.hijacked_not_blocked AS hijacked_not_blocked,
+           ilp.not_hijacked_blocked + iap.not_hijacked_blocked AS not_hijacked_blocked,
+           asns.total - hijacked_blocked - hijacked_not_blocked - not_hijacked_blocked,
+           urls.urls_list AS urls
+            FROM total_announcements asns
+                LEFT JOIN FROM invalid_length_policy ilp ON ilp.asn = asns.asn
+                LEFT JOIN FROM invalid_asn_policy iap ON iap.asn = asns.asn
+                LEFT JOIN FROM urls ON urls.asn = asns.asn;
+    """,
+    """CREATE INDEX ON rov_policy USING asn;"""]

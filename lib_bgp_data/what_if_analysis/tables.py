@@ -33,7 +33,7 @@ class Unique_Prefix_Origins_Table(Database):
     def _create_tables(self):
         """ Creates tables if they do not exist"""
 
-        return None###########################################################
+#        return None###########################################################
         if self.test is False:
             sql = """DROP TABLE IF EXISTS unique_prefix_origins;"""
         self.cursor.execute(sql)
@@ -86,8 +86,15 @@ class Unique_Prefix_Origins_Table(Database):
 
         with open(path, 'rb') as f_in, gzip.open('{}.gz'.format(path), 'wb') as f_out:
             f_out.writelines(f_in)
-        self.cursor.execute("SELECT COUNT(*) FROM unique_prefix_origins")
+        self.cursor.execute("SELECT COUNT(1) FROM unique_prefix_origins")
         return self.cursor.fetchone()
+
+    def close(self):
+        """Closes the database connection correctly"""
+
+        self.cursor.execute("""DROP TABLE IF EXISTS unique_prefix_origins;""")
+        self.cursor.close()
+        self.conn.close()
 
 class Validity_Table(Database):
     """Announcements table class"""
@@ -105,7 +112,7 @@ class Validity_Table(Database):
         """ Creates tables if they do not exist"""
 
         sql = """CREATE TABLE IF NOT EXISTS validity (
-                 validity_id serial PRIMARY KEY,
+                 PRIMARY KEY(asn, prefix),
                  asn bigint,
                  prefix cidr,
                  validity smallint);"""
@@ -115,12 +122,9 @@ class Validity_Table(Database):
     def create_index(self):
         """Creates index on validity_table"""
 
-        sql1 = """CREATE INDEX IF NOT EXISTS validity_index ON validity
-                 USING GIST(prefix inet_ops, asn)"""
-        sql2 = """CREATE INDEX IF NOT EXISTS validity_valid_index ON validity
+        sql = """CREATE INDEX IF NOT EXISTS validity_valid_index ON validity
                   (validity);"""
-        for sql in [sql1, sql2]:
-            self.cursor.execute(sql)
+        self.cursor.execute(sql)
 
 
     @property

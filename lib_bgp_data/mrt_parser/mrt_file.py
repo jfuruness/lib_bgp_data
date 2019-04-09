@@ -16,6 +16,7 @@ import os
 import bz2
 import gzip
 import functools
+from subprocess import call
 from ..logger import error_catcher
 from .. import utils
 from . import mrt_info
@@ -61,21 +62,15 @@ class MRT_File:
         return os.path.getsize(self.path) < os.path.getsize(other.path)
 
     @error_catcher()
-    def parse_file(self, db, IPV4=True, IPV6=False):
+    def parse_file(self, db):
         """Calls all functions to parse a file into the db"""
 
-        self._unzip_file()
         # If db is false, results are printed and not db inserted
         self.csv_name = "{}/{}.csv".format(self.csv_dir,
                                            os.path.basename(self.path))
-        utils.write_csv(self.logger,
-                        mrt_info.main(self.path, IPV4, IPV6),
-                        self.csv_name,
-                        files_to_delete=self.path)
+        self._bgpdump_to_csv()
         if db:
-            utils.csv_to_db(self.logger,
-                            Announcements_Table(self.logger),
-                            self.csv_name)
+            utils.csv_to_db(self.logger, Announcements_Table, self.csv_name)
         utils.delete_paths(self.logger, [self.path, self.csv_name])
 
 
@@ -84,12 +79,28 @@ class MRT_File:
 ########################
 
     @error_catcher()
-    def _unzip_file(self):
-        """Unzips a file, and deletes the old one"""
+    def _bgpdump_to_csv(self):
+        """Function takes mrt file and converts it to a csv with bash"""
 
-        old_path = self.path
-        self.path = "{}.decompressed".format(os.path.splitext(self.path)[0])
-        args = [self.logger, old_path, self.path]
-        utils.unzip_bz2(*args) if self.ext == ".bz2" else utils.unzip_gz(*args)
-        utils.delete_paths(self.logger, old_path)
-        self.logger.info("Unzipped: {}".format(os.path.basename(self.path)))
+        # I know this may seem unmaintanable, that's because this is a 
+        # Fast way to to this. Please, calm down.
+
+        # performs bgpdump on the file
+        bash_args =  'bgpdump -q -M -t change '
+        bash_args += self.path
+        # Cuts out columns we don't need
+        bash_args += ' | cut -d "|" -f2,6,7 '
+        # Deletes any announcements with as sets
+        bash_args += '|sed -e "/{.*}/d" '
+        # Performs regex matching with sed and adds brackets around the as_path
+        bash_args += '-e "s/\(.*|.*|\)\(.*$\)/\\1{\\2}/g" '
+        # Replaces pipes and spaces with commas for csv insertion
+        # leaves out first one
+        bash_args += '-e "s/ /, /g" -e "s/, / /" -e "s/|/\t/g" '
+        # Adds a column for the origin
+        bash_args += '-e "s/\([[:digit:]]\+\)}/\\1}\t\\1/g"'
+        # writes to a csv
+        bash_args += '> ' + self.csv_name
+        call(bash_args, shell=True)
+        self.logger.info("Wrote {}".format(self.csv_name))
+        utils.delete_paths(self.logger, self.path)

@@ -189,28 +189,28 @@ def write_csv(logger, rows, csv_path, files_to_delete=None):
     if files_to_delete:
         delete_paths(logger, files_to_delete)
 
-def csv_to_db(logger, table, csv_path, delete_duplicates=False, close=True):
+def csv_to_db(logger, Table, csv_path):
     """Copies csv into table and deletes csv_path
 
     Copies tab delimited csv into table and deletes csv_path
     Table should inherit from Database class and have name attribute and
     columns attribute"""
 
-    logger.info("Copying {} into the database".format(csv_path))
-    # Opens temporary file
-    with open(r'{}'.format(csv_path), 'r') as f:
+    with db_connection(Table, logger) as t:
+        logger.info("Copying {} into the database".format(csv_path))
+        # Opens temporary file
+        with open(r'{}'.format(csv_path), 'r') as f:
 
-        # Copies data from the csv to the db, this is the fastest way
-        table.cursor.copy_from(f, table.name, sep='\t', columns=table.columns, null="")
-
-    if delete_duplicates:
-        # Deletes duplicates from table
-        table.delete_duplicates()
-    # Closes db connection
-    if close:
-        table.close()
+            # Copies data from the csv to the db, this is the fastest way
+            t.cursor.copy_from(f, t.name, sep='\t', columns=t.columns, null="")
     logger.info("Done inserting {} into the database".format(csv_path))
     delete_paths(logger, csv_path)
+
+def rows_to_db(logger, rows, csv_path, Table):
+    """Writes rows to csv and from csv to database"""
+
+    write_csv(logger, rows, csv_path)
+    csv_to_db(logger, Table, csv_path)
 
 def get_tags(url, tag):
     """Gets the html of a given url, and returns a list of tags"""

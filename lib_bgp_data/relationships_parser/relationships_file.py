@@ -73,10 +73,7 @@ class Relationship_File:
             utils.download_file(self.logger, self.url, self.path)
         self._unzip()
         # Gets data and writes it to the csvs
-        self._write_csvs()
-        # If db is false results are not inserted into the database
-        if db:
-            self._db_insert()
+        self._db_insert()
         # Deletes all paths/files that could have been created
         utils.delete_paths(self.logger, [self.csv_directory, self.path])
 
@@ -98,33 +95,24 @@ class Relationship_File:
         utils.unzip_bz2(self.logger, old_path, self.path)
 
     @error_catcher()
-    def _write_csvs(self):
+    def _db_insert(self):
         """Writes both csv files needed"""
 
         self._get_data()
         
         # For each type of csv:
-        for _, val in Rel_Types.__members__.items():
+        for val in Rel_Types.__members__.values():
             # Set the csv names
             self.csv_names[val] = "{}/{}_{}.csv".format(
                 self.csv_directory, self.name[:-13], val)
 
             # Writes to the csvs
-            utils.write_csv(self.logger,
+            utils.rows_to_db(self.logger,
                             self.rows.get(val),
-                            self.csv_names.get(val))
+                            self.csv_names.get(val),
+                            self.tables[val])
         # Deletes the old path
         utils.delete_paths(self.logger, self.path)
-
-    @error_catcher()
-    def _db_insert(self):
-        """Inserts all csvs into the database"""
-
-        # Inserts the csvs into db and deletes them
-        for val in Rel_Types.__members__.values():
-            utils.csv_to_db(self.logger,
-                            self.tables[val](self.logger),
-                            self.csv_names.get(val))
 
     def _get_data(self):
         """Method to be inherited by class"""

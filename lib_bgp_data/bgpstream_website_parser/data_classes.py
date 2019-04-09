@@ -12,6 +12,7 @@ import requests
 import bs4
 from ..logger import error_catcher
 from .. import utils
+from ..database import database_connection
 from .tables import Hijack_Table, Outage_Table, Leak_Table
 
 __author__ = "Justin Furuness"
@@ -57,15 +58,10 @@ class Data:
 
     @error_catcher()
     def db_insert(self):
-        utils.write_csv(self.logger, self.data, self.csv_path)
-        utils.csv_to_db(self.logger,
-                        self.table,
-                        self.csv_path,
-                        delete_duplicates=True,
-                        close=False)
-        self.table.delete_duplicates()
-        self.table.create_index()
-        self.table.close()
+        utils.rows_to_db(self.logger, self.data, self.csv_path, self.table)
+        with db_connection(self.table, self.logger) as db_table:
+            db_table.create_index()
+            db_table.delete_duplicates()
 
 ########################
 ### Helper Functions ###
@@ -128,7 +124,7 @@ class Hijack(Data):
         """Initializes row instance and determine info about it"""
 
         Data.__init__(self, logger)
-        self.table = Hijack_Table(self.logger)
+        self.table = Hijack_Table
         self.csv_path = "{}/hijack.csv".format(csv_dir)
 
     def _parse_uncommon_info(self, as_info, extended_children):
@@ -171,7 +167,7 @@ class Leak(Data):
         """Initializes row instance and determine info about it"""
 
         Data.__init__(self, logger)
-        self.table = Leak_Table(self.logger)
+        self.table = Leak_Table
         self.csv_path = "{}/leak.csv".format(csv_dir)
 
     def _parse_uncommon_info(self, as_info, extended_children):
@@ -224,7 +220,7 @@ class Outage(Data):
         """Initializes row instance and determine info about it"""
 
         Data.__init__(self, logger)
-        self.table = Outage_Table(self.logger)
+        self.table = Outage_Table
         self.csv_path = "{}/outage.csv".format(csv_dir)
 
     def _parse_uncommon_info(self, as_info, extended_children):

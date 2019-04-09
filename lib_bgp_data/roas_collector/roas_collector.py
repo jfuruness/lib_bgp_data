@@ -39,10 +39,8 @@ class ROAs_Collector:
     def parse_roas(self, db=True):
         """Downloads and stores roas from a json"""
 
-        utils.write_csv(self.logger,
-                        self._format_roas(self._get_json_roas()),  # Gets Roas
-                        self.csv_path)
-        utils.csv_to_db(self.logger, ROAs_Table(self.logger), self.csv_path)
+        roas = self._format_roas(self._get_json_roas())
+        utils.rows_to_db(self.logger, roas, self.csv_path, ROAs_Table)
 
 ########################
 ### Helper Functions ###

@@ -92,10 +92,10 @@ class What_if_Analysis:
         """Downloads and stores roas from a json"""
 
         unique_p_o = Unique_Prefix_Origins_Table(self.logger)
-#        unique_p_o.fill_table()
+        unique_p_o.fill_table()
         rpki_path = "/justins_validator/dev/rpki-validator-3.0-DEV20180902182639/rpki-validator-3.sh"
-#        new_path, total_rows = unique_p_o.write_validator_file(
-#                                    path="/tmp/validator.csv")#.format(self.path))
+        new_path, total_rows = unique_p_o.write_validator_file(
+                                    path="/tmp/validator.csv")#.format(self.path))
         new_path = "/tmp/validator.csv.gz"
         total_rows = 900000
         headers = {"Connection": "keep-alive","Cache-Control": "max-age=0", "Upgrade-Insecure-Requests": 1,"User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/73.0.3683.86 Safari/537.36", "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3", "Accept-Encoding": "gzip, deflate, br", "Accept-Language": "en-US,en;q=0.9"}
@@ -120,27 +120,16 @@ class What_if_Analysis:
         utils.csv_to_db(self.logger,
                         Validity_Table(self.logger),
                         validity_csv_path)
-        # This is misleading, this really drops the table
+        # This is misleading, this really drops the table
 #        unique_p_o._create_tables()# Do this in a separate process elsewher
         unique_p_o.close()
         validity_table = Validity_Table(self.logger)
         validity_table.create_index()
-        # Query the json and make a table from it
-        # make an index like the one on hijack
-        # do sql queries in word doc for policy4
-
+        self.run_rov_policy()
+        self.run_time_policy()
 
         # Delete table
         # delete csv and gz files
-
-
-
-#        self.run_simple_time_heuristic()
-#        self.run_enforce_invalid_asn_only()
-#        self.run_enforce_invalid_length_only()
-#        self.run_enfore_invalid()
-#        self.run_pass_if_no_alternative()
-#        self.run_pass_if_no_alternative_including_superprefixes()
 
     @error_catcher()
     def _format_asn_dict(self, asn):
@@ -167,6 +156,9 @@ class What_if_Analysis:
 
         For more in depth explanation, read README"""
 
+        pass
+        # I have the sql version of this code somewhere, it is a simple join
+
         return rows, csv_path, table
 
     @error_catcher()
@@ -177,149 +169,10 @@ class What_if_Analysis:
         For more in depth explanation, read README"""
 
         db = Database()
-        # Gets list of all asns from hijack blocked invalid asns
-        sql = """CREATE TABLE invalid_asn_hijacked_blocked
-                 AS SELECT exr2.asn FROM validity v, hijack h,
-                 extrapolation_results2 exr2
-                 WHERE v.validity = -2 AND
-                 h.more_specific_prefix = v.prefix AND
-                 h.more_specific_prefix = exr2.prefix AND
-                 h.detected_origin_number = v.asn AND
-                 h.detected_origin_number = exr2.origin;"""
-        db.cursor.execute(sql)
-        # Reformats the table
-        sql = """CREATE TABLE invalid_asn_hijacked_blocked_final
-                 AS SELECT hbd.asn, count(*) AS total
-                 FROM invalid_asn_hijacked_blocked hb LEFT JOIN (
-                 SELECT DISTINCT * FROM invalid_asn_hijacked_blocked) hbd
-                 ON hbd.asn = hb.asn GROUP BY hbd.asn;"""
-        self.cursor.execute(sql)
-        # Drops the old table
-        sql = """DROP TABLE invalid_asn_hijacked_blocked;"""
-        db.cursor.execute(sql)
+        # Rn we just copy paste the sql query int eh database, later we will refactor it here
+        # This whole thing is just a sql query
 
-        # Gets the hijacked and not blocked
 
-        # Gets all the asns that are hijacked and blocked with invalid asn
-        sql = """CREATE TABLE invalid_asn_hijacked_not_blocked
-                 AS SELECT exr2.asn FROM validity v, hijack h,
-                 extrapolation_results2 exr2
-                 WHERE h.more_specific_prefix = v.prefix AND
-                 h.more_specific_prefix = exr2.prefix AND
-                 h.detected_origin_number = v.asn AND
-                 h.detected_origin_number = exr2.origin AND v.validity >= 0;"""
-        db.cursor.execute(sql)
-        # Gets the count of each asn
-        sql = """CREATE TABLE invalid_asn_hijacked_not_blocked_final
-                 AS SELECT hnbd.asn, count(*) AS total
-                 FROM invalid_asn_hijacked_not_blocked  hnb LEFT JOIN (
-                 SELECT DISTINCT * FROM invalid_asn_hijacked_not_blocked) hnbd
-                 ON hnbd.asn = hnb.asn GROUP BY hnbd.asn;"""
-        db.cursor.execute(sql)
-        # Drops the old table
-        sql = "DROP TABLE invalid_asn_hijacked_not_blocked;"
-        self.cursor.execute(sql)
-
-        # Gets the not hijacked and not blocked
-        
-        # Gets a list of all the asns hijacked and blocked
-        sql = """CREATE TABLE invalid_asn_not_hijacked_blocked
-                 AS SELECT exr2.asn FROM validity v, hijack h,
-                 extrapolation_results2 exr2
-                 WHERE v.validity = -2 AND
-                 h.detected_origin_number != v.asn AND
-                 v.prefix = exr2.prefix AND
-                 v.asn = exr2.origin;"""
-        db.cursor.execute(sql)
-        # Gets the count of al the asns in the previous list
-        sql = """CREATE TABLE invalid_asn_not_hijacked_blocked_final
-                 AS SELECT nhbd.asn, count(*) AS total
-                 FROM invalid_asn_not_hijacked_blocked nhb LEFT JOIN (
-                 SELECT DISTINCT * FROM invalid_asn_not_hijacked_blocked) nhbd
-                 ON nhbd.asn = nhb.asn GROUP BY nhbd.asn;"""
-        db.cursor.execute(sql)
-        # Drops the old table
-        db.cursor.execute("DROP TABLE  invalid_asn_not_hijacked_blocked;")
-
-        # Gets the not hijacked and not blocked table
-        
-        # Gets the list of asns not hijacked and blocked
-        #TODO: can optimize based on subtraction of other tables
-        sql = """CREATE TABLE invalid_asn_not_hijacked_not_blocked
-                 AS SELECT exr2.asn FROM validity v, hijack h,
-                 extrapolation_results2 exr2
-                 WHERE v.validity >= 0 AND
-                 v.prefix = exr2.prefix AND
-                 v.asn = exr2.origin AND
-                 h.detected_origin_number != v.asn AND
-                 h.more_specific_prefix != v.prefix;"""
-        db.cursor.execute(sql)
-        # Gets the count of all the asns for this table
-        sql = """CREATE TABLE invalid_asn_not_hijacked_not_blocked_final
-                 AS SELECT nhnbd.asn, count(*) AS total
-                 FROM invalid_asn_not_hijacked_not_blocked nhnb LEFT JOIN (
-                 SELECT DISTINCT * FROM
-                 invalid_asn_not_hijacked_not_blocked) nhnbd
-                 ON nhnbd.asn = nhnb.asn GROUP BY nhnbd.asn;"""
-        db.cursor.execute(sql)
-        # Drops old table
-        db.cursor.execute("invalid_asn_not_hijacked_not_blocked;")
-
-        # Combines all of the tables into the website table data
-        sql = """CREATE TABLE policy_2 AS SELECT 
-                 v.asn as asn, hb.total AS hijack_blocked,
-                 hnb.total AS hijack_not_blocked,
-                 nhb.total AS not_hijacked_blocked,
-                 nhnb.total as not_hijacked_not_blocked,
-                 urls.url_list
-                 FROM invalid_asn_hijacked_blocked_final hb,
-                 invalid_asn_hijacked_not_blocked_final hnb,
-                 invalid_asn_not_hijack_blocked nhb,
-                 invalid_asn_not_hijack_not_blocked nhnb,
-                 validity v,
-                    (SELECT ARRAY(SELECT url FROM hijack h
-                    WHERE h.detected_origin_number = v.asn)
-                AS url_list) urls WHERE 
-                nhnb.asn = v.asn OR
-                nhb.asn = v.asn OR
-                hnb.asn = v.asn OR
-                hb.asn = v.asn;"""
-        
-    @error_catcher()
-    @run_policy()
-    def run_enforce_invalid_length_only(self):
-        """Makes policy decision based on validity of length
-
-        For more in depth explanation, read README"""
-        return
-        return rows, csv_path, table
-
-    @error_catcher()
-    @run_policy()
-    def run_enfore_invalid(self):
-        """Makes policy decision based on validity of length or asn
-
-        For more in depth explanation, read README"""
-        return
-        return rows, csv_path, table
-
-    @error_catcher()
-    @run_policy()
-    def run_pass_if_no_alternative(self):
-        """Allows announcement only if no alternative exists
-
-        For more in depth explanation, read README"""
-        return
-        return rows, csv_path, table
-
-    @error_catcher()
-    @run_policy()
-    def run_pass_if_no_alternative_including_superprefixes(self):
-        """Allows anouncement if no alternative/superprefix exists
-
-        For more in depth explanation, read README"""
-        return
-        return rows, csv_path, table
 
 ########################
 ### Helper Functions ###

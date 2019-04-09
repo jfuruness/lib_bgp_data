@@ -5,6 +5,7 @@
 
 import psycopg2
 from psycopg2.extras import RealDictCursor
+from contextlib import contextmanager
 from .config import Config
 from .logger import error_catcher
 
@@ -16,6 +17,12 @@ __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
+
+@contextmanager
+def db_connection(table, self.logger):
+    t = table(self.logger)
+    yield t
+    t.close()
 
 class Database:
     """Interact with the database"""
