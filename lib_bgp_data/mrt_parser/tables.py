@@ -53,10 +53,9 @@ class Announcements_Table(Database):
         """Creates an index"""
 
         self.logger.info("Creating index")
-#        sql = """CREATE INDEX IF NOT EXISTS mrt_announcements_index
-#                 ON mrt_announcements USING GIST (prefix inet_ops);"""
-#        self.cursor.execute(sql)
-        self.logger.info("jk we didn't do this... maybe reimpliment later?""")
+        sql = """CREATE INDEX IF NOT EXISTS mrt_announcements_index
+                 ON mrt_announcements USING GIST (prefix inet_ops);"""
+        self.cursor.execute(sql)
         self.logger.info("Index created")
 
     @property

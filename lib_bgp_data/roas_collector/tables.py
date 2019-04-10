@@ -33,18 +33,17 @@ class ROAs_Table(Database):
         """ Creates tables if they do not exist"""
 
         if self.test is False:
-            sql = """CREATE TABLE IF NOT EXISTS roas (
-                  roas_id serial PRIMARY KEY,
+            sql = """CREATE UNLOGGED TABLE IF NOT EXISTS roas (
                   asn bigint,
                   prefix inet,
                   max_length integer
                   );"""
         else:
-            sql = """CREATE TABLE IF NOT EXISTS test_roas (
+            sql = """CREATE UNLOGGED TABLE IF NOT EXISTS test_roas (
               test_roas_id serial PRIMARY KEY,
               random_num int
               );"""
-        self.cursor.execute(sql)
+        elf.cursor.execute(sql)
 
     @error_catcher()
     def _clear_table(self):
@@ -53,6 +52,18 @@ class ROAs_Table(Database):
         self.logger.info("Clearing Roas")
         self.cursor.execute("DELETE FROM roas")
         self.logger.info("ROAs Table Cleared")
+
+    @error_catcher()
+    def create_index(self):
+        """Creates a bunch of indexes to be used on the table"""
+
+        self.logger.info("Creating index on roas")
+        sqls = ["""CREATE INDEX roas_index IF NOT EXISTS
+                 USING GIST(prefix inet_ops)""",
+               """CREATE INDEX roas_po_index IF NOT EXISTS
+                 USING GIST(prefix inet_ops, max_length)"""]
+        for sql in sqls:
+            self.cursor.execute(sql)
 
     @property
     def name(self):

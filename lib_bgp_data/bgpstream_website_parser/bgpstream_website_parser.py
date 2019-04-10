@@ -52,7 +52,7 @@ class BGPStream_Website_Parser:
 
     @error_catcher()
     @utils.run_parser()
-    def parse(self, row_limit=None, db=True,
+    def parse(self, start, end, row_limit=None, db=True,
               data_types=[Event_Types.HIJACK.value]):
         """Parses rows in the bgpstream website
 
@@ -75,6 +75,8 @@ class BGPStream_Website_Parser:
 
         # Writes to csvs and dbs
         [self.data[x].db_insert() for x in data_types]
+        [self.data[x].create_indexes() for x in data_types]
+        [self.data[x].create_temp_table(start, end) for x in data_types]
 
     @error_catcher()
     def _parse_row(self, row, num, total):

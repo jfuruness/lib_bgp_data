@@ -23,15 +23,15 @@ get_hijack_temp_sql = [
             (%s, %s)
         );
      """,
-     """CREATE INDEX CONCURRENTLY ON hijack_temp USING GIST (prefix inet_ops, origin);""",
-     """CREATE INDEX CONCURRENTLY ON hijack_temp USING GIST (prefix inet_ops);"""
+     """CREATE INDEX ON hijack_temp USING GIST (prefix inet_ops, origin);""",
+     """CREATE INDEX ON hijack_temp USING GIST (prefix inet_ops);"""
     ]
 get_total_announcements_sql = [
     """CREATE UNLOGGED TABLE total_announcements AS
            (SELECT exr.asn, count(exr.asn) AS total FROM extrapolation_results exr
             GROUP BY exr.asn);
     """,
-    """CREATE INDEX CONCURRENTLY ON total_announcements USING asn;"""
+    """CREATE INDEX ON total_announcements USING asn;"""
     ]
 run_after_extrapolator_sql = get_hijack_temp_sql + get_total_announcements_sql
 
@@ -48,9 +48,7 @@ validity_parallel_split = [
     """CREATE UNLOGGED TABLE invalid_length AS
            (SELECT v.prefix, v.asn AS origin FROM validity v
            WHERE v.validity = -1);
-    """,
-    
-    
+    """, 
     """CREATE INDEX CONCURRENTLY ON unblocked USING GIST(prefix inet_ops, origin);""",
     """CREATE INDEX CONCURRENTLY ON unblocked USING GIST(prefix inet_ops);""",
     """CREATE INDEX CONCURRENTLY ON invalid_asn USING GIST(prefix inet_ops, origin);""",

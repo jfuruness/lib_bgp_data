@@ -33,7 +33,6 @@ class Unique_Prefix_Origins_Table(Database):
     def _create_tables(self):
         """ Creates tables if they do not exist"""
 
-#        return None###########################################################
         if self.test is False:
             sql = """DROP TABLE IF EXISTS unique_prefix_origins;"""
         self.cursor.execute(sql)
@@ -43,8 +42,7 @@ class Unique_Prefix_Origins_Table(Database):
         """Gets all unique Prefix Origins and stores them in a table"""
 
         sql = """CREATE TABLE unique_prefix_origins AS
-                 SELECT DISTINCT as_path[array_upper(as_path, 1)]
-                 as origin_as, prefix, 100 as placeholder 
+                 SELECT DISTINCT origin, prefix, 100 as placeholder 
                  FROM mrt_announcements ORDER BY prefix ASC;"""
         self.cursor.execute(sql)
 
@@ -138,3 +136,35 @@ class Validity_Table(Database):
         """Returns the columns of the table"""
 
         return ['asn', 'prefix', 'validity']
+
+    def split_table(self):
+        """Splits the table into three based on validity"""
+
+        sqls = ["DROP TABLE IF EXISTS unblocked",
+                "DROP TABLE IF EXISTS invalid_length",
+                "DROP TABLE IF EXISTS invalid_asn"]
+        for sql in sqls:
+            self.cursor.execute(sql)
+        # Yes I know we could do this all in parallel, but there
+        # really is no need since this is fast
+        sqls = ["""CREATE UNLOGGED TABLE unblocked AS
+                (SELECT v.prefix, v.asn AS origin FROM validity v
+                WHERE v.validity >= 0);
+                """,
+                """CREATE UNLOGGED TABLE invalid_asn AS
+                (SELECT v.prefix, v.asn AS origin FROM validity v
+                WHERE v.validity = -2);
+                """,
+                """CREATE UNLOGGED TABLE invalid_length AS
+                (SELECT v.prefix, v.asn AS origin FROM validity v
+                WHERE v.validity = -1);
+                """,
+                """CREATE INDEX CONCURRENTLY ON unblocked USING GIST(prefix inet_ops, origin);""",
+                """CREATE INDEX CONCURRENTLY ON unblocked USING GIST(prefix inet_ops);""",
+                """CREATE INDEX CONCURRENTLY ON invalid_asn USING GIST(prefix inet_ops, origin);""",
+                """CREATE INDEX CONCURRENTLY ON invalid_asn USING GIST(prefix inet_ops);""",
+                """CREATE INDEX CONCURRENTLY ON invalid_length USING GIST(prefix inet_ops, origin);""",
+                """CREATE INDEX CONCURRENTLY ON invalid_length USING GIST(prefix inet_ops);""",
+                ]
+        for sql in sqls:
+            self.cursor.execute(sql)

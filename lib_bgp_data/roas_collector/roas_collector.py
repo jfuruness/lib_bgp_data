@@ -41,6 +41,8 @@ class ROAs_Collector:
 
         roas = self._format_roas(self._get_json_roas())
         utils.rows_to_db(self.logger, roas, self.csv_path, ROAs_Table)
+        with db_connection(ROAs_Table, self.logger) as roas_table:
+            roas_table.create_index()
 
 ########################
 ### Helper Functions ###

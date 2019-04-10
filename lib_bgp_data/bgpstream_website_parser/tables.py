@@ -31,36 +31,46 @@ class Hijack_Table(Database):
     def _create_tables(self):
         """ Creates tables if they do not exist"""
 
-        if self.test is False:
-            sql = """CREATE TABLE IF NOT EXISTS hijack (
-                  hijack_id serial PRIMARY KEY,
-                  country varchar (50),
-                  detected_as_path bigint ARRAY,
-                  detected_by_bgpmon_peers integer,
-                  detected_origin_name varchar (200),
-                  detected_origin_number bigint,
-                  start_time timestamp,
-                  end_time timestamp,
-                  event_number integer,
-                  event_type varchar (50),
-                  expected_origin_name varchar (200),
-                  expected_origin_number bigint,
-                  expected_prefix cidr,
-                  more_specific_prefix cidr,
-                  url varchar (250)
-                  );"""
-        else:
-            sql = """CREATE TABLE IF NOT EXISTS test_hijack (
-              test_hijack_id serial PRIMARY KEY,
-              random_num int
+        sql = """CREATE UNLOGGED TABLE IF NOT EXISTS hijack (
+              hijack_id serial PRIMARY KEY,
+              country varchar (50),
+              detected_as_path bigint ARRAY,
+              detected_by_bgpmon_peers integer,
+              detected_origin_name varchar (200),
+              detected_origin_number bigint,
+              start_time timestamp,
+              end_time timestamp,
+              event_number integer,
+              event_type varchar (50),
+              expected_origin_name varchar (200),
+              expected_origin_number bigint,
+              expected_prefix cidr,
+              more_specific_prefix cidr,
+              url varchar (250)
               );"""
         self.cursor.execute(sql)
 
     @error_catcher()
     def create_index(self):
-        sql = """CREATE INDEX IF NOT EXISTS hijack_index ON hijack
-                 USING GIST(more_specific_prefix inet_ops, detected_origin_number)"""
+        sql1 = """CREATE INDEX IF NOT EXISTS hijack_index ON hijack
+                  USING (start_time, end_time)"""
         self.cursor.execute(sql)
+
+    @error_catcher()
+    def create_temp_table(self, start, end):
+        sql = """CREATE UNLOGGED TABLE hijack_temp AS
+        (SELECT h.more_specific_prefix AS prefix, h.detected_origin_number AS origin, h.url
+        FROM hijack h
+        WHERE
+            (h.start_time, COALESCE(h.end_time, now()::timestamp)) OVERLAPS
+            (%s, %s)
+        );
+     """
+        self.cursor.execute(sql, [start, end])
+     sqls = ["""CREATE INDEX CONCURRENTLY ON hijack_temp USING GIST (prefix inet_ops, origin);""",
+     """CREATE INDEX CONCURRENTLY ON hijack_temp USING GIST (prefix inet_ops);"""]
+        for sql in sqls:
+            self.cursor.execute(sql)
 
     @error_catcher()
     def delete_duplicates(self):
@@ -115,30 +125,24 @@ class Leak_Table(Database):
     def _create_tables(self):
         """Creates tables if they do not exist"""
 
-        if self.test is False:
-            sql = """CREATE TABLE IF NOT EXISTS Leak (
-                  leak_id serial PRIMARY KEY,
-                  country varchar (50),
-                  detected_by_bgpmon_peers integer,
-                  start_time timestamp,
-                  end_time timestamp,
-                  event_number integer,
-                  event_type varchar (50),
-                  example_as_path bigint ARRAY,
-                  leaked_prefix cidr,
-                  leaked_to_name varchar (200) ARRAY,
-                  leaked_to_number bigint ARRAY,
-                  leaker_as_name varchar (200),
-                  leaker_as_number bigint,
-                  origin_as_name varchar (200),
-                  origin_as_number bigint,
-                  url varchar (250)
-                  );"""
-        else:
-            sql = """CREATE TABLE IF NOT EXISTS test_leak (
-                  test_leak_id serial PRIMARY KEY,
-                  random_num int
-                  );"""
+        sql = """CREATE UNLOGGED TABLE IF NOT EXISTS Leak (
+              leak_id serial PRIMARY KEY,
+              country varchar (50),
+              detected_by_bgpmon_peers integer,
+              start_time timestamp,
+              end_time timestamp,
+              event_number integer,
+              event_type varchar (50),
+              example_as_path bigint ARRAY,
+              leaked_prefix cidr,
+              leaked_to_name varchar (200) ARRAY,
+              leaked_to_number bigint ARRAY,
+              leaker_as_name varchar (200),
+              leaker_as_number bigint,
+              origin_as_name varchar (200),
+              origin_as_number bigint,
+              url varchar (250)
+              );"""
         self.cursor.execute(sql)
 
     @error_catcher()
@@ -193,25 +197,19 @@ class Outage_Table(Database):
     def _create_tables(self):
         """Creates tables if they do not exist"""
 
-        if self.test is False:
-            sql = """CREATE TABLE IF NOT EXISTS outage (
-                  outage_id serial PRIMARY KEY,
-                  as_name varchar (200),
-                  as_number bigint,
-                  country varchar (25),
-                  start_time timestamp,
-                  end_time timestamp,
-                  event_number integer,
-                  event_type varchar (25),
-                  number_prefixes_affected integer,
-                  percent_prefixes_affected smallint,
-                  url varchar(150)
-                  );"""
-        else:
-            sql = """CREATE TABLE IF NOT EXISTS test_outage (
-                  test_leak_id serial PRIMARY KEY,
-                  random_num int
-                  );"""
+        sql = """CREATE UNLOGGED TABLE IF NOT EXISTS outage (
+              outage_id serial PRIMARY KEY,
+              as_name varchar (200),
+              as_number bigint,
+              country varchar (25),
+              start_time timestamp,
+              end_time timestamp,
+              event_number integer,
+              event_type varchar (25),
+              number_prefixes_affected integer,
+              percent_prefixes_affected smallint,
+              url varchar(150)
+              );"""
         self.cursor.execute(sql)
 
     @error_catcher()

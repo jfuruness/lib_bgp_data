@@ -189,3 +189,10 @@ class MRT_Parser:
         data = requests.get(url=self.url, params=PARAMS).json()
         # Returns the urls
         return [x.get('url') for x in data.get('data').get('dumpFiles')]
+
+    @error_catcher()
+    def create_index(self):
+        """Creates an index on the prefix"""
+
+        with db_connection(Announcements_Table, self.logger) as ann_table:
+            ann_table.create_index()

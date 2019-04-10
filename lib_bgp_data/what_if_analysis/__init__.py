@@ -4,6 +4,7 @@
 """This package runs policies on announcements and stores them in a table"""
 
 from .what_if_analysis import What_if_Analysis
+from .RPKI_Validator import RPKI_Validator
 
 __author__ = "Justin Furuness"
 __credits__ = ["Justin Furuness"]

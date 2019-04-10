@@ -36,16 +36,10 @@ class Customer_Providers_Table(Database):
         """ Creates tables if they do not exist"""
 
         if self.test is False:
-            sql = """CREATE TABLE IF NOT EXISTS customer_providers (
-                  customer_providers_id serial PRIMARY KEY,
+            sql = """CREATE UNLOGGED TABLE IF NOT EXISTS customer_providers (
                   provider_as bigint,
                   customer_as bigint
                   );"""
-        else:
-            sql = """CREATE TABLE IF NOT EXISTS test_customer_providers (
-              test_customer_providers_id serial PRIMARY KEY,
-              random_num int
-              );"""
         self.cursor.execute(sql)
 
     @error_catcher()
@@ -79,6 +73,16 @@ class Customer_Providers_Table(Database):
 
         return "customer_providers"
 
+    def create_index(self):
+        """Creates index on customer providers"""
+
+        sqls = ["""CREATE INDEX IF NOT EXISTS customer_providers_index_provider
+                  USING provider_as""",
+                """CREATE INDEX IF NOT EXISTS customer_providers_index_customer
+                  USING customer_as"""]
+        for sql in sqls:
+            self.cursor.execute(sql)
+
 
 class Peers_Table(Database):
     """Peers Table class, inherits from Database"""
@@ -95,16 +99,10 @@ class Peers_Table(Database):
         """ Creates tables if they do not exist"""
 
         if self.test is False:
-            sql = """CREATE TABLE IF NOT EXISTS peers (
-                  peers_id serial PRIMARY KEY,
+            sql = """CREATE UNLOGGED TABLE IF NOT EXISTS peers (
                   peer_as_1 bigint,
                   peer_as_2 bigint
                   );"""
-        else:
-            sql = """CREATE TABLE IF NOT EXISTS test_peers (
-              test_peers_id serial PRIMARY KEY,
-              random_num int
-              );"""
         self.cursor.execute(sql)
 
     @error_catcher()
@@ -137,3 +135,13 @@ class Peers_Table(Database):
         """Returns the table name"""
 
         return "peers"
+
+    def create_index(self):
+        """Creates indexes on the peers table"""
+
+        sqls = ["""CREATE INDEX IF NOT EXISTS peers_1_index
+                    USING peer_as_1""",
+                """CREATE INDEX IF NOT EXISTS peers_1_index
+                    USING peer_as_2"""]
+        for sql in sqls:
+            self.cursor.execute(sql)

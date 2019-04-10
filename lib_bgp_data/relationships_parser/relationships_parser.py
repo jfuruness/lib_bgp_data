@@ -61,6 +61,7 @@ class Relationships_Parser:
             AS_2_File(self.logger, self.path, self.csv_dir, url
                 ).parse_file(db)
             self.config.update_last_date(int_date)
+            self.create_indexes()
         else:
             self.logger.info("old file, not parsing")
 
@@ -78,3 +79,11 @@ class Relationships_Parser:
         url = [x["href"] for x in elements if "bz2" in x["href"]][-1]
         # Returns the url and the date for the url
         return url, max(map(int, re.findall('\d+', url)))
+
+    @error_catcher()
+    def create_indexes(self):
+        """Creates indexes on the table"""
+        
+        for Table in [Customer_Providers_Table, Peers_Table]:
+            with db_connection(Table, self.logger) as table:
+                table.create_index()

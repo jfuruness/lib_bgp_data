@@ -73,7 +73,7 @@ class RPKI_Validator:
         validator_file, total_rows = self._write_validator_file()
         rpki_path = ("/validator/dev/"
                      "rpki-validator-3.0-DEV20180902182639/"
-                     "irpki-validator-3.sh")
+                     "rpki-validator-3.sh")
         # This runs the rpki validator
         with _run_rpki_validator(self, validator_file, rpki_path):
             # First we wait for the validator to load the data
@@ -84,6 +84,8 @@ class RPKI_Validator:
                              "{}/validity.csv".format(self.csv_dir),  #  CSV 
                              Validity_Table)
         utils.delete_paths(validator_file, "/tmp/validator.csv")
+        with db_connection(Validity_Table, self.logger) as v_table:
+            v_table.split_table()
 
 ########################
 ### Helper Functions ###
@@ -107,7 +109,7 @@ class RPKI_Validator:
             table.fill_table()
             rpki_path = ("/validator/dev/"
                          "rpki-validator-3.0-DEV20180902182639/"
-                         "irpki-validator-3.sh")
+                         "rpki-validator-3.sh")
             # This writes the validator file that the rpki validator will use
             # And returns the file path and the total rows of the file
             return unique_p_o.write_validator_file(path=path)

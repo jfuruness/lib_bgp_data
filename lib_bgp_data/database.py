@@ -19,8 +19,8 @@ __status__ = "Development"
 
 
 @contextmanager
-def db_connection(table, self.logger):
-    t = table(self.logger)
+def db_connection(table, logger):
+    t = table(logger)
     yield t
     t.close()
 

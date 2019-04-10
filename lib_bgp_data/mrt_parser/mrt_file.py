@@ -3,8 +3,8 @@
 
 """This module contains class MRT_File
 The MRT File Class allows for the downloading, unzipping, and database
-storage of MRT files and data. After each step the unnessecary files are
-deleted.
+storage of MRT files and data. After each step the unnessecary files
+are deleted.
 """
 
 import time
