@@ -1,0 +1,19 @@
+Returns a CSV file of the extrapolation results for the given ASN
+This is using yml doc for specifications.
+---
+parameters:
+  - name: asn
+    in: path
+    description: AS Number
+    type: string
+    required: true
+definitions:
+  ExtrapolationResults:
+    type: file
+responses:
+  200:
+    description: A CSV file of the extrapolation results for the given ASN
+    content:
+      application/csv:
+        schema:
+          type: file
