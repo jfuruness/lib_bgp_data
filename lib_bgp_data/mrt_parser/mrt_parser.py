@@ -38,6 +38,8 @@ from .logger import Logger
 from ..logger import error_catcher
 from .tables import Announcements_Table
 from .. import utils
+from ..utils import Pool
+from ..database import db_connection
 
 __author__ = "Justin Furuness"
 __credits__ = ["Justin Furuness", "Cameron Morris"]
@@ -46,16 +48,6 @@ __Version__ = "0.1.0"
 __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
-
-@contextmanager
-def Pool(logger, threads, multiplier, name):
-    """Context manager for pathos ProcessingPool"""
-
-    # Creates a pool with threads else cpu_count * multiplier
-    p = ProcessingPool(threads if threads else cpu_count() * multiplier)
-    logger.info("Created {} pool".format(name))
-    yield p
-    (p.close(), p.join())
 
 
 class MRT_Parser:
@@ -75,7 +67,7 @@ class MRT_Parser:
         # URLs fom the caida websites to pull data from
         self.url = 'https://bgpstream.caida.org/broker/data'
         self.logger = Logger(args.get("stream_level"))
-        with db_connection(Announcements_Table, self.logger) as ann_table
+        with db_connection(Announcements_Table, self.logger) as ann_table:
             ann_table.clear_table()
             # Need this here so multithreading doesn't try this later
             ann_table._create_tables()
@@ -106,7 +98,7 @@ class MRT_Parser:
         self._multiprocess_parse_dls(parse_threads, mrt_files, IPV4, IPV6, db)
         with db_connection(Announcements_Table, self.logger) as ann_table:
             ann_table.create_index()
-            ann_table.vacuum()
+#            ann_table.vacuum()
         
 
 ########################

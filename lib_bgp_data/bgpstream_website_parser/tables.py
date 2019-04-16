@@ -64,11 +64,11 @@ class Hijack_Table(Database):
         WHERE
             (h.start_time, COALESCE(h.end_time, now()::timestamp)) OVERLAPS
             (%s, %s)
-        );
+        ) TABLESPACE RAM;
      """
         self.cursor.execute(sql, [start, end])
-     sqls = ["""CREATE INDEX CONCURRENTLY ON hijack_temp USING GIST (prefix inet_ops, origin);""",
-     """CREATE INDEX CONCURRENTLY ON hijack_temp USING GIST (prefix inet_ops);"""]
+        sqls = ["""CREATE INDEX CONCURRENTLY ON hijack_temp USING GIST (prefix inet_ops, origin);""",
+            """CREATE INDEX CONCURRENTLY ON hijack_temp USING GIST (prefix inet_ops);"""]
         for sql in sqls:
             self.cursor.execute(sql)
 

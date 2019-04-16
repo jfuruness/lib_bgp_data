@@ -16,8 +16,11 @@ import gzip
 import json
 from bz2 import BZ2Decompressor
 from bs4 import BeautifulSoup as Soup
+from pathos.multiprocessing import ProcessingPool
+from contextlib import contextmanager 
 from .logger import Logger
 from .config import Config
+from .database import db_connection
 
 __author__ = "Justin Furuness"
 __credits__ = ["Justin Furuness"]
@@ -54,6 +57,16 @@ def run_parser():
                 end_parser(self.logger, self.all_files, start_time)
         return function_that_runs_func
     return my_decorator
+
+@contextmanager
+def Pool(logger, threads, multiplier, name):
+    """Context manager for pathos ProcessingPool"""
+
+    # Creates a pool with threads else cpu_count * multiplier
+    p = ProcessingPool(threads if threads else cpu_count() * multiplier)
+    logger.info("Created {} pool".format(name))
+    yield p
+    (p.close(), p.join())
 
 def now():
     """Returns current time"""

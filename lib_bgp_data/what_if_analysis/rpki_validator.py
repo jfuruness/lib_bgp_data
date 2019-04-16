@@ -19,6 +19,7 @@ from ..logger import Logger, error_catcher
 from .. import utils
 from .tables import Unique_Prefix_Origins_Table, Validity_Table
 from ..database import Database
+from ..database import db_connection
 
 __author__ = "Justin Furuness", "Cameron Morris"
 __credits__ = ["Justin Furuness", "Cameron Morris"]
@@ -66,11 +67,11 @@ class RPKI_Validator:
 
     @error_catcher()
     @utils.run_parser()
-    def run_validator(self):
+    def run_validator(self, mrt_w_roas_t):
         """Downloads and stores roas from a json"""
 
         # Writes the file that the validator uses for validation
-        validator_file, total_rows = self._write_validator_file()
+        validator_file, total_rows = self._write_validator_file(mrt_w_roas_t)
         rpki_path = ("/validator/dev/"
                      "rpki-validator-3.0-DEV20180902182639/"
                      "rpki-validator-3.sh")
@@ -92,7 +93,7 @@ class RPKI_Validator:
 ########################
 
     @error_catcher()
-    def _write_validator_file(self, path="/tmp/validator.csv"):
+    def _write_validator_file(self, mrt_w_roas_t, path="/tmp/validator.csv"):
         """Writes validator file
 
         This function write the validator file by taking the mrt announcements
@@ -106,7 +107,7 @@ class RPKI_Validator:
             # Gets the unique prefix origins from the mrt announcements
             # And write them to a table with the default placeholder of 100
             # For easy integration with rpki validator
-            table.fill_table()
+            table.fill_table(mrt_w_roas_t)
             rpki_path = ("/validator/dev/"
                          "rpki-validator-3.0-DEV20180902182639/"
                          "rpki-validator-3.sh")

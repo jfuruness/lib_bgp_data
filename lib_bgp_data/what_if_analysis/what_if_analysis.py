@@ -73,7 +73,7 @@ def _run_rpki_validator(self, file_path, rpki_path):
 #TODO Add to docs valid=1, unknown=0, invalid=-1
 
 
-class What_if_Analysis:
+class What_If_Analysis:
     """This class runs all the policies on the mrt_announcements table""" 
 
     __slots__ = ['path', 'csv_dir', 'args', 'logger', 'csv_path', 'all_files']

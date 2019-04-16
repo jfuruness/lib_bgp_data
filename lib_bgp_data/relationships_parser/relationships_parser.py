@@ -22,6 +22,7 @@ from ..logger import Logger, error_catcher
 from .tables import Customer_Providers_Table, Peers_Table
 from ..config import Config
 from .. import utils
+from ..database import db_connection
 
 __author__ = "Justin Furuness"
 __credits__ = ["Justin Furuness"]

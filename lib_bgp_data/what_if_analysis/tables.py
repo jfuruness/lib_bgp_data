@@ -38,12 +38,13 @@ class Unique_Prefix_Origins_Table(Database):
         self.cursor.execute(sql)
 
     @error_catcher()
-    def fill_table(self):
+    def fill_table(self, table):
         """Gets all unique Prefix Origins and stores them in a table"""
 
+        self.cursor.execute("DROP TABLE unique_prefix_origins")
         sql = """CREATE TABLE unique_prefix_origins AS
                  SELECT DISTINCT origin, prefix, 100 as placeholder 
-                 FROM mrt_announcements ORDER BY prefix ASC;"""
+                 FROM {} ORDER BY prefix ASC;""".format(table)
         self.cursor.execute(sql)
 
     @error_catcher()
@@ -140,31 +141,82 @@ class Validity_Table(Database):
     def split_table(self):
         """Splits the table into three based on validity"""
 
-        sqls = ["DROP TABLE IF EXISTS unblocked",
-                "DROP TABLE IF EXISTS invalid_length",
-                "DROP TABLE IF EXISTS invalid_asn"]
+        sqls = ["DROP TABLE IF EXISTS unblocked_hijacked",
+                "DROP TABLE IF EXISTS unblocked_not_hijacked",
+                "DROP TABLE IF EXISTS invalid_length_hijacked",
+                "DROP TABLE IF EXISTS invalid_length_not_hijacked",
+                "DROP TABLE IF EXISTS invalid_asn_hijacked",
+                "DROP TABLE IF EXISTS invalid_asn_not_hijacked"]
         for sql in sqls:
             self.cursor.execute(sql)
         # Yes I know we could do this all in parallel, but there
         # really is no need since this is fast
-        sqls = ["""CREATE UNLOGGED TABLE unblocked AS
+        sqls = ["""CREATE UNLOGGED TABLE unblocked_not_hijacked AS
                 (SELECT v.prefix, v.asn AS origin FROM validity v
+                LEFT JOIN temp_hijack h
+                ON h.prefix = v.prefix AND h.origin = v.asn
+                WHERE v.validity >= 0 AND h.prefix IS NULL
+                AND h.origin IS NULL);
+                """,
+                """CREATE UNLOGGED TABLE unblocked_hijacked AS
+                (SELECT v.prefix, v.asn AS origin FROM validity v
+                LEFT JOIN temp_hijack h
+                ON h.prefix = v.prefix AND h.origin = v.asn
                 WHERE v.validity >= 0);
                 """,
-                """CREATE UNLOGGED TABLE invalid_asn AS
+                """CREATE UNLOGGED TABLE invalid_asn_not_hijacked AS
                 (SELECT v.prefix, v.asn AS origin FROM validity v
-                WHERE v.validity = -2);
+                LEFT JOIN temp_hijack h
+                ON h.prefix = v.prefix AND h.origin = v.asn
+                WHERE v.validity = -1 AND h.prefix IS NULL
+                AND h.origin IS NULL);
                 """,
-                """CREATE UNLOGGED TABLE invalid_length AS
+                """CREATE UNLOGGED TABLE invalid_asn_hijacked AS
                 (SELECT v.prefix, v.asn AS origin FROM validity v
+                LEFT JOIN temp_hijack h
+                ON h.prefix = v.prefix AND h.origin = v.asn
                 WHERE v.validity = -1);
                 """,
-                """CREATE INDEX CONCURRENTLY ON unblocked USING GIST(prefix inet_ops, origin);""",
-                """CREATE INDEX CONCURRENTLY ON unblocked USING GIST(prefix inet_ops);""",
-                """CREATE INDEX CONCURRENTLY ON invalid_asn USING GIST(prefix inet_ops, origin);""",
-                """CREATE INDEX CONCURRENTLY ON invalid_asn USING GIST(prefix inet_ops);""",
-                """CREATE INDEX CONCURRENTLY ON invalid_length USING GIST(prefix inet_ops, origin);""",
-                """CREATE INDEX CONCURRENTLY ON invalid_length USING GIST(prefix inet_ops);""",
+                """CREATE UNLOGGED TABLE invalid_length_not_hijacked AS
+                (SELECT v.prefix, v.asn AS origin FROM validity v
+                LEFT JOIN temp_hijack h
+                ON h.prefix = v.prefix AND h.origin = v.asn
+                WHERE v.validity = -2 AND h.prefix IS NULL
+                AND h.origin IS NULL);
+                """,
+                """CREATE UNLOGGED TABLE invalid_length_hijacked AS
+                (SELECT v.prefix, v.asn AS origin FROM validity v
+                LEFT JOIN temp_hijack h
+                ON h.prefix = v.prefix AND h.origin = v.asn
+                WHERE v.validity = -2);
+                """,
+                """CREATE INDEX ON unblocked_hijacked
+                USING GIST(prefix inet_ops, origin);""",
+                """CREATE INDEX ON unblocked_hijacked
+                USING GIST(prefix inet_ops);""",
+                """CREATE INDEX ON unblocked_not_hijacked
+                USING GIST(prefix inet_ops, origin);""",
+                """CREATE INDEX ON unblocked_not_hijacked
+                USING GIST(prefix inet_ops);""",
+
+
+                """CREATE INDEX ON invalid_asn_hijacked
+                USING GIST(prefix inet_ops, origin);""",
+                """CREATE INDEX ON invalid_asn_hijacked
+                USING GIST(prefix inet_ops);""",
+                """CREATE INDEX ON invalid_asn_not_hijacked
+                USING GIST(prefix inet_ops, origin);""",
+                """CREATE INDEX ON invalid_asn_not_hijacked
+                USING GIST(prefix inet_ops);""",
+
+                """CREATE INDEX ON invalid_length_hijacked
+                USING GIST(prefix inet_ops, origin);""",
+                """CREATE INDEX ON invalid_length_hijacked
+                USING GIST(prefix inet_ops);""",
+                """CREATE INDEX ON invalid_length_not_hijacked
+                USING GIST(prefix inet_ops, origin);""",
+                """CREATE INDEX ON invalid_length_not_hijacked
+                USING GIST(prefix inet_ops);"""
                 ]
         for sql in sqls:
             self.cursor.execute(sql)

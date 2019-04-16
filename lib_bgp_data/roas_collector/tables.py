@@ -37,7 +37,7 @@ class ROAs_Table(Database):
                   asn bigint,
                   prefix inet,
                   max_length integer
-                  );"""
+                  ) TABLESPACE RAM;"""
         else:
             sql = """CREATE UNLOGGED TABLE IF NOT EXISTS test_roas (
               test_roas_id serial PRIMARY KEY,
