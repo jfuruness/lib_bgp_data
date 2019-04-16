@@ -38,7 +38,7 @@ class Announcements_Table(Database):
                   prefix cidr,
                   as_path bigint ARRAY,
                   origin bigint
-                  );"""
+                  ) TABLESPACE ram;"""
         self.cursor.execute(sql)
 
     @error_catcher()

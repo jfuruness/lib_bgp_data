@@ -11,6 +11,7 @@ import csv
 from ..logger import Logger, error_catcher
 from .. import utils
 from .tables import ROAs_Table
+from ..database import db_connection
 
 __author__ = "Justin Furuness"
 __credits__ = ["Justin Furuness"]

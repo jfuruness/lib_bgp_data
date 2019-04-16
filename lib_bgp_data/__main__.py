@@ -8,12 +8,14 @@ The main function of this script, is to run all of these jobs in
 the proper order with the proper settings. This can be run as a chron
 job"""
 
+from multiprocessing import Process
 from .relationships_parser import Relationships_Parser
 from .roas_collector import ROAs_Collector
 from .bgpstream_website_parser import BGPStream_Website_Parser
 from .mrt_parser import MRT_Parser
 from .what_if_analysis import What_If_Analysis
-from .mrt_parser import Pool
+from .utils import Pool
+from . import utils
 
 __author__ = "Justin Furuness"
 __credits__ = ["Justin Furuness"]
@@ -23,7 +25,7 @@ __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
-class bgp_data_parser:
+class BGP_Data_Parser:
     """This class contains all the neccessary parsing functions"""
 
     def __init__(self,
@@ -31,77 +33,77 @@ class bgp_data_parser:
                  end=1553920677,
                  first_run=False,
                  mrt_parser_args={},
-                 mrt_parse_args=[],
                  relationships_parser_args={},
-                 relationship_parse_args=[]
                  roas_collector_args={},
-                 roas_collector_parse_args=[],
                  bgpstream_website_parser_args={},
-                 bgpstream_website_parse_args=[], 
                  What_If_Analysis_args={},
-                 what_if_analysis_parse_args=[],
                  rpki_validator_args={}):
         """Initializes vars such as log level etc
 
         kwargs dictionary includes <name_of_parser>_args"""
 
-        utils.set_common_init_args(self, args, "bgp data")
+        utils.set_common_init_args(self, {}, "bgp data")
         if first_run:
             self.initialize_everything()
-        # First we want to parse the mrt files. This will take up all
-        # threads and saturates the io, so we do this non multithreaded
+        # First we want to parse the mrt files and create the index
+        # We can do this in a separate process so that we can run other things
+        # This table gets created in ram
         mrt_parser = MRT_Parser(mrt_parser_args)
-        mrt_parser.parse_files(start, end)
-        
-        # After this we need an index on the prefix for this table for
-        # The extrapolator. We can run this in it's own process
-        # asynchronously for now
-        mrt_index_process = Process(target=mrt_parser.create_index)
-        mrt_index_process.start()
-        # While that index is being created, lets get the hijack data
+        mrt_process = Process(target=mrt_parser.parse_files, args=(start, end, ))
+        mrt_process.start()
+        # While that is going get the relationships data. We aren't going to run this
+        # multithreaded because it is so fast, there is no point
+        Relationships_Parser(relationships_parser_args).parse_files()
+        # While that is running lets get roas, its fast so no multiprocessing
+        # This table gets created in RAM
+        Roas_Collector(roas_collector_args).parse_roas()
+        # We will get the hijack data asynchronously because it will take a while
         website_parser = BGPStream_Website_Parser(
             bgpstream_website_parser_args)
         get_hijacks_process = Process(target=website_parser.parse, args=(start,end,))         
         get_hijacks_process.start()
-        # While we are getting the hijack data, lets get the roas too
-        roas_collector = Roas_Collector(roas_collector_args)
-        get_roas_process = Process(target=roas_collector.parse_roas)
-        get_roas_process.start()
-        # While that process is running, lets get the relationship data
-        rel_parser = Relationships_Parser(relationships_parser_args)
-        get_relationships_process = Process(target=rel_parser.parse_files)
-        get_relationships_process.start()
+        # Now we need to wait until the mrt parser finishes it's stuff
+        mrt_process.join()
+        # Now we are going to join these two tables, and move them out of memory
+        with db_connection(Announcements_Covered_By_Roas_Table,
+                           self.logger) as db:
+            # This function joins mrts and roas which are in ram
+            # Then moves the mrts out of ram
+            # Then moves the roas out of ram
+            # Then splits up the table and deletes unnessecary tables
+            db.join_mrt_roas()
+            tables = db.get_tables()
 
-        # At the same time as all of that is running/completing,
-        # We can start ripe
-        rpki_parser = RPKI_Validator(rpki_validator_args)
-        rpki_process = Process(target=rpki_process.run_validator)
-        rpki_process.start()
+        get_hijacks_process.join()
+        for table in tables:
+            # start extrapolator
+            # run the rpki validator concurrently
+            rpki_parser = RPKI_Validator(rpki_validator_args)
+            rpki_process = Process(target=rpki_parser.run_validator, args=(table, ))
+            rpki_process.start()
+            self.run_extrapolator()
+            rpki_process.join()
+            wia = What_If_Analysis(what_if_analysis_args)
+            wia.run_policies()
+            with db_connection(Database, self.logger) as db:
+                db.cursor.execute("DROP TABLE {}".format(table))
+                db.cursor.execute("DROP TABLE extrapolation_results;")
+        with db_connection(Database, self.logger) as db:
+            # CLEAN OUT DATABASE HERE!!!!!!!!
+            db.cursor.execute("VACUUM FULL;")
 
-        # The roas should have completed now, so join that process
-        get_roas_process.join()
-        # Hopefully our index will be done by now, so join that process
-        mrt_index_process.join()
-        #######
-        # join the mrt and roas table, and create index in same thread, make a main_tables.py file in this directory
-        # while the tables are joining, 
-        #   join hijack and validity things, create all validity intersect hijack tables, and create indexes
-        # join the relationships process
-        # join the mrt intersect roas process
-        # start extrapolator here
-        # join the hijack and validity process
-        # join the extrapolator process
-        # Get the announcement thing
-        # run the what if analysis, get announcement thing last (add column at the end)
 
-    def initialize_everything(self)
+    def initialize_everything(self):
         """Runs the data collection for all data within a period of time"""
 
         pass##############################TODO
 
         # Run initial setup - setup database
-        # Connect to database, make some tables
+        # Connect to database, make some tables, drop everything that is in there
         # Optimize database for performance
         # install all dependencies using pyenv and activate
         # parse relationships, bgpstream website, roas, mrt_files, index, vaccuum, extrapolator
         # delete unnessecary tables, vaccuum again
+
+if __name__ == "__main__":
+    bgp_data_parser()
