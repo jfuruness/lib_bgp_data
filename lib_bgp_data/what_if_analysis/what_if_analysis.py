@@ -91,63 +91,8 @@ class What_If_Analysis:
     def run_policies(self, db=True):
         """Downloads and stores roas from a json"""
 
-        unique_p_o = Unique_Prefix_Origins_Table(self.logger)
-        unique_p_o.fill_table()
-        rpki_path = "/justins_validator/dev/rpki-validator-3.0-DEV20180902182639/rpki-validator-3.sh"
-        new_path, total_rows = unique_p_o.write_validator_file(
-                                    path="/tmp/validator.csv")#.format(self.path))
-        new_path = "/tmp/validator.csv.gz"
-        total_rows = 900000
-        headers = {"Connection": "keep-alive","Cache-Control": "max-age=0", "Upgrade-Insecure-Requests": 1,"User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/73.0.3683.86 Safari/537.36", "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3", "Accept-Encoding": "gzip, deflate, br", "Accept-Language": "en-US,en;q=0.9"}
-        with _run_rpki_validator(self, new_path, rpki_path):
-            time.sleep(30)
-            while self._get_row_count(headers) < total_rows:
-                print(total_rows)
-                print(self._get_row_count(headers))
-                time.sleep(30)
-            # optimization for later make this total rows for the page size,
-            # 10 mil is just excessively large
-            url = "http://localhost:8080/api/bgp/?pageSize=10000000"
-            json_stuff = utils.get_json(url, headers)
-            
-            csv_rows = [
-                self._format_asn_dict(x) for x in json_stuff["data"]]
-            validity_csv_path = "{}/validity.csv".format(self.csv_dir)
-            utils.write_csv(self.logger,
-                            csv_rows,
-                            validity_csv_path,
-                            files_to_delete=new_path)
-        utils.csv_to_db(self.logger,
-                        Validity_Table(self.logger),
-                        validity_csv_path)
-        # This is misleading, this really drops the table
-#        unique_p_o._create_tables()# Do this in a separate process elsewher
-        unique_p_o.close()
-        validity_table = Validity_Table(self.logger)
-        validity_table.create_index()
         self.run_rov_policy()
         self.run_time_policy()
-
-        # Delete table
-        # delete csv and gz files
-
-    @error_catcher()
-    def _format_asn_dict(self, asn):
-        validity = {"VALID": 1,
-                    "UNKNOWN": 0,
-                    "INVALID_LENGTH": -1,
-                    "INVALID_ASN": -2}
-        return [int(asn["asn"][2:]), asn["prefix"], validity.get(asn["validity"])]
-
-    @error_catcher()
-    def _get_row_count(self, headers):
-        """Returns row count of json object for waiting"""
-
-        try:
-            return utils.get_json("http://localhost:8080/api/bgp/", headers)["metadata"]["totalCount"]
-        except Exception as e:
-            self.logger.warning("Problem with getting json: {}".format(e))
-            return 0
 
     @error_catcher()
     @run_policy()
@@ -160,33 +105,3 @@ class What_If_Analysis:
         # I have the sql version of this code somewhere, it is a simple join
 
         return rows, csv_path, table
-
-    @error_catcher()
-    @run_policy()
-    def run_enforce_invalid_asn_only(self):
-        """Makes policy decision based on validity of asn
-
-        For more in depth explanation, read README"""
-
-        db = Database()
-        # Rn we just copy paste the sql query int eh database, later we will refactor it here
-        # This whole thing is just a sql query
-
-
-
-########################
-### Helper Functions ###
-########################
-
-    def _serve_file(self, path):
-        class Handler(http.server.SimpleHTTPRequestHandler):
-            def __init__(self, *args, **kwargs):
-                super().__init__(*args, **kwargs)
-        os.chdir("/tmp/")
-        socketserver.TCPServer(("", 8000), Handler).serve_forever()
-
-    def _gzip_file(self, path):
-        """Gzips the validator.txt file"""
-
-        with open(path, 'rb') as f_in, gzip.open('{}.gz'.format(path), 'wb') as f_out:
-            f_out.writelines(f_in)

@@ -12,7 +12,7 @@ from multiprocess import Process
 import functools
 from contextlib import contextmanager
 import os
-from subprocess import Popen
+from subprocess import Popen, PIPE
 import time
 import urllib
 from ..logger import Logger, error_catcher
@@ -47,9 +47,16 @@ def _run_rpki_validator(self, file_path, rpki_path):
     # Serves the ripe file
     with _serve_file(self, file_path):
         # Subprocess
-        process = Popen([rpki_path])
+        self.logger.info("About to run rpki validator")
+        # Because the output of the rpki validator is garbage we omit it
+        process = Popen([rpki_path], stdout=PIPE, stderr=PIPE)
+#        stdout, stderr = process.communicate()
+#        self.logger.debug(stdout)
+#        self.logger.debug(stderr)
+        self.logger.info("Running rpki validator")
         yield 
         process.terminate()
+        self.logger.info("Closed rpki validator")
 
 
 class RPKI_Validator:
@@ -67,24 +74,24 @@ class RPKI_Validator:
 
     @error_catcher()
     @utils.run_parser()
-    def run_validator(self, mrt_w_roas_t):
+    def run_validator(self):
         """Downloads and stores roas from a json"""
 
         # Writes the file that the validator uses for validation
-        validator_file, total_rows = self._write_validator_file(mrt_w_roas_t)
+        validator_file, total_rows = self._write_validator_file()
         rpki_path = ("/validator/dev/"
                      "rpki-validator-3.0-DEV20180902182639/"
                      "rpki-validator-3.sh")
         # This runs the rpki validator
         with _run_rpki_validator(self, validator_file, rpki_path):
             # First we wait for the validator to load the data
-            self.wait_for_validator_load()
+            self._wait_for_validator_load(total_rows)
             # Writes validator to database
             utils.rows_to_db(self.logger,
                              self._get_ripe_data(),
                              "{}/validity.csv".format(self.csv_dir),  #  CSV 
                              Validity_Table)
-        utils.delete_paths(validator_file, "/tmp/validator.csv")
+        utils.delete_paths(self.logger, [validator_file, "/tmp/validator.csv"])
         with db_connection(Validity_Table, self.logger) as v_table:
             v_table.split_table()
 
@@ -93,7 +100,7 @@ class RPKI_Validator:
 ########################
 
     @error_catcher()
-    def _write_validator_file(self, mrt_w_roas_t, path="/tmp/validator.csv"):
+    def _write_validator_file(self, path="/tmp/validator.csv"):
         """Writes validator file
 
         This function write the validator file by taking the mrt announcements
@@ -107,18 +114,19 @@ class RPKI_Validator:
             # Gets the unique prefix origins from the mrt announcements
             # And write them to a table with the default placeholder of 100
             # For easy integration with rpki validator
-            table.fill_table(mrt_w_roas_t)
+            table.fill_table()
             rpki_path = ("/validator/dev/"
                          "rpki-validator-3.0-DEV20180902182639/"
                          "rpki-validator-3.sh")
             # This writes the validator file that the rpki validator will use
             # And returns the file path and the total rows of the file
-            return unique_p_o.write_validator_file(path=path)
+            return table.write_validator_file(path=path)
 
     @error_catcher()
     def _get_ripe_data(self):
         """Gets the data from ripe and formats it for csv insertions"""
 
+        self.logger.info("Getting data from ripe")
         # Then we get the data from the ripe RPKI validator
         # Todo for later, change 10mil to be total count
         url = "http://localhost:8080/api/bgp/?pageSize=10000000"
@@ -145,7 +153,7 @@ class RPKI_Validator:
         try:
             return utils.get_json("http://localhost:8080/api/bgp/", headers)["metadata"]["totalCount"]
         except Exception as e:
-            self.logger.warning("Problem with getting json: {}".format(e))
+            self.logger.debug("Problem with getting json: {}".format(e))
             return 0
 
     def _serve_file(self, path):
@@ -162,6 +170,7 @@ class RPKI_Validator:
 
         time.sleep(30)
         while self._get_row_count(self._get_headers()) < total_rows:
+            self.logger.info("Waiting for validator load")
             self.logger.debug(total_rows)
             self.logger.debug(self._get_row_count(self._get_headers()))
             time.sleep(30)

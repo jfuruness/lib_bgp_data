@@ -40,9 +40,9 @@ class ROAs_Collector:
     def parse_roas(self, db=True):
         """Downloads and stores roas from a json"""
 
-        roas = self._format_roas(self._get_json_roas())
-        utils.rows_to_db(self.logger, roas, self.csv_path, ROAs_Table)
         with db_connection(ROAs_Table, self.logger) as roas_table:
+            roas = self._format_roas(self._get_json_roas())
+            utils.rows_to_db(self.logger, roas, self.csv_path, ROAs_Table)
             roas_table.create_index()
 
 ########################

@@ -3,6 +3,21 @@
 
 """This package contains functions used across classes"""
 
+from contextlib import contextmanager
+
+# to prevent circular depencies
+@contextmanager
+def Pool(logger, threads, multiplier, name):
+    """Context manager for pathos ProcessingPool"""
+
+    # Creates a pool with threads else cpu_count * multiplier
+    p = ProcessingPool(threads if threads else cpu_count() * multiplier)
+    logger.info("Created {} pool".format(name))
+    yield p
+    (p.close(), p.join())
+
+
+
 import requests
 import time
 import urllib
@@ -18,7 +33,8 @@ from bz2 import BZ2Decompressor
 from bs4 import BeautifulSoup as Soup
 from pathos.multiprocessing import ProcessingPool
 from contextlib import contextmanager 
-from .logger import Logger
+from multiprocessing import cpu_count
+from .thread_safe_logger import Logger
 from .config import Config
 from .database import db_connection
 
@@ -76,12 +92,17 @@ def now():
 def set_common_init_args(self, args, parser, non_essentials=True):
     """Sets self attributes for arguments common across many classes"""
 
+    # The class name. This because when parsers are done,
+    # they aggressively clean up. We do not want parser to clean up in
+    # the same directories and delete files that others are using
+    name = self.__class__.__name__
     # Path to where all files willi go. It does not have to exist
-    self.path = args.get("path") if args.get("path") else "/tmp/bgp"
+    self.path = args.get("path") if args.get("path") else\
+        "/tmp/bgp_{}".format(name)
     self.csv_dir = args.get("csv_dir") if args.get("csv_dir") else\
-        "/dev/shm/bgp"
+        "/dev/shm/bgp_{}".format(name)
     self.logger = args.get("logger") if args.get("logger") else\
-        Logger(args).logger
+        Logger(args)
     if non_essentials:
         self.all_files = [self.path, self.csv_dir]
         try:
@@ -144,10 +165,11 @@ def delete_paths(logger, paths):
         # Just in case we always delete everything at the end of a run
         # So some files may not exist anymore
         except AttributeError:
-            logger.debug(
-                "File caused attribute error {}".format(path))
+            logger.debug("Attribute error when deleting {}".format(path))
         except FileNotFoundError:
-            logger.debug("File not found {}".format(path))
+            logger.debug("File not found when deleting {}".format(path))
+        except PermissionError:
+            logger.warning("Permission error when deleting {}".format(path))
 
 def clean_paths(logger, paths, end=False):
     """If path exists remove it, else create it"""
@@ -155,7 +177,14 @@ def clean_paths(logger, paths, end=False):
     delete_paths(logger, paths)
     if not end:
         for path in paths:
-            os.makedirs(path)
+            # Yes I know this is a security flaw, but
+            # Everything is becoming hacky since we need to demo soon
+            # We can fix it later
+            # No really, I mean it
+            # For real, I will fix it
+            # Hahaha I hate selinux
+            # Where am I?
+            os.makedirs(path, mode=0o777, exist_ok=False)
 
 def end_parser(logger, paths, start_time):
     """To be run at the end of every parser, deletes paths and prints time"""
@@ -202,7 +231,7 @@ def write_csv(logger, rows, csv_path, files_to_delete=None):
     if files_to_delete:
         delete_paths(logger, files_to_delete)
 
-def csv_to_db(logger, Table, csv_path):
+def csv_to_db(logger, Table, csv_path, clear_table=False):
     """Copies csv into table and deletes csv_path
 
     Copies tab delimited csv into table and deletes csv_path
@@ -210,6 +239,8 @@ def csv_to_db(logger, Table, csv_path):
     columns attribute"""
 
     with db_connection(Table, logger) as t:
+        if clear_table:
+            t.clear_table()
         logger.info("Copying {} into the database".format(csv_path))
         # Opens temporary file
         with open(r'{}'.format(csv_path), 'r') as f:
@@ -219,10 +250,10 @@ def csv_to_db(logger, Table, csv_path):
     logger.info("Done inserting {} into the database".format(csv_path))
     delete_paths(logger, csv_path)
 
-def rows_to_db(logger, rows, csv_path, Table):
+def rows_to_db(logger, rows, csv_path, Table, clear_table=True):
     """Writes rows to csv and from csv to database"""
 
-    write_csv(logger, rows, csv_path)
+    write_csv(logger, rows, csv_path, clear_table)
     csv_to_db(logger, Table, csv_path)
 
 def get_tags(url, tag):

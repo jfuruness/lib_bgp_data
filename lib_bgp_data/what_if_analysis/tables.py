@@ -33,24 +33,27 @@ class Unique_Prefix_Origins_Table(Database):
     def _create_tables(self):
         """ Creates tables if they do not exist"""
 
-        if self.test is False:
-            sql = """DROP TABLE IF EXISTS unique_prefix_origins;"""
-        self.cursor.execute(sql)
+        pass
 
     @error_catcher()
-    def fill_table(self, table):
+    def fill_table(self):
         """Gets all unique Prefix Origins and stores them in a table"""
 
-        self.cursor.execute("DROP TABLE unique_prefix_origins")
-        sql = """CREATE TABLE unique_prefix_origins AS
+        self.logger.debug("Dropping unique prefix origin table")
+        self.cursor.execute("DROP TABLE IF EXISTS unique_prefix_origins")
+        self.logger.debug("Dropped unique prefix origin table")
+        self.logger.info("Creating unique prefix origings table")
+        sql = """CREATE UNLOGGED TABLE unique_prefix_origins AS
                  SELECT DISTINCT origin, prefix, 100 as placeholder 
-                 FROM {} ORDER BY prefix ASC;""".format(table)
+                 FROM mrt_w_roas ORDER BY prefix ASC;"""
         self.cursor.execute(sql)
+        self.logger.info("Created unique prefix origings table")
 
     @error_catcher()
     def write_validator_file(self, path):
         """Takes unique prefix origin table and converts to a csv then gzips"""
 
+        self.logger.info("About to create file for validator")
         sql = "COPY unique_prefix_origins TO %s DELIMITER '\t';"
         self.cursor.execute(sql, [path])
         self._gzip_file(path)
@@ -85,7 +88,7 @@ class Unique_Prefix_Origins_Table(Database):
 
         with open(path, 'rb') as f_in, gzip.open('{}.gz'.format(path), 'wb') as f_out:
             f_out.writelines(f_in)
-        self.cursor.execute("SELECT COUNT(1) FROM unique_prefix_origins")
+        self.cursor.execute("SELECT COUNT(*) FROM unique_prefix_origins")
         return self.cursor.fetchone()
 
     def close(self):
@@ -110,8 +113,8 @@ class Validity_Table(Database):
     def _create_tables(self):
         """ Creates tables if they do not exist"""
 
-        sql = """CREATE TABLE IF NOT EXISTS validity (
-                 PRIMARY KEY(asn, prefix),
+        self.cursor.execute("DROP TABLE IF EXISTS validity;")
+        sql = """CREATE UNLOGGED TABLE IF NOT EXISTS validity (
                  asn bigint,
                  prefix cidr,
                  validity smallint);"""
@@ -141,6 +144,7 @@ class Validity_Table(Database):
     def split_table(self):
         """Splits the table into three based on validity"""
 
+        self.logger.info("Dropping old tables")
         sqls = ["DROP TABLE IF EXISTS unblocked_hijacked",
                 "DROP TABLE IF EXISTS unblocked_not_hijacked",
                 "DROP TABLE IF EXISTS invalid_length_hijacked",
@@ -149,44 +153,45 @@ class Validity_Table(Database):
                 "DROP TABLE IF EXISTS invalid_asn_not_hijacked"]
         for sql in sqls:
             self.cursor.execute(sql)
+        self.logger.info("Creating tables used for what if analysis")
         # Yes I know we could do this all in parallel, but there
         # really is no need since this is fast
         sqls = ["""CREATE UNLOGGED TABLE unblocked_not_hijacked AS
                 (SELECT v.prefix, v.asn AS origin FROM validity v
-                LEFT JOIN temp_hijack h
+                LEFT JOIN hijack_temp h
                 ON h.prefix = v.prefix AND h.origin = v.asn
                 WHERE v.validity >= 0 AND h.prefix IS NULL
                 AND h.origin IS NULL);
                 """,
                 """CREATE UNLOGGED TABLE unblocked_hijacked AS
                 (SELECT v.prefix, v.asn AS origin FROM validity v
-                LEFT JOIN temp_hijack h
+                LEFT JOIN hijack_temp h
                 ON h.prefix = v.prefix AND h.origin = v.asn
                 WHERE v.validity >= 0);
                 """,
                 """CREATE UNLOGGED TABLE invalid_asn_not_hijacked AS
                 (SELECT v.prefix, v.asn AS origin FROM validity v
-                LEFT JOIN temp_hijack h
+                LEFT JOIN hijack_temp h
                 ON h.prefix = v.prefix AND h.origin = v.asn
                 WHERE v.validity = -1 AND h.prefix IS NULL
                 AND h.origin IS NULL);
                 """,
                 """CREATE UNLOGGED TABLE invalid_asn_hijacked AS
                 (SELECT v.prefix, v.asn AS origin FROM validity v
-                LEFT JOIN temp_hijack h
+                LEFT JOIN hijack_temp h
                 ON h.prefix = v.prefix AND h.origin = v.asn
                 WHERE v.validity = -1);
                 """,
                 """CREATE UNLOGGED TABLE invalid_length_not_hijacked AS
                 (SELECT v.prefix, v.asn AS origin FROM validity v
-                LEFT JOIN temp_hijack h
+                LEFT JOIN hijack_temp h
                 ON h.prefix = v.prefix AND h.origin = v.asn
                 WHERE v.validity = -2 AND h.prefix IS NULL
                 AND h.origin IS NULL);
                 """,
                 """CREATE UNLOGGED TABLE invalid_length_hijacked AS
                 (SELECT v.prefix, v.asn AS origin FROM validity v
-                LEFT JOIN temp_hijack h
+                LEFT JOIN hijack_temp h
                 ON h.prefix = v.prefix AND h.origin = v.asn
                 WHERE v.validity = -2);
                 """,

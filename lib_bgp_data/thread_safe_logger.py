@@ -50,7 +50,7 @@ class logging(Enum):
 class Logger:
     """Logger class for process safe logging, explained at module header"""
 
-    def __init__(self, stream_level):
+    def __init__(self, args):
         """Initializes logger
         Logging levels are, in order:
         logging.CRITICAL
@@ -64,6 +64,7 @@ class Logger:
         class works with multiprocessing
         """
 
+        stream_level = args.get("stream_level")
         # Sets stream level
         stream_level = int(stream_level) if stream_level else logging.INFO
         # Sets all the standard logging functions

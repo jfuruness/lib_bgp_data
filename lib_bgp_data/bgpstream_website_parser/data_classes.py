@@ -26,7 +26,7 @@ __status__ = "Development"
 class Data:
     """Class for parsing rows of bgpstream"""
 
-    __slots__ = ['logger', 'as_regex', 'nums_regex', 'ip_regex', 'temp_row', 'data']
+    __slots__ = ['logger', 'as_regex', 'nums_regex', 'ip_regex', 'temp_row', 'data', 'columns']
 
     @error_catcher()
     def __init__(self, logger):
@@ -45,7 +45,6 @@ class Data:
         self.nums_regex = re.compile(r'(\d[^a-zA-Z\(\)\%]*\d*)')
         self.ip_regex = re.compile(r'.+?:(.+)')
         self.data = []
-        
 
     @error_catcher()
     def append(self, row):
@@ -57,11 +56,13 @@ class Data:
         self.data.append(self._format_temp_row())
 
     @error_catcher()
-    def db_insert(self):
-        utils.rows_to_db(self.logger, self.data, self.csv_path, self.table)
+    def db_insert(self, start, end):
+        utils.rows_to_db(self.logger, self.data, self.csv_path, self.table,
+            clear_table=False)
         with db_connection(self.table, self.logger) as db_table:
             db_table.create_index()
             db_table.delete_duplicates()
+            db_table.create_temp_table(start, end)
 
 ########################
 ### Helper Functions ###
@@ -99,20 +100,23 @@ class Data:
         as_parsed = self.as_regex.search(as_info)
         # If the as_info is "N/A" and the regex returns nothing
         if as_parsed is None:
-            return None, None
+            try:
+                return None, re.findall(r'\d+', as_info)[0]
+            except:
+                return None, None
         else:
             # This is the first way the string can be formatted:
-            if as_parsed.group("as_number") is not None:
+            if as_parsed.group("as_number") not in [None, "", " "]:
                 return as_parsed.group("as_name"), as_parsed.group("as_number")
             # This is the second way the string can be formatted:
-            else:
+            elif as_parsed.group("as_number2") not in [None, "", " "]:
                 return as_parsed.group("as_name2"),\
                     as_parsed.group("as_number2")
 
     def _format_temp_row(self):
         """Formats row vals for input into the csv files"""
 
-        return [self.temp_row.get(x) for x in self.table.columns]
+        return [self.temp_row.get(x) for x in self.columns]
 
 class Hijack(Data):
     """Class for parsing Hijack events"""
@@ -126,6 +130,9 @@ class Hijack(Data):
         Data.__init__(self, logger)
         self.table = Hijack_Table
         self.csv_path = "{}/hijack.csv".format(csv_dir)
+        with db_connection(self.table, self.logger) as t:
+            self.columns = t.columns
+
 
     def _parse_uncommon_info(self, as_info, extended_children):
         """Parses misc hijack row info."""

@@ -29,7 +29,6 @@ class Customer_Providers_Table(Database):
     def __init__(self, logger, cursor_factory=RealDictCursor, test=False):
         """Initializes the Customer Provider table"""
         Database.__init__(self, logger, cursor_factory, test)
-        self._clear_table()
 
     @error_catcher()
     def _create_tables(self):
@@ -54,7 +53,7 @@ class Customer_Providers_Table(Database):
         self.logger.info("Duplicates deleted in customer providers")
 
     @error_catcher()
-    def _clear_table(self):
+    def clear_table(self):
         """Clears the tables. Should be called at the start of every run"""
 
         self.logger.info("Clearing customer_providers")
@@ -77,9 +76,9 @@ class Customer_Providers_Table(Database):
         """Creates index on customer providers"""
 
         sqls = ["""CREATE INDEX IF NOT EXISTS customer_providers_index_provider
-                  USING provider_as""",
+                ON customer_providers (provider_as)""",
                 """CREATE INDEX IF NOT EXISTS customer_providers_index_customer
-                  USING customer_as"""]
+                ON customer_providers (customer_as)"""]
         for sql in sqls:
             self.cursor.execute(sql)
 
@@ -117,7 +116,7 @@ class Peers_Table(Database):
         self.logger.info("Deleted duplicates from peers")
 
     @error_catcher()
-    def _clear_table(self):
+    def clear_table(self):
         """Clears the tables. Should be called at the start of every run"""
 
         self.logger.info("Clearing peers")
@@ -140,8 +139,8 @@ class Peers_Table(Database):
         """Creates indexes on the peers table"""
 
         sqls = ["""CREATE INDEX IF NOT EXISTS peers_1_index
-                    USING peer_as_1""",
+                ON peers (peer_as_1)""",
                 """CREATE INDEX IF NOT EXISTS peers_1_index
-                    USING peer_as_2"""]
+                ON peers (peer_as_2)"""]
         for sql in sqls:
             self.cursor.execute(sql)

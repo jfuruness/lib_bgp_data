@@ -34,7 +34,6 @@ from pathos.multiprocessing import ProcessingPool
 from contextlib import contextmanager
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from .mrt_file import MRT_File
-from .logger import Logger
 from ..logger import error_catcher
 from .tables import Announcements_Table
 from .. import utils
@@ -66,7 +65,6 @@ class MRT_Parser:
         utils.set_common_init_args(self, args, "mrt")
         # URLs fom the caida websites to pull data from
         self.url = 'https://bgpstream.caida.org/broker/data'
-        self.logger = Logger(args.get("stream_level"))
         with db_connection(Announcements_Table, self.logger) as ann_table:
             ann_table.clear_table()
             # Need this here so multithreading doesn't try this later
@@ -90,7 +88,7 @@ class MRT_Parser:
         """
 
         # Gets urls of all mrt files needed
-        urls = self._multithreaded_get_mrt_urls(start, end)
+        urls = self._get_mrt_urls(start, end)
         self.logger.info(len(urls))
         # Get downloaded instances of mrt files using multiprocessing
         mrt_files = self._multiprocess_download(download_threads, urls)
@@ -108,13 +106,13 @@ class MRT_Parser:
     def _multiprocess_download(self, dl_threads, urls):
         """Downloads files in parallel. Explanation at the top, dl=download"""
 
-        mrt_files = [MRT_File(self.path,
+        mrt_files = [[MRT_File(self.path,#############################
                               self.csv_dir,
                               url,
                               i + 1,
                               len(urls),
-                              Logger(self.args.get("stream_level")))
-                     for i, url in enumerate(urls)]
+                              self.logger)
+                     for i, url in enumerate(urls)][1]]#############################
         # Creates a dl pool, I/O based, so get as many threads as possible
         with Pool(self.logger, dl_threads, 4, "download") as dl_pool:
             self.logger.debug("About to start downloading files")
@@ -137,44 +135,12 @@ class MRT_Parser:
                        [db]*len(mrt_files))
 
     @error_catcher()
-    def _multithreaded_get_mrt_urls(self, start, end):
-        """This gets all the possible urls with multiprocessing
-
-        The api is broken - it only gives us the first rib file in the time
-        interval. To get all urls we need to query with many time intervals.
-        We will then take the set of all these values for uniqueness. Because
-        this will be slow, multithreading will be used since it's mostly IO."""
-
-        self.logger.info("Getting all urls using multithreading")
-        # I know you could use list comprehensions for this whole thing but no
-        comprehensive_url_list = []
-        min_step = 60  # One min in epoch
-        intervals = ["{},{}".format(i, i + min_step)
-                     for i in range(start, end - min_step, min_step)][:-1]
-        # I know this is weird code, read the docs below
-        # https://docs.python.org/3/library/concurrent.futures.html
-        # By default this populates with cpu's available times 5 (I/O bound)
-        with ThreadPoolExecutor() as executor:
-            ouput_to_urls = {executor.submit(self._get_mrt_urls, x):
-                                             x for x in intervals}
-            for t_output in as_completed(ouput_to_urls):
-                try:
-                    comprehensive_url_list.extend(t_output.result())
-                except Exception as e:
-                    self.logger.error("Problem loading urls: {}".format(e))
-                    raise e
-        self.logger.info("URLs ben git got")
-        # Return only the unique urls
-        return list(set(comprehensive_url_list))
-        
-
-    @error_catcher()
-    def _get_mrt_urls(self, interval):
+    def _get_mrt_urls(self, start, end):
         """Gets urls to download mrt files. Start and end should be epoch"""
 
         # Paramters for the get request, look at caida for more in depth info
         PARAMS = {'human': True,
-                  'intervals': [interval],
+                  'intervals': ["{},{}".format(start, end)],
                   'types': ['ribs']
                   }
         # Request for data and conversion to json

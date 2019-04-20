@@ -12,110 +12,30 @@ __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
 # I know the lines on this file will be off, it's crazy sql man whatever
-
-# Before the validator is run we can start doing this on the extrapolation results:
-get_hijack_temp_sql = [
-    """CREATE UNLOGGED TABLE hijack_temp AS
-        (SELECT h.more_specific_prefix AS prefix, h.detected_origin_number AS origin, h.url
-        FROM hijack h
-        WHERE
-            (h.start_time, COALESCE(h.end_time, now()::timestamp)) OVERLAPS
-            (%s, %s)
-        );
-     """,
-     """CREATE INDEX ON hijack_temp USING GIST (prefix inet_ops, origin);""",
-     """CREATE INDEX ON hijack_temp USING GIST (prefix inet_ops);"""
-    ]
 get_total_announcements_sql = [
     """CREATE UNLOGGED TABLE total_announcements AS
-           (SELECT exr.asn, count(exr.asn) AS total FROM extrapolation_results exr
-            GROUP BY exr.asn);
+           (SELECT exir.asn,
+            (SELECT count(DISTINCT prefix) FROM mrt_w_roas)
+                - count(exir.asn)
+            AS total FROM extrapolation_inverse_results exir
+            GROUP BY exir.asn);
     """,
-    """CREATE INDEX ON total_announcements USING asn;"""
-    ]
-run_after_extrapolator_sql = get_hijack_temp_sql + get_total_announcements_sql
-
-# Then, validator is run. We now have validity table. Run this query asynchronously:
-validity_parallel_split = [
-    ["""CREATE UNLOGGED TABLE unblocked AS
-           (SELECT v.prefix, v.asn AS origin FROM validity v
-           WHERE v.validity >= 0);
-     """,
-    """CREATE UNLOGGED TABLE invalid_asn AS
-           (SELECT v.prefix, v.asn AS origin FROM validity v
-           WHERE v.validity = -2);
-    """,
-    """CREATE UNLOGGED TABLE invalid_length AS
-           (SELECT v.prefix, v.asn AS origin FROM validity v
-           WHERE v.validity = -1);
-    """, 
-    """CREATE INDEX CONCURRENTLY ON unblocked USING GIST(prefix inet_ops, origin);""",
-    """CREATE INDEX CONCURRENTLY ON unblocked USING GIST(prefix inet_ops);""",
-    """CREATE INDEX CONCURRENTLY ON invalid_asn USING GIST(prefix inet_ops, origin);""",
-    """CREATE INDEX CONCURRENTLY ON invalid_asn USING GIST(prefix inet_ops);""",
-    """CREATE INDEX CONCURRENTLY ON invalid_length USING GIST(prefix inet_ops, origin);""",
-    """CREATE INDEX CONCURRENTLY ON invalid_length USING GIST(prefix inet_ops);""",
-    ]
-    run_after_validity_split = [
-    """CREATE UNLOGGED TABLE unblocked_hijacked AS
-           (SELECT u.prefix, u.origin FROM unblocked u
-            LEFT JOIN hijack_temp h ON h.prefix = u.prefix AND h.origin = u.origin;
-    """,
-    """CREATE INDEX CONCURRENTLY ON unblocked_hijack USING (prefix inet_ops);""",
-    
-    
-    
-    """CREATE UNLOGGED TABLE invalid_asn_hijacked AS
-           (SELECT ia.prefix, ia.origin FROM invalid_asn ia
-            LEFT JOIN hijack_temp h ON h.prefix = ia.prefix AND h.origin = ia.origin;
-    """,
-    """CREATE UNLOGGED TABLE invalid_asn_not_hijacked AS
-           (SELECT ia.prefix, ia.origin FROM invalid_asn ia
-            LEFT JOIN hijack_temp h ON h.prefix = ia.prefix
-            WHERE h.prefix IS NULL;
-    """,
-    """CREATE INDEX CONCURRENTLY ON invalid_asn_hijacked USING (prefix inet_ops);""",
-    """CREATE INDEX CONCURRENTLY ON invalid_asn_hijacked USING origin;""",
-    """CREATE INDEX CONCURRENTLY ON invalid_asn_not_hijacked USING (prefix inet_ops);""",
-    
-    
-    
-    """CREATE UNLOGGED TABLE invalid_length_hijacked AS
-           (SELECT il.prefix, il.origin FROM invalid_length il
-            LEFT JOIN hijack_temp h ON h.prefix = il.prefix AND h.origin = il.origin;
-    """,
-    """CREATE UNLOGGED TABLE invalid_length_not_hijacked AS
-           (SELECT il.prefix, il.origin FROM invalid_length il
-            LEFT JOIN hijack_temp h ON h.prefix = il.prefix
-            WHERE h.prefix IS NULL;
-    """,
-    """CREATE INDEX CONCURRENTLY ON invalid_length_hijacked USING (prefix inet_ops);""",
-    """CREATE INDEX CONCURRENTLY ON invalid_length_hijacked USING origin;""",
-    """CREATE INDEX CONCURRENTLY ON invalid_length_not_hijacked USING (prefix inet_ops);""",
-    ]
-    
-    """CREATE UNLOGGED TABLE total_announcements AS
-           (SELECT exr.asn, count(exr.asn) AS total FROM extrapolation_results exr
-            GROUP BY exr.asn);
-    """,
-    """CREATE INDEX CONCURRENTLY ON total_announcements USING asn;""",
-    
-    
-    
+    """CREATE INDEX ON total_announcements USING asn;""",        
+##########ABOVE WORKS REFACTOR DOES NOT
     # Now we have all of our tables that we need to calculate the statistics
     """CREATE TABLE invalid_asn_hijacked_stats AS
-       SELECT final_table.asn AS asn, COUNT(final_table.asn) AS TOTAL FROM (invalid_asn_hijacked
+       SELECT ta.asn AS asn, COUNT(ta.asn) AS TOTAL FROM (invalid_asn_hijacked
         LEFT JOIN
-        (SELECT exr.asn, exr.prefix, exr.origin FROM extrapolation_results exr
-        LEFT JOIN invalid_asn_hijacked iah ON exr.prefix = iah.prefix) for_index
-        ON invalid_asn_hijacked.origin = for_index.origin) final_table
-       GROUP BY final_table.asn;
+        (SELECT exir.asn, exir.prefix, exir.origin FROM extrapolation_inverse_results exir
+        LEFT JOIN invalid_asn_hijacked iah ON exir.prefix = iah.prefix) for_index
+        ON invalid_asn_hijacked.origin = for_index.origin) total_announcements ta
+       GROUP BY ta.asn;
     """,
     
     """CREATE TABLE invalid_asn_not_hijacked_stats AS
-       SELECT exr.asn, COUNT(exr.asn) AS TOTAL FROM
-       invalid_asn_not_hijacked iah LEFT JOIN extrapolation_results exr
-       ON iah.prefix = exr.prefix;
+       SELECT exir.asn, COUNT(exir.asn) AS TOTAL FROM
+       invalid_asn_not_hijacked iah LEFT JOIN extrapolation_inverse_results exir
+       ON iah.prefix = exir.prefix;
     """,
     """CREATE INDEX ON invalid_asn_hijacked_stats USING asn;""",
     """CREATE INDEX ON invalid_asn_not_hijacked_stats USING asn;""",
@@ -124,16 +44,16 @@ validity_parallel_split = [
     """CREATE TABLE invalid_length_hijacked_stats AS
        SELECT final_table.asn AS asn, COUNT(final_table.asn) AS TOTAL FROM (invalid_length_hijacked
         LEFT JOIN
-        (SELECT exr.asn, exr.prefix, exr.origin FROM extrapolation_results exr
-        LEFT JOIN invalid_length_hijacked ilh ON exr.prefix = ilh.prefix) for_index
+        (SELECT exir.asn, exir.prefix, exir.origin FROM extrapolation_inverse_results exir
+        LEFT JOIN invalid_length_hijacked ilh ON exir.prefix = ilh.prefix) for_index
         ON invalid_length_hijacked.origin = for_index.origin) final_table
        GROUP BY final_table.asn;
     """,
     
     """CREATE TABLE invalid_length_not_hijacked_stats AS
-       SELECT exr.asn, COUNT(exr.asn) AS TOTAL FROM
-       invalid_length_not_hijacked ilh LEFT JOIN extrapolation_results exr
-       ON ilh.prefix = exr.prefix;
+       SELECT exir.asn, COUNT(exir.asn) AS TOTAL FROM
+       invalid_length_not_hijacked ilh LEFT JOIN extrapolation_inverse_results exir
+       ON ilh.prefix = exir.prefix;
     """,
     """CREATE INDEX ON invalid_length_hijacked_stats USING asn;""",
     """CREATE INDEX ON invalid_length_not_hijacked_stats USING asn;""",
@@ -141,8 +61,8 @@ validity_parallel_split = [
     """CREATE TABLE unblocked_hijacked_stats AS
        SELECT final_table.asn AS asn, COUNT(final_table.asn) AS TOTAL FROM (unblocked_hijacked uh
         LEFT JOIN
-        (SELECT exr.asn, exr.prefix, exr.origin FROM extrapolation_results exr
-        LEFT JOIN unblocked_hijacked uh ON exr.prefix = uh.prefix) for_index
+        (SELECT exir.asn, exir.prefix, exir.origin FROM extrapolation_inverse_results exir
+        LEFT JOIN unblocked_hijacked uh ON exir.prefix = uh.prefix) for_index
         ON uh.origin = for_index.origin) final_table
        GROUP BY final_table.asn;
     """,

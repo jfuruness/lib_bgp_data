@@ -8,6 +8,7 @@ from psycopg2.extras import RealDictCursor
 from contextlib import contextmanager
 from .config import Config
 from .logger import error_catcher
+from .utils import Pool
 
 __author__ = "Justin Furuness"
 __credits__ = ["Justin Furuness"]
@@ -27,7 +28,7 @@ def db_connection(table, logger):
 class Database:
     """Interact with the database"""
 
-    __slots__ = ['logger', 'config', 'conn', 'cursor', 'test']
+    __slots__ = ['logger', 'config', 'conn', 'cursor', 'test', 'cursor_factory']
 
     @error_catcher()
     def __init__(self, logger, cursor_factory=RealDictCursor, test=False):
@@ -72,6 +73,20 @@ class Database:
         except psycopg2.ProgrammingError:
             self.logger.warning("No results to fetch")
             return None
+
+    def multiprocess_execute(self, sqls):
+        """Executes sql statements in parallel"""
+
+        self.close()
+        with Pool(self.logger, None, 1, "database execute") as db_pool:
+            db_pool.map(lambda self, sql: self._reconnect_execute(sql),
+                        [self]*len(sqls),
+                        sqls)
+        self.__init__(self.logger)
+
+    def _reconnect_execute(self, sql):
+        self.__init__(self.logger)
+        self.execute(sql)
 
     @error_catcher()
     def close(self):

@@ -5,6 +5,8 @@
 
 import psycopg2
 from psycopg2.extras import RealDictCursor
+from datetime import datetime
+from time import strptime, strftime, mktime, gmtime
 from ..config import Config
 from ..logger import error_catcher
 from ..database import Database
@@ -38,8 +40,8 @@ class Hijack_Table(Database):
               detected_by_bgpmon_peers integer,
               detected_origin_name varchar (200),
               detected_origin_number bigint,
-              start_time timestamp,
-              end_time timestamp,
+              start_time timestamp with time zone,
+              end_time timestamp with time zone,
               event_number integer,
               event_type varchar (50),
               expected_origin_name varchar (200),
@@ -52,25 +54,35 @@ class Hijack_Table(Database):
 
     @error_catcher()
     def create_index(self):
-        sql1 = """CREATE INDEX IF NOT EXISTS hijack_index ON hijack
-                  USING (start_time, end_time)"""
+        sql = """CREATE INDEX IF NOT EXISTS hijack_index ON hijack
+                  USING BTREE(start_time, end_time);"""
         self.cursor.execute(sql)
 
     @error_catcher()
     def create_temp_table(self, start, end):
-        sql = """CREATE UNLOGGED TABLE hijack_temp AS
-        (SELECT h.more_specific_prefix AS prefix, h.detected_origin_number AS origin, h.url
+
+        self.logger.info("About to create temporary hijack table")
+        self.logger.debug("About to drop hijack temp")
+        self.cursor.execute("DROP TABLE IF EXISTS hijack_temp;")
+        self.logger.debug("Dropped hijack temp")
+
+        start = strftime('%Y-%m-%d %H:%M:%S', gmtime(start))
+        end = strftime('%Y-%m-%d %H:%M:%S', gmtime(end))
+        print(start)
+        print(end)
+        sql = """CREATE UNLOGGED TABLE hijack_temp TABLESPACE ram AS
+        (SELECT h.more_specific_prefix AS prefix, h.detected_origin_number AS origin, h.start_time, COALESCE(h.end_time, now()) AS end_time, h.url
         FROM hijack h
         WHERE
-            (h.start_time, COALESCE(h.end_time, now()::timestamp)) OVERLAPS
-            (%s, %s)
-        ) TABLESPACE RAM;
-     """
+            (h.start_time, COALESCE(h.end_time, now())) OVERLAPS
+            (%s::timestamp with time zone, %s::timestamp with time zone)
+        );"""
         self.cursor.execute(sql, [start, end])
-        sqls = ["""CREATE INDEX CONCURRENTLY ON hijack_temp USING GIST (prefix inet_ops, origin);""",
-            """CREATE INDEX CONCURRENTLY ON hijack_temp USING GIST (prefix inet_ops);"""]
+        sqls = ["""CREATE INDEX ON hijack_temp USING GIST (prefix inet_ops, origin);""",
+            """CREATE INDEX ON hijack_temp USING GIST (prefix inet_ops);"""]
         for sql in sqls:
             self.cursor.execute(sql)
+        self.logger.info("Created temporary hijack table")
 
     @error_catcher()
     def delete_duplicates(self):
@@ -129,8 +141,8 @@ class Leak_Table(Database):
               leak_id serial PRIMARY KEY,
               country varchar (50),
               detected_by_bgpmon_peers integer,
-              start_time timestamp,
-              end_time timestamp,
+              start_time timestamp with time zone,
+              end_time timestamp with time zone,
               event_number integer,
               event_type varchar (50),
               example_as_path bigint ARRAY,
@@ -142,7 +154,7 @@ class Leak_Table(Database):
               origin_as_name varchar (200),
               origin_as_number bigint,
               url varchar (250)
-              );"""
+              ) TABLESPACE ram;"""
         self.cursor.execute(sql)
 
     @error_catcher()
@@ -202,14 +214,14 @@ class Outage_Table(Database):
               as_name varchar (200),
               as_number bigint,
               country varchar (25),
-              start_time timestamp,
-              end_time timestamp,
+              start_time timestamp with time zone,
+              end_time timestamp with time zone,
               event_number integer,
               event_type varchar (25),
               number_prefixes_affected integer,
               percent_prefixes_affected smallint,
               url varchar(150)
-              );"""
+              ) TABLESPACE ram;"""
         self.cursor.execute(sql)
 
     @error_catcher()

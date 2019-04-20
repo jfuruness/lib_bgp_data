@@ -73,10 +73,9 @@ class BGPStream_Website_Parser:
             if i > row_limit: break
             self._parse_row(row, i, len(rows))
 
-        # Writes to csvs and dbs
-        [self.data[x].db_insert() for x in data_types]
-        [self.data[x].create_indexes() for x in data_types]
-        [self.data[x].create_temp_table(start, end) for x in data_types]
+        # Writes to csvs and dbs and deletes duplicates and creates indexes
+        # And also creates the temporary tables
+        [self.data[x].db_insert(start, end) for x in data_types]
 
     @error_catcher()
     def _parse_row(self, row, num, total):

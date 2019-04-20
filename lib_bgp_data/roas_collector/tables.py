@@ -26,31 +26,24 @@ class ROAs_Table(Database):
         """Initializes the announcement table"""
 
         Database.__init__(self, logger, cursor_factory, test)
-        self._clear_table()
 
     @error_catcher()
     def _create_tables(self):
         """ Creates tables if they do not exist"""
 
-        if self.test is False:
-            sql = """CREATE UNLOGGED TABLE IF NOT EXISTS roas (
-                  asn bigint,
-                  prefix inet,
-                  max_length integer
-                  ) TABLESPACE RAM;"""
-        else:
-            sql = """CREATE UNLOGGED TABLE IF NOT EXISTS test_roas (
-              test_roas_id serial PRIMARY KEY,
-              random_num int
-              );"""
-        elf.cursor.execute(sql)
+        sql = """CREATE UNLOGGED TABLE IF NOT EXISTS roas (
+              asn bigint,
+              prefix inet,
+              max_length integer
+              ) TABLESPACE RAM;"""
+        self.cursor.execute(sql)
 
     @error_catcher()
-    def _clear_table(self):
+    def clear_table(self):
         """Clears the tables. Should be called at the start of every run"""
 
         self.logger.info("Clearing Roas")
-        self.cursor.execute("DELETE FROM roas")
+        self.cursor.execute("DROP TABLE IF EXISTS roas")
         self.logger.info("ROAs Table Cleared")
 
     @error_catcher()
@@ -58,10 +51,10 @@ class ROAs_Table(Database):
         """Creates a bunch of indexes to be used on the table"""
 
         self.logger.info("Creating index on roas")
-        sqls = ["""CREATE INDEX roas_index IF NOT EXISTS
-                 USING GIST(prefix inet_ops)""",
-               """CREATE INDEX roas_po_index IF NOT EXISTS
-                 USING GIST(prefix inet_ops, max_length)"""]
+        sqls = ["""CREATE INDEX IF NOT EXISTS roas_index
+                ON roas USING GIST(prefix inet_ops)""",
+               """CREATE INDEX IF NOT EXISTS roas_po_index
+               ON roas USING GIST(prefix inet_ops, max_length)"""]
         for sql in sqls:
             self.cursor.execute(sql)
 

@@ -5,11 +5,12 @@
 
 import psycopg2
 from psycopg2.extras import RealDictCursor
-from ..config import Config
-from ..logger import error_catcher
-from ..database import Database
-from ..database import db_connection
-from pathos import pool as Pool
+from multiprocessing import Process, cpu_count
+from .config import Config
+from .logger import error_catcher
+from .database import Database
+from .database import db_connection
+from .utils import Pool
 
 __author__ = "Justin Furuness"
 __credits__ = ["Justin Furuness"]
@@ -34,11 +35,12 @@ class Announcements_Covered_By_Roas_Table(Database):
     def _create_tables(self):
         """ Creates tables if they do not exist"""
 
-        sql = """CREATE UNLOGGED TABLE IF NOT EXISTS mrt_w_roas AS (
+        sql = """CREATE UNLOGGED TABLE IF NOT EXISTS
+              mrt_w_roas TABLESPACE ram AS (
               SELECT m.time, m.prefix, m.as_path, m.origin
               FROM mrt_announcements m
-                  INNER JOIN roas r ON m.prefix << r.prefix
-              ) TABLESPACE ram;"""
+                  INNER JOIN roas r ON m.prefix <<= r.prefix
+              );"""
         self.cursor.execute(sql)
 
     @error_catcher()
@@ -46,7 +48,7 @@ class Announcements_Covered_By_Roas_Table(Database):
         """Clears the tables. Should be called at the start of every run"""
 
         self.logger.info("Dropping MRT_W_Roas")
-        self.cursor.execute("DROP TABLE mrt_w_roas")
+        self.cursor.execute("DROP TABLE IF EXISTS mrt_w_roas")
         self.logger.info("MRT_W_Roas table dropped")
 
     def create_index(self):
@@ -79,8 +81,8 @@ class Announcements_Covered_By_Roas_Table(Database):
         mrt and roas tables are dropped.
         """
 
-        self.clear_Table()
-        self.create_tables()
+        self.clear_table()
+        self._create_tables()
         self.create_index()
         # Splits the tables, drops the old tables
         self.split_tables()
@@ -95,62 +97,79 @@ class Announcements_Covered_By_Roas_Table(Database):
         vaccumed
         """
 
-        create_table_sql  = "CREATE TABLE {} AS (".format(table_name)
-        create_table_sql += "SELECT * FROM mrt_w_roas WHERE prefix <<= "
-        create_table_sql += "{}) TABLESPACE RAM;".format(prefix)
-
         p_ranges = ["{}.0.0.0/5".format(x) for x in range(0, 256, 8)]
         p_ranges.append("255.255.255.255")
         
         table_names = ["mrt_w_roas_contained_or_equal_{}".format(
-            x.replace(".", "_").replace("/", "_") for x in p_ranges]
+            x.replace(".", "_").replace("/", "_")) for x in p_ranges]
             
+        drop_table_sqls = []
         create_table_sqls = []
         create_index_sqls = []
         add_table_name_sqls = []
-        for prefix, table_name in zip(prepends, table_names):
-            create_table_sql  = "CREATE TABLE {} AS (".format(table_name)
+        for prefix, table_name in zip(p_ranges, table_names):
+            drop_table_sqls.append("DROP TABLE IF EXISTS {}".format(table_name))
+            create_table_sql  = "CREATE UNLOGGED TABLE {} TABLESPACE ram AS (".format(table_name)
             create_table_sql += "SELECT * FROM mrt_w_roas WHERE prefix <<= "
-            create_table_sql += "{}) TABLESPACE RAM;".format(prefix)
+            create_table_sql += "'{}');".format(prefix)
             create_table_sqls.append(create_table_sql)
             create_index_sql =  "CREATE INDEX ON {} USING GIST".format(table_name)
-            create_index_sql += "(prefix inet_ops, origin)"
+            create_index_sql += "(prefix inet_ops, origin);"
             create_index_sqls.append(create_index_sql)
-            add_name = "INSERT INTO mrt_w_roas_names VALUES ({});".format(
+            add_name = "INSERT INTO mrt_w_roas_names VALUES ('{}');".format(
                 table_name)
             add_table_name_sqls.append(add_name)
 
         sqls = [
         """DROP TABLE IF EXISTS mrt_w_roas_names;""",
-        """CREATE TABLE mrt_w_roas_names (name varchar(100));"""]
+        """CREATE UNLOGGED TABLE mrt_w_roas_names (name varchar(100));"""]
 
         for sql in sqls:
             self.cursor.execute(sql)
 
-        with Pool(self.logger, cpu_count()-1, 1, "split_pool") as split_pool:
-            drop_old_tables = Process(target=drop_mrt_async)
+        with Pool(self.logger, cpu_count()-1, 1, "split") as split_pool:
+            drop_old_tables = Process(target=self.drop_mrt_async)
             drop_old_tables.start()
-            split_pool.map(create_tables,
+            split_pool.map(self.create_tables,
+                           drop_table_sqls,
                            create_table_sqls,
                            create_index_sqls,
                            add_table_name_sqls)
-            self.cursor.execute("DROP TABLE mrt_w_roas;")
             drop_old_tables.join()
+        print("ALL DONE")
 
     @error_catcher()
-    def create_tables(self, create_table, create_index, add_name):
-        for sql in [create_table, create_index, add_name]:
-            self.cursor.execute(sql)
+    def create_tables(self, drop_table_sqls, create_table, create_index, add_name):
+        import sys
+        print("Creating a table now")
+        sys.stdout.flush()
+#        input()
+        # Must do this because this is a multiprocessor func
+        # So needs multiple db connections
+        with db_connection(Database, self.logger) as db:
+            print("Database connected")
+            for i, sql in enumerate([drop_table_sqls, create_table, create_index, add_name]):
+                print("Executing sql statement {}".format(i))
+                print(sql)
+                sys.stdout.flush()
+                db.cursor.execute(sql)
 
     @error_catcher()
     def drop_mrt_async(self):
         """Function that drops the mrt table to be called in multiprocess"""
 
-        with db_connection(MRT_Announcements, self.logger) as mrt_table:
-            mrt_table.cursor.execute("DROP TABLE mrt_announcements;")
-            mrt_table.cursor.execute("DROP TABLE roas;")
-            mrt_table.cursor.execute("VACUUM;")
+        with db_connection(Database, self.logger) as db:
+            self.logger.info("About to drop mrt announcements")
+            db.cursor.execute("DROP TABLE mrt_announcements;")
+            self.logger.info("Dropped mrt announcements")
+            self.logger.info("About to drop roas")
+            db.cursor.execute("DROP TABLE roas;")
+            self.logger.info("Dropped roas")
+            self.logger.info("About to vacuum")
+#            db.cursor.execute("VACUUM;")###############################
+            self.logger.info("Vacuum complete")
 
     @error_catcher()
     def get_tables(self):
         self.cursor.execute("SELECT * FROM mrt_w_roas_names;")
+        return [x.get("name") for x in self.cursor.fetchall()]
