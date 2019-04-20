@@ -1,0 +1,34 @@
+Returns a series of data for a given policy for a given amount of days back from today.
+---
+parameters:
+  - name: asn
+    in: path
+    description: AS Number
+    type: string
+    required: true
+  - name: policy
+    in: path
+    type: string
+    enum: ['simpleTimeHeuristic', 'rov', 'deprefer', 'all']
+    required: true
+    default: all
+  - name: length
+    in: path
+    type: integer
+    required: true
+    default: 10
+responses:
+  200:
+    description: An object with a list of policies and their corresponding stats over time.
+    examples:
+      '1111': {
+        'timestamps': ['2019-03-15T04:20:01.999172', '2019-03-16T04:20:01.999172', '2019-03-17T04:20:01.999172', '2019-03-18T04:20:01.999172', '2019-03-19T04:20:01.999172', '2019-03-20T04:20:01.999172'],
+        'history': {
+          'simpleTimeHeuristic': {
+              'neitherBlockedNorHijacked': [31, 34, 25, 43, 55, 66],
+              'hijackedAndBlocked': [21, 12, 25, 33, 28, 23],
+              'notHijackedButBlocked': [5, 12, 15, 13, 10, 1],
+              'hijackedButNotBlocked': [1, 2, 3, 6, 3, 1]
+          }
+        },
+      }
