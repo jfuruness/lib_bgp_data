@@ -24,49 +24,49 @@ get_total_announcements_sql = [
 ##########ABOVE WORKS REFACTOR DOES NOT
     # Now we have all of our tables that we need to calculate the statistics
     """CREATE TABLE invalid_asn_blocked_hijacked_stats TABLESPACE ram AS
-       SELECT exir.asn AS asn, (SELECT COUNT(*) FROM invalid_asn_blocked_hijacked) - COUNT(exir.asn) AS TOTAL FROM invalid_asn_blocked_hijacked iabh
-        LEFT JOIN extrapolation_inverse_results exir ON
-        exir.prefix = iabh.prefix AND iabh.origin = exir.origin
-       GROUP BY exir.asn;
+        SELECT ta.asn, (SELECT COUNT(*) FROM invalid_asn_blocked_hijacked) - COALESCE(missed.total, 0) AS total 
+        FROM total_announcements ta LEFT JOIN (SELECT exir.asn, COUNT(exir.asn) AS total FROM extrapolation_inverse_results exir
+        INNER JOIN invalid_asn_blocked_hijacked iabh ON exir.prefix = iabh.prefix AND iabh.origin = exir.origin GROUP BY exir.asn) missed
+        ON ta.asn = missed.asn;
     """,
-    
+
     """CREATE TABLE invalid_asn_blocked_not_hijacked_stats TABLESPACE ram AS
-       SELECT exir.asn AS asn, (SELECT COUNT(*) FROM invalid_asn_blocked_not_hijacked) - COUNT(exir.asn) AS TOTAL FROM
-       invalid_asn_blocked_not_hijacked iabnh LEFT JOIN extrapolation_inverse_results exir
-       ON iabnh.prefix = exir.prefix AND iabnh.origin = exir.origin
-       GROUP BY exir.asn;
+        SELECT ta.asn, (SELECT COUNT(*) FROM invalid_asn_blocked_not_hijacked) - COALESCE(missed.total, 0) AS total 
+        FROM total_announcements ta LEFT JOIN (SELECT exir.asn, COUNT(exir.asn) AS total FROM extrapolation_inverse_results exir
+        INNER JOIN invalid_asn_blocked_not_hijacked iabnh ON exir.prefix = iabnh.prefix AND iabnh.origin = exir.origin GROUP BY exir.asn) missed
+        ON ta.asn = missed.asn;
     """,
+
     """CREATE TABLE invalid_asn_unblocked_hijacked_stats TABLESPACE ram AS
-       SELECT exir.asn AS asn, (SELECT COUNT(*) FROM invalid_asn_unblocked_hijacked) - COUNT(exir.asn) AS TOTAL FROM invalid_asn_unblocked_hijacked ianbh
-        LEFT JOIN extrapolation_inverse_results exir ON
-        exir.prefix = ianbh.prefix AND ianbh.origin = exir.origin
-       GROUP BY exir.asn;
+        SELECT ta.asn, (SELECT COUNT(*) FROM invalid_asn_unblocked_hijacked) - COALESCE(missed.total, 0) AS total
+        FROM total_announcements ta LEFT JOIN (SELECT exir.asn, COUNT(exir.asn) AS total FROM extrapolation_inverse_results exir
+        INNER JOIN invalid_asn_unblocked_hijacked ianbh ON exir.prefix = ianbh.prefix AND ianbh.origin = exir.origin GROUP BY exir.asn) missed
+        ON ta.asn = missed.asn;
     """,
 
     """CREATE INDEX ON invalid_asn_blocked_hijacked_stats(asn);""",
     """CREATE INDEX ON invalid_asn_blocked_not_hijacked_stats(asn);""",
     """CREATE INDEX ON invalid_asn_unblocked_hijacked_stats(asn);""",
     
-
-
     """CREATE TABLE invalid_length_blocked_hijacked_stats TABLESPACE ram AS
-       SELECT exir.asn AS asn, (SELECT COUNT(*) FROM invalid_length_blocked_hijacked) - COUNT(exir.asn) AS TOTAL FROM invalid_length_blocked_hijacked ilbh
-        LEFT JOIN extrapolation_inverse_results exir ON
-        exir.prefix = ilbh.prefix AND ilbh.origin = exir.origin
-       GROUP BY exir.asn;
+        SELECT ta.asn, (SELECT COUNT(*) FROM invalid_length_blocked_hijacked) - COALESCE(missed.total, 0) AS total 
+        FROM total_announcements ta LEFT JOIN (SELECT exir.asn, COUNT(exir.asn) AS total FROM extrapolation_inverse_results exir
+        INNER JOIN invalid_length_blocked_hijacked ilbh ON exir.prefix = ilbh.prefix AND ilbh.origin = exir.origin GROUP BY exir.asn) missed
+        ON ta.asn = missed.asn;
     """,
 
     """CREATE TABLE invalid_length_blocked_not_hijacked_stats TABLESPACE ram AS
-       SELECT exir.asn AS asn, (SELECT COUNT(*) FROM invalid_length_blocked_not_hijacked) - COUNT(exir.asn) AS TOTAL FROM
-       invalid_length_blocked_not_hijacked ilbnh LEFT JOIN extrapolation_inverse_results exir
-       ON ilbnh.prefix = exir.prefix AND ilbnh.origin = exir.origin
-       GROUP BY exir.asn;
+        SELECT ta.asn, (SELECT COUNT(*) FROM invalid_length_blocked_not_hijacked) - COALESCE(missed.total, 0) AS total 
+        FROM total_announcements ta LEFT JOIN (SELECT exir.asn, COUNT(exir.asn) AS total FROM extrapolation_inverse_results exir
+        INNER JOIN invalid_length_blocked_not_hijacked ilbnh ON exir.prefix = ilbnh.prefix AND ilbnh.origin = exir.origin GROUP BY exir.asn) missed
+        ON ta.asn = missed.asn;
     """,
+
     """CREATE TABLE invalid_length_unblocked_hijacked_stats TABLESPACE ram AS
-       SELECT exir.asn AS asn, (SELECT COUNT(*) FROM invalid_length_unblocked_hijacked) - COUNT(exir.asn) AS TOTAL FROM invalid_length_unblocked_hijacked ilnbh
-        LEFT JOIN extrapolation_inverse_results exir ON
-        exir.prefix = ilnbh.prefix AND ilnbh.origin = exir.origin
-       GROUP BY exir.asn;
+        SELECT ta.asn, (SELECT COUNT(*) FROM invalid_length_unblocked_hijacked) - COALESCE(missed.total, 0) AS total
+        FROM total_announcements ta LEFT JOIN (SELECT exir.asn, COUNT(exir.asn) AS total FROM extrapolation_inverse_results exir
+        INNER JOIN invalid_length_unblocked_hijacked ilnbh ON exir.prefix = ilnbh.prefix AND ilnbh.origin = exir.origin GROUP BY exir.asn) missed
+        ON ta.asn = missed.asn;
     """,
 
     """CREATE INDEX ON invalid_length_blocked_hijacked_stats(asn);""",
@@ -74,20 +74,22 @@ get_total_announcements_sql = [
     """CREATE INDEX ON invalid_length_unblocked_hijacked_stats(asn);""",
 
 
+
     """CREATE TABLE rov_unblocked_hijacked_stats TABLESPACE ram AS
-       SELECT exir.asn AS asn, (SELECT COUNT(*) FROM rov_unblocked_hijacked) - COUNT(exir.asn) AS TOTAL FROM rov_unblocked_hijacked rovnbh
-        LEFT JOIN extrapolation_inverse_results exir ON
-        exir.prefix = rovnbh.prefix AND rovnbh.origin = exir.origin
-       GROUP BY exir.asn;
+        SELECT ta.asn, (SELECT COUNT(*) FROM rov_unblocked_hijacked) - COALESCE(missed.total, 0) AS total
+        FROM total_announcements ta LEFT JOIN (SELECT exir.asn, COUNT(exir.asn) AS total FROM extrapolation_inverse_results exir
+        INNER JOIN rov_unblocked_hijacked rovnbh ON exir.prefix = rovnbh.prefix AND rovnbh.origin = exir.origin GROUP BY exir.asn) missed
+        ON ta.asn = missed.asn;
     """,
 
-
-
+    """CREATE INDEX ON rov_unblocked_hijacked_stats(asn);""",
+ 
     """CREATE TABLE urls_list TABLESPACE ram AS (SELECT ta.asn, ARRAY_AGG(ht.url) AS urls FROM hijack_temp ht
                                  INNER JOIN total_announcements ta ON
                                      ht.origin = ta.asn GROUP BY ta.asn);""",
     
-    
+   SELECT DISTINCT exir.asn, ht.url FROM hijack_temp ht LEFT JOIN extrapolation_inverse_results exir ON ht.prefix != exir.prefix AND ht.origin != exir.origin WHERE asn=33978;
+ 
     
     
     
@@ -97,7 +99,7 @@ get_total_announcements_sql = [
            ianbhs.total AS hijack_not_blocked,
            iabnhs.total AS not_hijacked_blocked,
            asns.total - iabhs.total - ianbhs.total - iabnhs.total AS not_hijacked_not_blocked,
-           urls_list.urls
+           rls_list.urls
            FROM total_announcements asns
                LEFT JOIN invalid_asn_blocked_hijacked_stats iabhs ON iabhs.asn = asns.asn
                LEFT JOIN invalid_asn_unblocked_hijacked_stats ianbhs ON ianbhs.asn = asns.asn
