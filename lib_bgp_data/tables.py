@@ -35,6 +35,7 @@ class Announcements_Covered_By_Roas_Table(Database):
     def _create_tables(self):
         """ Creates tables if they do not exist"""
 
+        return#######################################################
         sql = """CREATE UNLOGGED TABLE IF NOT EXISTS
               mrt_w_roas TABLESPACE ram AS (
               SELECT m.time, m.prefix, m.as_path, m.origin

@@ -87,6 +87,8 @@ class RPKI_Validator:
             # First we wait for the validator to load the data
             self._wait_for_validator_load(total_rows)
             # Writes validator to database
+            with db_connection(Validity_Table, self.logger) as v_table:
+                v_table.execute("DROP TABLE IF EXISTS validity;")
             utils.rows_to_db(self.logger,
                              self._get_ripe_data(),
                              "{}/validity.csv".format(self.csv_dir),  #  CSV 
