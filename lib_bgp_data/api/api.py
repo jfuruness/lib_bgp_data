@@ -17,6 +17,16 @@ application = Flask(__name__)
 application.wsgi_app = ProxyFix(application.wsgi_app)
 application.url_map.converters['list'] = ListConverter
 
+@application.route("/extrapolator/inverse/<list:asns>/")
+def forecast_api(asns):
+	extrapolator_results = {"012": {"prefix": 123,
+					"origin": 345
+					},
+				"description": "All prefixes that where not seen at that asn"
+				}
+	return jsonify(extrapolator_results)
+
+
 @application.route("/<list:asns>/<list:policies>/")
 def forecast_api(asns, policies):
 #    db = Database(Logger({}).logger)
