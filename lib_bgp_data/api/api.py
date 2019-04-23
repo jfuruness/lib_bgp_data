@@ -1,6 +1,21 @@
+# Flask stuff
 from flask import Flask, jsonify
 from werkzeug.contrib.fixers import ProxyFix
 from werkzeug.routing import BaseConverter
+# Utility modules
+from random import random
+from datetime import datetime, timedelta
+# API Docs
+from flasgger import Swagger, swag_from
+
+
+####################################################################
+# Auxiliary Classes and Functions
+####################################################################
+
+#-------------------------------------------------------
+# Classes
+#-------------------------------------------------------
 
 
 class ListConverter(BaseConverter):
@@ -13,12 +28,81 @@ class ListConverter(BaseConverter):
                         for value in values)
 
 
+#-------------------------------------------------------
+# Functions
+#-------------------------------------------------------
+
+# TODO: Delete this functions once we implement ability of getting history data from database
+def rand_num_array(length):
+    """
+    Create an array of random numbers of the given length
+    """
+    result = []
+    for i in range(length):
+        result.append(int(random() * 100))
+    return result
+
+
+# TODO: Delete this functions once we implement ability of getting history data from database
+def stat_history_producer(length):
+    """
+    Produces fake history data for all the policies, for a given amount of days (i.e. length)
+    """
+    asn_stats_history = {
+        'simpleTimeHeuristic': {
+            'neitherBlockedNorHijacked': rand_num_array(length),
+            'hijackedAndBlocked': rand_num_array(length),
+            'notHijackedButBlocked': rand_num_array(length),
+            'hijackedButNotBlocked': rand_num_array(length)
+        },
+        'rov': {
+            'neitherBlockedNorHijacked': rand_num_array(length),
+            'hijackedAndBlocked': rand_num_array(length),
+            'notHijackedButBlocked': rand_num_array(length),
+            'hijackedButNotBlocked': rand_num_array(length)
+        },
+        'deprefer': {
+          'neitherBlockedNorHijacked': rand_num_array(length),
+          'hijackedAndBlocked': rand_num_array(length),
+          'notHijackedButBlocked': rand_num_array(length),
+          'hijackedButNotBlocked': rand_num_array(length)
+        }
+    }
+
+    # Create timestamps
+    dates = []
+    today = datetime.today()
+    for i in range(length, 0, -1):
+        date = today - timedelta(days=i)
+        # dates.append(date.strftime('%Y-%m-%d'))
+        dates.append(date.isoformat())
+
+    result = {
+        'timestamps': dates,
+        'history': asn_stats_history
+    }
+
+    return result
+
+
+####################################################################
+# Flask App Settings
+####################################################################
+
+
 application = Flask(__name__)
+swagger = Swagger(application)
 application.wsgi_app = ProxyFix(application.wsgi_app)
 application.url_map.converters['list'] = ListConverter
 
+
+####################################################################
+# API Endpoints
+####################################################################
+
+@swag_from('flasgger_docs/extrapolation.yml')
 @application.route("/extrapolator/inverse/<list:asns>/")
-def forecast_api(asns):
+def extrapolation(asns):
 	extrapolator_results = {"012": {"prefix": 123,
 					"origin": 345
 					},
@@ -27,8 +111,9 @@ def forecast_api(asns):
 	return jsonify(extrapolator_results)
 
 
+@swag_from('flasgger_docs/asn_hijack_stats.yml')
 @application.route("/<list:asns>/<list:policies>/")
-def forecast_api(asns, policies):
+def asn_hijack_stats(asns, policies):
 #    db = Database(Logger({}).logger)
     stats = {"123":
                 {'parent_if_stub_as': '1234',
@@ -106,13 +191,36 @@ def forecast_api(asns, policies):
                      'description': 'incomplete'
                      }
                 }
-
             }
     if '123' not in asns:
         stats.pop('123')
     if '456' not in asns:
         stats.pop('456')
     return jsonify(stats)
+
+
+@swag_from('flasgger_docs/asn_history.yml')
+@application.route('/asn_history/<asn>/<policy>/<length>/')
+def asn_history(asn, policy, length):
+    result = {}
+    history_data = stat_history_producer(int(length))
+
+    if policy == 'all':
+        result[asn] = history_data
+    else:
+        result[asn] = {
+            'timestamps': history_data['timestamps'],
+            'history': {
+                policy: history_data['history'][policy]
+            }
+        }
+
+    return jsonify(result)
+
+
+####################################################################
+# For Development Testing Only
+####################################################################
 
 if __name__ == '__main__':
     application.run(host='0.0.0.0', debug=True)
