@@ -46,13 +46,14 @@ responses:
       $ref: '#/definitions/PolicyStats'
     examples:
       '1111': {
-        'simpleTimeHeuristic': {
+        'parent_if_stub_as': '1000',
+        'Simple Time Heuristic': {
             'neitherBlockedNorHijacked': 3,
             'hijackedAndBlocked': 10,
             'notHijackedButBlocked': 2,
             'hijackedButNotBlocked': 1
         },
-        'rov': {
+        'ROV': {
             'neitherBlockedNorHijacked': 5,
             'hijackedAndBlocked': 4,
             'notHijackedButBlocked': 6,
