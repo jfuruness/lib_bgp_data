@@ -15,7 +15,8 @@ from .roas_collector import ROAs_Collector
 from .bgpstream_website_parser import BGPStream_Website_Parser
 from .mrt_parser import MRT_Parser
 from .what_if_analysis import What_If_Analysis, RPKI_Validator
-from .utils import utils, Database, db_connection, Announcements_Covered_By_Roas_Table
+from .utils import utils, Database, db_connection
+from .utils import Announcements_Covered_By_Roas_Table, Stubs_Table
 
 __author__ = "Justin Furuness"
 __credits__ = ["Justin Furuness"]
@@ -43,6 +44,8 @@ class BGP_Data_Parser:
         kwargs dictionary includes <name_of_parser>_args"""
 
         utils.set_common_init_args(self, {}, "bgp data")
+        self.logger.info("starting data parser")
+
         if first_run:
             self.initialize_everything()
         # First we want to parse the mrt files and create the index
@@ -96,8 +99,12 @@ class BGP_Data_Parser:
                 USING GIST(prefix inet_ops, origin);"""]        
         input("ABOUT TO PERFORM Multiproc exec")
         input("PRESS ONE MORE TIME")
+        # Generates the final stubs table, and creates indexes
         with db_connection(Database, self.logger) as db:
             db.multiprocess_execute(create_exr_index_sqls)
+        with db_connection(Stubs_Table, self.logger) as db:
+            db.generate_stubs_table()
+            
 #        rpki_process.join()#######################
         input("rpki done running")
         wia = What_If_Analysis(what_if_analysis_args)

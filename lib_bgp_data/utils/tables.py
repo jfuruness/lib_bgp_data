@@ -11,6 +11,7 @@ from .logger import error_catcher
 from .database import Database
 from .database import db_connection
 from .utils import Pool
+from . import utils
 
 __author__ = "Justin Furuness"
 __credits__ = ["Justin Furuness"]
@@ -174,3 +175,70 @@ class Announcements_Covered_By_Roas_Table(Database):
     def get_tables(self):
         self.cursor.execute("SELECT * FROM mrt_w_roas_names;")
         return [x.get("name") for x in self.cursor.fetchall()]
+
+class Stubs_Table(Database):
+    """Stubs table class"""
+
+    __slots__ = []
+
+    @error_catcher()
+    def __init__(self, logger, cursor_factory=RealDictCursor, test=False):
+        """Initializes the announcement table"""
+        Database.__init__(self, logger, cursor_factory, test)
+
+    @error_catcher()
+    def _create_tables(self):
+        """ Creates tables if they do not exist"""
+
+        sql = """CREATE UNLOGGED TABLE IF NOT EXISTS stubs_final (
+              asn bigint,
+              parent bigint);"""
+        self.cursor.execute(sql)
+
+    def generate_stubs_table(self):
+
+        self.logger.info("Generating final stubs table")
+        asn_rows = []
+        for result in self.execute("SELECT * FROM stubs;"):
+            parent = result["parent_asn"]
+            while True:
+                new_results = self.execute(
+                    "SELECT * FROM stubs WHERE stub_asn=%s", [parent])
+                if len(new_results) > 0:
+                    parent = new_results[0]["parent_asn"]
+                else:
+                    break
+            asn_rows.append([result["stub_asn"], parent])
+        self.logger.debug(asn_rows)
+        utils.rows_to_db(self.logger, asn_rows, "/tmp/stubs_final.csv", Stubs_Table)
+        self.logger.info("Final stubs table generated")
+        self.create_index()
+
+    @error_catcher()
+    def clear_table(self):
+        """Clears the tables. Should be called at the start of every run"""
+
+        self.logger.info("Dropping Stubs final")
+        self.cursor.execute("DROP TABLE IF EXISTS stubs_final")
+        self.logger.info("Stubs final table dropped")
+
+    def create_index(self):
+        """Creates an index"""
+
+        self.logger.info("Creating index")
+        sql = """CREATE INDEX IF NOT EXISTS stubs_final_index
+                 ON stubs_final(asn);"""
+        self.cursor.execute(sql)
+        self.logger.info("Index created")
+
+    @property
+    def name(self):
+        """Returns the name of the table"""
+
+        return "stubs_final"
+
+    @property
+    def columns(self):
+        """Returns the columns of the table"""
+
+        return ['asn', 'parent']

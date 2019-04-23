@@ -4,6 +4,8 @@ from werkzeug.routing import BaseConverter
 from random import random
 from datetime import datetime, timedelta
 from flasgger import Swagger, swag_from
+from ..utils import Database, db_connection, Thread_Safe_Logger as Logger
+from ..utils import utils, Stubs_Table
 
 
 class ListConverter(BaseConverter):
@@ -71,7 +73,7 @@ application = Flask(__name__)
 swagger = Swagger(application)
 application.wsgi_app = ProxyFix(application.wsgi_app)
 application.url_map.converters['list'] = ListConverter
-
+db = Database(Logger({}))
 
 @swag_from('flasgger_docs/extrapolation.yml')
 @application.route("/extrapolator/inverse/<list:asns>/")
@@ -83,11 +85,37 @@ def extrapolation(asns):
 				}
 	return jsonify(extrapolator_results)
 
+def form_sql(table_name, asns):
+    sql = "SELECT * FROM "
+    sql += table_name
+    sql += " WHERE asn=%s"
+    if len(asns) > 1:
+        for asn in asns[0:]:
+            sql += " OR asn=%s "
+    sql += ";"
+
+
+    
 
 @swag_from('flasgger_docs/asn_hijack_stats.yml')
 @application.route("/<list:asns>/<list:policies>/")
-def asn_hijack_stats(asns, policies):
-#    db = Database(Logger({}).logger)
+def asn_policy_stats(asns, policies):
+    sqls = []
+    if "all" in policies:
+        policies = ["invalid_asn", "invalid_length", "rov", "time_heuristic"]
+    if "invalid_asn" in policies:
+        sqls.append(form_sql("invalid_asn_policy", asns))
+    if "invalid_length" in policies:
+        sqls.append(form_sql("invalid_length_policy", asns))
+    if "rov" in policies:
+        sqls.append(form_sql("rov_policy", asns))
+    if "time_heuristic" in policies:
+        sqls.append(form_sql("time_heuristic_policy", asns))
+    for sql in sqls:
+        db.cursor.execute(sqls)
+        results = db.cursor.fetchall()
+        for result in results:
+            print([(key, val) for key, val in result.items()])
     stats = {"123":
                 {'parent_if_stub_as': '1234',
                  'Simple Time Heuristic':
