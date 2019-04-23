@@ -10,9 +10,7 @@ setup(
     download_url='https://github.com/jfuruness/lib_bgp_data.git',
     keywords=['Furuness', 'furuness', 'pypi', 'package'],  # arbitrary keywords
     install_requires=[
-        'pybgpstream',
         'setuptools',
-        'psycopg2',
         'requests',
         'bs4'
     ],

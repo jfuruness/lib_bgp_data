@@ -3,9 +3,17 @@
 
 """This module contains class Database that interacts with a database"""
 
+# Due to circular imports this must be here
+from contextlib import contextmanager
+
+@contextmanager
+def db_connection(table, logger):
+    t = table(logger)
+    yield t
+    t.close()
+
 import psycopg2
 from psycopg2.extras import RealDictCursor
-from contextlib import contextmanager
 from .config import Config
 from .logger import error_catcher
 from .utils import Pool
@@ -18,12 +26,6 @@ __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
-
-@contextmanager
-def db_connection(table, logger):
-    t = table(logger)
-    yield t
-    t.close()
 
 class Database:
     """Interact with the database"""

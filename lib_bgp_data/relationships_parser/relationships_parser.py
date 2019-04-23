@@ -18,11 +18,9 @@ from datetime import timedelta
 import multiprocessing
 from pathos.multiprocessing import ProcessingPool as Pool
 from .relationships_file import AS_2_File
-from ..logger import Logger, error_catcher
 from .tables import Customer_Providers_Table, Peers_Table
-from ..config import Config
-from .. import utils
-from ..database import db_connection
+from ..utils import utils, Config, db_connection
+from ..utils import Thread_Safe_Logger as Logger, error_catcher
 
 __author__ = "Justin Furuness"
 __credits__ = ["Justin Furuness"]

@@ -8,10 +8,8 @@ import urllib
 import json
 import re
 import csv
-from ..logger import Logger, error_catcher
-from .. import utils
+from ..utils import utils, error_catcher, db_connection
 from .tables import ROAs_Table
-from ..database import db_connection
 
 __author__ = "Justin Furuness"
 __credits__ = ["Justin Furuness"]

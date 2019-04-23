@@ -18,8 +18,7 @@ simply delete the comments at the top of the files, and treat them as
 from enum import Enum
 import re
 import os
-from ..logger import error_catcher
-from .. import utils
+from ..utils import utils, error_catcher
 from .tables import Customer_Providers_Table, Peers_Table
 
 __author__ = "Justin Furuness"

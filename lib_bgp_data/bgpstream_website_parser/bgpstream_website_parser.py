@@ -12,8 +12,7 @@ import shutil
 import os
 import bs4
 from enum import Enum
-from ..logger import error_catcher
-from .. import utils
+from ..utils import error_catcher, utils
 from .data_classes import Leak, Hijack, Outage 
 
 __author__ = "Justin Furuness"

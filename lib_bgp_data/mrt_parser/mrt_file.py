@@ -17,8 +17,7 @@ import bz2
 import gzip
 import functools
 from subprocess import call
-from ..logger import error_catcher
-from .. import utils
+from ..utils import utils, error_catcher
 from .tables import Announcements_Table
 
 __author__ = "Justin Furuness"

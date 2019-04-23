@@ -15,10 +15,7 @@ from .roas_collector import ROAs_Collector
 from .bgpstream_website_parser import BGPStream_Website_Parser
 from .mrt_parser import MRT_Parser
 from .what_if_analysis import What_If_Analysis, RPKI_Validator
-from .utils import Pool
-from . import utils
-from .database import Database, db_connection
-from .tables import Announcements_Covered_By_Roas_Table
+from .utils import utils, Database, db_connection, Announcements_Covered_By_Roas_Table
 
 __author__ = "Justin Furuness"
 __credits__ = ["Justin Furuness"]

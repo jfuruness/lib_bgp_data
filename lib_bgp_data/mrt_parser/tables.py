@@ -5,9 +5,7 @@
 
 import psycopg2
 from psycopg2.extras import RealDictCursor
-from ..config import Config
-from ..logger import error_catcher
-from ..database import Database
+from ..utils import Config, Database, error_catcher
 
 __author__ = "Justin Furuness"
 __credits__ = ["Justin Furuness"]

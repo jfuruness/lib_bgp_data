@@ -15,11 +15,9 @@ import os
 from subprocess import Popen, PIPE
 import time
 import urllib
-from ..logger import Logger, error_catcher
-from .. import utils
+from ..utils import utils, error_catcher, Thread_Safe_Logger as Logger
 from .tables import Unique_Prefix_Origins_Table, Validity_Table
-from ..database import Database
-from ..database import db_connection
+from ..utils import Database, db_connection
 
 __author__ = "Justin Furuness", "Cameron Morris"
 __credits__ = ["Justin Furuness", "Cameron Morris"]

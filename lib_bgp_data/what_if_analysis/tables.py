@@ -6,8 +6,7 @@
 import os
 import gzip
 from psycopg2.extras import RealDictCursor
-from ..logger import error_catcher
-from ..database import Database
+from ..utils import error_catcher, Database
 
 __author__ = "Justin Furuness", "Cameron Morris"
 __credits__ = ["Justin Furuness", "Cameron Morris"]

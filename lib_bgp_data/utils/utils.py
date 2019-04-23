@@ -34,7 +34,7 @@ from bs4 import BeautifulSoup as Soup
 from pathos.multiprocessing import ProcessingPool
 from contextlib import contextmanager 
 from multiprocessing import cpu_count
-from .thread_safe_logger import Logger
+from .logger import Thread_Safe_Logger as Logger
 from .config import Config
 from .database import db_connection
 

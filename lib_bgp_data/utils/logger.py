@@ -207,14 +207,14 @@ class logging(Enum):
 class Thread_Safe_Logger:
     """Logger class for process safe logging, explained below
 
-	This module contains class Logger with logging functionality
-	This module contains a logging class that impliments logging.
-	Because the logging module deadlocks when used with lots of multiprocessing
-	I have decided to take it out and replace it with something simpler. Logging
-	to files are awesome, but clearly python logging sucks when using
-	multiprocessing, I cannot even import logging without it somehow deadlocking
-	so I will be using my own crap class from now on
-	"""
+    This module contains class Logger with logging functionality
+    This module contains a logging class that impliments logging.
+    Because the logging module deadlocks when used with lots of multiprocessing
+    I have decided to take it out and replace it with something simpler. Logging
+    to files are awesome, but clearly python logging sucks when using
+    multiprocessing, I cannot even import logging without it somehow deadlocking
+    so I will be using my own crap class from now on
+    """
 
     def __init__(self, args):
         """Initializes logger
@@ -253,4 +253,3 @@ class Thread_Safe_Logger:
                 # Flush the output for multithreading
                 sys.stdout.flush()
         return _function
-

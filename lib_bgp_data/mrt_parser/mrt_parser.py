@@ -34,11 +34,8 @@ from pathos.multiprocessing import ProcessingPool
 from contextlib import contextmanager
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from .mrt_file import MRT_File
-from ..logger import error_catcher
+from ..utils import error_catcher, utils, db_connection
 from .tables import Announcements_Table
-from .. import utils
-from ..utils import Pool
-from ..database import db_connection
 
 __author__ = "Justin Furuness"
 __credits__ = ["Justin Furuness", "Cameron Morris"]
@@ -114,7 +111,7 @@ class MRT_Parser:
                               self.logger)
                      for i, url in enumerate(urls)][1]]#############################
         # Creates a dl pool, I/O based, so get as many threads as possible
-        with Pool(self.logger, dl_threads, 4, "download") as dl_pool:
+        with utils.Pool(self.logger, dl_threads, 4, "download") as dl_pool:
             self.logger.debug("About to start downloading files")
             dl_pool.map(lambda f : utils.download_file(f.logger, f.url, f.path,
                 f.num, f.total_files, f.num/5), mrt_files)
@@ -129,7 +126,7 @@ class MRT_Parser:
         # Creates a parsing pool with half cpu count
         # This is because the bash command spawns multiple processes
         # So multiplier is less than 1 
-        with Pool(self.logger, p_threads, 1, "parsing") as  p_pool:
+        with utils.Pool(self.logger, p_threads, 1, "parsing") as  p_pool:
             p_pool.map(lambda f, db: f.parse_file(db),
                        sorted(mrt_files, reverse=True),  #  Largest first
                        [db]*len(mrt_files))
