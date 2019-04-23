@@ -1,21 +1,9 @@
-# Flask stuff
 from flask import Flask, jsonify
 from werkzeug.contrib.fixers import ProxyFix
 from werkzeug.routing import BaseConverter
-# Utility modules
 from random import random
 from datetime import datetime, timedelta
-# API Docs
 from flasgger import Swagger, swag_from
-
-
-####################################################################
-# Auxiliary Classes and Functions
-####################################################################
-
-#-------------------------------------------------------
-# Classes
-#-------------------------------------------------------
 
 
 class ListConverter(BaseConverter):
@@ -24,23 +12,17 @@ class ListConverter(BaseConverter):
         return value.split('+')
 
     def to_url(self, values):
-        return '+'.join(BaseConverter.to_url(value)
-                        for value in values)
+        return '+'.join([BaseConverter.to_url(value)
+                        for value in values])
 
-
-#-------------------------------------------------------
-# Functions
-#-------------------------------------------------------
 
 # TODO: Delete this functions once we implement ability of getting history data from database
 def rand_num_array(length):
     """
     Create an array of random numbers of the given length
     """
-    result = []
-    for i in range(length):
-        result.append(int(random() * 100))
-    return result
+
+    return [int(random() * 100) for i in range(length)]
 
 
 # TODO: Delete this functions once we implement ability of getting history data from database
@@ -85,20 +67,11 @@ def stat_history_producer(length):
     return result
 
 
-####################################################################
-# Flask App Settings
-####################################################################
-
-
 application = Flask(__name__)
 swagger = Swagger(application)
 application.wsgi_app = ProxyFix(application.wsgi_app)
 application.url_map.converters['list'] = ListConverter
 
-
-####################################################################
-# API Endpoints
-####################################################################
 
 @swag_from('flasgger_docs/extrapolation.yml')
 @application.route("/extrapolator/inverse/<list:asns>/")
@@ -216,11 +189,6 @@ def asn_history(asn, policy, length):
         }
 
     return jsonify(result)
-
-
-####################################################################
-# For Development Testing Only
-####################################################################
 
 if __name__ == '__main__':
     application.run(host='0.0.0.0', debug=True)
