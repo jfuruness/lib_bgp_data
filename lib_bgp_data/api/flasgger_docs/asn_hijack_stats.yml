@@ -2,10 +2,12 @@ Returns hijack stats for a given ASN and policy
 This is using yml doc for specifications.
 ---
 parameters:
-  - name: asn
+  - name: asns
     in: path
     description: AS Number
-    type: string
+    type: array
+    items: 
+      type: string
     required: true
   - name: policy
     in: path
