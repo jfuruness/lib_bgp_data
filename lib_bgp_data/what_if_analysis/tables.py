@@ -178,19 +178,19 @@ class Validity_Table(Database):
                 (SELECT v.prefix, v.asn AS origin FROM validity v
                  LEFT OUTER JOIN hijack_temp h
                 ON h.prefix = v.prefix AND h.origin = v.asn
-                WHERE v.validity = -1 AND h.prefix IS NULL and h.origin IS NULL);
+                WHERE v.validity = -2 AND h.prefix IS NULL and h.origin IS NULL);
                 """,
                 """CREATE UNLOGGED TABLE invalid_asn_blocked_hijacked AS
                 (SELECT v.prefix, v.asn AS origin FROM validity v
                 INNER JOIN hijack_temp h
                 ON h.prefix = v.prefix AND h.origin = v.asn
-                WHERE v.validity = -1);
+                WHERE v.validity = -2);
                 """,
                 """CREATE UNLOGGED TABLE invalid_asn_unblocked_hijacked AS
                 (SELECT v.prefix, v.asn AS origin FROM validity v
                 INNER JOIN hijack_temp h
                 ON h.prefix = v.prefix AND h.origin = v.asn
-                WHERE v.validity>=0 OR v.validity=-2);
+                WHERE v.validity>=0 OR v.validity=-1);
                 """,
 
                 """CREATE UNLOGGED TABLE rov_unblocked_hijacked AS
