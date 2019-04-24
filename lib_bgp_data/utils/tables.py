@@ -36,7 +36,7 @@ class Announcements_Covered_By_Roas_Table(Database):
     def _create_tables(self):
         """ Creates tables if they do not exist"""
 
-#	return #################################################
+        return #################################################
         sql = """CREATE UNLOGGED TABLE IF NOT EXISTS
               mrt_w_roas AS (
               SELECT m.time, m.prefix, m.as_path, m.origin
@@ -49,6 +49,7 @@ class Announcements_Covered_By_Roas_Table(Database):
     def clear_table(self):
         """Clears the tables. Should be called at the start of every run"""
 
+        return
         self.logger.info("Dropping MRT_W_Roas")
         self.cursor.execute("DROP TABLE IF EXISTS mrt_w_roas")
         self.logger.info("MRT_W_Roas table dropped")
@@ -83,9 +84,9 @@ class Announcements_Covered_By_Roas_Table(Database):
         mrt and roas tables are dropped.
         """
 
-        self.clear_table()
-        self._create_tables()
-        self.create_index()
+#        self.clear_table()
+#        self._create_tables()
+#        self.create_index()
         # Splits the tables, drops the old tables
         self.split_tables()
 
@@ -99,7 +100,7 @@ class Announcements_Covered_By_Roas_Table(Database):
         vaccumed
         """
 
-        p_ranges = ["{}.0.0.0/5".format(x) for x in range(0, 256, 8)]
+        p_ranges = ["{}.0.0.0/3".format(x) for x in range(0, 256, 32)]
         p_ranges.append("255.255.255.255")
         
         table_names = ["mrt_w_roas_contained_or_equal_{}".format(

@@ -75,24 +75,24 @@ class BGP_Data_Parser:
             # Then moves the mrts out of ram
             # Then moves the roas out of ram
             # Then splits up the table and deletes unnessecary tables
-            self.logger.info("analyzing now")
-            db.cursor.execute("VACUUM ANALYZE")
-            self.logger.info("dine analys")
-            self.logger.info("kjoining")
-            db.join_mrt_with_roas()
-            self.logger.info("done joining")
+#            self.logger.info("analyzing now")
+#            db.cursor.execute("VACUUM ANALYZE")
+#            self.logger.info("dine analys")
+#            self.logger.info("kjoining")
+#            db.join_mrt_with_roas()
+#            self.logger.info("done joining")
             tables = db.get_tables()
-            db.cursor.execute("DROP TABLE IF EXISTS extrapolation_inverse_results;")
-            db.cursor.execute("SET enable_seqscan to true;")
-            db.cursor.execute("CHECKPOINT;")
-            db.cursor.execute("VACUUM ANALYZE;")
+#########            db.cursor.execute("DROP TABLE IF EXISTS extrapolation_inverse_results;")
+#            db.cursor.execute("SET enable_seqscan TO TRUE;")
+#            db.cursor.execute("CHECKPOINT;")
+#            db.cursor.execute("VACUUM ANALYZE;")
 
 #        get_hijacks_process.join()########################
-        input("start rpki")
-        rpki_parser = RPKI_Validator(rpki_validator_args)
-        rpki_process = Process(target=rpki_parser.run_validator)        
-        rpki_process.start()
-        rpki_process.join()#########################################
+#        input("start rpki")
+#        rpki_parser = RPKI_Validator(rpki_validator_args)
+#        rpki_process = Process(target=rpki_parser.run_validator)        
+#        rpki_process.start()
+#        rpki_process.join()#########################################
 
         input("start extrapolator")
 
@@ -104,7 +104,7 @@ class BGP_Data_Parser:
                 extrap_args = "/home/ubuntu/bgp-extrapolator -a {}".format(table)
                 Popen([extrap_args], shell=True).wait()
                 print("table is {}".format(table))
-                db.cursor.execute("DROP TABLE {}".format(table))
+#                db.cursor.execute("DROP TABLE {}".format(table))
                 db.cursor.execute("CHECKPOINT;")
         create_exr_index_sqls = ["""CREATE INDEX ON 
             extrapolation_inverse_results USING GIST(prefix inet_ops);""",
