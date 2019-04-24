@@ -59,7 +59,8 @@ class BGP_Data_Parser:
 #        Relationships_Parser(relationships_parser_args).parse_files()############################
         # While that is running lets get roas, its fast so no multiprocessing
         # This table gets created in RAM
-#        ROAs_Collector(roas_collector_args).parse_roas()#############################
+        ROAs_Collector(roas_collector_args).parse_roas()#############################
+        input("EXIT")
         # We will get the hijack data asynchronously because it will take a while
 #        website_parser = BGPStream_Website_Parser(########################
 #            bgpstream_website_parser_args)#############################
