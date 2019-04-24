@@ -88,79 +88,44 @@ def extrapolation(asns):
 def form_sql(table_name, asns):
     sql = "SELECT * FROM "
     sql += table_name
-    sql += " WHERE asn=%s"
+    sql += " WHERE asn={}".format(asns[0])
     if len(asns) > 1:
         for asn in asns[0:]:
             sql += " OR asn=%s "
     sql += ";"
+    return sql
 
 
     
 
 @swag_from('flasgger_docs/asn_hijack_stats.yml')
-@application.route("/<list:asns>/<list:policies>/")
+@application.route("/asn_policy_stats/<list:asns>/<list:policies>/")
 def asn_policy_stats(asns, policies):
     sqls = []
     if "all" in policies:
-        policies = ["invalid_asn", "invalid_length", "rov", "time_heuristic"]
+        policies = ["invalid_asn"]#, "invalid_length", "rov", "time_heuristic"]
     if "invalid_asn" in policies:
-        sqls.append(form_sql("invalid_asn_policy", asns))
-    if "invalid_length" in policies:
-        sqls.append(form_sql("invalid_length_policy", asns))
-    if "rov" in policies:
-        sqls.append(form_sql("rov_policy", asns))
-    if "time_heuristic" in policies:
-        sqls.append(form_sql("time_heuristic_policy", asns))
+       sqls.append(form_sql("invalid_asn_policy", asns))
+       print(sqls)
+#    if "invalid_length" in policies:
+#        sqls.append(form_sql("invalid_length_policy", asns))
+#    if "rov" in policies:
+#        sqls.append(form_sql("rov_policy", asns))
+#    if "time_heuristic" in policies:
+#        sqls.append(form_sql("time_heuristic_policy", asns))
     for sql in sqls:
-        db.cursor.execute(sqls)
+        db.cursor.execute(sql)
         results = db.cursor.fetchall()
+        result = results[0]
         for result in results:
             print([(key, val) for key, val in result.items()])
-    stats = {"123":
-                {'parent_if_stub_as': '1234',
-                 'Simple Time Heuristic':
-                    {'neitherBlockedNorHijacked': 1,
-                     'hijackedAndBlocked': 2,
-                     'notHijackedButBlocked': 3,
-                     'hijackedButNotBlocked': 4,
-                     'description': 'Block route announcements using standard Resources Certification (RPKI) Route Origin Validation (ROV)'
-                      },
-                'ROV':
-                    {'neitherBlockedNorHijacked': 5,
-                     'hijackedAndBlocked': 6,
-                     'notHijackedButBlocked': 7,
-                     'hijackedButNotBlocked': 8,
-                     'description': 'Hello Cameron'
-                      },
-                'Enforce Invalid ASN ONly':
-                    {'neitherBlockedNorHijacked': 9,
-                     'hijackedAndBlocked': 10,
-                     'notHijackedButBlocked': 11,
-                     'hijackedButNotBlocked': 12,
-                     'description': 'Block route announcements based on certain ROA rules'
-                     },
-                'Enforce Invalid Length ONly':
-                    {'neitherBlockedNorHijacked': 13,
-                     'hijackedAndBlocked': 14,
-                     'notHijackedButBlocked': 15,
-                     'hijackedButNotBlocked': 16,
-                     'description': 'help'
-                     },
-                'Pass If No Alternative Route':
-                    {'neitherBlockedNorHijacked': 17,
-                     'hijackedAndBlocked': 18,
-                     'notHijackedButBlocked': 19,
-                     'hijackedButNotBlocked': 20,
-                     'description': 'incomplete'
-                     }
-                },
-            "456":
+    stats = {asns[0]:
                 {'parent_if_stub_as': '',
-                 'Simple Time Heuristic':
-                    {'neitherBlockedNorHijacked': 1,
-                     'hijackedAndBlocked': 2,
-                     'notHijackedButBlocked': 3,
-                     'hijackedButNotBlocked': 4,
+                 'Enforce Invalid ASN Only':
+                    {'neitherBlockedNorHijacked': result["not_hijacked_not_blocked"],
+                     'hijackedAndBlocked': result["hijack_blocked"],
+                     'notHijackedButBlocked': result["not_hijacked_blocked"],
+                     'hijackedButNotBlocked': result["hijack_not_blocked"],#result["hijacked_not_blocked"],
                      'description': 'Block route announcements using standard Resources Certification (RPKI) Route Origin Validation (ROV)'
                       },
                 'ROV':
@@ -168,35 +133,30 @@ def asn_policy_stats(asns, policies):
                      'hijackedAndBlocked': 6,
                      'notHijackedButBlocked': 7,
                      'hijackedButNotBlocked': 8,
-                     'description': 'Hello Cameron'
+                     'description': 'Block route announcements using standard Resources Certification (RPKI) Route Origin Validation (ROV)'
                       },
-                'Enforce Invalid ASN Only':
+                'Simple Time Heuristic':
                     {'neitherBlockedNorHijacked': 9,
                      'hijackedAndBlocked': 10,
                      'notHijackedButBlocked': 11,
                      'hijackedButNotBlocked': 12,
-                     'description': 'Block route announcements based on certain ROA rules'
+                     'description': 'Block route announcements using standard Resources Certification (RPKI) Route Origin Validation (ROV) and certain time parameters'
                      },
                 'Enforce Invalid Length Only':
                     {'neitherBlockedNorHijacked': 13,
                      'hijackedAndBlocked': 14,
                      'notHijackedButBlocked': 15,
                      'hijackedButNotBlocked': 16,
-                     'description': ''
+                     'description': 'Block route announcements using standard Resources Certification (RPKI) Route Origin Validation (ROV) if invalid_length'
                      },
                 'Pass If No Alternative Route':
-                    {'neitherBlockedNorHijacked': 17,
-                     'hijackedAndBlocked': 18,
-                     'notHijackedButBlocked': 19,
-                     'hijackedButNotBlocked': 20,
+                    {'neitherBlockedNorHijacked': 0,
+                     'hijackedAndBlocked': 0,
+                     'notHijackedButBlocked': 0,
+                     'hijackedButNotBlocked': 0,
                      'description': 'incomplete'
                      }
-                }
-            }
-    if '123' not in asns:
-        stats.pop('123')
-    if '456' not in asns:
-        stats.pop('456')
+                }}
     return jsonify(stats)
 
 
