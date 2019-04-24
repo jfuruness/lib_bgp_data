@@ -92,6 +92,7 @@ class MRT_Parser:
         # Parses files using multiprocessing in descending order by size
         self._multiprocess_parse_dls(parse_threads, mrt_files, IPV4, IPV6, db)
         with db_connection(Announcements_Table, self.logger) as ann_table:
+            ann_table.cursor.execute("VACUUM ANALYZE;")
             ann_table.create_index()
 #            ann_table.vacuum()
         
@@ -103,13 +104,13 @@ class MRT_Parser:
     def _multiprocess_download(self, dl_threads, urls):
         """Downloads files in parallel. Explanation at the top, dl=download"""
 
-        mrt_files = [[MRT_File(self.path,#############################
+        mrt_files = [MRT_File(self.path,#############################
                               self.csv_dir,
                               url,
                               i + 1,
                               len(urls),
                               self.logger)
-                     for i, url in enumerate(urls)][1]]#############################
+                     for i, url in enumerate(urls)]#############################
         # Creates a dl pool, I/O based, so get as many threads as possible
         with utils.Pool(self.logger, dl_threads, 4, "download") as dl_pool:
             self.logger.debug("About to start downloading files")

@@ -155,45 +155,45 @@ class Validity_Table(Database):
         self.logger.info("Creating tables used for what if analysis")
         # Yes I know we could do this all in parallel, but there
         # really is no need since this is fast
-        sqls = ["""CREATE UNLOGGED TABLE invalid_length_blocked_not_hijacked TABLESPACE ram AS
+        sqls = ["""CREATE UNLOGGED TABLE invalid_length_blocked_not_hijacked AS
                 (SELECT v.prefix, v.asn AS origin FROM validity v
                  LEFT OUTER JOIN hijack_temp h
                 ON h.prefix = v.prefix AND h.origin = v.asn
                 WHERE v.validity = -1 AND h.prefix IS NULL and h.origin IS NULL);
                 """,
-                """CREATE UNLOGGED TABLE invalid_length_blocked_hijacked TABLESPACE ram AS
+                """CREATE UNLOGGED TABLE invalid_length_blocked_hijacked AS
                 (SELECT v.prefix, v.asn AS origin FROM validity v
                 INNER JOIN hijack_temp h
                 ON h.prefix = v.prefix AND h.origin = v.asn
                 WHERE v.validity = -1);
                 """,
-                """CREATE UNLOGGED TABLE invalid_length_unblocked_hijacked TABLESPACE ram AS
+                """CREATE UNLOGGED TABLE invalid_length_unblocked_hijacked AS
                 (SELECT v.prefix, v.asn AS origin FROM validity v
                 INNER JOIN hijack_temp h
                 ON h.prefix = v.prefix AND h.origin = v.asn
                 WHERE v.validity>=0 OR v.validity=-2);
                 """,
 
-                """CREATE UNLOGGED TABLE invalid_asn_blocked_not_hijacked TABLESPACE ram AS
+                """CREATE UNLOGGED TABLE invalid_asn_blocked_not_hijacked AS
                 (SELECT v.prefix, v.asn AS origin FROM validity v
                  LEFT OUTER JOIN hijack_temp h
                 ON h.prefix = v.prefix AND h.origin = v.asn
                 WHERE v.validity = -1 AND h.prefix IS NULL and h.origin IS NULL);
                 """,
-                """CREATE UNLOGGED TABLE invalid_asn_blocked_hijacked TABLESPACE ram AS
+                """CREATE UNLOGGED TABLE invalid_asn_blocked_hijacked AS
                 (SELECT v.prefix, v.asn AS origin FROM validity v
                 INNER JOIN hijack_temp h
                 ON h.prefix = v.prefix AND h.origin = v.asn
                 WHERE v.validity = -1);
                 """,
-                """CREATE UNLOGGED TABLE invalid_asn_unblocked_hijacked TABLESPACE ram AS
+                """CREATE UNLOGGED TABLE invalid_asn_unblocked_hijacked AS
                 (SELECT v.prefix, v.asn AS origin FROM validity v
                 INNER JOIN hijack_temp h
                 ON h.prefix = v.prefix AND h.origin = v.asn
                 WHERE v.validity>=0 OR v.validity=-2);
                 """,
 
-                """CREATE UNLOGGED TABLE rov_unblocked_hijacked TABLESPACE ram AS
+                """CREATE UNLOGGED TABLE rov_unblocked_hijacked AS
                 (SELECT v.prefix, v.asn AS origin FROM validity v
                 INNER JOIN hijack_temp h
                 ON h.prefix = v.prefix AND h.origin = v.asn

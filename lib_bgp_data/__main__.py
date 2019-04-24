@@ -30,8 +30,8 @@ class BGP_Data_Parser:
     """This class contains all the neccessary parsing functions"""
 
     def __init__(self,
-                 start=1553834277,
-                 end=1553920677,
+                 start=1555286400,
+                 end=1555372800,
                  first_run=False,
                  mrt_parser_args={},
                  relationships_parser_args={},
@@ -51,22 +51,22 @@ class BGP_Data_Parser:
         # First we want to parse the mrt files and create the index
         # We can do this in a separate process so that we can run other things
         # This table gets created in ram
-#        mrt_parser = MRT_Parser(mrt_parser_args)#################################
-#        mrt_process = Process(target=mrt_parser.parse_files, args=(start, end, ))#################
-#        mrt_process.start()############################################
+        mrt_parser = MRT_Parser(mrt_parser_args)#################################
+        mrt_process = Process(target=mrt_parser.parse_files, args=(start, end, ))#################
+        mrt_process.start()############################################
         # While that is going get the relationships data. We aren't going to run this
         # multithreaded because it is so fast, there is no point
-#        Relationships_Parser(relationships_parser_args).parse_files()############################
+        Relationships_Parser(relationships_parser_args).parse_files()############################
         # While that is running lets get roas, its fast so no multiprocessing
         # This table gets created in RAM
-#        ROAs_Collector(roas_collector_args).parse_roas()#############################
+        ROAs_Collector(roas_collector_args).parse_roas()#############################
         # We will get the hijack data asynchronously because it will take a while
-#        website_parser = BGPStream_Website_Parser(########################
-#            bgpstream_website_parser_args)#############################
-#        get_hijacks_process = Process(target=website_parser.parse, args=(start,end,))##########    
-#        get_hijacks_process.start()##########################
+        website_parser = BGPStream_Website_Parser(########################
+            bgpstream_website_parser_args)#############################
+        get_hijacks_process = Process(target=website_parser.parse, args=(start,end,))##########    
+        get_hijacks_process.start()##########################
         # Now we need to wait until the mrt parser finishes it's stuff
-#        mrt_process.join()############################################
+        mrt_process.join()############################################
         # Now we are going to join these two tables, and move them out of memory
         with db_connection(Announcements_Covered_By_Roas_Table,
                            self.logger) as db:
@@ -74,25 +74,32 @@ class BGP_Data_Parser:
             # Then moves the mrts out of ram
             # Then moves the roas out of ram
             # Then splits up the table and deletes unnessecary tables
-#            db.join_mrt_with_roas()
+            self.logger.info("analyzing now")
+            db.cursor.execute("VACUUM ANALYZE")
+            self.logger.info("dine analys")
+            self.logger.iunfo("kjoining")
+            db.join_mrt_with_roas()
+            self.logger.iunfo("done joining")
             tables = db.get_tables()
-#            db.cursor.execute("DROP TABLE IF EXISTS extrapolation_inverse_results;")
+            db.cursor.execute("DROP TABLE IF EXISTS extrapolation_inverse_results;")
+            db.cursor.execute("SET enable_seqscan to true;")
+            db.cursor.execute("CHECKPOINT;")
+            db.cursor.execute("VACUUM ANALYZE;")
 
-#        get_hijacks_process.join()########################
-        rpki_parser = RPKI_Validator(rpki_validator_args)
-        rpki_process = Process(target=rpki_parser.run_validator)        
-        rpki_process.start()
-        rpki_process.join()#########################################
-        input("FIRST PART COMPLETED")
-        input("Another teneraeraeraer")
+        get_hijacks_process.join()########################
+#        rpki_parser = RPKI_Validator(rpki_validator_args)
+#        rpki_process = Process(target=rpki_parser.run_validator)        
+#        rpki_process.start()
+#        rpki_process.join()#########################################
         with db_connection(Database, self.logger) as db:
             for table in tables:
                 # start extrapolator
                 # run the rpki validator concurrently
-                extrap_args = "/home/jmf/bgp_files/bgp-extrapolator -a {}".format(table)
+                extrap_args = "/home/ubuntu/bgp-extrapolator -a {}".format(table)
                 Popen([extrap_args], shell=True).wait()
                 print("table is {}".format(table))
                 db.cursor.execute("DROP TABLE {}".format(table))
+                db.cursor.execute("CHECKPOINT;")
         create_exr_index_sqls = ["""CREATE INDEX ON 
             extrapolation_inverse_results USING GIST(prefix inet_ops);""",
             """CREATE INDEX ON extrapolation_inverse_results
@@ -104,14 +111,20 @@ class BGP_Data_Parser:
             db.multiprocess_execute(create_exr_index_sqls)
         with db_connection(Stubs_Table, self.logger) as db:
             db.generate_stubs_table()
-            
+            db.cursor.execute("VACUUM FULL ANALYZE;")
+            db.cursor.execute("CHECKPOINT;")
+        rpki_parser = RPKI_Validator(rpki_validator_args)
+        rpki_process = Process(target=rpki_parser.run_validator)
+        rpki_process.start()
+        rpki_process.join()#############################     
 #        rpki_process.join()#######################
         input("rpki done running")
         wia = What_If_Analysis(what_if_analysis_args)
         wia.run_policies()
         with db_connection(Database, self.logger) as db:
             # CLEAN OUT DATABASE HERE!!!!!!!!
-            db.cursor.execute("VACUUM FULL;")
+            db.cursor.execute("VACUUM FULL ANALYZE;")
+            db.cursor.execute("CHECKPOINT;")
 
 
     def initialize_everything(self):
