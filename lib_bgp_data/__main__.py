@@ -59,8 +59,8 @@ class BGP_Data_Parser:
 #        Relationships_Parser(relationships_parser_args).parse_files()############################
         # While that is running lets get roas, its fast so no multiprocessing
         # This table gets created in RAM
-        ROAs_Collector(roas_collector_args).parse_roas()#############################
-        input("EXIT")
+#        ROAs_Collector(roas_collector_args).parse_roas()#############################
+#        input("EXIT")
         # We will get the hijack data asynchronously because it will take a while
 #        website_parser = BGPStream_Website_Parser(########################
 #            bgpstream_website_parser_args)#############################
@@ -78,9 +78,9 @@ class BGP_Data_Parser:
             self.logger.info("analyzing now")
             db.cursor.execute("VACUUM ANALYZE")
             self.logger.info("dine analys")
-            self.logger.iunfo("kjoining")
+            self.logger.info("kjoining")
             db.join_mrt_with_roas()
-            self.logger.iunfo("done joining")
+            self.logger.info("done joining")
             tables = db.get_tables()
             db.cursor.execute("DROP TABLE IF EXISTS extrapolation_inverse_results;")
             db.cursor.execute("SET enable_seqscan to true;")
@@ -88,11 +88,11 @@ class BGP_Data_Parser:
             db.cursor.execute("VACUUM ANALYZE;")
 
 #        get_hijacks_process.join()########################
-
-#        rpki_parser = RPKI_Validator(rpki_validator_args)
-#        rpki_process = Process(target=rpki_parser.run_validator)        
-#        rpki_process.start()
-#        rpki_process.join()#########################################
+        input("start rpki")
+        rpki_parser = RPKI_Validator(rpki_validator_args)
+        rpki_process = Process(target=rpki_parser.run_validator)        
+        rpki_process.start()
+        rpki_process.join()#########################################
 
         input("start extrapolator")
 
@@ -122,9 +122,6 @@ class BGP_Data_Parser:
 
             db.cursor.execute("CHECKPOINT;")
 
-        rpki_parser = RPKI_Validator(rpki_validator_args)
-        rpki_process = Process(target=rpki_parser.run_validator)
-        rpki_process.start()
         rpki_process.join()#############################     
 #        rpki_process.join()#######################
         input("rpki done running")
