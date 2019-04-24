@@ -15,7 +15,7 @@ __status__ = "Development"
 get_total_announcements_sql = [
     """CREATE UNLOGGED TABLE total_announcements  AS
            (SELECT exir.asn,
-            (SELECT count(DISTINCT prefix) FROM mrt_w_roas)
+            (SELECT count(*) FROM mrt_w_roas)
                 - count(exir.asn)
             AS total FROM extrapolation_inverse_results exir
             GROUP BY exir.asn);
@@ -98,28 +98,31 @@ get_total_announcements_sql = [
            iabhs.total AS hijack_blocked,
            ianbhs.total AS hijack_not_blocked,
            iabnhs.total AS not_hijacked_blocked,
-           asns.total - iabhs.total - ianbhs.total - iabnhs.total AS not_hijacked_not_blocked,
-           rls_list.urls
+           asns.total - iabhs.total - ianbhs.total - iabnhs.total AS not_hijacked_not_blocked
            FROM total_announcements asns
                LEFT JOIN invalid_asn_blocked_hijacked_stats iabhs ON iabhs.asn = asns.asn
                LEFT JOIN invalid_asn_unblocked_hijacked_stats ianbhs ON ianbhs.asn = asns.asn
-               LEFT JOIN invalid_asn_blocked_not_hijacked_stats iabnhs ON iabnhs.asn = asns.asn
-               LEFT JOIN urls_list ON urls_list.asn = asns.asn;
+               LEFT JOIN invalid_asn_blocked_not_hijacked_stats iabnhs ON iabnhs.asn = asns.asn;
     """,
     """CREATE INDEX ON invalid_asn_policy USING asn""",
+
+
     """CREATE TABLE invalid_length_policy AS SELECT
            asns.asn AS asn,
-           ilhs.total AS hijack_blocked,
-           uhs.total AS hijack_not_blocked,
-           ilnhs.total AS not_hijacked_blocked,
-           asns.total - ilhs.total - uhs.total - ilnhs.total AS not_hijacked_not_blocked,
-           urls.url_list AS urls
+           iabhs.total AS hijack_blocked,
+           ianbhs.total AS hijack_not_blocked,
+           iabnhs.total AS not_hijacked_blocked,
+           asns.total - iabhs.total - ianbhs.total - iabnhs.total AS not_hijacked_not_blocked
            FROM total_announcements asns
-               LEFT JOIN FROM invalid_length_hijacked_stats ilhs ON ilhs.asn = asns.asn
-               LEFT JOIN FROM unblocked_hijacked_stats ON uhs.asn = asns.asn
-               LEFT JOIN FROM invalid_length_not_hijacked_stats ilnhs ON ilnhs.asn = asns.asn
-               LEFT JOIN urls_list ON urls_list.asn = asns.asn;
+               LEFT JOIN invalid_length_blocked_hijacked_stats iabhs ON iabhs.asn = asns.asn
+               LEFT JOIN invalid_length_unblocked_hijacked_stats ianbhs ON ianbhs.asn = asns.asn
+               LEFT JOIN invalid_length_blocked_not_hijacked_stats iabnhs ON iabnhs.asn = asns.asn;
     """,
+    """CREATE INDEX ON invalid_length_policy USING asn""",
+
+
+
+
     """CREATE INDEX ON invalid_length_policy USING asn""",
     """CREATE TABLE rov_policy AS SELECT
            asns.asn AS asn,

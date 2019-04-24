@@ -57,6 +57,7 @@ class Announcements_Covered_By_Roas_Table(Database):
     def create_index(self):
         """Creates an index"""
 
+        return
         self.logger.info("Creating index")
         sql = """CREATE INDEX IF NOT EXISTS mrt_w_roas_index
                  ON mrt_w_roas USING GIST (prefix inet_ops);"""

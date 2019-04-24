@@ -89,10 +89,10 @@ class BGP_Data_Parser:
 
 #        get_hijacks_process.join()########################
 #        input("start rpki")
-#        rpki_parser = RPKI_Validator(rpki_validator_args)
-#        rpki_process = Process(target=rpki_parser.run_validator)        
-#        rpki_process.start()
-#        rpki_process.join()#########################################
+        rpki_parser = RPKI_Validator(rpki_validator_args)
+        rpki_process = Process(target=rpki_parser.run_validator)        
+        rpki_process.start()
+        rpki_process.join()#########################################
 
         input("start extrapolator")
 
