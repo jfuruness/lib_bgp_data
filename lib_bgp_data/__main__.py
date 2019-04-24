@@ -51,22 +51,22 @@ class BGP_Data_Parser:
         # First we want to parse the mrt files and create the index
         # We can do this in a separate process so that we can run other things
         # This table gets created in ram
-        mrt_parser = MRT_Parser(mrt_parser_args)#################################
-        mrt_process = Process(target=mrt_parser.parse_files, args=(start, end, ))#################
-        mrt_process.start()############################################
+#        mrt_parser = MRT_Parser(mrt_parser_args)#################################
+#        mrt_process = Process(target=mrt_parser.parse_files, args=(start, end, ))#################
+#        mrt_process.start()############################################
         # While that is going get the relationships data. We aren't going to run this
         # multithreaded because it is so fast, there is no point
-        Relationships_Parser(relationships_parser_args).parse_files()############################
+#        Relationships_Parser(relationships_parser_args).parse_files()############################
         # While that is running lets get roas, its fast so no multiprocessing
         # This table gets created in RAM
-        ROAs_Collector(roas_collector_args).parse_roas()#############################
+#        ROAs_Collector(roas_collector_args).parse_roas()#############################
         # We will get the hijack data asynchronously because it will take a while
-        website_parser = BGPStream_Website_Parser(########################
-            bgpstream_website_parser_args)#############################
-        get_hijacks_process = Process(target=website_parser.parse, args=(start,end,))##########    
-        get_hijacks_process.start()##########################
+#        website_parser = BGPStream_Website_Parser(########################
+#            bgpstream_website_parser_args)#############################
+#        get_hijacks_process = Process(target=website_parser.parse, args=(start,end,))##########    
+#        get_hijacks_process.start()##########################
         # Now we need to wait until the mrt parser finishes it's stuff
-        mrt_process.join()############################################
+#        mrt_process.join()############################################
         # Now we are going to join these two tables, and move them out of memory
         with db_connection(Announcements_Covered_By_Roas_Table,
                            self.logger) as db:
