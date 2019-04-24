@@ -68,7 +68,7 @@ class Hijack_Table(Database):
         end = strftime('%Y-%m-%d %H:%M:%S', gmtime(end))
         print(start)
         print(end)
-        sql = """CREATE UNLOGGED TABLE hijack_temp TABLESPACE ram AS
+        sql = """CREATE UNLOGGED TABLE hijack_temp AS
         (SELECT h.more_specific_prefix AS prefix, h.detected_origin_number AS origin, h.start_time, COALESCE(h.end_time, now()) AS end_time, h.url
         FROM hijack h
         WHERE
@@ -152,7 +152,7 @@ class Leak_Table(Database):
               origin_as_name varchar (200),
               origin_as_number bigint,
               url varchar (250)
-              ) TABLESPACE ram;"""
+              ) ;"""
         self.cursor.execute(sql)
 
     @error_catcher()
@@ -219,7 +219,7 @@ class Outage_Table(Database):
               number_prefixes_affected integer,
               percent_prefixes_affected smallint,
               url varchar(150)
-              ) TABLESPACE ram;"""
+              ) ;"""
         self.cursor.execute(sql)
 
     @error_catcher()

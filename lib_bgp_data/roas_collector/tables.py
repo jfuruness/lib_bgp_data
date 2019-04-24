@@ -34,7 +34,7 @@ class ROAs_Table(Database):
               asn bigint,
               prefix inet,
               max_length integer
-              ) TABLESPACE ram;"""
+              ) ;"""
         self.cursor.execute(sql)
 
     @error_catcher()

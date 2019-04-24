@@ -36,9 +36,9 @@ class Announcements_Covered_By_Roas_Table(Database):
     def _create_tables(self):
         """ Creates tables if they do not exist"""
 
-        return#######################################################
+#	return #################################################
         sql = """CREATE UNLOGGED TABLE IF NOT EXISTS
-              mrt_w_roas TABLESPACE ram AS (
+              mrt_w_roas AS (
               SELECT m.time, m.prefix, m.as_path, m.origin
               FROM mrt_announcements m
                   INNER JOIN roas r ON m.prefix <<= r.prefix
@@ -111,7 +111,7 @@ class Announcements_Covered_By_Roas_Table(Database):
         add_table_name_sqls = []
         for prefix, table_name in zip(p_ranges, table_names):
             drop_table_sqls.append("DROP TABLE IF EXISTS {}".format(table_name))
-            create_table_sql  = "CREATE UNLOGGED TABLE {} TABLESPACE ram AS (".format(table_name)
+            create_table_sql  = "CREATE UNLOGGED TABLE {} AS (".format(table_name)
             create_table_sql += "SELECT * FROM mrt_w_roas WHERE prefix <<= "
             create_table_sql += "'{}');".format(prefix)
             create_table_sqls.append(create_table_sql)

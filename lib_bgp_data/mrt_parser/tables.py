@@ -36,7 +36,7 @@ class Announcements_Table(Database):
                   prefix cidr,
                   as_path bigint ARRAY,
                   origin bigint
-                  ) TABLESPACE ram;"""
+                  ) ;"""
         self.cursor.execute(sql)
 
     @error_catcher()
@@ -52,7 +52,7 @@ class Announcements_Table(Database):
 
         self.logger.info("Creating index")
         sql = """CREATE INDEX IF NOT EXISTS mrt_announcements_index
-                 ON mrt_announcements USING GIST (prefix inet_ops);"""
+                 ON mrt_announcements USING GIST (prefix cidr_ops);"""
         self.cursor.execute(sql)
         self.logger.info("Index created")
 

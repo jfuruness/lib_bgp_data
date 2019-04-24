@@ -30,8 +30,8 @@ class BGP_Data_Parser:
     """This class contains all the neccessary parsing functions"""
 
     def __init__(self,
-                 start=1553834277,
-                 end=1553920677,
+                 start=1555286400,
+                 end=1555372800,
                  first_run=False,
                  mrt_parser_args={},
                  relationships_parser_args={},
@@ -74,22 +74,27 @@ class BGP_Data_Parser:
             # Then moves the mrts out of ram
             # Then moves the roas out of ram
             # Then splits up the table and deletes unnessecary tables
-#            db.join_mrt_with_roas()
+            self.logger.info("analyzing now")
+            db.cursor.execute("VACUUM ANALYZE")
+            self.logger.info("dine analys")
+            self.logger.info("kjoining")
+            db.join_mrt_with_roas()
+            self.logger.info("done joining")
             tables = db.get_tables()
-#            db.cursor.execute("DROP TABLE IF EXISTS extrapolation_inverse_results;")
+            db.cursor.execute("DROP TABLE IF EXISTS extrapolation_inverse_results;")
+            db.cursor.execute("VACUUM ANALYZE;")
 
 #        get_hijacks_process.join()########################
-        rpki_parser = RPKI_Validator(rpki_validator_args)
-        rpki_process = Process(target=rpki_parser.run_validator)        
-        rpki_process.start()
-        rpki_process.join()#########################################
-        input("FIRST PART COMPLETED")
-        input("Another teneraeraeraer")
+#        rpki_parser = RPKI_Validator(rpki_validator_args)
+#        rpki_process = Process(target=rpki_parser.run_validator)        
+#        rpki_process.start()
+#        rpki_process.join()#########################################
+        input("start extrapolator")
         with db_connection(Database, self.logger) as db:
             for table in tables:
                 # start extrapolator
                 # run the rpki validator concurrently
-                extrap_args = "/home/jmf/bgp_files/bgp-extrapolator -a {}".format(table)
+                extrap_args = "/home/ubuntu/bgp-extrapolator -a {}".format(table)
                 Popen([extrap_args], shell=True).wait()
                 print("table is {}".format(table))
                 db.cursor.execute("DROP TABLE {}".format(table))
@@ -104,14 +109,18 @@ class BGP_Data_Parser:
             db.multiprocess_execute(create_exr_index_sqls)
         with db_connection(Stubs_Table, self.logger) as db:
             db.generate_stubs_table()
-            
+            db.cursor.execute("VACUUM FULL ANALYZE;")
+        rpki_parser = RPKI_Validator(rpki_validator_args)
+        rpki_process = Process(target=rpki_parser.run_validator)
+        rpki_process.start()
+        rpki_process.join()#############################     
 #        rpki_process.join()#######################
         input("rpki done running")
         wia = What_If_Analysis(what_if_analysis_args)
         wia.run_policies()
         with db_connection(Database, self.logger) as db:
             # CLEAN OUT DATABASE HERE!!!!!!!!
-            db.cursor.execute("VACUUM FULL;")
+            db.cursor.execute("VACUUM FULL ANALYZE;")
 
 
     def initialize_everything(self):
