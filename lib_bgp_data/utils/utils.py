@@ -247,6 +247,7 @@ def csv_to_db(logger, Table, csv_path, clear_table=False):
 
             # Copies data from the csv to the db, this is the fastest way
             t.cursor.copy_from(f, t.name, sep='\t', columns=t.columns, null="")
+            t.cursor.execute("CHECKPOINT;")
     logger.info("Done inserting {} into the database".format(csv_path))
     delete_paths(logger, csv_path)
 

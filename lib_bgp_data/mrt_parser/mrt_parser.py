@@ -2,27 +2,91 @@
 # -*- coding: utf-8 -*-
 
 """This module contains class Caida_MRT_Parser
-Caida_MRT_Parser first determines all of the urls from which to download mrt
-files. Afterwards it goes one by one, downloading the mrt file, unzipping it,
-parsing it, and deleting it. It can do this for any time period.
-A note on how this works. The module downloads all files first, lists them by
-size, then parses them. This is because if it is not done this way, then the
-largest files get downloaded last, and end up running when all other processes
-have finished, and isn't efficient. If you run it with overlap, meaning that
-it starts parsing once the downloading is nearly done, the time extends
-for many reasons. One of them being that more processes are running. The
-second is that the largest files get downloaded last, but these should be
-parsed first. The third is that to transfer information between processes, a
-queue must be used, which is extremely slow, and the locking mechanism causes
-a significant slowdown in the application. I've tested it both ways, and with
-overlapping the download and parsing processes the time for inserting a days
-worth of data increased by more than a half hour when I killed the program.
-Also I've experimented with the number of parse and download processes. For
-downloading, it is mostly IO based and so should have as many processes as
-the system allows. The second should not have more processes than the system
-has because it is not mostly io based (the only io is db insertion which is
-quick and csv writing which is done in one step)
+
+The purpose of this class is to download the mrt files and insert them
+into a database. This is done through a series of steps.
+
+1. Make an api call to https://bgpstream.caida.org/broker/data
+    -Handled in _get_mrt_urls function
+    -This will return json for rib files which contain BGP announcements
+    -From this we parse out urls for the BGP dumps
+    -This only returns the first dump for the time interval given
+        -However, we only want one dump, multiple dumps would have
+         data that conflicts with one another
+        -For longer intervals use one BGP dump then updates
+2. Then all the mrt files are downloaded in parallel
+    -Handled in _multiprocess_download function
+    -This instantiates the mrt_file class with each url
+        -utils.download_file handles downloading each particular file
+    -Four times the CPUs is used for thread count since it is I/O bound
+        -Mutlithreading with GIL lock is better than multiprocessing
+         since this is just intesive I/O in this case
+    -Downloaded first so that we parse the largest files first
+    -In this way, more files are parsed in parallel (since the largest
+     files are not left until the end)
+3. Then all mrt_files are parsed in parallel
+    -Handled in _multiprocess_parse_dls function
+    -The mrt_files class handles the actual parsing of the files
+    -CPUs - 1 is used for thread count since this is a CPU bound process
+    -Largest files are parsed first for faster overall parsing
+4. Parsed information is stored in csv files, and old files are deleted
+    -This is handled by the mrt_file class
+    -This is done because there is thirty to one hundred gigabytes
+        -Fast insertion is needed, and bulk insertion is the fastest
+    -CSVs are chosen over binaries even though they are slightly slower
+        -CSVs are more portable and don't rely on postgres versions
+        -Binary file insertion relies on specific postgres instance
+    -Old files are deleted to free up space
+5. CSV files are inserted into postgres using COPY, and then deleted
+    -This is handled by mrt_file class
+    -COPY is used for speedy bulk insertions
+    -Files are deleted to save space
+    -Duplicates are not deleted because this is an intensive process
+        -There are not a lot of duplicates, so it's not worth the time
+        -The overall project takes longer if duplicates are deleted
+        -A duplicate has the same AS path and prefix
+6. VACUUM ANALYZE is then called to analyze the table for statistics
+    -An index is never created on the mrt announcements because when
+     the announcements table is intersected with roas table, only a 
+     parallel sequential scan is used
+
+Design choices (summarizing from above):
+    -We only want the first BGP dump
+        -Multiple dumps have conflicting announcements
+        -Instead, for longer intervals use one BGP dump and updates
+    -Due to I/O bound downloading:
+        -Multithreading is used over multiprocessing for less memory
+        -Four times CPUs is used for thread count
+    -I have a misquito bite that is quite large.
+    -Downloading is done and completed before parsing
+        -This is done to ensure largest files get parsed first
+        -Results in fastest time
+    -Downloading completes 100% before parsing because synchronization
+     primitives make the program slower if downloading is done until
+     threads are available for parsing
+    -Largest files are parsed first because due to the difference in
+     in file size there is more parallelization achieved when parsing
+     largest files first resulting in a faster overall time
+    -CPUs - 1 is used for thread count since the process is CPU bound
+        -For our machine this is the fastest, feel free to experiment
+    -Data is bulk inserted into postgres
+        -Bulk insertion using COPY is the fastest way to insert data
+         into postgres and is neccessary due to massive data size
+    -Parsed information is stored in CSV files
+        -Binary files require changes based on each postgres version
+        -Not as compatable as CSV files
+    -Duplicates are not deleted to save time, since there are very few
+        -A duplicate has the same AS path and prefix
+
+Possible Future Extensions:
+    -Add functionality to download and parse updates?
+        -This would allow for a longer time interval
+        -After the first dump it is assumed this would be faster?
+        -Would need to make sure that all updates are gathered, not
+         just the first in the time interval to the api, as is the norm
+    -Test again for different thread numbers now that bgpscanner is used
 """
+
 
 import requests
 import shutil
@@ -38,7 +102,7 @@ from ..utils import error_catcher, utils, db_connection
 from .tables import Announcements_Table
 
 __author__ = "Justin Furuness"
-__credits__ = ["Justin Furuness", "Cameron Morris"]
+__credits__ = ["Justin Furuness"]
 __Lisence__ = "MIT"
 __Version__ = "0.1.0"
 __maintainer__ = "Justin Furuness"
@@ -47,54 +111,62 @@ __status__ = "Development"
 
 
 class MRT_Parser:
-    """This class downloads, unzips, parses, and deletes files from Caida
-    Deeper explanation at the top of module
+    """This class downloads, parses, and deletes files from Caida
+
+    In depth explanation at the top of module
     """
 
-    __slots__ = ['path', 'csv_dir', 'args', 'url', 'logger', 'start_time',
-                 'dl_pool', 'p_pool', 'all_files']
+    __slots__ = ['path', 'csv_dir', 'args', 'logger', 'start_time', 'dl_pool',
+                 'p_pool', 'all_files']
 
     @error_catcher()
     def __init__(self, args={}):
-        """Initializes urls, regexes, and path variables"""
+        """Initializes urls, regexes, logger, and path variables"""
 
         # Sets path vars, logger, config, etc
         utils.set_common_init_args(self, args, "mrt")
-        # URLs fom the caida websites to pull data from
-        self.url = 'https://bgpstream.caida.org/broker/data'
         with db_connection(Announcements_Table, self.logger) as ann_table:
+            # Clears the table for insertion
             ann_table.clear_table()
-            # Need this here so multithreading doesn't try this later
+            # Tables can't be created in multithreading so it's done now
             ann_table._create_tables()
 
     @error_catcher()
     @utils.run_parser()
     def parse_files(self,
-                    start=(utils.now()-timedelta(days=1)).timestamp(),
-                    end=utils.now().timestamp(),
-                    db=True,
+                    start=(utils.now()-timedelta(days=2)).timestamp(),
+                    end=(utils.now()-timedelta(days=1)).timestamp(),
+                    api_params=None,
                     download_threads=None,
                     parse_threads=None,
                     IPV4=True,
                     IPV6=False):
-        """Downloads, unzips, and parses files using multiprocessing
-        This Function downloads, unzips, and parses files one by one.
-        Start and End are the epoch intervals for mrt files. Explanation at
-        top of file. Other Design choices: We don't delete duplicates because
-        there are so few and the query is unnessecarily long (~2% duplicates)
+        """Downloads and parses files using multiprocessing.
+
+        In depth explanation at the top of the file. 
+            Start is epoch time which defaults to two days ago
+            End is epoch time which defaults to yesterday
+            api_params defaults to None, later changed in _get_mrt_urls
+            download_threads defaults to None, and later defaults to
+                four times cpu_count
+            parse_threads defaults to None, and later to cpu_count - 1
+            IPV4 defaults to True, so IPV4 results are included
+            IPV6 defaults to False, so IP6 results are not included
         """
 
         # Gets urls of all mrt files needed
         urls = self._get_mrt_urls(start, end)
-        self.logger.info(len(urls))
-        # Get downloaded instances of mrt files using multiprocessing
+        self.logger.debug("Total files {}".format(len(urls)))
+        # Get downloaded instances of mrt files using multithreading
         mrt_files = self._multiprocess_download(download_threads, urls)
         # Parses files using multiprocessing in descending order by size
-        self._multiprocess_parse_dls(parse_threads, mrt_files, IPV4, IPV6, db)
+        self._multiprocess_parse_dls(parse_threads, mrt_files, IPV4, IPV6)
         with db_connection(Announcements_Table, self.logger) as ann_table:
+            # VACUUM ANALYZE to clean up data and create statistics on table
+            # This is needed for better index creation and queries later on
             ann_table.cursor.execute("VACUUM ANALYZE;")
-            ann_table.create_index()
-#            ann_table.vacuum()
+            # A checkpoint is run here so that RAM isn't lost
+            ann_table.cursor.execute("CHECKPOINT;")
         
 
 ########################
@@ -102,53 +174,55 @@ class MRT_Parser:
 ########################
 
     def _multiprocess_download(self, dl_threads, urls):
-        """Downloads files in parallel. Explanation at the top, dl=download"""
+        """Downloads MRT files in parallel.
 
-        mrt_files = [MRT_File(self.path,#############################
+        In depth explanation at the top of the file, dl=download"""
+
+        # Creates an mrt file for each url
+        mrt_files = [MRT_File(self.path,
                               self.csv_dir,
                               url,
                               i + 1,
                               len(urls),
                               self.logger)
-                     for i, url in enumerate(urls)]#############################
-        # Creates a dl pool, I/O based, so get as many threads as possible
+                     for i, url in enumerate(urls)]
+
+        # Creates a dl pool with 4xCPUs since it is I/O based
         with utils.Pool(self.logger, dl_threads, 4, "download") as dl_pool:
             self.logger.debug("About to start downloading files")
-            dl_pool.map(lambda f : utils.download_file(f.logger, f.url, f.path,
-                f.num, f.total_files, f.num/5), mrt_files)
+            # Download files in parallel
+            dl_pool.map(lambda f : utils.download_file(f.logger, f.url,
+                f.path, f.num, f.total_files, f.num/5), mrt_files)
             self.logger.debug("started to download files")
         return mrt_files
 
-    def _multiprocess_parse_dls(self, p_threads, mrt_files, IPV4, IPV6, db):
-        """Multiprocessingly (ooh cool verb, to bad it's not real) parse files
-        explanation at the top of the file. p=parse, dl=download
+    def _multiprocess_parse_dls(self, p_threads, mrt_files, IPV4, IPV6):
+        """Multiprocessingly(ooh cool verb, too bad it's not real)parse files.
+
+        In depth explanation at the top of the file.
+        dl=download, p=parse.
         """
 
-        # Creates a parsing pool with half cpu count
-        # This is because the bash command spawns multiple processes
-        # So multiplier is less than 1 
+        # Creates a parsing pool with cpu_count since it is CPU bound
         with utils.Pool(self.logger, p_threads, 1, "parsing") as  p_pool:
-            p_pool.map(lambda f, db: f.parse_file(db),
+            # Runs the parsing of files in parallel
+            p_pool.map(lambda f: f.parse_file(),
                        sorted(mrt_files, reverse=True),  #  Largest first
                        [db]*len(mrt_files))
 
     @error_catcher()
-    def _get_mrt_urls(self, start, end):
-        """Gets urls to download mrt files. Start and end should be epoch"""
+    def _get_mrt_urls(self, start, end, PARAMS=None):
+        """Gets urls to download MRT files. Start and end should be epoch."""
 
-        # Paramters for the get request, look at caida for more in depth info
-        PARAMS = {'human': True,
-                  'intervals': ["{},{}".format(start, end)],
-                  'types': ['ribs']
-                  }
+        # Parameters for the get request, look at caida for more in depth info
+        if PARAMS is None:
+            PARAMS = {'human': True,
+                      'intervals': ["{},{}".format(start, end)],
+                      'types': ['ribs']
+                      }
+        # URL to make the api call to
+        URL = 'https://bgpstream.caida.org/broker/data'
         # Request for data and conversion to json
-        data = requests.get(url=self.url, params=PARAMS).json()
-        # Returns the urls
+        data = requests.get(url=URL, params=PARAMS).json()
+        # Returns the urls from the json
         return [x.get('url') for x in data.get('data').get('dumpFiles')]
-
-    @error_catcher()
-    def create_index(self):
-        """Creates an index on the prefix"""
-
-        with db_connection(Announcements_Table, self.logger) as ann_table:
-            ann_table.create_index()
