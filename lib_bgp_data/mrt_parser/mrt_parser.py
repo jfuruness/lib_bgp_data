@@ -47,7 +47,7 @@ into a database. This is done through a series of steps.
         -A duplicate has the same AS path and prefix
 6. VACUUM ANALYZE is then called to analyze the table for statistics
     -An index is never created on the mrt announcements because when
-     the announcements table is intersected with roas table, only a 
+     the announcements table is intersected with roas table, only a
      parallel sequential scan is used
 
 Design choices (summarizing from above):
@@ -89,14 +89,7 @@ Possible Future Extensions:
 
 
 import requests
-import shutil
-import os
-import datetime
 from datetime import timedelta
-from multiprocessing import cpu_count
-from pathos.multiprocessing import ProcessingPool
-from contextlib import contextmanager
-from concurrent.futures import ThreadPoolExecutor, as_completed
 from .mrt_file import MRT_File
 from ..utils import error_catcher, utils, db_connection
 from .tables import Announcements_Table
@@ -143,7 +136,7 @@ class MRT_Parser:
                     IPV6=False):
         """Downloads and parses files using multiprocessing.
 
-        In depth explanation at the top of the file. 
+        In depth explanation at the top of the file.
             Start is epoch time which defaults to two days ago
             End is epoch time which defaults to yesterday
             api_params defaults to None, later changed in _get_mrt_urls
@@ -167,7 +160,7 @@ class MRT_Parser:
             ann_table.cursor.execute("VACUUM ANALYZE;")
             # A checkpoint is run here so that RAM isn't lost
             ann_table.cursor.execute("CHECKPOINT;")
-        
+
 
 ########################
 ### Helper Functions ###
@@ -191,8 +184,8 @@ class MRT_Parser:
         with utils.Pool(self.logger, dl_threads, 4, "download") as dl_pool:
             self.logger.debug("About to start downloading files")
             # Download files in parallel
-            dl_pool.map(lambda f : utils.download_file(f.logger, f.url,
-                f.path, f.num, f.total_files, f.num/5), mrt_files)
+            dl_pool.map(lambda f: utils.download_file(f.logger, f.url,
+                        f.path, f.num, f.total_files, f.num/5), mrt_files)
             self.logger.debug("started to download files")
         return mrt_files
 
@@ -204,11 +197,10 @@ class MRT_Parser:
         """
 
         # Creates a parsing pool with cpu_count since it is CPU bound
-        with utils.Pool(self.logger, p_threads, 1, "parsing") as  p_pool:
-            # Runs the parsing of files in parallel
+        with utils.Pool(self.logger, p_threads, 1, "parsing") as p_pool:
+            # Runs the parsing of files in parallel, largest first
             p_pool.map(lambda f: f.parse_file(),
-                       sorted(mrt_files, reverse=True),  #  Largest first
-                       [db]*len(mrt_files))
+                       sorted(mrt_files, reverse=True))
 
     @error_catcher()
     def _get_mrt_urls(self, start, end, PARAMS=None):
