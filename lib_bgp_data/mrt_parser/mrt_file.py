@@ -82,21 +82,29 @@ class MRT_File:
 
         # I know this may seem unmaintanable, that's because this is a 
         # Fast way to to this. Please, calm down.
+        # Turns out not fast - idk if other regexes are faster
 
         # performs bgpdump on the file
+        1/0 # break so i don't forget need to make bgpscanner and test with backslashes
         bash_args =  'bgpdump -q -M -t change '
         bash_args += self.path
         # Cuts out columns we don't need
-        bash_args += ' | cut -d "|" -f2,6,7 '
-        # Deletes any announcements with as sets
-        bash_args += '|sed -e "/{.*}/d" '
-        # Performs regex matching with sed and adds brackets around the as_path
-        bash_args += '-e "s/\(.*|.*|\)\(.*$\)/\\1{\\2}/g" '
-        # Replaces pipes and spaces with commas for csv insertion
-        # leaves out first one
-        bash_args += '-e "s/ /, /g" -e "s/, / /" -e "s/|/\t/g" '
-        # Adds a column for the origin
-        bash_args += '-e "s/\([[:digit:]]\+\)}/\\1}\t\\1/g"'
+        bash_args += ' | cut -d "|" -f1,3,10,11'
+        # Makes sure gets announcement, withdrawl, or rib
+        # -n for no output if nothing there
+        bash_args += ' | sed -n "s/[=|+|-]|'
+        # Gets three capture groups.
+        # First capture group is as path
+        # Second capture group is as path up to origin
+        bash_args += '\(\([^{]*\s\)*'
+        # Third capture group is the origin
+        bash_args += '\([[:digit:]]\+\)\)'
+        # Fourth capture group is the time
+        bash_args += '|\(.*\)'
+        # Fifth capture group is the origin
+        bash_args += '|\(.*\)'
+        # Replacement with the capture groups
+        bash_args += '/{\1}\t\3\t\4\t\5/p"'
         # writes to a csv
         bash_args += '> ' + self.csv_name
         call(bash_args, shell=True)
