@@ -30,16 +30,15 @@ __status__ = "Development"
 class Database:
     """Interact with the database"""
 
-    __slots__ = ['logger', 'config', 'conn', 'cursor', 'test', 'cursor_factory']
+    __slots__ = ['logger', 'config', 'conn', 'cursor', 'cursor_factory']
 
     @error_catcher()
-    def __init__(self, logger, cursor_factory=RealDictCursor, test=False):
+    def __init__(self, logger, cursor_factory=RealDictCursor):
         """Create a new connection with the databse"""
 
         # Initializes self.logger
         self.logger = logger
         self.config = Config(self.logger)
-        self.test = test
         self._connect(cursor_factory)
 
     @error_catcher()
@@ -94,9 +93,6 @@ class Database:
     def close(self):
         """Closes the database connection correctly"""
 
-        # If testing delete test table
-        if self.test:
-            self._drop_tables()
         self.cursor.close()
         self.conn.close()
 

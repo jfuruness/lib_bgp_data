@@ -61,15 +61,13 @@ __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
 class MRT_File:
-    """File class that allows for download, unzip, and database storage
-    The MRT File Class allows for the downloading, unzipping, and database
-    storage of MRT files and data. After each step the unnessecary files are
-    deleted.
+    """Converts MRT files to CSVs and then inserts them into a database.
+ 
+    In depth explanation at the top of the file.
     """
 
-    __slots__ = ['logger', 'name', 'file_name', 'path',
-                 'old_path', 'url', 'num', 'total_files', 'csv_dir',
-                 'csv_name', 'test', 'ext']
+    __slots__ = ['logger', 'total_files', 'csv_dir', 'url', 'num', 'ext',
+                 'path', 'csv_name']
 
     @error_catcher()
     def __init__(self, path, csv_dir, url, num, total_files, logger):
@@ -86,20 +84,28 @@ class MRT_File:
 
     @error_catcher()
     def __lt__(self, other):
-        """less than attribute for sorting files, sorts based on size"""
+        """less than attribute for sorting files, sorts based on size
+
+        The purpose of this is to be able to sort files in order to be
+        able to parse the largest files first"""
 
         # Returns the smallest file size for a comparater
         return os.path.getsize(self.path) < os.path.getsize(other.path)
 
     @error_catcher()
     def parse_file(self):
-        """Calls all functions to parse a file into the db"""
+        """Parses a downloaded file and inserts it into the database
 
-        # If db is false, results are printed and not db inserted
+        More in depth explanation at the top of the file"""
+
+        # Sets CSV path
         self.csv_name = "{}/{}.csv".format(self.csv_dir,
                                            os.path.basename(self.path))
+        # Parses the MRT file into a csv file
         self._bgpdump_to_csv()
+        # Inserts the csv file into the Announcements Table
         utils.csv_to_db(self.logger, Announcements_Table, self.csv_name)
+        # Deletes all old files
         utils.delete_paths(self.logger, [self.path, self.csv_name])
 
 
@@ -109,36 +115,73 @@ class MRT_File:
 
     @error_catcher()
     def _bgpdump_to_csv(self):
-        """Function takes mrt file and converts it to a csv with bash"""
+        """Parses MRT file into a CSV
+
+        This function usesasdfasdf bgpscanner to first be able to read
+        the MRT file. This is because BGPScanner is the fastest tool to
+        use for this task. Then the sed commands parse the file and
+        format the data for a CSV. Then this is stored as a tab
+        delimited CSV file, and the original is deleted. For a more in
+        depth explanation see top of file. For explanation on specifics
+        of the parsing, see below"""
 
         # I know this may seem unmaintanable, that's because this is a 
         # Fast way to to this. Please, calm down.
         # Turns out not fast - idk if other regexes are faster
 
+        # bgpscanner outputs this format:
+        # TYPE|SUBNETS|AS_PATH|NEXT_HOP|ORIGIN|ATOMIC_AGGREGATE|
+        # AGGREGATOR|COMMUNITIES|SOURCE|TIMESTAMP|ASN 32 BIT
+        # Example: =|1.23.250.0/24|14061 6453 9498 45528 45528|
+        # 198.32.160.170|i|||
+        # 6453:50 6453:1000 6453:1100 6453:1113 14061:402 14061:2000
+        # 14061:2002 14061:4000 14061:4002|198.32.160.170 14061|
+        # 1545345848|1
+
+
         # performs bgpdump on the file
-        1/0 # break so i don't forget need to make bgpscanner and test with backslashes
         bash_args =  'bgpscanner '
         bash_args += self.path
         # Cuts out columns we don't need
-        bash_args += ' | cut -d "|" -f1,3,10,11'
+        bash_args += ' | cut -d "|" -f1,2,3,10'
+        # Now we have TYPE|SUBNETS|AS_PATH|TIMESTAMP
+        # Ex: =|1.23.250.0/24|14061 6453 9498 45528 45528|1545345848
+
         # Makes sure gets announcement, withdrawl, or rib
         # -n for no output if nothing there
         bash_args += ' | sed -n "s/[=|+|-]|'
+        # Now we focus on SUBNETS|AS_PATH|TIMESTAMP
+        # Ex: 1.23.250.0/24|14061 6453 9498 45528 45528|1545345848
         # Gets three capture groups.
-        # First capture group is as path
-        # Second capture group is as path up to origin
-        bash_args += '\(\([^{]*\s\)*'
+        # The first capture group is the prefix
+        # The regex for prefix is done in this way instead of non
+        # greedy matching because sed doesn't have non greedy matching
+        # so instead the | must be excluded which is slower than this
+        bash_args += '\([[:digit:]]\+\.[[:digit:]]\+\.[[:digit:]]\+'
+        bash_args += '\.[[:digit:]]\+\/[[:digit:]]\+\)|'
+        # Now we focus on AS_PATH|TIMESTAMP
+        # Ex: 14061 6453 9498 45528 45528|1545345848
+        # Second capture group is as path except for the last number
+        bash_args += '\(.*\s\)*'
+        # Now we have all but the last number
+        # Ex: 45528|1545345848
         # Third capture group is the origin
-        bash_args += '\([[:digit:]]\+\)\)'
+        bash_args += '\(.*\)'
+        # Now we have just the time
+        # Example: |1545345848
         # Fourth capture group is the time
         bash_args += '|\(.*\)'
-        # Fifth capture group is the origin
-        bash_args += '|\(.*\)'
         # Replacement with the capture groups
-        bash_args += '/{\\1}\\t\\3\\t\\4\\t\\5/p" '
+        bash_args += '/\\1\\t{\\2\\3}\\t\\3\\t\\4/p" | '
+        # Replaces spaces in array to commas
+        # Need to pipe to new sed because you need the -n -p args
+        # to make sed not output the full string if it doesn't match
+        # And you cannot add -e args after that
+        bash_args += 'sed -e "s/ /, /g" '
         # writes to a csv
-        1/0####NEED TO CAHNGE SPACES TO COMMAS!!!
         bash_args += '> ' + self.csv_name
+        # Subprocess call, waits for completion
         call(bash_args, shell=True)
         self.logger.info("Wrote {}".format(self.csv_name))
+        # Deletes old file
         utils.delete_paths(self.logger, self.path)
