@@ -41,13 +41,7 @@ Possible Future Extensions:
     -Test different regex parsers other than sed for speed?
 """
 
-import time
-import sys
-import csv
-import urllib.request
-import shutil
 import os
-import functools
 from subprocess import call
 from ..utils import utils, error_catcher
 from .tables import Announcements_Table
@@ -60,9 +54,10 @@ __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
+
 class MRT_File:
     """Converts MRT files to CSVs and then inserts them into a database.
- 
+
     In depth explanation at the top of the file.
     """
 
@@ -125,7 +120,7 @@ class MRT_File:
         depth explanation see top of file. For explanation on specifics
         of the parsing, see below"""
 
-        # I know this may seem unmaintanable, that's because this is a 
+        # I know this may seem unmaintanable, that's because this is a
         # Fast way to to this. Please, calm down.
         # Turns out not fast - idk if other regexes are faster
 
@@ -138,9 +133,17 @@ class MRT_File:
         # 14061:2002 14061:4000 14061:4002|198.32.160.170 14061|
         # 1545345848|1
 
+        # Also please note: sed needs escape characters, so if something
+        # is escaped once it is for sed. If it is escaped twice, it is
+        # to escape something in sed, and a second escape for the python
+        # Below are the things that need to be escaped:
+        # Parenthesis are escaped because they are sed capture groups
+        # + is escaped to get sed's special plus (at least one)
+        # . is escaped for sed to recognize it as a period to match
+        # / is escaped for sed to match the actual forward slash
 
         # performs bgpdump on the file
-        bash_args =  'bgpscanner '
+        bash_args = 'bgpscanner '
         bash_args += self.path
         # Cuts out columns we don't need
         bash_args += ' | cut -d "|" -f1,2,3,10'
@@ -172,6 +175,7 @@ class MRT_File:
         # Fourth capture group is the time
         bash_args += '|\(.*\)'
         # Replacement with the capture groups
+        # Must double escape here or python freaks out
         bash_args += '/\\1\\t{\\2\\3}\\t\\3\\t\\4/p" | '
         # Replaces spaces in array to commas
         # Need to pipe to new sed because you need the -n -p args

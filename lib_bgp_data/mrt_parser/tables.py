@@ -21,11 +21,11 @@ Design choices:
 
 Possible future improvements:
     -Make the columns return through a query and order them in some way?
-        -Maybe not since the CSV needs them in a particular order"""
+        -Maybe not since the CSV needs them in a particular order
+"""
 
-import psycopg2
 from psycopg2.extras import RealDictCursor
-from ..utils import Config, Database, error_catcher
+from ..utils import Database, error_catcher
 
 __author__ = "Justin Furuness"
 __credits__ = ["Justin Furuness"]

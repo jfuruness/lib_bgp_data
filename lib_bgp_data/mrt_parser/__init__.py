@@ -15,7 +15,7 @@ into a database. This is done through a series of steps.
          data that conflicts with one another
         -For longer intervals use one BGP dump then updates
 2. Then all the mrt files are downloaded in parallel
-    -Handled in MRT_Parser class 
+    -Handled in MRT_Parser class
     -This instantiates the MRT_File class with each url
         -utils.download_file handles downloading each particular file
     -Four times the CPUs is used for thread count since it is I/O bound
@@ -29,7 +29,7 @@ into a database. This is done through a series of steps.
     -The mrt_files class handles the actual parsing of the files
     -CPUs - 1 is used for thread count since this is a CPU bound process
     -Largest files are parsed first for faster overall parsing
-    -bgpscanner is used to parse files because it is the fastest 
+    -bgpscanner is used to parse files because it is the fastest
      BGP dump scanner
     -sed is used because it is cross compatable and fast
         -Must use regex parser that can find/replace for array format
@@ -108,4 +108,3 @@ __Version__ = "0.1.0"
 __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
-
