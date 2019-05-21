@@ -76,6 +76,7 @@ def error_catcher(msg=None):
                                         capture.group("line_num"),
                                         capture.group("line"))
                     self.logger.error(err_str)
+                    # hahaha so professional
                     print('\a')
                 # Exit program and also kills all parents/ancestors
                 sys.exit(1)

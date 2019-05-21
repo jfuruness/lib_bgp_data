@@ -7,7 +7,7 @@ This also contains all the functions to run each individual parser.
 The main function of this script, is to run all of these jobs in
 the proper order with the proper settings. This can be run as a chron
 job"""
-
+# future improvement: improving logging (can literally replace the logging class)
 from multiprocessing import Process
 from subprocess import Popen, PIPE
 from .relationships_parser import Relationships_Parser

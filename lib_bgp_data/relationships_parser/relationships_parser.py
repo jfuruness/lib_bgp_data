@@ -57,8 +57,8 @@ class Relationships_Parser:
         # If this is a new file, the config date will be less than the
         # websites file date, and so we renew our data
         if self.config.last_date < int_date:
-            AS_2_File(self.logger, self.path, self.csv_dir, url
-                ).parse_file(db)
+            AS_2_File(self.path, self.csv_dir, url, self.logger
+                ).parse_file()
             self.config.update_last_date(int_date)
             self.create_indexes()
         else:

@@ -56,10 +56,10 @@ class Announcements_Table(Database):
         Called during initialization of the database class."""
 
         sql = """CREATE UNLOGGED TABLE IF NOT EXISTS mrt_announcements (
-                 time timestamp,
                  prefix cidr,
                  as_path bigint ARRAY,
-                 origin bigint
+                 origin bigint,
+                 time bigint
                  ) ;"""
         self.cursor.execute(sql)
 
@@ -87,4 +87,4 @@ class Announcements_Table(Database):
 
         Used in utils to insert the CSV into the database"""
 
-        return ['as_path', 'origin', 'time', 'prefix']
+        return ['prefix', 'as_path', 'origin', 'time']

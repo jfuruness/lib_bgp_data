@@ -25,19 +25,18 @@ class Customer_Providers_Table(Database):
     __slots__ = ['logger', 'config', 'conn', 'cursor', 'test']
 
     @error_catcher()
-    def __init__(self, logger, cursor_factory=RealDictCursor, test=False):
+    def __init__(self, logger, cursor_factory=RealDictCursor):
         """Initializes the Customer Provider table"""
-        Database.__init__(self, logger, cursor_factory, test)
+        Database.__init__(self, logger, cursor_factory)
 
     @error_catcher()
     def _create_tables(self):
         """ Creates tables if they do not exist"""
 
-        if self.test is False:
-            sql = """CREATE UNLOGGED TABLE IF NOT EXISTS customer_providers (
-                  provider_as bigint,
-                  customer_as bigint
-                  );"""
+        sql = """CREATE UNLOGGED TABLE IF NOT EXISTS customer_providers (
+              provider_as bigint,
+              customer_as bigint
+              );"""
         self.cursor.execute(sql)
 
     @error_catcher()
@@ -88,19 +87,18 @@ class Peers_Table(Database):
     __slots__ = ['logger', 'config', 'conn', 'cursor', 'test']
 
     @error_catcher()
-    def __init__(self, logger, cursor_factory=RealDictCursor, test=False):
+    def __init__(self, logger, cursor_factory=RealDictCursor):
         """Initializes the peers table"""
-        Database.__init__(self, logger, cursor_factory, test)
+        Database.__init__(self, logger, cursor_factory)
 
     @error_catcher()
     def _create_tables(self):
         """ Creates tables if they do not exist"""
 
-        if self.test is False:
-            sql = """CREATE UNLOGGED TABLE IF NOT EXISTS peers (
-                  peer_as_1 bigint,
-                  peer_as_2 bigint
-                  );"""
+        sql = """CREATE UNLOGGED TABLE IF NOT EXISTS peers (
+              peer_as_1 bigint,
+              peer_as_2 bigint
+              );"""
         self.cursor.execute(sql)
 
     @error_catcher()

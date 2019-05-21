@@ -45,13 +45,12 @@ class Relationship_File:
                  'divisor', 'name', 'rows', 'classifiers', 'tables']
 
     @error_catcher()
-    def __init__(self, logger, path, csv_directory, url, test=False):
+    def __init__(self, path, csv_directory, url, logger):
         """Initializes file instance and determine info about it"""
 
         self.logger = logger
         self.name = "relationships.bz2"
         self.csv_directory = csv_directory
-        self.test = test
         self.csv_names = {}
         # os.path.join is neccessary for cross platform compatability
         self.path = os.path.join(path, self.name)
@@ -64,7 +63,7 @@ class Relationship_File:
         self.logger.debug("Initialized file instance")
 
     @error_catcher()
-    def parse_file(self, db=True):
+    def parse_file(self):
         """Calls all functions to parse a file into the db"""
 
         # If the file wasn't downloaded, download it
@@ -127,10 +126,10 @@ class AS_File(Relationship_File):
 
     __slots__ = []
 
-    def __init__(self, path, csv_directory, url, logger, test=False):
+    def __init__(self, path, csv_directory, url, logger):
         """Initializes file instance and determine info about it"""
 
-        Relationship_File.__init__(self, path, csv_directory, url, logger, test)
+        Relationship_File.__init__(self, path, csv_directory, url, logger)
 
     def _parse_line(self, line):
         """parses a line for the csv files
@@ -149,10 +148,10 @@ class AS_2_File(Relationship_File):
 
     __slots__ = ['parse_duplicates']
 
-    def __init__(self, path, csv_directory, url, logger, test=False):
+    def __init__(self, path, csv_directory, url, logger):
         """Initializes file instance and determine info about it"""
 
-        Relationship_File.__init__(self, path, csv_directory, url, logger, test)
+        Relationship_File.__init__(self, path, csv_directory, url, logger)
 
     def _parse_line(self, line):
         """parses a line for the csv files

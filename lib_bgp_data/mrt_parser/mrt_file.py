@@ -9,7 +9,10 @@ mrt files. This is done through a series of steps
 1. Initialize the MRT_File class
 2. The MRT File will be downloaded from the MRT_Parser using utils
 3. Parse the MRT_File using bgpscanner and sed
-    -bgpscanner is used because it is the fastest BG{ dump scanner
+    -bgpscanner is used because it is the fastest BGP dump scanner
+    -bgpscanner ignores announcements with malformed attributes
+    -bgpdump can be used for full runs to include announcements with
+     malformed attributes, because some ASs do not ignore them
     -sed is used because it is cross compatable and fast
         -Must use regex parser that can find/replace for array format
     -Possible future extensions:
@@ -28,6 +31,9 @@ mrt files. This is done through a series of steps
 
 Design choices (summarizing from above):
     -bgpscanner is the fastest BGP dump scanner so it is used to parse
+    -bgpscanner ignores announcements with malformed attributes
+    -bgpdump can be used for full runs since it does not ignore
+     malformed announcements, which some AS's do not ignore
     -sed is used for regex parsing because it is fast and portable
     -Data is bulk inserted into postgres
         -Bulk insertion using COPY is the fastest way to insert data
@@ -88,16 +94,23 @@ class MRT_File:
         return os.path.getsize(self.path) < os.path.getsize(other.path)
 
     @error_catcher()
-    def parse_file(self):
+    def parse_file(self, bgpscanner=True):
         """Parses a downloaded file and inserts it into the database
 
-        More in depth explanation at the top of the file"""
+        if bgpscanner is set to True, bgpscanner is used to parser files
+        which is faster, but ignores malformed announcements. While
+        these malformed announcements are few and far between, bgpdump
+        does not ignore them and should be used for full data runs. For
+        testing however, bgpscanner is much faster and has almost all
+        data required. More in depth explanation at the top of the file
+        """
 
         # Sets CSV path
         self.csv_name = "{}/{}.csv".format(self.csv_dir,
                                            os.path.basename(self.path))
         # Parses the MRT file into a csv file
-        self._bgpdump_to_csv()
+        self._convert_dump_to_csv(bgpscanner)
+        self._bgpscanner_to_csv() if bgpscanner else self._bgpdump_to_csv()
         # Inserts the csv file into the Announcements Table
         utils.csv_to_db(self.logger, Announcements_Table, self.csv_name)
         # Deletes all old files
@@ -109,16 +122,35 @@ class MRT_File:
 ########################
 
     @error_catcher()
-    def _bgpdump_to_csv(self):
+    def _convert_dump_to_csv(bgpscanner)
         """Parses MRT file into a CSV
 
-        This function usesasdfasdf bgpscanner to first be able to read
+        This function uses bgpscanner to first be able to read
         the MRT file. This is because BGPScanner is the fastest tool to
-        use for this task. Then the sed commands parse the file and
+        use for this task. The drawback of bgpscanner is that it ignores
+        malformed announcements. There aren't a lot of these, and it's
+        much faster, but for a full data set the slower tool bgpdump
+        should be used. Then the sed commands parse the file and
         format the data for a CSV. Then this is stored as a tab
         delimited CSV file, and the original is deleted. For a more in
-        depth explanation see top of file. For explanation on specifics
-        of the parsing, see below"""
+        depth explanation see top of file. For parsing spefics, see each
+        function listed below."""
+
+
+        args = self._bgpscanner_args() if bgpscanner else self._bgpdump_args()
+        # writes to a csv
+        args += '> ' + self.csv_name
+        call(args, shell=True)
+        self.logger.info("Wrote {}".format(self.csv_name))
+        utils.delete_paths(self.logger, self.path)
+
+
+    @error_catcher()
+    def _bgpscanner_args(self):
+        """Parses MRT file into a CSV using bgpscanner
+
+        For a more in depth explanation see _convert_dump_to_csv. For
+        explanation on specifics of the parsing, see below."""
 
         # I know this may seem unmaintanable, that's because this is a
         # Fast way to to this. Please, calm down.
@@ -157,19 +189,35 @@ class MRT_File:
         # Ex: 1.23.250.0/24|14061 6453 9498 45528 45528|1545345848
         # Gets three capture groups.
         # The first capture group is the prefix
+        # Captures chars normally in IPV4 or IPV6 prefixes
+        bash_args += '\([0|1|2|3|4|5|6|7|8|9|%|\.|\:|a|b|c|d|e|f|/]\+\)|'
+
+        # I left this old code here in case someone can figure it out
+        # https://unix.stackexchange.com/questions/145402/
+        # It appears sed doesn't support this kind of alternation
+        # It appears you cannot perform alternation with char classes
+        # So while it is slower to use ^, that is the way it will run
+        # until someone can figure out a crazier sed command. And even
+        # if you could, it would appear that it wouldn't be cross
+        # platform compatable, so it probably shouldn't be done anyways
         # The regex for prefix is done in this way instead of non
         # greedy matching because sed doesn't have non greedy matching
         # so instead the | must be excluded which is slower than this
-        bash_args += '\([[:digit:]]\+\.[[:digit:]]\+\.[[:digit:]]\+'
-        bash_args += '\.[[:digit:]]\+\/[[:digit:]]\+\)|'
+        # bash_args += '\([[[:digit:]]\+\.[[:digit:]]\+\.[[:digit:]]\+'
+        # bash_args += '\.[[:digit:]]\+\/[[:digit:]]\+|'
+        # Now we match for ipv6 prefixes
+        # bash_args += '[0|1|2|3|4|5|6|7|8|9|%|\:|\.|a|b|c|d|e|f]*]\)|'
+
         # Now we focus on AS_PATH|TIMESTAMP
         # Ex: 14061 6453 9498 45528 45528|1545345848
         # Second capture group is as path except for the last number
-        bash_args += '\(.*\s\)*'
+        bash_args += '\([^{]*[[:space:]]\)*'
+
         # Now we have all but the last number
         # Ex: 45528|1545345848
         # Third capture group is the origin
-        bash_args += '\(.*\)'
+        bash_args += '\([^{]*\)'
+
         # Now we have just the time
         # Example: |1545345848
         # Fourth capture group is the time
@@ -182,10 +230,28 @@ class MRT_File:
         # to make sed not output the full string if it doesn't match
         # And you cannot add -e args after that
         bash_args += 'sed -e "s/ /, /g" '
-        # writes to a csv
-        bash_args += '> ' + self.csv_name
-        # Subprocess call, waits for completion
-        call(bash_args, shell=True)
-        self.logger.info("Wrote {}".format(self.csv_name))
-        # Deletes old file
-        utils.delete_paths(self.logger, self.path)
+        return bash_args
+
+    @error_catcher()
+    def _bgpdump_args(self):
+        """Parses MRT file into a CSV using bgpscanner
+
+        For a more in depth explanation see _convert_dump_to_csv. For
+        explanation on specifics of the parsing, see below. Also note,
+        you must use the updated bgpdump tool, not the apt repo."""
+
+        # performs bgpdump on the file
+        bash_args =  'bgpdump -q -M -t change '
+        bash_args += self.path
+        # Cuts out columns we don't need
+        bash_args += ' | cut -d "|" -f2,6,7 '
+        # Deletes any announcements with as sets
+        bash_args += '|sed -e "/{.*}/d" '
+        # Performs regex matching with sed and adds brackets to as_path
+        bash_args += '-e "s/\(.*|.*|\)\(.*$\)/\\1{\\2}/g" '
+        # Replaces pipes and spaces with commas for csv insertion
+        # leaves out first one
+        bash_args += '-e "s/ /, /g" -e "s/, / /" -e "s/|/\t/g" '
+        # Adds a column for the origin
+        bash_args += '-e "s/\([[:digit:]]\+\)}/\\1}\t\\1/g"'
+        return bash_args

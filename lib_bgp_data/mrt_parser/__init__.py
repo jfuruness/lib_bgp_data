@@ -30,7 +30,13 @@ into a database. This is done through a series of steps.
     -CPUs - 1 is used for thread count since this is a CPU bound process
     -Largest files are parsed first for faster overall parsing
     -bgpscanner is used to parse files because it is the fastest
-     BGP dump scanner
+     BGP dump scanner for testing
+        -By default bgpdump is used because bgpscanner ignores malformed
+         attributes, which AS's should ignore but not all do
+        -This is a small portion of announcements, so we ignore them for
+         tests but not for simulations, which is why we use bgpdump for
+         full runs
+    -Announcements with malformed attributes are ignored
     -sed is used because it is cross compatable and fast
         -Must use regex parser that can find/replace for array format
     -Possible future extensions:
@@ -84,7 +90,11 @@ Design choices (summarizing from above):
         -Not as compatable as CSV files
     -Duplicates are not deleted to save time, since there are very few
         -A duplicate has the same AS path and prefix
-    -bgpscanner is the fastest BGP dump scanner so it is used to parse
+    -bgpscanner is the fastest BGP dump scanner so it is used for tests
+    -bgpscanner ignores announcements with malformed attributes
+    -bgpdump is used for full runs because it does not ignore
+     announcements with malformed attributes, which some ASs don't
+     ignore
     -sed is used for regex parsing because it is fast and portable
 
 

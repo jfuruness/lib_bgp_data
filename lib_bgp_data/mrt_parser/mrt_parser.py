@@ -29,6 +29,9 @@ into a database. This is done through a series of steps.
     -The mrt_files class handles the actual parsing of the files
     -CPUs - 1 is used for thread count since this is a CPU bound process
     -Largest files are parsed first for faster overall parsing
+    -Parsing with bgpscanner is faster, but ignores malformed
+     announcements. Use this for testing, and bgpdump is used for full
+     runs
 4. Parsed information is stored in csv files, and old files are deleted
     -This is handled by the mrt_file class
     -This is done because there is thirty to one hundred gigabytes
@@ -69,6 +72,9 @@ Design choices (summarizing from above):
      largest files first resulting in a faster overall time
     -CPUs - 1 is used for thread count since the process is CPU bound
         -For our machine this is the fastest, feel free to experiment
+    -Parsing with bgpscanner is faster, but ignores malformed
+     announcements. Use this for testing, and bgpdump is used for full
+     runs
     -Data is bulk inserted into postgres
         -Bulk insertion using COPY is the fastest way to insert data
          into postgres and is neccessary due to massive data size
@@ -77,6 +83,8 @@ Design choices (summarizing from above):
         -Not as compatable as CSV files
     -Duplicates are not deleted to save time, since there are very few
         -A duplicate has the same AS path and prefix
+    -Announcements with malformed attributes are disregarded thanks to
+     bgpscanner
 
 Possible Future Extensions:
     -Add functionality to download and parse updates?
