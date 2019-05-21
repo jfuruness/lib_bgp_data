@@ -6,13 +6,6 @@
 The MRT File Class allows for the downloading, unzipping, and database
 storage of MRT files and data. After each step the unnessecary files are
 deleted.
-
-The other classes are for specific types of files and include how to parse
-those particular files
-
-NOTE: I just now realized, probably an easier way of doing this would be to
-simply delete the comments at the top of the files, and treat them as
-| delimited csvs. I assume that would work,  oh well this works too.
 """
 
 from enum import Enum
@@ -31,135 +24,59 @@ __status__ = "Development"
 
 # The two types of relationship data
 class Rel_Types(Enum):
-    CUSTOMER_PROVIDERS = "Customer_Providers"
-    PEERS = "Peers"
+    CUSTOMER_PROVIDERS = "customer_providers"
+    PEERS = "peers"
 
-class Relationship_File:
+class Rel_File:
     """File class that allows for download, unzip, and database storage
     The Relationship File Class allows for the downloading, unzipping, and
     database storage of Relationship files and data. After each step the
     unnessecary files are deleted.
     """
 
-    __slots__ = ['path', 'url', 'logger', 'csv_directory', 'test', 'csv_names',
-                 'divisor', 'name', 'rows', 'classifiers', 'tables']
+    __slots__ = ['path', 'url', 'logger', 'csv_dir']
 
     @error_catcher()
-    def __init__(self, path, csv_directory, url, logger):
+    def __init__(self, path, csv_dir, url, logger):
         """Initializes file instance and determine info about it"""
 
         self.logger = logger
-        self.name = "relationships.bz2"
-        self.csv_directory = csv_directory
-        self.csv_names = {}
-        # os.path.join is neccessary for cross platform compatability
-        self.path = os.path.join(path, self.name)
-        self._url_rename(url)
-        self.divisor = re.compile(r'([^|\n\s]+)')
-        # How each csv is classified in their respective files
-        self.classifiers = {"-1": Rel_Types.CUSTOMER_PROVIDERS, "0": Rel_Types.PEERS}
-        self.tables = {Rel_Types.CUSTOMER_PROVIDERS: Customer_Providers_Table,
-                       Rel_Types.PEERS: Peers_Table}
-        self.logger.debug("Initialized file instance")
+        self.csv_dir = csv_dir
+        self.path = os.path.join(path, "rel.bz2")
+        self.url = url
 
     @error_catcher()
     def parse_file(self):
         """Calls all functions to parse a file into the db"""
 
-        # If the file wasn't downloaded, download it
-        if not os.path.isfile(self.path):
-            utils.download_file(self.logger, self.url, self.path)
-        self._unzip()
+        utils.download_file(self.logger, self.url, self.path)
+        self.path = utils.unzip_bz2(self.logger, self.path)
         # Gets data and writes it to the csvs
         self._db_insert()
         # Deletes all paths/files that could have been created
-        utils.delete_paths(self.logger, [self.csv_directory, self.path])
-
-    def _url_rename(self, url):
-        """Renames the url properly"""
-
-        url_prepend = "http://data.caida.org/datasets/as-relationships/serial-"
-        serial_1 = "{}1/".format(url_prepend)
-        serial_2 = "{}2/".format(url_prepend)
-        self.url = serial_2 + url if "as-rel2" in url else serial_1 + url
-
-    @error_catcher()
-    def _unzip(self):
-        """Unzips this .bz2 file"""
-
-        old_path = self.path
-        self.path = os.path.join("{}.decompressed".format(old_path[:-4]))
-        self.name = "relationships.decompressed"
-        utils.unzip_bz2(self.logger, old_path, self.path)
+        utils.delete_paths(self.logger, [self.csv_dir, self.path])
 
     @error_catcher()
     def _db_insert(self):
         """Writes both csv files needed"""
 
-        self._get_data()
-        
+        grep, csvs, tables = self._get_rel_attributes()
+
         # For each type of csv:
         for val in Rel_Types.__members__.values():
-            # Set the csv names
-            self.csv_names[val] = "{}/{}_{}.csv".format(
-                self.csv_directory, self.name[:-13], val)
+            call("cat {} | {} > {}".format(self.path, grep[val], csvs[val]))
+            utils.csv_to_db(self.logger, tables[val], csvs[val])
+        # Deletes the old paths
+        utils.delete_paths(self.logger, [self.path, csvs])
 
-            # Writes to the csvs
-            utils.rows_to_db(self.logger,
-                            self.rows.get(val),
-                            self.csv_names.get(val),
-                            self.tables[val])
-        # Deletes the old path
-        utils.delete_paths(self.logger, self.path)
+    @error_catcher()
+    def _get_rel_attributes(self):
+        """Put here instead of _db_insert or __init__ for cleaner code, if you don't do it this way it starts to get pretty messy"""
 
-    def _get_data(self):
-        """Method to be inherited by class"""
-
-        self.rows = {val: [] for val in  Rel_Types.__members__.values()}
-        # Parses all lines in the file that aren't commented out
-        with open(self.path, "r") as f:
-            [self._parse_line(x) for x in f.readlines() if "#" not in x]
-        self.logger.info("Parsed through file: {}".format(self.path))
-
-class AS_File(Relationship_File):
-    """AS_File, inherites from Relationship_File"""
-
-    __slots__ = []
-
-    def __init__(self, path, csv_directory, url, logger):
-        """Initializes file instance and determine info about it"""
-
-        Relationship_File.__init__(self, path, csv_directory, url, logger)
-
-    def _parse_line(self, line):
-        """parses a line for the csv files
-        Format of an as_rel file:
-        <provider_as> | <customer_as> | -1
-        <peer_as> | <peer_as> | 0
-        <nums[0] | <nums[1]> | <nums[2]>
-        """
-
-        nums = self.divisor.findall(line)
-        self.rows[self.classifiers[nums[2]]].append([nums[0], nums[1]])
-        
-
-class AS_2_File(Relationship_File):
-    """AS_2 file, inherites from Relationship_file"""
-
-    __slots__ = ['parse_duplicates']
-
-    def __init__(self, path, csv_directory, url, logger):
-        """Initializes file instance and determine info about it"""
-
-        Relationship_File.__init__(self, path, csv_directory, url, logger)
-
-    def _parse_line(self, line):
-        """parses a line for the csv files
-        Format of an as_rel file:
-        <provider_as> | <customer_as> | -1
-        <peer_as> | <peer_as> | 0 | <source>
-        <nums[0] | <nums[1]> | <nums[2]> | <nums[3]>
-        """
-
-        nums = self.divisor.findall(line)
-        self.rows[self.classifiers[nums[2]]].append([nums[0], nums[1]])
+        grep = {Rel_Types.CUSTOMER_PROVIDERS: 'grep "-1" ',
+                Rel_Types.PEERS: 'grep -Ev "-1|#" '}
+        csvs = {'{}/.csv;'.format(self.csv_dir, val) for val in
+                Rel_Types.__members__.values()}
+        tables = {Rel_Types.CUSTOMER_PROVIDERS: Customer_Providers_Table,
+                       Rel_Types.PEERS: Peers_Table}
+        return grep, csvs, tables

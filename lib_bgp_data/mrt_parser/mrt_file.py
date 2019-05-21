@@ -111,7 +111,6 @@ class MRT_File:
                                            os.path.basename(self.path))
         # Parses the MRT file into a csv file
         self._convert_dump_to_csv(bgpscanner)
-        self._bgpscanner_to_csv() if bgpscanner else self._bgpdump_to_csv()
         # Inserts the csv file into the Announcements Table
         utils.csv_to_db(self.logger, Announcements_Table, self.csv_name)
         # Deletes all old files
@@ -123,7 +122,7 @@ class MRT_File:
 ########################
 
     @error_catcher()
-    def _convert_dump_to_csv(bgpscanner)
+    def _convert_dump_to_csv(self, bgpscanner=True):
         """Parses MRT file into a CSV
 
         This function uses bgpscanner to first be able to read

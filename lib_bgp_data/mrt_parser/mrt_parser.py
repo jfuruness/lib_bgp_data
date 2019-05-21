@@ -117,8 +117,7 @@ class MRT_Parser:
     In depth explanation at the top of module
     """
 
-    __slots__ = ['path', 'csv_dir', 'args', 'logger', 'start_time', 'dl_pool',
-                 'p_pool', 'all_files']
+    __slots__ = ['path', 'csv_dir', 'logger', 'start_time', 'dl_pool','p_pool']
 
     @error_catcher()
     def __init__(self, args={}):
@@ -162,7 +161,7 @@ class MRT_Parser:
         # Get downloaded instances of mrt files using multithreading
         mrt_files = self._multiprocess_download(download_threads, urls)
         # Parses files using multiprocessing in descending order by size
-        self._multiprocess_parse_dls(parse_threads, mrt_files)
+        self._multiprocess_parse_dls(parse_threads, mrt_files, bgpscanner)
         self._filter_and_clean_up_db(IPV4, IPV6)
 
 ########################

@@ -59,7 +59,7 @@ def run_parser():
             # Gets the start time
             start_time = now()
             # Deletes everything from and creates paths
-            clean_paths(self.logger, self.all_files)
+            clean_paths(self.logger, [self.path, self.csv_dir])
             try:
                 # Runs the parser
                 return run_parser_func(self, *args, **kwargs)
@@ -70,7 +70,7 @@ def run_parser():
             # End the parser to delete all files and directories always
             finally:
                 # Clean up don't be messy yo
-                end_parser(self.logger, self.all_files, start_time)
+                end_parser(self.logger, [self.path, self.csv_dir], start_time)
         return function_that_runs_func
     return my_decorator
 
@@ -89,7 +89,7 @@ def now():
 
     return datetime.now()
 
-def set_common_init_args(self, args, parser, non_essentials=True):
+def set_common_init_args(self, args, parser, non_essentials=False):
     """Sets self attributes for arguments common across many classes"""
 
     # The class name. This because when parsers are done,
@@ -104,7 +104,6 @@ def set_common_init_args(self, args, parser, non_essentials=True):
     self.logger = args.get("logger") if args.get("logger") else\
         Logger(args)
     if non_essentials:
-        self.all_files = [self.path, self.csv_dir]
         try:
             self.args = args
             self.config = Config(self.logger)

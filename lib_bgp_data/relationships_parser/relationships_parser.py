@@ -17,7 +17,7 @@ import datetime
 from datetime import timedelta
 import multiprocessing
 from pathos.multiprocessing import ProcessingPool as Pool
-from .relationships_file import AS_2_File
+from .relationships_file import Rel_File
 from .tables import Customer_Providers_Table, Peers_Table
 from ..utils import utils, Config, db_connection
 from ..utils import Thread_Safe_Logger as Logger, error_catcher
@@ -34,15 +34,12 @@ __status__ = "Development"
 class Relationships_Parser:
     """This class downloads, unzips, parses, and deletes files from Caida"""
 
-    __slots__ = ['path', 'csv_dir', 'args', 'url', 'logger', 'config',
-                 'all_files']
+    __slots__ = ['path', 'csv_dir', 'logger']
 
     @error_catcher()
     def __init__(self, args={}):
         """Initializes urls, regexes, and path variables"""
 
-        # URLs fom the caida websites to pull data from
-        self.url = 'http://data.caida.org/datasets/as-relationships/serial-2/'
         # Sets args such as path, csv_dir, logger, config, etc
         utils.set_common_init_args(self, args, "Relationship")
 
@@ -50,17 +47,16 @@ class Relationships_Parser:
     # records start/end time, and upon end or error deletes everything
     @error_catcher()
     @utils.run_parser()
-    def parse_files(self, db=True):
+    def parse_files(self):
         """Downloads, unzips, and parses file"""
 
         url, int_date = self._get_url()
         # If this is a new file, the config date will be less than the
         # websites file date, and so we renew our data
-        if self.config.last_date < int_date:
-            AS_2_File(self.path, self.csv_dir, url, self.logger
-                ).parse_file()
-            self.config.update_last_date(int_date)
-            self.create_indexes()
+        config = Config(self.logger)
+        if config.last_date < int_date:
+            Rel_File(self.path, self.csv_dir, url, self.logger).parse_file()
+            config.update_last_date(int_date)
         else:
             self.logger.info("old file, not parsing")
 
@@ -72,17 +68,9 @@ class Relationships_Parser:
     def _get_url(self):
         """Gets urls to download relationship files"""
 
+        url = 'http://data.caida.org/datasets/as-relationships/serial-2/'
         # Get all html tags that might have links
-        elements = [x for x in utils.get_tags(self.url, 'a')[0]]
+        elements = [x for x in utils.get_tags(url, 'a')[0]]
         # Gets the last file of all bz2 files
-        url = [x["href"] for x in elements if "bz2" in x["href"]][-1]
-        # Returns the url and the date for the url
-        return url, max(map(int, re.findall('\d+', url)))
-
-    @error_catcher()
-    def create_indexes(self):
-        """Creates indexes on the table"""
-        
-        for Table in [Customer_Providers_Table, Peers_Table]:
-            with db_connection(Table, self.logger) as table:
-                table.create_index()
+        file_url = [x["href"] for x in elements if "bz2" in x["href"]][-1]
+        return file_url, int_date
