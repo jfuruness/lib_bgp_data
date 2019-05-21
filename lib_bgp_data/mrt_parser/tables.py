@@ -53,7 +53,8 @@ class Announcements_Table(Database):
     def _create_tables(self):
         """Creates tables if they do not exist.
 
-        Called during initialization of the database class."""
+        Called during initialization of the database class.
+        """
 
         sql = """CREATE UNLOGGED TABLE IF NOT EXISTS mrt_announcements (
                  prefix cidr,
@@ -67,17 +68,34 @@ class Announcements_Table(Database):
     def clear_table(self):
         """Clears the mrt_announcements table.
 
-        Should be called at the start of every run."""
+        Should be called at the start of every run.
+        """
 
         self.logger.info("Dropping MRT Announcements")
         self.cursor.execute("DROP TABLE mrt_announcements")
         self.logger.info("MRT Announcements Table dropped")
 
+    @error_catcher()
+    def filter_by_IPV_family(self, IPV4, IPV6):
+        """Filters the data by IPV family"""
+
+        if not IPV6:
+            self.logger.info("Deleting IPV6 from mrt announcements")
+            sql = "DELETE FROM mrt_announcements WHERE family(prefix) = 6;"
+            self.cursor.execute(sql)
+            self.logger.info("IPV6 deleted from mrt_announcements")
+        if not IPV4:
+            self.logger.info("Deleting IPV4 from mrt_announcements")
+            sql = "DELETE FROM mrt_announcements WHERE family(prefix) = 4;"
+            self.cursor.execute(sql)
+            self.logger.info("IPV4 deleted from mrt_announcements")
+
     @property
     def name(self):
         """Returns the name of the table.
 
-        Used in utils to insert CSV into the database."""
+        Used in utils to insert CSV into the database.
+        """
 
         return "mrt_announcements"
 
@@ -85,6 +103,7 @@ class Announcements_Table(Database):
     def columns(self):
         """Returns the columns of the table.
 
-        Used in utils to insert the CSV into the database"""
+        Used in utils to insert the CSV into the database
+        """
 
         return ['prefix', 'as_path', 'origin', 'time']

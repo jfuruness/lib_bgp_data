@@ -88,7 +88,8 @@ class MRT_File:
         """less than attribute for sorting files, sorts based on size
 
         The purpose of this is to be able to sort files in order to be
-        able to parse the largest files first"""
+        able to parse the largest files first
+        """
 
         # Returns the smallest file size for a comparater
         return os.path.getsize(self.path) < os.path.getsize(other.path)
@@ -134,7 +135,8 @@ class MRT_File:
         format the data for a CSV. Then this is stored as a tab
         delimited CSV file, and the original is deleted. For a more in
         depth explanation see top of file. For parsing spefics, see each
-        function listed below."""
+        function listed below.
+        """
 
 
         args = self._bgpscanner_args() if bgpscanner else self._bgpdump_args()
@@ -150,7 +152,8 @@ class MRT_File:
         """Parses MRT file into a CSV using bgpscanner
 
         For a more in depth explanation see _convert_dump_to_csv. For
-        explanation on specifics of the parsing, see below."""
+        explanation on specifics of the parsing, see below.
+        """
 
         # I know this may seem unmaintanable, that's because this is a
         # Fast way to to this. Please, calm down.
@@ -238,7 +241,8 @@ class MRT_File:
 
         For a more in depth explanation see _convert_dump_to_csv. For
         explanation on specifics of the parsing, see below. Also note,
-        you must use the updated bgpdump tool, not the apt repo."""
+        you must use the updated bgpdump tool, not the apt repo.
+        """
 
         # performs bgpdump on the file
         bash_args =  'bgpdump -q -M -t change '

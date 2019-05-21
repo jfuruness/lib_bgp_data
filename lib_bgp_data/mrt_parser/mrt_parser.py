@@ -141,7 +141,8 @@ class MRT_Parser:
                     download_threads=None,
                     parse_threads=None,
                     IPV4=True,
-                    IPV6=False):
+                    IPV6=False,
+                    bgpscanner=True):
         """Downloads and parses files using multiprocessing.
 
         In depth explanation at the top of the file.
@@ -161,23 +162,35 @@ class MRT_Parser:
         # Get downloaded instances of mrt files using multithreading
         mrt_files = self._multiprocess_download(download_threads, urls)
         # Parses files using multiprocessing in descending order by size
-        self._multiprocess_parse_dls(parse_threads, mrt_files, IPV4, IPV6)
-        with db_connection(Announcements_Table, self.logger) as ann_table:
-            # VACUUM ANALYZE to clean up data and create statistics on table
-            # This is needed for better index creation and queries later on
-            ann_table.cursor.execute("VACUUM ANALYZE;")
-            # A checkpoint is run here so that RAM isn't lost
-            ann_table.cursor.execute("CHECKPOINT;")
-
+        self._multiprocess_parse_dls(parse_threads, mrt_files)
+        self._filter_and_clean_up_db(IPV4, IPV6)
 
 ########################
 ### Helper Functions ###
 ########################
 
+    @error_catcher()
+    def _get_mrt_urls(self, start, end, PARAMS=None):
+        """Gets urls to download MRT files. Start and end should be epoch."""
+
+        # Parameters for the get request, look at caida for more in depth info
+        if PARAMS is None:
+            PARAMS = {'human': True,
+                      'intervals': ["{},{}".format(start, end)],
+                      'types': ['ribs']
+                      }
+        # URL to make the api call to
+        URL = 'https://bgpstream.caida.org/broker/data'
+        # Request for data and conversion to json
+        data = requests.get(url=URL, params=PARAMS).json()
+        # Returns the urls from the json
+        return [x.get('url') for x in data.get('data').get('dumpFiles')]
+
     def _multiprocess_download(self, dl_threads, urls):
         """Downloads MRT files in parallel.
 
-        In depth explanation at the top of the file, dl=download"""
+        In depth explanation at the top of the file, dl=download
+        """
 
         # Creates an mrt file for each url
         mrt_files = [MRT_File(self.path,
@@ -197,7 +210,7 @@ class MRT_Parser:
             self.logger.debug("started to download files")
         return mrt_files
 
-    def _multiprocess_parse_dls(self, p_threads, mrt_files, IPV4, IPV6):
+    def _multiprocess_parse_dls(self, p_threads, mrt_files, bgpscanner):
         """Multiprocessingly(ooh cool verb, too bad it's not real)parse files.
 
         In depth explanation at the top of the file.
@@ -207,22 +220,23 @@ class MRT_Parser:
         # Creates a parsing pool with cpu_count since it is CPU bound
         with utils.Pool(self.logger, p_threads, 1, "parsing") as p_pool:
             # Runs the parsing of files in parallel, largest first
-            p_pool.map(lambda f: f.parse_file(),
+            p_pool.map(lambda f: f.parse_file(bgpscanner),
                        sorted(mrt_files, reverse=True))
 
-    @error_catcher()
-    def _get_mrt_urls(self, start, end, PARAMS=None):
-        """Gets urls to download MRT files. Start and end should be epoch."""
+    def _filter_and_clean_up_db(self, IPV4, IPV6):
+        """This function filters mrt data by IPV family and cleans up db
 
-        # Parameters for the get request, look at caida for more in depth info
-        if PARAMS is None:
-            PARAMS = {'human': True,
-                      'intervals': ["{},{}".format(start, end)],
-                      'types': ['ribs']
-                      }
-        # URL to make the api call to
-        URL = 'https://bgpstream.caida.org/broker/data'
-        # Request for data and conversion to json
-        data = requests.get(url=URL, params=PARAMS).json()
-        # Returns the urls from the json
-        return [x.get('url') for x in data.get('data').get('dumpFiles')]
+        First the database is connected. Then IPV4 and/or IPV6 data is
+        removed. Aftwards the data is vaccuumed and analyzed to get
+        statistics for the table for future queries, and a checkpoint is
+        called so as not to lose RAM.
+        """
+
+        with db_connection(Announcements_Table, self.logger) as ann_table:
+            # First we filter by IPV4 and IPV6:
+            ann_table.filter_by_IPV_family(IPV4, IPV6)
+            # VACUUM ANALYZE to clean up data and create statistics on table
+            # This is needed for better index creation and queries later on
+            ann_table.cursor.execute("VACUUM ANALYZE;")
+            # A checkpoint is run here so that RAM isn't lost
+            ann_table.cursor.execute("CHECKPOINT;")
