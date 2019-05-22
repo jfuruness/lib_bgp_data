@@ -11,6 +11,7 @@ deleted.
 from enum import Enum
 import re
 import os
+from subprocess import call
 from ..utils import utils, error_catcher
 from .tables import Customer_Providers_Table, Peers_Table
 
@@ -64,18 +65,19 @@ class Rel_File:
 
         # For each type of csv:
         for val in Rel_Types.__members__.values():
-            call("cat {} | {} > {}".format(self.path, grep[val], csvs[val]))
+            call("cat {} | {} > {}".format(self.path, grep[val], csvs[val]),
+                 shell=True)
             utils.csv_to_db(self.logger, tables[val], csvs[val])
         # Deletes the old paths
-        utils.delete_paths(self.logger, [self.path, csvs])
+        utils.delete_paths(self.logger, [self.path].extend([val for key, val in csvs.items()]))
 
     @error_catcher()
     def _get_rel_attributes(self):
         """Put here instead of _db_insert or __init__ for cleaner code, if you don't do it this way it starts to get pretty messy"""
 
-        grep = {Rel_Types.CUSTOMER_PROVIDERS: 'grep "-1" ',
-                Rel_Types.PEERS: 'grep -Ev "-1|#" '}
-        csvs = {'{}/.csv;'.format(self.csv_dir, val) for val in
+        grep = {Rel_Types.CUSTOMER_PROVIDERS: 'grep "\-1" | grep -F -v "#" | cut -d "|" -f1,2 | sed -e "s/|/\t/g"',
+                Rel_Types.PEERS: 'grep -v "\-1" | grep -F -v "#" | cut -d "|" -f1,2 | sed -e "s/|/\t/g"'}
+        csvs = {val: '{}/rel.csv'.format(self.csv_dir, val) for val in
                 Rel_Types.__members__.values()}
         tables = {Rel_Types.CUSTOMER_PROVIDERS: Customer_Providers_Table,
                        Rel_Types.PEERS: Peers_Table}

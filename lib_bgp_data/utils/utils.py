@@ -192,9 +192,10 @@ def end_parser(logger, paths, start_time):
     logger.info("Parser started at {}".format(start_time))
     logger.info("Parser completed at {}".format(now()))
 
-def unzip_bz2(logger, old_path, new_path):
+def unzip_bz2(logger, old_path):
     """Unzips a bz2 file from old_path into new_path and deletes old file"""
 
+    new_path = "{}.decompressed".format(old_path[:-4])
     with open(new_path, 'wb') as new_file, open(old_path, 'rb') as file:
         decompressor = BZ2Decompressor()
         for data in iter(lambda: file.read(100 * 1024), b''):
@@ -202,6 +203,7 @@ def unzip_bz2(logger, old_path, new_path):
 
     logger.debug("Unzipped a file: {}".format(old_path))
     delete_paths(logger, old_path)
+    return new_path
 
 def unzip_gz(logger, old_path, new_path):
     """Unzips a .gz file from old_path into new_path and deletes old file"""

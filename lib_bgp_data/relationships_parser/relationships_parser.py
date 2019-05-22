@@ -73,4 +73,4 @@ class Relationships_Parser:
         elements = [x for x in utils.get_tags(url, 'a')[0]]
         # Gets the last file of all bz2 files
         file_url = [x["href"] for x in elements if "bz2" in x["href"]][-1]
-        return file_url, int_date
+        return url + file_url, max(map(int, re.findall('\d+', file_url)))

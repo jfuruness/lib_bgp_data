@@ -142,7 +142,7 @@ class MRT_File:
         # writes to a csv
         args += '> ' + self.csv_name
         call(args, shell=True)
-        self.logger.info("Wrote {}".format(self.csv_name))
+        self.logger.info("Wrote {}\n\tFrom {}".format(self.csv_name, self.url))
         utils.delete_paths(self.logger, self.path)
 
 
