@@ -1,13 +1,30 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-"""This module contains the tables for the relationships tables
+"""This module contains classes for relationship data tables
 
-This module contains the relationships tables, which inherit from the
-database class
+The relationship classes inherits from the Database class. The Database
+class allows for the conection to a database upon initialization. Also
+upon initialization the _create_tables function is called to initialize
+any tables if they do not yet exist. Beyond that the class can clear the
+table, create an index, and has the name and columns properties that are
+used in utils function to insert CSVs into the database. This class does
+not contain an index creation function since this data is only used by
+the extrapolator, which does not use indexes. Each table follows the
+table name followed by a _Table since it inherits from the Database
+class.
+
+Design choices:
+    -There is no index creation function since indexes are never used
+     for the typical purpose of the relationship data
+
+Possible future improvements:
+    -Add test cases
+    -The data is actualy provider customers, change the name to
+     provider_customers in this file and all others
 """
 
-from psycopg2.extras import RealDictCursor
+
 from ..utils import error_catcher, Database
 
 __author__ = "Justin Furuness"
@@ -20,20 +37,25 @@ __status__ = "Development"
 
 
 class Customer_Providers_Table(Database):
-    """Customer Providers table class, inherits from database"""
+    """Class with database functionality.
 
-    __slots__ = ['logger', 'config', 'conn', 'cursor', 'test']
+    In depth explanation at the top of the file."""
+
+    __slots__ = []
 
     @error_catcher()
-    def __init__(self, logger, cursor_factory=RealDictCursor):
+    def __init__(self, logger):
         """Initializes the Customer Provider table"""
 
-        Database.__init__(self, logger, cursor_factory)
+        Database.__init__(self, logger)
 
     @error_catcher()
     def _create_tables(self):
-        """ Creates tables if they do not exist"""
+        """Creates tables if they do not exist.
 
+        Called during initialization of the database class."""
+
+        # Drops the table if it exists
         self.cursor.execute("DROP TABLE IF EXISTS customer_providers;")
         sql = """CREATE UNLOGGED TABLE IF NOT EXISTS customer_providers (
               provider_as bigint,
@@ -41,47 +63,30 @@ class Customer_Providers_Table(Database):
               );"""
         self.cursor.execute(sql)
 
-    @property
-    def columns(self):
-        """Returns the columns of the table"""
-
-        return ['provider_as', 'customer_as']
-
-    @property
-    def name(self):
-        """Returns the table name"""
-
-        return "customer_providers"
 
 class Peers_Table(Database):
-    """Peers Table class, inherits from Database"""
+    """Class with database functionality.
 
-    __slots__ = ['logger', 'config', 'conn', 'cursor', 'test']
+    In depth explanation at the top of the file."""
+
+    __slots__ = []
 
     @error_catcher()
-    def __init__(self, logger, cursor_factory=RealDictCursor):
-        """Initializes the peers table"""
-        Database.__init__(self, logger, cursor_factory)
+    def __init__(self, logger):
+        """Initializes the Peers table"""
+
+        Database.__init__(self, logger)
 
     @error_catcher()
     def _create_tables(self):
-        """ Creates tables if they do not exist"""
+        """Creates tables if they do not exist.
 
+        Called during initialization of the database class."""
+
+        # Drops the table if it exists
         self.cursor.execute("DROP TABLE IF EXISTS peers;")
         sql = """CREATE UNLOGGED TABLE IF NOT EXISTS peers (
               peer_as_1 bigint,
               peer_as_2 bigint
               );"""
         self.cursor.execute(sql)
-
-    @property
-    def columns(self):
-        """Returns the columns of the table"""
-
-        return ['peer_as_1', 'peer_as_2']
-
-    @property
-    def name(self):
-        """Returns the table name"""
-
-        return "peers"

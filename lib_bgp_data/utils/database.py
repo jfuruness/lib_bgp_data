@@ -30,7 +30,7 @@ __status__ = "Development"
 class Database:
     """Interact with the database"""
 
-    __slots__ = ['logger', 'config', 'conn', 'cursor', 'cursor_factory']
+    __slots__ = ['logger', 'conn', 'cursor']
 
     @error_catcher()
     def __init__(self, logger, cursor_factory=RealDictCursor):
@@ -38,14 +38,13 @@ class Database:
 
         # Initializes self.logger
         self.logger = logger
-        self.config = Config(self.logger)
         self._connect(cursor_factory)
 
     @error_catcher()
     def _connect(self, cursor_factory):
         """Connects to db"""
 
-        kwargs = self.config.get_db_creds()
+        kwargs = Config(self.logger).get_db_creds()
         if cursor_factory:
             kwargs["cursor_factory"] = cursor_factory
         conn = psycopg2.connect(**kwargs)
@@ -100,3 +99,28 @@ class Database:
         """Vaccums db for efficiency"""
 
         self.cursor.execute("VACUUM")
+
+        self.cursor.execute("""SELECT column_name FROM information_schema.columns WHERE table_schema = 'public' AND table_name
+ = %s;""", ['peers'])########################################################
+        print([x['column_name'] for x in self.cursor.fetchall()])#####################################3
+
+    @property
+    def columns(self):
+        """Returns the columns of the table
+
+        used in utils to insert csv into the database"""
+
+        sql = """SELECT column_name FROM information_schema.columns
+              WHERE table_schema = 'public' AND table_name = %s;
+              """
+        self.cursor.execute(sql, [self.name])
+        return [x['column_name'] for x in self.cursor.fetchall()]
+
+    @property
+    def name(self):
+        """Returns the table name
+
+        used in utils to insert csv into the database"""
+
+        # takes out _Table and makes lowercase
+        return self.__class__.__name__[:-6].lower()

@@ -93,6 +93,7 @@ Possible Future Extensions:
         -Would need to make sure that all updates are gathered, not
          just the first in the time interval to the api, as is the norm
     -Test again for different thread numbers now that bgpscanner is used
+    -Add test cases
 """
 
 
@@ -100,7 +101,7 @@ import requests
 from datetime import timedelta
 from .mrt_file import MRT_File
 from ..utils import error_catcher, utils, db_connection
-from .tables import Announcements_Table
+from .tables import MRT_Announcements_Table
 
 __author__ = "Justin Furuness"
 __credits__ = ["Justin Furuness"]
@@ -112,20 +113,20 @@ __status__ = "Development"
 
 
 class MRT_Parser:
-    """This class downloads, parses, and deletes files from Caida
+    """This class downloads, parses, and deletes files from Caida.
 
-    In depth explanation at the top of module
+    In depth explanation at the top of module.
     """
 
     __slots__ = ['path', 'csv_dir', 'logger', 'start_time', 'dl_pool','p_pool']
 
     @error_catcher()
     def __init__(self, args={}):
-        """Initializes urls, regexes, logger, and path variables"""
+        """Initializes logger and path variables."""
 
         # Sets path vars, logger, config, etc
         utils.set_common_init_args(self, args, "mrt")
-        with db_connection(Announcements_Table, self.logger) as ann_table:
+        with db_connection(MRT_Announcements_Table, self.logger) as ann_table:
             # Clears the table for insertion
             ann_table.clear_table()
             # Tables can't be created in multithreading so it's done now
@@ -188,7 +189,7 @@ class MRT_Parser:
     def _multiprocess_download(self, dl_threads, urls):
         """Downloads MRT files in parallel.
 
-        In depth explanation at the top of the file, dl=download
+        In depth explanation at the top of the file, dl=download.
         """
 
         # Creates an mrt file for each url
@@ -231,7 +232,7 @@ class MRT_Parser:
         called so as not to lose RAM.
         """
 
-        with db_connection(Announcements_Table, self.logger) as ann_table:
+        with db_connection(MRT_Announcements_Table, self.logger) as ann_table:
             # First we filter by IPV4 and IPV6:
             ann_table.filter_by_IPV_family(IPV4, IPV6)
             # VACUUM ANALYZE to clean up data and create statistics on table

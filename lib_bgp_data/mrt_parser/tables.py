@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-"""This module contains class Announcements Table
+"""This module contains class MRT_Announcements_Table
 
 Announcements_Table inherits from the Database class. The Database
 class allows for the conection to a database upon initialization. Also
@@ -11,7 +11,9 @@ table, create an index, and has the name and columns properties that are
 used in utils function to insert CSVs into the database. This class does
 not contain an index creation function, because it would only ever be
 used when combining with the roas table, which does a parallel seq_scan,
-thus any indexes are not used since they are not efficient.
+thus any indexes are not used since they are not efficient. Each table
+follows the table name followed by a _Table since it inherits from the
+database class.
 
 Design choices:
     -There is no index creation function since indexes are never used
@@ -20,11 +22,9 @@ Design choices:
      it uses a parallel seq_scan, with no indexes
 
 Possible future improvements:
-    -Make the columns return through a query and order them in some way?
-        -Maybe not since the CSV needs them in a particular order
+    -Add test cases
 """
 
-from psycopg2.extras import RealDictCursor
 from ..utils import Database, error_catcher
 
 __author__ = "Justin Furuness"
@@ -36,7 +36,7 @@ __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
 
-class Announcements_Table(Database):
+class MRT_Announcements_Table(Database):
     """Class with database functionality.
 
     In depth explanation at the top of the file."""
@@ -44,10 +44,10 @@ class Announcements_Table(Database):
     __slots__ = []
 
     @error_catcher()
-    def __init__(self, logger, cursor_factory=RealDictCursor):
+    def __init__(self, logger):
         """Initializes the announcement table"""
 
-        Database.__init__(self, logger, cursor_factory)
+        Database.__init__(self, logger)
 
     @error_catcher()
     def _create_tables(self):
@@ -89,21 +89,3 @@ class Announcements_Table(Database):
             sql = "DELETE FROM mrt_announcements WHERE family(prefix) = 4;"
             self.cursor.execute(sql)
             self.logger.info("IPV4 deleted from mrt_announcements")
-
-    @property
-    def name(self):
-        """Returns the name of the table.
-
-        Used in utils to insert CSV into the database.
-        """
-
-        return "mrt_announcements"
-
-    @property
-    def columns(self):
-        """Returns the columns of the table.
-
-        Used in utils to insert the CSV into the database
-        """
-
-        return ['prefix', 'as_path', 'origin', 'time']

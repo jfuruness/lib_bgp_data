@@ -45,12 +45,13 @@ Design choices (summarizing from above):
 Possible Future Extensions:
     -Add functionality to download and parse updates?
     -Test different regex parsers other than sed for speed?
+    -Add test cases
 """
 
 import os
 from subprocess import call
 from ..utils import utils, error_catcher
-from .tables import Announcements_Table
+from .tables import MRT_Announcements_Table
 
 __author__ = "Justin Furuness"
 __credits__ = ["Justin Furuness", "Cameron Morris"]
@@ -111,8 +112,8 @@ class MRT_File:
                                            os.path.basename(self.path))
         # Parses the MRT file into a csv file
         self._convert_dump_to_csv(bgpscanner)
-        # Inserts the csv file into the Announcements Table
-        utils.csv_to_db(self.logger, Announcements_Table, self.csv_name)
+        # Inserts the csv file into the MRT_Announcements Table
+        utils.csv_to_db(self.logger, MRT_Announcements_Table, self.csv_name)
         # Deletes all old files
         utils.delete_paths(self.logger, [self.path, self.csv_name])
 

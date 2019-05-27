@@ -106,6 +106,7 @@ Possible Future Extensions:
          just the first in the time interval to the api, as is the norm
     -Test again for different thread numbers now that bgpscanner is used
     -Test different regex parsers other than sed for speed?
+    -Add test cases
 """
 
 
