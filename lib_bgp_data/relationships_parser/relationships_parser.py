@@ -47,21 +47,9 @@ Possible Future Extensions:
 """
 
 
-
-
 import re
-import requests
-import shutil
-import os
-import bs4
-import datetime
-from datetime import timedelta
-import multiprocessing
-from pathos.multiprocessing import ProcessingPool as Pool
 from .relationships_file import Rel_File
-from .tables import Customer_Providers_Table, Peers_Table
-from ..utils import utils, Config, db_connection
-from ..utils import Thread_Safe_Logger as Logger, error_catcher
+from ..utils import utils, Config, error_catcher
 
 __author__ = "Justin Furuness"
 __credits__ = ["Justin Furuness"]
@@ -128,4 +116,4 @@ class Relationships_Parser:
         # Gets the last file of all bz2 files
         file_url = [x["href"] for x in elements if "bz2" in x["href"]][-1]
         # Returns the url plus the max number (the date) in the url
-        return url + file_url, max(map(int, re.findall('\d+', file_url)))
+        return url + file_url, max(map(int, re.findall(r'\d+', file_url)))

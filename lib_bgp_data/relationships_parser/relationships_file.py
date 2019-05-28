@@ -38,7 +38,6 @@ Possible Future Extensions:
 """
 
 from enum import Enum
-import re
 import os
 from subprocess import call
 from ..utils import utils, error_catcher
@@ -59,9 +58,10 @@ class Rel_Types(Enum):
     CUSTOMER_PROVIDERS = "customer_providers"
     PEERS = "peers"
 
+
 class Rel_File:
     """File class that allows for download, unzip, and database storage.
-    
+
     More in depth explanation at top of file.
     """
 
@@ -119,7 +119,8 @@ class Rel_File:
             # Inserts the CSV into the database
             utils.csv_to_db(self.logger, tables[val], csvs[val])
         # Deletes the old paths
-        utils.delete_paths(self.logger, [self.path].extend([val for key, val in csvs.items()]))
+        utils.delete_paths(self.logger, self.path)
+        utils.delete_paths(self.logger, [val for key, val in csvs.items()])
 
     @error_catcher()
     def _get_rel_attributes(self):
@@ -139,7 +140,7 @@ class Rel_File:
 
         # The start of the grep strings
         grep_temp = {Rel_Types.CUSTOMER_PROVIDERS:
-                         'grep "\-1" | grep -F -v "#"',
+                     'grep "\-1" | grep -F -v "#"',
                      Rel_Types.PEERS: 'grep -v "\-1" | grep -F -v "#"'}
         # Appended onto all grep strings to format for CSV insertion
         grep = {key: val + ' | cut -d "|" -f1,2 | sed -e "s/|/\t/g"'

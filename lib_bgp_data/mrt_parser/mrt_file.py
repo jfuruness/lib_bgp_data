@@ -138,14 +138,12 @@ class MRT_File:
         function listed below.
         """
 
-
         args = self._bgpscanner_args() if bgpscanner else self._bgpdump_args()
         # writes to a csv
         args += '> ' + self.csv_name
         call(args, shell=True)
         self.logger.info("Wrote {}\n\tFrom {}".format(self.csv_name, self.url))
         utils.delete_paths(self.logger, self.path)
-
 
     @error_catcher()
     def _bgpscanner_args(self):
@@ -245,7 +243,7 @@ class MRT_File:
         """
 
         # performs bgpdump on the file
-        bash_args =  'bgpdump -q -M -t change '
+        bash_args = 'bgpdump -q -M -t change '
         bash_args += self.path
         # Cuts out columns we don't need
         bash_args += ' | cut -d "|" -f2,6,7 '
