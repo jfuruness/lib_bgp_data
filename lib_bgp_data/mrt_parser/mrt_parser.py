@@ -135,9 +135,9 @@ class MRT_Parser:
     @error_catcher()
     @utils.run_parser()
     def parse_files(self,
-                    start=(utils.now()-timedelta(days=2)).timestamp(),
-                    end=(utils.now()-timedelta(days=1)).timestamp(),
-                    api_params=None,
+                    start=(utils.now()-timedelta(days=7)).timestamp(),
+                    end=(utils.now()-timedelta(days=6)).timestamp(),
+                    api_params_mods=None,
                     download_threads=None,
                     parse_threads=None,
                     IPV4=True,
@@ -146,8 +146,10 @@ class MRT_Parser:
         """Downloads and parses files using multiprocessing.
 
         In depth explanation at the top of the file.
-            Start is epoch time which defaults to two days ago
-            End is epoch time which defaults to yesterday
+            Start is epoch time which defaults to one week ago
+            End is epoch time which defaults to six days ago
+            Note: The reason start and end are earlier than a day ago is
+                  to allow for the updated MRT files to get posted
             api_params defaults to None, later changed in _get_mrt_urls
             download_threads defaults to None, and later defaults to
                 four times cpu_count
@@ -157,7 +159,7 @@ class MRT_Parser:
         """
 
         # Gets urls of all mrt files needed
-        urls = self._get_mrt_urls(start, end)
+        urls = self._get_mrt_urls(start, end, api_params_mods)
         self.logger.debug("Total files {}".format(len(urls)))
         # Get downloaded instances of mrt files using multithreading
         mrt_files = self._multiprocess_download(download_threads, urls)
@@ -170,15 +172,20 @@ class MRT_Parser:
 ########################
 
     @error_catcher()
-    def _get_mrt_urls(self, start, end, PARAMS=None):
+    def _get_mrt_urls(self, start, end, PARAMS_modification=None):
         """Gets urls to download MRT files. Start and end should be epoch."""
 
         # Parameters for the get request, look at caida for more in depth info
-        if PARAMS is None:
-            PARAMS = {'human': True,
-                      'intervals': ["{},{}".format(start, end)],
-                      'types': ['ribs']
-                      }
+        # This must be included in every API query
+        PARAMS = {'human': True,
+                  'intervals': ["{},{}".format(start, end)],
+                  }
+        # By default the type is ribs
+        if PARAMS_modification is None:
+            PARAMS.update({'types': ['ribs']})
+        # Other api calls can be made with these modifications
+        else:
+            PARAMS.update(PARAMS_modification)
         # URL to make the api call to
         URL = 'https://bgpstream.caida.org/broker/data'
         # Request for data and conversion to json
