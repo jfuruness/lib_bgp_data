@@ -1,4 +1,3 @@
-
 # lib\_bgp\_data
 This package contains multiple submodules that are used to gather and manipulate real data in order to simulate snapshots of the internet. The purpose of this is to test different security policies to determine their accuracy, and hopefully find ones that will create a safer, more secure, internet as we know it.
 
@@ -311,12 +310,12 @@ For more in depth documentation please refer to: [https://github.com/c-morris/BG
 ### BGPStream Website Possible Future Improvements
 ## RPKI Validator Submodule
    * [lib\_bgp\_data](#lib_bgp_data)
-    * [Short Description](#rpki-validator-short-description)
-    * [Long Description](#rpki-validator-long-description)
-    * [Usage](#rpki-validator-usage)
-    * [Table Schema](#rpki-validator-table-schema)
-    * [Design Choices](#rpki-validator-design-choices)
-    * [Possible Future Improvements](#rpki-validator-possible-future-improvements)
+   * [Short Description](#rpki-validator-short-description)
+   * [Long Description](#rpki-validator-long-description)
+   * [Usage](#rpki-validator-usage)
+   * [Table Schema](#rpki-validator-table-schema)
+   * [Design Choices](#rpki-validator-design-choices)
+   * [Possible Future Improvements](#rpki-validator-possible-future-improvements)
 ### RPKI Validator Short description
 ### RPKI Validator Long description
 ### RPKI Validator Usage
@@ -327,12 +326,12 @@ For more in depth documentation please refer to: [https://github.com/c-morris/BG
 ### RPKI Validator Possible Future Improvements
 ## What if Analysis Submodule
    * [lib\_bgp\_data](#lib_bgp_data)
-    * [Short Description](#what-if-analysis-short-description)
-    * [Long Description](#what-if-analysis-long-description)
-    * [Usage](#what-if-analysis-usage)
-    * [Table Schema](#what-if-analysis-table-schema)
-    * [Design Choices](#what-if-analysis-design-choices)
-    * [Possible Future Improvements](#what-if-analysis-possible-future-improvements)
+   * [Short Description](#what-if-analysis-short-description)
+   * [Long Description](#what-if-analysis-long-description)
+   * [Usage](#what-if-analysis-usage)
+   * [Table Schema](#what-if-analysis-table-schema)
+   * [Design Choices](#what-if-analysis-design-choices)
+   * [Possible Future Improvements](#what-if-analysis-possible-future-improvements)
 ### What if Analysis  Short description
 ### What if Analysis  Long description
 ### What if Analysis  Usage
@@ -343,12 +342,12 @@ For more in depth documentation please refer to: [https://github.com/c-morris/BG
 ### What if Analysis  Possible Future Improvements
 ## API Submodule
    * [lib\_bgp\_data](#lib_bgp_data)
-    * [Short Description](#api-short-description)
-    * [Long Description](#api-long-description)
-    * [Usage](#api-usage)
-    * [JSON Format](#api-json-format)
-    * [Design Choices](#api-design-choices)
-    * [Possible Future Improvements](#api-possible-future-improvements)
+   * [Short Description](#api-short-description)
+   * [Long Description](#api-long-description)
+   * [Usage](#api-usage)
+   * [JSON Format](#api-json-format)
+   * [Design Choices](#api-design-choices)
+   * [Possible Future Improvements](#api-possible-future-improvements)
 ### API Short Description
 ### API Long Description
 ### API Usage
@@ -359,18 +358,18 @@ For more in depth documentation please refer to: [https://github.com/c-morris/BG
 ### API Possible Future Improvements
 ## Utils
    * [lib\_bgp\_data](#lib_bgp_data)
-    * [Description](#utils-description)
-    * [Design Choices](#utils-design-choices)
-    * [Possible Future Improvements](#utils-possible-future-improvements)
+   * [Description](#utils-description)
+   * [Design Choices](#utils-design-choices)
+   * [Possible Future Improvements](#utils-possible-future-improvements)
 ### Utils Description
 ### Utils Design Choices
 ### Utils Possible Future Improvements
 ## Database Submodule
    * [lib\_bgp\_data](#lib_bgp_data)
-    * [Description](#database-description)
-    * [Usage](#database-usage)
-    * [Design Choices](#database-design-choices)
-    * [Possible Future Improvements](#database-possible-future-improvements)
+   * [Description](#database-description)
+   * [Usage](#database-usage)
+   * [Design Choices](#database-design-choices)
+   * [Possible Future Improvements](#database-possible-future-improvements)
 ### Database Description
 ### Database Enhancements
 ### Database  Usage
@@ -383,18 +382,18 @@ unlogged tables
 PUT LINK HERE TO DB INSTALL INSTRUCTIONS BELOW!!
 ## Logging Submodule
    * [lib\_bgp\_data](#lib_bgp_data)
-    * [Description](#logging-description)
-    * [Design Choices](#logging-design-choices)
-    * [Possible Future Improvements](#logging-possible-future-improvements)
+   * [Description](#logging-description)
+   * [Design Choices](#logging-design-choices)
+   * [Possible Future Improvements](#logging-possible-future-improvements)
 ### Logging Description
 ### Logging Design Choices
 ### Logging Possible Future Improvements
 ## Installation
    * [lib\_bgp\_data](#lib_bgp_data)
-    * [Installation Instructions](#installation-instructions)
-    * [Database Installation](#database-instructions)
-    * [bgpscanner installation](#bgpscanner-installation)
-    * [System Requirements](#system-requirements)
+   * [Installation Instructions](#installation-instructions)
+   * [Database Installation](#database-instructions)
+   * [bgpscanner installation](#bgpscanner-installation)
+   * [System Requirements](#system-requirements)
 ### Installation instructions
 ### Database Installation
 ### BGPScanner Installation
