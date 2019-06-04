@@ -100,10 +100,6 @@ class Database:
 
         self.cursor.execute("VACUUM")
 
-        self.cursor.execute("""SELECT column_name FROM information_schema.columns WHERE table_schema = 'public' AND table_name
- = %s;""", ['peers'])########################################################
-        print([x['column_name'] for x in self.cursor.fetchall()])#####################################3
-
     @property
     def columns(self):
         """Returns the columns of the table
