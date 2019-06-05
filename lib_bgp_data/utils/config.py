@@ -27,20 +27,27 @@ class Config:
 
         self.path = path
         self.logger = logger
-        # If config does not exist, create one
-        if not os.path.isfile(self.path):
-            self._create_config()
 
-    def _create_config(self):
+    def create_config(self, password):
         """Creates a blank config file"""
 
+        try:
+            os.mkdirs(os.path.split(self.path))
+        except FileExistsError:
+            self.logger.debug("{} already exists".format(os.path.split(self.path)))
+        # Supposedly try except is more pythonic than if then so yah whatever
+        # This looks wicked dumb though
+        try:
+            os.remove(self.path)
+        except FileNotFoundError:
+            pass
         config = SCP()
-        config["bgp"] = {"user": "Not Initialized",
-                         "host": "Not Initialized",
-                         "database": "Not Initialized",
-                         "last_relationship_update": "0"
-                         }
-        with open(self.path, "w") as config_file:
+        config["bgp"] = {"host": "localhost",
+                         "database": "bgp",
+                         "password": password,
+                         "user": "bgp_user",
+                         "last_relationship_update": "0"}
+        with open(self.path, "w+") as config_file:
             config.write(config_file)
 
     @error_catcher()
@@ -52,8 +59,6 @@ class Config:
         string = parser.get(section, tag, raw=raw)
         try:
             return int(string)
-#        except SCP.NoSectionError:
-#            self._create_config()
         except:
             return string
 
