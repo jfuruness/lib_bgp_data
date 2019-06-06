@@ -67,7 +67,7 @@ class RPKI_Validator:
         """Initializes urls, regexes, and path variables"""
 
         # Sets common file paths and logger
-        utils.set_common_init_args(self, args, "RIPE Validator")
+        utils.set_common_init_args(self, args)
         
 
     @error_catcher()

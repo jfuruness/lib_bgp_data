@@ -28,7 +28,10 @@ class Config:
         self.path = path
         self.logger = logger
 
-    def create_config(self, password):
+    def create_config(self,
+                      password,
+                      exr_path="/home/jmf/forecast-extrapolator",
+                      rovpp_exr_path="/home/jmf/rovpp-extrapolator"):
         """Creates a blank config file"""
 
         try:
@@ -46,7 +49,9 @@ class Config:
                          "database": "bgp",
                          "password": password,
                          "user": "bgp_user",
-                         "last_relationship_update": "0"}
+                         "last_relationship_update": "0",
+                         "forecast_extrapolator_path": exr_path
+                         "rovpp_extrapolator_path": rovpp_exr_path}
         with open(self.path, "w+") as config_file:
             config.write(config_file)
 
@@ -83,6 +88,22 @@ class Config:
             return 0
         else:
             return int(last_date)
+
+    @property
+    def rovpp_extrapolator_path(self):
+        """Returns the path of the rovpp extrapolator"""
+
+        section  = "bgp"
+        subsection = "rovpp_extrapolator_path"
+        return self._read_config(section, subsection)
+
+    @property
+    def forecast_extrapolator_path(self):
+        """Returns the path of extrapolator used for forecast"""
+
+        section = "bgp"
+        subsection = "forecast_extrapolator_path"
+        return self._read_config(section, subsection)
         
     @error_catcher()
     def update_last_date(self, _date):

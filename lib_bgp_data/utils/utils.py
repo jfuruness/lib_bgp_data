@@ -89,7 +89,7 @@ def now():
 
     return datetime.now()
 
-def set_common_init_args(self, args, parser, non_essentials=False):
+def set_common_init_args(self, args, non_essentials=False):
     """Sets self attributes for arguments common across many classes"""
 
     # The class name. This because when parsers are done,
@@ -113,7 +113,7 @@ def set_common_init_args(self, args, parser, non_essentials=False):
         # Some classes won't set these
         except AttributeError:
             pass
-    self.logger.info("Initialized {} Parser at {}".format(parser, now()))
+    self.logger.info("Initialized {} at {}".format(name, now()))
 
 def download_file(logger, url, path, file_num=1, total_files=1, sleep_time=0):
     """Downloads a file from a url into a path"""

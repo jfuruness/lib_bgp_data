@@ -125,7 +125,7 @@ class MRT_Parser:
         """Initializes logger and path variables."""
 
         # Sets path vars, logger, config, etc
-        utils.set_common_init_args(self, args, "mrt")
+        utils.set_common_init_args(self, args)
         with db_connection(MRT_Announcements_Table, self.logger) as ann_table:
             # Clears the table for insertion
             ann_table.clear_table()

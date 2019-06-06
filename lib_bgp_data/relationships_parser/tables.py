@@ -12,7 +12,8 @@ used in utils function to insert CSVs into the database. This class does
 not contain an index creation function since this data is only used by
 the extrapolator, which does not use indexes. Each table follows the
 table name followed by a _Table since it inherits from the Database
-class.
+class. In addition, since this data is used for the rovpp simulation,
+there are also rovpp tables
 
 Design choices:
     -There is no index creation function since indexes are never used
@@ -86,6 +87,61 @@ class Peers_Table(Database):
         # Drops the table if it exists
         self.cursor.execute("DROP TABLE IF EXISTS peers;")
         sql = """CREATE UNLOGGED TABLE IF NOT EXISTS peers (
+              peer_as_1 bigint,
+              peer_as_2 bigint
+              );"""
+        self.cursor.execute(sql)
+
+class ROVPP_Customer_Providers_Table(Database):
+    """Class with database functionality.
+
+    In depth explanation at the top of the file."""
+
+    __slots__ = []
+
+    @error_catcher()
+    def __init__(self, logger):
+        """Initializes the ROVPP Customer Provider table"""
+
+        Database.__init__(self, logger)
+
+    @error_catcher()
+    def _create_tables(self):
+        """Creates tables if they do not exist.
+
+        Called during initialization of the database class."""
+
+        # Drops the table if it exists
+        self.cursor.execute("DROP TABLE IF EXISTS rovpp_customer_providers;")
+        sql = """CREATE UNLOGGED TABLE IF NOT EXISTS rovpp_customer_providers (
+              provider_as bigint,
+              customer_as bigint
+              );"""
+        self.cursor.execute(sql)
+
+
+class ROVPP_Peers_Table(Database):
+    """Class with database functionality.
+
+    In depth explanation at the top of the file."""
+
+    __slots__ = []
+
+    @error_catcher()
+    def __init__(self, logger):
+        """Initializes the ROVPP Peers table"""
+
+        Database.__init__(self, logger)
+
+    @error_catcher()
+    def _create_tables(self):
+        """Creates tables if they do not exist.
+
+        Called during initialization of the database class."""
+
+        # Drops the table if it exists
+        self.cursor.execute("DROP TABLE IF EXISTS rovpp_peers;")
+        sql = """CREATE UNLOGGED TABLE IF NOT EXISTS rovpp_peers (
               peer_as_1 bigint,
               peer_as_2 bigint
               );"""

@@ -1,3 +1,5 @@
+
+  
 # lib\_bgp\_data
 This package contains multiple submodules that are used to gather and manipulate real data in order to simulate snapshots of the internet. The purpose of this is to test different security policies to determine their accuracy, and hopefully find ones that will create a safer, more secure, internet as we know it.
 
@@ -395,8 +397,64 @@ PUT LINK HERE TO DB INSTALL INSTRUCTIONS BELOW!!
    * [bgpscanner installation](#bgpscanner-installation)
    * [System Requirements](#system-requirements)
 ### Installation instructions
+If you are on a machine that has SELinux, you are going to need to run this in a python environment. On Ubuntu, the steps are as follows
+```bash
+sudo apt-get install python3-pip
+sudo pip3 install virtualenv 
+```
+ 
+On Redhat the steps can be found here:
+[https://developers.redhat.com/blog/2018/08/13/install-python3-rhel/](https://developers.redhat.com/blog/2018/08/13/install-python3-rhel/)
+
+Once you have virtualenv installed, run 
+```bash
+python3 -m venv env
+source ./env/bin/activate
+```
+You now have a python virtual environment where you do not need sudo to install packages. Then run:
+```bash
+pip3 install lib_bgp_data
+```
+This will install the package and all of it's python dependencies. After this you are going to need a install a couple of other things. The first is a database (see database installation). The second is bgpscanner. The third is bgpdump. The fourth is the RPKI Validator. See each of these sections below on how to install each part. 
 ### Database Installation
+For this, you are going to need postgres 11. You need this because it allows for parallel query execution, which significantly speeds up processing time. For installing postgres on your machine, see:
+Ubuntu Install:
+[https://computingforgeeks.com/install-postgresql-11-on-ubuntu-18-04-ubuntu-16-04/](https://computingforgeeks.com/install-postgresql-11-on-ubuntu-18-04-ubuntu-16-04/)
+
+or redhat install:
+
+[https://computingforgeeks.com/how-to-install-postgresql-11-on-centos-7/](https://computingforgeeks.com/how-to-install-postgresql-11-on-centos-7/)
+
+After the database is installed, we are going to need to make a couple of changes. First, we need to start the database. To do this run:
+```bash
+sudo systemctl start postgresql@11-main.service
+```
+To check to see if it is running:
+```bash
+sudo systemctl status postgresql@11-main.service
+```
+
+From here on in, this could probably be automated, but that is a task for the future.
+
+Then log in as postgres (you will need sudo to do this)
+```bash
+sudo -i -u postgres
+```
+Then create a file that contains the following commands:
+
+Then access the postgres command line:
+```bash
+psql
+```
+After this we want to create our database
+First we are going to need to create our database. To do this run:
+```sql
+CREATE DATABASE bgp;
+```
+
 ### BGPScanner Installation
+### BGPDump installation
+### RPKI Validator Installation
 ### System Requirements
 ## Development/Contributing
    * [lib\_bgp\_data](#lib_bgp_data)
@@ -409,6 +467,7 @@ PUT LINK HERE TO DB INSTALL INSTRUCTIONS BELOW!!
 ## TODO/Possible Future Improvements
    * [lib\_bgp\_data](#lib_bgp_data)
 command line args
+automate the database installation process
 remove all in person crap like we from the readme you idjiout
 (if something is from a submodule, post a link to that specific possible future improvements? say that this is a summary of stuff?)
 ## FAQ

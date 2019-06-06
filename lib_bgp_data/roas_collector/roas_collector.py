@@ -30,7 +30,7 @@ class ROAs_Collector:
         """Initializes urls, regexes, and path variables"""
 
         # Sets common file paths and logger
-        utils.set_common_init_args(self, args, "Roas")
+        utils.set_common_init_args(self, args)
         self.csv_path = "{}/roas.csv".format(self.csv_dir)
 
     @error_catcher()

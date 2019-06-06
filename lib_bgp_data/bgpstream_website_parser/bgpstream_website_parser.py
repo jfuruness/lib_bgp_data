@@ -41,7 +41,7 @@ class BGPStream_Website_Parser:
         """Initializes urls, regexes, and path variables"""
 
         # Inits paths, args, logger, config, etc
-        utils.set_common_init_args(self, args, "bgpstream_website")
+        utils.set_common_init_args(self, args)
         self.data = {Event_Types.HIJACK.value: Hijack(self.logger,
                                                       self.csv_dir),
                      Event_Types.LEAK.value: Leak(self.logger,
@@ -51,7 +51,7 @@ class BGPStream_Website_Parser:
 
     @error_catcher()
     @utils.run_parser()
-    def parse(self, start, end, row_limit=None, db=True,
+    def parse(self, start, end, row_limit=None, db=True, IPV4=True, IPV6=False,
               data_types=[Event_Types.HIJACK.value]):
         """Parses rows in the bgpstream website
 
@@ -74,7 +74,7 @@ class BGPStream_Website_Parser:
 
         # Writes to csvs and dbs and deletes duplicates and creates indexes
         # And also creates the temporary tables
-        [self.data[x].db_insert(start, end) for x in data_types]
+        [self.data[x].db_insert(start, end, IPV4, IPV6) for x in data_types]
 
     @error_catcher()
     def _parse_row(self, row, num, total):

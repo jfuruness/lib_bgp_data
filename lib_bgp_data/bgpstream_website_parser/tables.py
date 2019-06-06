@@ -69,7 +69,7 @@ class Hijack_Table(Database):
         print(start)
         print(end)
         sql = """CREATE UNLOGGED TABLE hijack_temp AS
-        (SELECT h.more_specific_prefix AS prefix, h.detected_origin_number AS origin, h.start_time, COALESCE(h.end_time, now()) AS end_time, h.url
+        (SELECT h.more_specific_prefix AS prefix, h.detected_origin_number AS origin, h.start_time, COALESCE(h.end_time, now()) AS end_time, h.url, h.expected_prefix, h.expected_origin_number
         FROM hijack h
         WHERE
             (h.start_time, COALESCE(h.end_time, now())) OVERLAPS
@@ -82,6 +82,15 @@ class Hijack_Table(Database):
             self.cursor.execute(sql)
         self.logger.info("Created temporary hijack table")
 
+        # This will get all of the subprefix hijackings within the temp table
+        sql = """CREATE UNLOGGED TABLE subprefix_hijack_temp AS
+        (SELECT h.prefix AS more_specific_prefix, h.origin AS attacker, h.url, h.expected_prefix, h.expected_origin_number AS victim
+        FROM hijack_temp h
+        WHERE h.prefix << h.expected_prefix
+        );"""
+        self.cursor.execute(sql)
+
+
     @error_catcher()
     def delete_duplicates(self):
         """Drops all duplicates from the table"""
@@ -93,6 +102,15 @@ class Hijack_Table(Database):
               ;"""
         self.cursor.execute(sql)
         self.logger.info("Duplicates deleted in hijack")
+
+    @error_catcher()
+    def filter(self, IPV4=True, IPV6=False):
+        """Filters by IPV4 and IPV6"""
+
+        if not IPV6:
+            self.cursor.execute("DELETE FROM hijack WHERE family(prefix) = 6;")
+        if not IPV4:
+            self.cursor.execute("DELETE FROM hijack WHERE family(prefix) = 4;")
 
     @property
     def columns(self):

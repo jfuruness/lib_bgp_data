@@ -54,13 +54,15 @@ class Data:
         self.data.append(self._format_temp_row())
 
     @error_catcher()
-    def db_insert(self, start, end):
+    def db_insert(self, start, end, IPV4=True, IPV6=False):
         utils.rows_to_db(self.logger, self.data, self.csv_path, self.table,
             clear_table=False)
         with db_connection(self.table, self.logger) as db_table:
+            db_table.filter(IPV4, IPV6)
             db_table.create_index()
             db_table.delete_duplicates()
             db_table.create_temp_table(start, end)
+            
 
 ########################
 ### Helper Functions ###

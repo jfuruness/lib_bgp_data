@@ -73,17 +73,25 @@ class Relationships_Parser:
         """Initializes logger and path variables"""
 
         # Sets path vars and logger
-        utils.set_common_init_args(self, args, "Relationship")
+        utils.set_common_init_args(self, args)
 
     # Note that the utils.run_parser decorator deletes/creates all paths,
     # records start/end time, and upon end or error deletes everything
     @error_catcher()
     @utils.run_parser()
-    def parse_files(self):
+    def parse_files(self, rovpp=False, url=None):
         """Downloads and parses file
 
         In depth explanation at top of module
         """
+
+        # For the rovpp simulation, pass in rovpp and a url to use
+        if rovpp:
+            Rel_File(self.path,
+                     self.csv_dir,
+                     url,
+                     self.logger).parse_file(rovpp)
+            return
 
         # Gets the url and the integer date for the latest file
         url, int_date = self._get_url()

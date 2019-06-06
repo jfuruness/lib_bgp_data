@@ -89,6 +89,7 @@ class Install:
         Config(self.logger).create_config(input("db password: "))
         self._create_database()
         self._modify_database(unhinged)
+        self._install_extrapolator()
 
     @error_catcher()
     def _create_datase(self):
@@ -183,3 +184,16 @@ class Install:
         call("; ".join(commands), shell=True)
         os.remove("/tmp/db_install.sql")
 
+    @error_catcher()
+    def _install_extrapolator(self):
+        # Install extrapolator and move executable
+        # delete github repo lmaoooo
+        # cd into extrapolator and git checkout remotes/origin/rovpp
+        # git checkout -b rovpp
+        # vim SQLQuerier.cpp
+        # line 302 change path to be "/etc/bgp/bgp.conf"
+        # make -j12
+        # Move executable somewhere else and call it rovpp
+
+        # Put both of the paths into the /etc/bgp.conf file
+        # WHEN MAKE CONFIG FILE MUST OUT THSI INFO IN THERE!!!

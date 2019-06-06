@@ -81,7 +81,7 @@ class What_If_Analysis:
         """Initializes urls, regexes, and path variables"""
 
         # Sets common file paths and logger
-        utils.set_common_init_args(self, args, "What If Analysis")
+        utils.set_common_init_args(self, args)
         
 
     @error_catcher()

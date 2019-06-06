@@ -19,6 +19,8 @@ insert the data into a database. This is done through a series of steps.
     -for more specifics see _db_insert function
 4. Then each CSV is inserted into the database
     -Handled by utils.csv_to_db
+    -The ROVPP simulation uses different tables, so different tables
+     are passed in if that simulation is being run
     -The old table gets destroyed first
     -This is handleded in the utils.csv_to_db function
     -This is done because the file comes in CSV format
@@ -42,6 +44,7 @@ import os
 from subprocess import call
 from ..utils import utils, error_catcher
 from .tables import Customer_Providers_Table, Peers_Table
+from .tables import ROVPP_Customer_Providers_Table, ROVPP_Peers_Table
 
 __author__ = "Justin Furuness"
 __credits__ = ["Justin Furuness"]
@@ -65,7 +68,7 @@ class Rel_File:
     More in depth explanation at top of file.
     """
 
-    __slots__ = ['path', 'url', 'logger', 'csv_dir']
+    __slots__ = ['path', 'url', 'logger', 'csv_dir', 'rovpp']
 
     @error_catcher()
     def __init__(self, path, csv_dir, url, logger):
@@ -78,7 +81,7 @@ class Rel_File:
         self.url = url
 
     @error_catcher()
-    def parse_file(self):
+    def parse_file(self, rovpp=False):
         """Calls all functions to parse a file into the db.
 
         For more in depth explanation see top of file."""
@@ -88,12 +91,12 @@ class Rel_File:
         # Unzips file and assigns new path
         self.path = utils.unzip_bz2(self.logger, self.path)
         # Gets data and writes it to the csvs
-        self._db_insert()
+        self._db_insert(rovpp)
         # Deletes all paths/files that could have been created
         utils.delete_paths(self.logger, [self.csv_dir, self.path])
 
     @error_catcher()
-    def _db_insert(self):
+    def _db_insert(self, rovpp=False):
         """Writes both csv files needed and insert into the database.
 
         First get the attributes of each relationship type. This
@@ -109,7 +112,7 @@ class Rel_File:
         <peer-as>|<peer-as>|0|<source>
         """
 
-        grep, csvs, tables = self._get_rel_attributes()
+        grep, csvs, tables = self._get_rel_attributes(rovpp)
 
         # For each type of csv:
         for val in Rel_Types.__members__.values():
@@ -148,7 +151,24 @@ class Rel_File:
         # Paths for each csv
         csvs = {val: '{}/rel.csv'.format(self.csv_dir, val) for val in
                 Rel_Types.__members__.values()}
-        # Tables for csv insertion
-        tables = {Rel_Types.CUSTOMER_PROVIDERS: Customer_Providers_Table,
-                  Rel_Types.PEERS: Peers_Table}
-        return grep, csvs, tables
+
+        # The last value is the tables for csv insertion
+        return grep, csvs, self._get_table_attributes(self, rovpp)
+
+    @error_catcher()
+    def _get_table_attributes(self, rovpp=False):
+        """Returns tables to be used for CSV insertion.
+
+        if the simulation is for rovpp then rov tables are used.
+        """
+
+        # For the ROVPP simulation
+        if rovpp:
+           return {Rel_Types.CUSTOMER_PROVIDERS:
+                       ROVPP_Customer_Providers_Table,
+                   Rel_Types.PEERS: ROVPP_Peers_Table}
+        # If it is for the other simulations we want these tables:
+        else:
+            return {Rel_Types.CUSTOMER_PROVIDERS: Customer_Providers_Table,
+                    Rel_Types.PEERS: Peers_Table}
+
