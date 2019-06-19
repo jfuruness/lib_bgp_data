@@ -126,7 +126,7 @@ class Rel_File:
         utils.delete_paths(self.logger, [val for key, val in csvs.items()])
 
     @error_catcher()
-    def _get_rel_attributes(self):
+    def _get_rel_attributes(self, rovpp=False):
         """Returns the grep string, csv path, and table attributes.
 
         The grep strings first filter based on whether the information
@@ -153,7 +153,7 @@ class Rel_File:
                 Rel_Types.__members__.values()}
 
         # The last value is the tables for csv insertion
-        return grep, csvs, self._get_table_attributes(self, rovpp)
+        return grep, csvs, self._get_table_attributes(rovpp)
 
     @error_catcher()
     def _get_table_attributes(self, rovpp=False):

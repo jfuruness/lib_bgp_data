@@ -50,7 +50,7 @@ class Config:
                          "password": password,
                          "user": "bgp_user",
                          "last_relationship_update": "0",
-                         "forecast_extrapolator_path": exr_path
+                         "forecast_extrapolator_path": exr_path,
                          "rovpp_extrapolator_path": rovpp_exr_path}
         with open(self.path, "w+") as config_file:
             config.write(config_file)

@@ -83,6 +83,7 @@ class Hijack_Table(Database):
         self.logger.info("Created temporary hijack table")
 
         # This will get all of the subprefix hijackings within the temp table
+        self.cursor.execute("DROP TABLE IF EXISTS subprefix_hijack_temp ;")
         sql = """CREATE UNLOGGED TABLE subprefix_hijack_temp AS
         (SELECT h.prefix AS more_specific_prefix, h.origin AS attacker, h.url, h.expected_prefix, h.expected_origin_number AS victim
         FROM hijack_temp h

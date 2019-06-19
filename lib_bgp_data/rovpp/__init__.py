@@ -110,7 +110,7 @@ Possible Future Extensions:
 """
 
 
-from .mrt_parser import MRT_Parser
+from .rovpp_simulator import ROVPP_Simulator
 
 __author__ = "Justin Furuness"
 __credits__ = ["Justin Furuness"]

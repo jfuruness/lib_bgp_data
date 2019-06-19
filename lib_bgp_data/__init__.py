@@ -9,6 +9,8 @@ from .bgpstream_website_parser import BGPStream_Website_Parser
 from .mrt_parser import MRT_Parser
 from .what_if_analysis import What_If_Analysis
 from .api import application
+from .extrapolator import Extrapolator
+from .rovpp import ROVPP_Simulator
 from .__main__ import BGP_Data_Parser
 
 __author__ = "Justin Furuness"

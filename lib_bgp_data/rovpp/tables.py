@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-"""This module contains class ROVPP_ASes_Table
+"""This module contains ROVPP_ASes_Table and Subprefix_Hijack_Temp_Table
 
-ROVPP_Ases_Table inherits from the Database class. The Database class
+These two classes inherits from the Database class. The Database class
 does allow for the conection to a database upon initialization. Also
 upon initialization the _create_tables function is called to initialize
 any tables if they do not yet exist. Beyond that the class can clear the
@@ -19,6 +19,7 @@ Possible future improvements:
     -Add test cases
 """
 
+from random import sample
 from ..utils import Database, error_catcher
 
 __author__ = "Justin Furuness"
@@ -68,7 +69,7 @@ class ROVPP_ASes_Table(Database):
         """
 
         self.logger.info("Dropping ROVPP_ASes")
-        self.cursor.execute("DELETE FROM rovpp_ases")
+        self.cursor.execute("DROP TABLE IF EXISTS rovpp_ases")
         self.logger.info("ROVPP_ASes Table dropped")
 
     @error_catcher()
@@ -79,6 +80,12 @@ class ROVPP_ASes_Table(Database):
         # Should this be a bulk update? Yes. Does it matter? No.
         for asn in asns:
             self.cursor.execute(sql, [policy, asn])
+
+    @error_catcher()
+    def get_all(self):
+        """Gets everything, for convenience only"""
+
+        return self.execute("SELECT * FROM rovpp_ases;")
 
 class ROVPP_MRT_Announcements_Table(Database):
     """Class with database functionality.
@@ -129,11 +136,70 @@ class ROVPP_MRT_Announcements_Table(Database):
               origin, as_path, prefix) VALUES
               (%s, %s, %s)"""
         attacker_data = [subprefix_hijack["attacker"],
-                        list(subprefix_hijack["attacker"]),
-                        subprefix_hijack["more_specific_prefix"]]
+                         [subprefix_hijack["attacker"]],
+                         subprefix_hijack["more_specific_prefix"]]
         victim_data = [subprefix_hijack["victim"],
-                        list(subprefix_hijack["victim"]),
-                        subprefix_hijack["expected_prefix"]]
+                       [subprefix_hijack["victim"]],
+                       subprefix_hijack["expected_prefix"]]
         for data in [attacker_data, victim_data]:
             self.cursor.execute(sql, data)
 
+class Subprefix_Hijack_Temp_Table(Database):
+    """Class with database functionality.
+
+    THIS SHOULD BE DELETED LATER AND ADDED INTO BGPSTREAM.COM CLASS!!!
+    THIS IS JUST FOR FAKE DATA!!!!
+
+    In depth explanation at the top of the file."""
+
+    __slots__ = []
+
+    @error_catcher()
+    def __init__(self, logger):
+        """Initializes the Subprefix_Hijack_Temp_Table"""
+
+        Database.__init__(self, logger)
+
+    @error_catcher()
+    def _create_tables(self):
+        """Creates tables if they do not exist.
+
+        Called during initialization of the database class.
+        """
+
+        self.clear_table()
+        sql = """CREATE UNLOGGED TABLE subprefix_hijack_temp(
+                 more_specific_prefix CIDR,
+                 attacker bigint,
+                 url varchar(200),
+                 expected_prefix CIDR,
+                 victim bigint
+                 );"""
+        self.cursor.execute(sql)
+
+    @error_catcher()
+    def clear_table(self):
+        """Clears the rovpp_ases table.
+
+        Should be called at the start of every run.
+        """
+
+        self.logger.info("Dropping Subprefix Hijacks")
+        self.cursor.execute("DROP TABLE IF EXISTS subprefix_hijack_temp;")
+        self.logger.info("Subprefix Hijacks Table dropped")
+
+    @error_catcher()
+    def populate(self, ases):
+        """Populates table with fake data"""
+
+        # Gets two random ases without duplicates
+        attacker, victim = sample(ases, k=2)
+        sql = """INSERT INTO subprefix_hijack_temp(
+              more_specific_prefix, attacker, expected_prefix, victim) VALUES
+              (%s, %s, %s, %s)"""
+        data = ['1.2.3.0/24',  # more_specfic_prefix
+                attacker,  # Random attacker
+                '1.2.0.0/16',  # expected_prefix
+                victim]
+        self.cursor.execute(sql, data)
+                
