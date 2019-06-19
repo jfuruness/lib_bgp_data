@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 setup(
     name='lib_bgp_data',
     packages=find_packages(),
-    version='0.1.28',
+    version='0.1.29',
     author='Justin Furuness',
     author_email='jfuruness@gmail.com',
     url='https://github.com/jfuruness/lib_bgp_data.git',
@@ -12,14 +12,19 @@ setup(
     install_requires=[
         'setuptools',
         'requests',
-        'bs4'
+        'beautifulsoup4',
+        'flasgger',
+        'Flask',
+        'multiprocess',
+        'pathos',
+        'psycopg2',
+        'Werkzeug'
     ],
     classifiers=[
         'Environment :: Console',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: MIT License',
-        'Operating System :: OS Independent',
-        'Programming Language :: Python',
+        'Operating System :: Linux',
         'Programming Language :: Python :: 3'],
     entry_points={
         'console_scripts': [

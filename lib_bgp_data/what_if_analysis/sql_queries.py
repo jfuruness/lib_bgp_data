@@ -86,10 +86,7 @@ get_total_announcements_sql = [
  
     """CREATE TABLE urls_list  AS (SELECT ta.asn, ARRAY_AGG(ht.url) AS urls FROM hijack_temp ht
                                  INNER JOIN total_announcements ta ON
-                                     ht.origin = ta.asn GROUP BY ta.asn);""",
-    
-   SELECT DISTINCT exir.asn, ht.url FROM hijack_temp ht LEFT JOIN extrapolation_inverse_results exir ON ht.prefix != exir.prefix AND ht.origin != exir.origin WHERE asn=33978;
- 
+                                     ht.origin = ta.asn GROUP BY ta.asn);""", 
     
     
     

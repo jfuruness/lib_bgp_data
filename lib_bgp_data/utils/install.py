@@ -166,17 +166,17 @@ class Install:
                 # Change max number of workers - since this is now manual it can be higher
                 "ALTER SYSTEM SET autovacuum_max_workers TO {};".format(cpu_count() - 1),
                 # Change the number of max_parallel_maintenance_workers - since its manual it can be higher
-                "ALTER SYSTEM SET max_parallel_maintenance_workers TO {};".format(cpu_count() - 1)
-                "ALTER SYSTEM maintenance_work_mem TO '{}MB';".format(int(ram/5)),
+                "ALTER SYSTEM SET max_parallel_maintenance_workers TO {};".format(cpu_count() - 1),
+                "ALTER SYSTEM maintenance_work_mem TO '{}MB';".format(int(ram/5))])
                 # Yes I know I could call this, but this is just for machines that might not have it or whatever
-                stack_limit = int(input("What is the output of ulimit -s?"))
+                #stack_limit = int(input("What is the output of ulimit -s?"))
                 # https://www.postgresql.org/docs/9.1/runtime-config-resource.html
-                1/0###############THIS ISNT CORRECT IDK HOW TO SET THIS!!!
-                "ALTER SYSTEM SET max_stack_depth TO '{}MB';".format(int(stack_limit/1024)-1)]
+                
+                #"ALTER SYSTEM SET max_stack_depth TO '{}MB';".format(int(stack_limit/1024)-1)]
 
         with open("/tmp/db_modify.sql", "w+") as db_mod_file:
             for sql in sqls:
-                db_install_file.write(sql + "\n")
+                db_mod_file.write(sql + "\n")
         commands = ["sudo -i -u postgres",
                     "psql -f /tmp/db_install.sql",
                     "rm ~/.psql_history"]
@@ -185,6 +185,7 @@ class Install:
 
     @error_catcher()
     def _install_extrapolator(self):
+        pass
         # Install extrapolator and move executable
         # delete github repo lmaoooo
         # cd into extrapolator and git checkout remotes/origin/rovpp
