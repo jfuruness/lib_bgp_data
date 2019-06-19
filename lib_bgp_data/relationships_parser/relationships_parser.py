@@ -18,6 +18,7 @@ insert the data into a database. This is done through a series of steps.
     -If the url date is less than the config file date do nothing
     -Else, parse
     -This is done to avoid unneccesarily parsing files
+    -If ROVPP, then download a specific file every time
 2. Then the Relationships_File class is then instantiated
 3. The relationship file is then downloaded
     -This is handled in the utils.download_file function

@@ -16,7 +16,9 @@ insert the data into a database. This is done through a series of steps.
     -The file itself is a formatted CSV with "|" delimiters
     -Using grep and cut the relationships file is split and formatted
     -This is done instead of regex because it is faster and simpler
-    -for more specifics see _db_insert function
+    -For more specifics see _db_insert function
+    -Note that for the rovpp extension an option is included to use those
+     tables instead so as not to interfere with other ongoing work
 4. Then each CSV is inserted into the database
     -Handled by utils.csv_to_db
     -The ROVPP simulation uses different tables, so different tables

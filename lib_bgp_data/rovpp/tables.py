@@ -76,8 +76,9 @@ class ROVPP_ASes_Table(Database):
     def change_routing_policies(self, asns, policy):
         """Changes routing policies to policy for a list of asns"""
 
+        self._create_tables()
         sql = "UPDATE rovpp_ases SET as_type = %s WHERE asn = %s"
-        # Should this be a bulk update? Yes. Does it matter? No.
+        # Should this be a bulk update? Yes. Does it matter? Do it later.
         for asn in asns:
             self.cursor.execute(sql, [policy, asn])
 
@@ -202,4 +203,3 @@ class Subprefix_Hijack_Temp_Table(Database):
                 '1.2.0.0/16',  # expected_prefix
                 victim]
         self.cursor.execute(sql, data)
-                
