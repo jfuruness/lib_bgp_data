@@ -427,6 +427,8 @@ If you want to install the project for development:
 git clone https://github.com/jfuruness/lib_bgp_data.git
 cd lib_bgp_data
 pip3 install -r requirements.txt
+python3 setup.py sdist bdist_wheel
+python3 setup.py develop
 ```
 
 After this you are going to need a install a couple of other things. bgscanner, bgpdump, and the extrapolator are all automatically installed and moved to /usr/bin. bgpdump must be installed from source because it has bug fixes that are necessary. The RPKI validator (for now) must be manually installed.
