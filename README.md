@@ -1,3 +1,4 @@
+
 # lib\_bgp\_data
 This package contains multiple submodules that are used to gather and manipulate real data in order to simulate snapshots of the internet. The purpose of this is to test different security policies to determine their accuracy, and hopefully find ones that will create a safer, more secure, internet as we know it.
 
@@ -413,7 +414,16 @@ You now have a python virtual environment where you do not need sudo to install 
 ```bash
 pip3 install lib_bgp_data
 ```
-This will install the package and all of it's python dependencies. After this you are going to need a install a couple of other things. The first is a database (see database installation). The second is bgpscanner. The third is bgpdump. The fourth is the RPKI Validator. See each of these sections below on how to install each part. 
+This will install the package and all of it's python dependencies. 
+
+If you want to install the project for development:
+```bash
+git clone https://github.com/jfuruness/lib_bgp_data.git
+cd lib_bgp_data
+pip3 install -r requirements.txt
+```
+
+After this you are going to need a install a couple of other things. The first is a database (see [Database Installation](#database_installation)). The second is bgpscanner (see [BGPScanner Installation](#bgpscanner_installation)). The third is bgpdump (see [BGPDump Installation](#bgpdump_installation)). The fourth is the RPKI Validator. (see [RPKI Installation](#rpki_validator_installation)). See each of these sections below on how to install each part. 
 ### Database Installation
 For this, you are going to need postgres 11. You need this because it allows for parallel query execution, which significantly speeds up processing time. For installing postgres on your machine, see:
 Ubuntu Install:
