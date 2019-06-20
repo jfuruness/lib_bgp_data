@@ -48,6 +48,7 @@ def error_catcher(msg=None):
             try:
                 return func(self, *args, **kwargs)
             except:
+#                raise
                 # Gets traceback object and error information
                 error_class, error_desc, tb = sys.exc_info()
                 # Makes sure it's not a system exit call

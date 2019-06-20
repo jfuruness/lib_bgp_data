@@ -35,9 +35,10 @@ class Config:
         """Creates a blank config file"""
 
         try:
-            os.mkdirs(os.path.split(self.path))
+            os.makedirs(os.path.split(self.path)[0])
         except FileExistsError:
-            self.logger.debug("{} already exists".format(os.path.split(self.path)))
+            self.logger.debug("About to overwrite {}".format(
+                os.path.split(self.path)[0]))
         # Supposedly try except is more pythonic than if then so yah whatever
         # This looks wicked dumb though
         try:

@@ -66,8 +66,9 @@ __status__ = "Development"
 from getpass import getpass
 from subprocess import call
 import os
-from .utils import ThreadSafeLogger as logger
-from .utils import Config
+from logging import DEBUG
+from .logger import Thread_Safe_Logger as logger, error_catcher
+from .config import Config
 
 class Install:
     """Installs stuff"""
@@ -78,33 +79,39 @@ class Install:
     def __init__(self):
         """Create a new connection with the databse"""
 
+        class NotSudo(Exception):
+            pass
+
         # Initializes self.logger
-        self.logger = logger()
+        self.logger = logger({"stream_level": DEBUG})
+        if os.getuid() != 0:
+            raise NotSudo("Sudo priveleges are required for install")
         self.db_pass = getpass("Password for database: ")
 
     @error_catcher()
     def install(self, unhinged=False):
         """Installs everything"""
 
-        Config(self.logger).create_config(input("db password: "))
+        Config(self.logger).create_config(self.db_pass)
         self._create_database()
         self._modify_database(unhinged)
         self._install_extrapolator()
 
     @error_catcher()
-    def _create_datase(self):
+    def _create_database(self):
         sqls = ["CREATE DATABASE bgp;",
                 "CREATE USER bgp_user;",
                 "REVOKE CONNECT ON DATABASE bgp FROM PUBLIC;"
-                "REVOKE ALL ON ALL TABLES IN SCHEMA public TO bgp_user;",
-                "GRANT ALL PRIVILEGES ON DATBASE bgp TO bgp_user;",
+                "REVOKE ALL ON ALL TABLES IN SCHEMA public FROM bgp_user;",
+                "GRANT ALL PRIVILEGES ON DATABASE bgp TO bgp_user;",
                 """GRANT ALL PRIVILEGES ON ALL SEQUENCES
                 IN SCHEMA public TO bgp_user;""",
-                "ALTER USER bgp_user WITH PASSWORD {}".format(self.db_pass),
-                "ALTER USER bgp_user WITH SUPERUSER"]
+                "ALTER USER bgp_user WITH PASSWORD '{}';".format(self.db_pass),
+                "ALTER USER bgp_user WITH SUPERUSER;"]
         with open("/tmp/db_install.sql", "w+") as db_install_file:
             for sql in sqls:
                 db_install_file.write(sql + "\n")
+        input("Just wrote sql file to install database. Enter to continue")
         commands = ["sudo -i -u postgres",
                     "psql -f /tmp/db_install.sql",
                     "rm ~/.psql_history"]

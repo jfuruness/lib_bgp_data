@@ -8,6 +8,7 @@ from .config import Config
 from .logger import Thread_Safe_Logger, Logger, error_catcher
 from .tables import Announcements_Covered_By_Roas_Table, Stubs_Table
 from . import utils
+from .install import Install
 
 __author__ = "Justin Furuness"
 __credits__ = ["Justin Furuness"]

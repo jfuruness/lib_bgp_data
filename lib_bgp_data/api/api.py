@@ -73,7 +73,7 @@ application = Flask(__name__)
 swagger = Swagger(application)
 application.wsgi_app = ProxyFix(application.wsgi_app)
 application.url_map.converters['list'] = ListConverter
-db = Database(Logger({}))
+#db = Database(Logger({}))
 
 @swag_from('flasgger_docs/extrapolation.yml')
 @application.route("/extrapolator/inverse/<list:asns>/")
@@ -101,6 +101,11 @@ def form_sql(table_name, asns):
 @swag_from('flasgger_docs/asn_hijack_stats.yml')
 @application.route("/asn_policy_stats/<list:asns>/<list:policies>/")
 def asn_policy_stats(asns, policies):
+    # Should move this out of here, should only be initialized once, but
+    # must be done with some kind of func call, cannot be global or else
+    # screws up installation script
+    db = Database(Logger({}))
+
     sqls = []
     if "all" in policies:
         policies = ["invalid_asn"]#, "invalid_length", "rov", "time_heuristic"]
