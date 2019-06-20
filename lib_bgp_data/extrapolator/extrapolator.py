@@ -47,7 +47,7 @@ class Extrapolator:
 
         self.logger.info("About to run the rovpp extrapolator")
         # Run the extrapolator
-        bash_args = "{} ".format(Config(self.logger).rovpp_extrapolator_path)
+        bash_args = "rovpp-extrapolator "
         # Don't invert the results so that we have the last hop
         bash_args += "--invert-results=0 "
         # Gives the attacker asn

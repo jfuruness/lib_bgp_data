@@ -93,18 +93,18 @@ class Install:
         self.db_pass = getpass("Password for database: ")
 
     @error_catcher()
-    def install(self,
-                exr_path="/home/jmf/forecast-extrapolator",
-                rovpp_exr_path="/home/jmf/rovpp-extrapolator",
-                unhinged=False):
+    def install(self, new_config=True, new_db=True, unhinged=False):
         """Installs everything"""
 
-        Config(self.logger).create_config(self.db_pass,
-                                          exr_path,
-                                          rovpp_exr_path)
-        self._create_database()
+        if new_config:
+            Config(self.logger).create_config(self.db_pass)
+        if new_db:
+            self._create_database()
         self._modify_database(unhinged)
-        self._install_extrapolator(exr_path, rovpp_exr_path)
+        self._install_extrapolator()
+        self._install_bgpscanner()
+        self._install_bgpdump()
+        self._install_rpki_validator()
 
     @error_catcher()
     def _create_database(self):
@@ -122,16 +122,18 @@ class Install:
         with open("/tmp/db_install.sql", "w+") as db_install_file:
             for sql in sqls:
                 db_install_file.write(sql + "\n")
-        commands = ["sudo -u postgres psql -f /tmp/db_install.sql",
-                    "rm /var/lib/postgresql/.psql_history"]
-        call("; ".join(commands), shell=True)
-        os.remove("/tmp/db_install.sql")
+        call("sudo -u postgres psql -f /tmp/db_install.sql", shell=True)
+
+        self._remove("/tmp/db_install.sql")
+        self._remove("/var/lib/postgresql/.psql_history")
 
     @error_catcher()
     def _modify_database(self, unhinge=False):
         """NOTE: SOME OF THESE CHANGES WORK AT A CLUSTER LEVEL, SO ALL DBS WILL BE CHANGED!!!"""
         """NOTE that if server goes down this may cause corruption"""
-
+        
+        print("The amount of ram can be found with free -h, shown below")
+        check_call("free -h", shell=True)
         ram = int(input("What is the amount of ram on the system in MB? "))
         sqls = ["CREATE EXTENSION IF NOT EXISTS btree_gist;",
                 # These are settings that ensure data isn't corrupted in
@@ -194,25 +196,26 @@ class Install:
             for sql in sqls:
                 db_mod_file.write(sql + "\n")
         call("sudo -u postgres psql -f /tmp/db_modify.sql", shell=True)
-        os.remove("/tmp/db_modify.sql")
+        self._remove("/tmp/db_modify.sql")
 
     @error_catcher()
-    def _install_extrapolator(self, exr_path, rovpp_exr_path):
+    def _install_extrapolator(self):
         input("About to delete BGPExtrapolator if exists, press any key")
-        try:
-            rmtree("BGPExtrapolator/")
-        except FileNotFoundError:
-            self.logger.debug("Extrapolator was not previouslt installed")
+        self._remove("BGPExtrapolator/")
         cmds = ["git clone https://github.com/c-morris/BGPExtrapolator.git",
                 "cd BGPExtrapolator/Misc",
                 "sudo ./apt-install-deps.sh",
                 "sudo apt install libboost-test-dev",
                 "cd ..",
                 "make -j{}".format(cpu_count()),
-                "cp bgp-extrapolator {}".format(exr_path),
+                "cp bgp-extrapolator /usr/bin/forecast-extrapolator",
+                "rm -rf BGPExtrapolator"]
+        check_call("&& ".join(cmds), shell=True)
+
+        cmds = ["git clone https://github.com/c-morris/BGPExtrapolator.git",
+                "cd BGPExtrapolator",
                 "git checkout remotes/origin/rovpp",
                 "git checkout -b rovpp"]
-        check_call("; ".join(cmds), shell=True)
 
         for line in fileinput.input("BGPExtrapolator/SQLQuerier.cpp",
                                     inplace=1):
@@ -222,6 +225,54 @@ class Install:
                 
         cmds = ["cd BGPExtrapolator",
                 "make -j{}".format(cpu_count()),
-                "cp bgp-extrapolator {}".format(rovpp_exr_path)]
+                "cp bgp-extrapolator /usr/bin/rovpp-extrapolator"]
 
-        check_call("; ".join(cmds), shell=True)
+        check_call("&& ".join(cmds), shell=True)
+        self._remove("BGPExtrapolator/")
+
+    def _install_rpki_validator(self):
+        pass
+
+    def _install_bgpscanner(self):
+        self._remove("bgpscanner/")
+
+        cmds = ["sudo apt install meson",
+                "sudo apt install zlib1g",
+                "sudo apt install zlib1g-dev",
+                "sudo apt-get install libbz2-dev",
+                "sudo apt-get install liblzma-dev",
+                "sudo apt-get install liblz4-dev",
+                "git clone https://gitlab.com/Isolario/bgpscanner.git",
+                "cd bgpscanner",
+                "mkdir build && cd build",
+                "meson ..",
+                "ninja",
+                "cp bgpscanner /usr/bin/bgpscanner"]
+        check_call("&& ".join(cmds), shell=True)
+        self._remove("bgpscanner")
+
+    def _install_bgpdump(self):
+        # Note - must install from source because it has bug fixes that are not in apt repo
+
+        self._remove("bgpdump/")
+
+        cmds = ["sudo apt install mercurial",
+                "hg clone https://bitbucket.org/ripencc/bgpdump",
+                "cd bgpdump",
+                "sudo apt install automake",
+                "./bootstrap.sh",
+                "make",
+                "./bgpdump -T",
+                "cp bgpdump /usr/bin/bgpdump"]
+        check_call("&& ".join(cmds), shell=True)
+        self._remove("bgpdump/")
+
+    def _remove(self, remove_me):
+        try:
+            if os.path.exists(remove_me) and os.path.isfile(remove_me):
+                os.remove(remove_me)
+            else:
+                rmtree(remove_me)
+        except FileNotFoundError:
+            self.logger.debug("{} was not previously installed".format(remove_me))
+
