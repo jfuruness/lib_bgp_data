@@ -392,16 +392,22 @@ PUT LINK HERE TO DB INSTALL INSTRUCTIONS BELOW!!
 ## Installation
    * [lib\_bgp\_data](#lib_bgp_data)
    * [Installation Instructions](#installation-instructions)
-   * [Database Installation](#database-instructions)
-   * [bgpscanner installation](#bgpscanner-installation)
+   * [Postgres Installation](#postgres-instructions)
    * [System Requirements](#system-requirements)
 ### Installation instructions
+First you need some dependencies. Run
+```bash
+sudo apt-get install python-psycopg2
+sudo apt-get install libpq-dev
+```
+Then install postgres 11 (see [Postgres Installation](#postgres-installation)
+
 If you are on a machine that has SELinux, you are going to need to run this in a python environment. On Ubuntu, the steps are as follows
 ```bash
 sudo apt-get install python3-pip
 sudo pip3 install virtualenv 
 ```
- 
+
 On Redhat the steps can be found here:
 [https://developers.redhat.com/blog/2018/08/13/install-python3-rhel/](https://developers.redhat.com/blog/2018/08/13/install-python3-rhel/)
 
@@ -423,8 +429,20 @@ cd lib_bgp_data
 pip3 install -r requirements.txt
 ```
 
-After this you are going to need a install a couple of other things. The first is a database (see [Database Installation](#database_installation)). The second is bgpscanner (see [BGPScanner Installation](#bgpscanner_installation)). The third is bgpdump (see [BGPDump Installation](#bgpdump_installation)). The fourth is the RPKI Validator. (see [RPKI Installation](#rpki_validator_installation)). See each of these sections below on how to install each part. 
-### Database Installation
+After this you are going to need a install a couple of other things. bgscanner, bgpdump, and the extrapolator are all automatically installed and moved to /usr/bin. bgpdump must be installed from source because it has bug fixes that are necessary. The RPKI validator (for now) must be manually installed.
+
+To run the automatic install process, make a script called install.py with:
+```python
+from lib_bgp_data import Install, MRT_Parser
+Install().install()
+```
+If you have already installed a database and config and don't need a fresh install, do:
+```python
+from lib_bgp_data import Install, MRT_Parser
+Install().install(fresh_install=False)
+```
+This will automate the installation process, and from here you should be ready to go
+### Postgres Installation
 For this, you are going to need postgres 11. You need this because it allows for parallel query execution, which significantly speeds up processing time. For installing postgres on your machine, see:
 Ubuntu Install:
 [https://computingforgeeks.com/install-postgresql-11-on-ubuntu-18-04-ubuntu-16-04/](https://computingforgeeks.com/install-postgresql-11-on-ubuntu-18-04-ubuntu-16-04/)
@@ -442,26 +460,6 @@ To check to see if it is running:
 sudo systemctl status postgresql@11-main.service
 ```
 
-From here on in, this could probably be automated, but that is a task for the future.
-
-Then log in as postgres (you will need sudo to do this)
-```bash
-sudo -i -u postgres
-```
-Then create a file that contains the following commands:
-
-Then access the postgres command line:
-```bash
-psql
-```
-After this we want to create our database
-First we are going to need to create our database. To do this run:
-```sql
-CREATE DATABASE bgp;
-```
-
-### BGPScanner Installation
-### BGPDump installation
 ### RPKI Validator Installation
 ### System Requirements
 ## Development/Contributing
