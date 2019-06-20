@@ -13,6 +13,7 @@ setup(
         'setuptools',
         'requests',
         'beautifulsoup4',
+        'fileinput',
         'flasgger',
         'Flask',
         'multiprocess',

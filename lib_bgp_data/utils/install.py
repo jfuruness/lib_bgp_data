@@ -54,6 +54,17 @@ Possible Future Extensions:
     -Add test cases
 """
 
+from getpass import getpass
+from subprocess import call, check_call
+import os
+from multiprocess import cpu_count
+from logging import DEBUG
+import fileinput
+import sys
+from shutil import rmtree
+from .logger import Thread_Safe_Logger as logger, error_catcher
+from .config import Config
+
 __author__ = "Justin Furuness"
 __credits__ = ["Justin Furuness"]
 __Lisence__ = "MIT"
@@ -62,13 +73,6 @@ __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
-
-from getpass import getpass
-from subprocess import call
-import os
-from logging import DEBUG
-from .logger import Thread_Safe_Logger as logger, error_catcher
-from .config import Config
 
 class Install:
     """Installs stuff"""
@@ -89,17 +93,24 @@ class Install:
         self.db_pass = getpass("Password for database: ")
 
     @error_catcher()
-    def install(self, unhinged=False):
+    def install(self,
+                exr_path="/home/jmf/forecast-extrapolator",
+                rovpp_exr_path="/home/jmf/rovpp-extrapolator",
+                unhinged=False):
         """Installs everything"""
 
-        Config(self.logger).create_config(self.db_pass)
+        Config(self.logger).create_config(self.db_pass,
+                                          exr_path,
+                                          rovpp_exr_path)
         self._create_database()
         self._modify_database(unhinged)
-        self._install_extrapolator()
+        self._install_extrapolator(exr_path, rovpp_exr_path)
 
     @error_catcher()
     def _create_database(self):
-        sqls = ["CREATE DATABASE bgp;",
+        sqls = ["DROP DATABASE bgp;",
+                "DROP USER bgp_user;",
+                "CREATE DATABASE bgp;",
                 "CREATE USER bgp_user;",
                 "REVOKE CONNECT ON DATABASE bgp FROM PUBLIC;"
                 "REVOKE ALL ON ALL TABLES IN SCHEMA public FROM bgp_user;",
@@ -111,10 +122,8 @@ class Install:
         with open("/tmp/db_install.sql", "w+") as db_install_file:
             for sql in sqls:
                 db_install_file.write(sql + "\n")
-        input("Just wrote sql file to install database. Enter to continue")
-        commands = ["sudo -i -u postgres",
-                    "psql -f /tmp/db_install.sql",
-                    "rm ~/.psql_history"]
+        commands = ["sudo -u postgres psql -f /tmp/db_install.sql",
+                    "rm /var/lib/postgresql/.psql_history"]
         call("; ".join(commands), shell=True)
         os.remove("/tmp/db_install.sql")
 
@@ -133,9 +142,9 @@ class Install:
                 # Allows for parallelization
                 """ALTER SYSTEM SET max_parallel_workers_per_gather
                 TO {};""".format(cpu_count() - 1),
-                "ALTER SYSTEM SET max_parallel_workers TO {}".format(
+                "ALTER SYSTEM SET max_parallel_workers TO {};".format(
                     cpu_count() - 1),
-                "ALTER SYSTEM SET max_worker_processes TO {}".format(
+                "ALTER SYSTEM SET max_worker_processes TO {};".format(
                     cpu_count() * 2),
 
                 # Writes as few logs as possible
@@ -153,11 +162,11 @@ class Install:
                 "ALTER SYSTEM SET work_mem TO '{}MB';".format(
                     int(ram / (cpu_count() * 1.5))),
                 # Total cache postgres has, ignore shared buffers
-                "ALTER SYSTEM SET effective_cache_size TO '{}MB'".format(ram),
+                "ALTER SYSTEM SET effective_cache_size TO '{}MB';".format(ram),
                 # Set random page cost to 2 if no ssd, with ssd
                 # seek time is one for ssds
-                "ALTER SYSTEM SET random_page_cost TO {}".format(
-                    float(input("If SSD, enter 1, else enter 2")))]
+                "ALTER SYSTEM SET random_page_cost TO {};".format(
+                    float(input("If SSD, enter 1, else enter 2: ")))]
         if unhinge:
             # This will make it so that your database never writes to
             # disk unless you tell it to. It's faster, but harder to use
@@ -184,23 +193,35 @@ class Install:
         with open("/tmp/db_modify.sql", "w+") as db_mod_file:
             for sql in sqls:
                 db_mod_file.write(sql + "\n")
-        commands = ["sudo -i -u postgres",
-                    "psql -f /tmp/db_install.sql",
-                    "rm ~/.psql_history"]
-        call("; ".join(commands), shell=True)
-        os.remove("/tmp/db_install.sql")
+        call("sudo -u postgres psql -f /tmp/db_modify.sql", shell=True)
+        os.remove("/tmp/db_modify.sql")
 
     @error_catcher()
-    def _install_extrapolator(self):
-        pass
-        # Install extrapolator and move executable
-        # delete github repo lmaoooo
-        # cd into extrapolator and git checkout remotes/origin/rovpp
-        # git checkout -b rovpp
-        # vim SQLQuerier.cpp
-        # line 302 change path to be "/etc/bgp/bgp.conf"
-        # make -j12
-        # Move executable somewhere else and call it rovpp
+    def _install_extrapolator(self, exr_path, rovpp_exr_path):
+        input("About to delete BGPExtrapolator if exists, press any key")
+        try:
+            rmtree("BGPExtrapolator/")
+        except FileNotFoundError:
+            self.logger.debug("Extrapolator was not previouslt installed")
+        cmds = ["git clone https://github.com/c-morris/BGPExtrapolator.git",
+                "cd BGPExtrapolator/Misc",
+                "sudo ./apt-install-deps.sh",
+                "sudo apt install libboost-test-dev",
+                "cd ..",
+                "make -j{}".format(cpu_count()),
+                "cp bgp-extrapolator {}".format(exr_path),
+                "git checkout remotes/origin/rovpp",
+                "git checkout -b rovpp"]
+        check_call("; ".join(cmds), shell=True)
 
-        # Put both of the paths into the /etc/bgp.conf file
-        # WHEN MAKE CONFIG FILE MUST OUT THSI INFO IN THERE!!!
+        for line in fileinput.input("BGPExtrapolator/SQLQuerier.cpp",
+                                    inplace=1):
+            line = line.replace('    string file_location = "./bgp.conf";',
+                                '    string file_location = "/etc/bgp/bgp.conf";')
+            sys.stdout.write(line)
+                
+        cmds = ["cd BGPExtrapolator",
+                "make -j{}".format(cpu_count()),
+                "cp bgp-extrapolator {}".format(rovpp_exr_path)]
+
+        check_call("; ".join(cmds), shell=True)
