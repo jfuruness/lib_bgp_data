@@ -34,6 +34,7 @@ insert the data into a database. This is done through a series of steps.
     -The old table gets destroyed first
     -This is handleded in the utils.csv_to_db function
     -This is done because the file comes in CSV format
+    -Optionally data can be inserted into ROVPP tables
 7. The config is updated with the last date a file was parsed
 
 Design Choices:
@@ -46,8 +47,10 @@ Design Choices:
 Possible Future Extensions:
     -Add test cases
     -Possibly take out date checking for cleaner code?
-     Save very little time
+     Saves very little time
     -Move unzip_bz2 to this file? Nothing else uses it anymore
+    -Possibly change the name of the table to provider_customers
+        -That is the order the data is in, it is like that in all files
 """
 
 from .relationships_parser import Relationships_Parser

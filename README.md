@@ -1,4 +1,5 @@
 
+
 # lib\_bgp\_data
 This package contains multiple submodules that are used to gather and manipulate real data in order to simulate snapshots of the internet. The purpose of this is to test different security policies to determine their accuracy, and hopefully find ones that will create a safer, more secure, internet as we know it.
 
@@ -161,8 +162,8 @@ MRT_Parser().parse_files()
 To run the MRT Parser with specific time intervals:
 ```python
 from lib_bgp_data import MRT_Parser
-MRT_Parser().parse_files({"start": 1558974033,
-                          "end": 1558974033})
+MRT_Parser().parse_files("start": 1558974033,
+                         "end": 1558974033)
 ```
 To run the MRT Parser with specific time intervals and custom api parameters:
 
@@ -171,35 +172,35 @@ See: [https://bgpstream.caida.org/docs/api/broker](https://bgpstream.caida.org/d
 In this example we get all RIB files from a specific collector, route-views2
 ```python
 from lib_bgp_data import MRT_Parser
-MRT_Parser().parse_files({"start": 1558974033,
-                          "end": 1558974033,
-                          "api_param_mods": {"collector": "route-views2",
-                                             "types": ['ribs']}})
+MRT_Parser().parse_files("start": 1558974033,
+                         "end": 1558974033,
+                         "api_param_mods": {"collector": "route-views2",
+                                             "types": ['ribs']})
 ```
 To run the MRT Parser with specific time intervals and bgpdump:
 ```python
 from lib_bgp_data import MRT_Parser
-MRT_Parser().parse_files({"start": 1558974033,
-                          "end": 1558974033,
-                          "bgpscanner": False})
+MRT_Parser().parse_files("start": 1558974033,
+                         "end": 1558974033,
+                         "bgpscanner": False)
 ```
 
 To run the MRT Parser with specific time intervals and IPV4 and IPV6 data:
 ```python
 from lib_bgp_data import MRT_Parser
-MRT_Parser().parse_files({"start": 1558974033,
-                          "end": 1558974033,
-                          "IPV4": True,
-                          "IPV6": True})
+MRT_Parser().parse_files("start": 1558974033,
+                         "end": 1558974033,
+                         "IPV4": True,
+                         "IPV6": True)
 ```
 To run the MRT Parser with specific time intervals and different number of threads:
 ```python
 from multiprocessing import cpu_count
 from lib_bgp_data import MRT_Parser
-MRT_Parser().parse_files({"start": 1558974033,
-                          "end": 1558974033,
-                          "download_threads": cpu_count(),
-                          "parse_threads": cpu_count()/4})
+MRT_Parser().parse_files("start": 1558974033,
+                         "end": 1558974033,
+                         "download_threads": cpu_count(),
+                         "parse_threads": cpu_count()/4)
 ```
 #### From the Command Line
 Coming Soon to a theater near you
@@ -263,12 +264,111 @@ Coming Soon to a theater near you
    * [Design Choices](#relationships-design-choices)
    * [Possible Future Improvements](#relationships-possible-future-improvements)
 ### Relationships Short description
+The purpose of this submodule is to parse Relationship files received from http://data.caida.org/datasets/as-relationships/serial-2/, converting this file into csvs with customer provider and peer relationships, and inserting this data into the database.
 ### Relationships Long description
+The purpose of this class is to download relationship files and insert the data into a database. This is done through a series of steps.
+
+1. Make an API call to:
+    * http://data.caida.org/datasets/as-relationships/serial-2/
+    * Handled in _get_url function
+    * This will return the URL of the file that we need to download
+    * In that URL we have the date of the file, which is also parsed out
+    * The serial 2 data set is used because it has multilateral peering
+    * which appears to be the more complete data set
+2. Then check if the file has already been parsed before
+    * Handled in parse_files function
+    * If the URL date is less than the config file date do nothing
+    * Else, parse
+    * This is done to avoid unneccesarily parsing files
+4. Then the Relationships_File class is then instantiated
+5. The relationship file is then downloaded
+    * This is handled in the utils.download_file function
+6. Then the file is unzipped
+    * handled by utils _unzip_bz2
+7. The relationship file is then split into two
+    * Handled in the Relationships_File class
+    * This is done because the file contains both peers and customer_provider data.
+    * The file itself is a formatted CSV with "|" delimiters
+    * Using grep and cut the relationships file is split and formatted
+    * This is done instead of regex because it is faster and simpler
+8. Then each CSV is inserted into the database
+    * The old table gets destroyed first
+    * This is handleded in the utils.csv_to_db function
+    * This is done because the file comes in CSV format
+    * Optionally data can be inserted into ROVPP tables for the ROVPP simulation
+9. The config is updated with the last date a file was parsed
+
 ### Relationships Usage
 #### In a Script
+
+Initializing the Relationships Parser:
+> The default params for the Relationships parser are:
+> name = self.\_\_class\_\_.\_\_name\_\_  # The purpose of this is to make sure when we clean up paths at the end it doesn't delete files from other parsers.
+> path = "/tmp/bgp_{}".format(name)  # This is for the relationship files
+> CSV directory = "/dev/shm/bgp_{}".format(name) # Path for CSV files, located in RAM
+> logging stream level = logging.INFO  # Logging level for printing
+> Note that any one of the above attributes can be changed or all of them can be changed in any combination
+
+To initialize Relationships_Parser with default values:
+```python
+from lib_bgp_data import Relationships_Parser
+relationships_parser = Relationships_Parser()
+```                 
+To initialize Relationships_Parser with custom path, CSV directory, and logging level:
+```python
+from logging import DEBUG
+from lib_bgp_data import Relationships_Parser
+relationships_parser = Relationships_Parser({"path": "/my_custom_path",
+                                             "csv_dir": "/my_custom_csv_dir",
+                                             "stream_level": DEBUG})
+```
+Running the Relationships_Parser:
+> The default params for the relationships parser's parse_files are:
+> rovpp = False #  By default store in the normal tables
+> url = None  # If rovpp is set to true, the specified URL will be used for downloads
+
+To run the Relationships Parser with defaults:
+```python
+from lib_bgp_data import Relationships_Parser
+Relationships_Parser().parse_files()
+```
+To run the Relationships Parser for ROVPP with a specific URL:
+```python
+from lib_bgp_data import Relationships_Parser
+Relationships_Parser().parse_files(rovpp=True,
+                                   url="my_specific_url")
+```
 #### From the Command Line
+Coming Soon to a theater near you
 ### Relationships Table Schema
+* These tables contains information on the relationship data retrieved from http://data.caida.org/datasets/as-relationships/serial-2/
+* Unlogged tables are used for speed
+#### customer_providers Table Schema:
+* Contains data for customer provider pairs
+* provider_as: Provider ASN *(bigint)*
+* customer_as: Customer ASN (*bigint)*
+* Create Table SQL:
+    ```
+    CREATE UNLOGGED TABLE IF NOT EXISTS
+        customer_providers (
+            provider_as bigint,
+            customer_as bigint
+        );
+    ```
+#### peers Table Schema:
+* Contains data for peer pairs
+* peer_as_1: An ASN that is a peer *(bigint)*
+* peer_as_2: An ASN that is another peer *(bigint)*
+* Create Table SQL:
+    ```
+    CREATE UNLOGGED TABLE IF NOT EXISTS
+        peers (
+            peer_as_1 bigint,
+            peer_as_2 bigint
+        );
+    ```
 ### Relationships Design Choices
+
 ### Relationships Possible Future Improvements
 ## Roas Submodule
    * [lib\_bgp\_data](#lib_bgp_data)
@@ -434,6 +534,12 @@ python3 setup.py develop
 ```
 
 After this you are going to need a install a couple of other things. bgscanner, bgpdump, and the extrapolator are all automatically installed and moved to /usr/bin. bgpdump must be installed from source because it has bug fixes that are necessary. The RPKI validator (for now) must be manually installed.
+>bgpscanner manual install link:
+>[https://gitlab.com/Isolario/bgpscanner](https://gitlab.com/Isolario/bgpscanner)
+>bgpdump manual install link:
+>[https://bitbucket.org/ripencc/bgpdump/wiki/Home](https://bitbucket.org/ripencc/bgpdump/wiki/Home)
+>extrapolator manual install link:
+>[https://github.com/c-morris/BGPExtrapolator](https://github.com/c-morris/BGPExtrapolator)
 
 To run the automatic install process, make a script called install.py with:
 ```python
@@ -482,3 +588,4 @@ remove all in person crap like we from the readme you idjiout
 (if something is from a submodule, post a link to that specific possible future improvements? say that this is a summary of stuff?)
 ## FAQ
    * [lib\_bgp\_data](#lib_bgp_data)
+
