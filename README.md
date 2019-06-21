@@ -1,5 +1,3 @@
-
-
 # lib\_bgp\_data
 This package contains multiple submodules that are used to gather and manipulate real data in order to simulate snapshots of the internet. The purpose of this is to test different security policies to determine their accuracy, and hopefully find ones that will create a safer, more secure, internet as we know it.
 
@@ -390,13 +388,77 @@ Coming Soon to a theater near you
    * [Design Choices](#roas-design-choices)
    * [Possible Future Improvements](#roas-possible-future-improvements)
 ### Roas Short description
+The purpose of this submodule is to parse Roa data received from https://rpki-validator.ripe.net/api/export.json, converting this data into csvs and inserting this data into the database.
 ### Roas Long description
+The purpose of this parser is to download ROAs from rpki and insert them into a database. This is done through a series of steps.
+
+1. Clear the Roas table
+   * Handled in the parse_roas function
+2. Make an API call to https://rpki-validator.ripe.net/api/export.json
+   * Handled in the _get_json_roas function
+   * This will get the json for the roas
+3. Format the roa data for database insertion
+   * Handled in the _format_roas function
+4. Insert the data into the database
+   * Handled in the utils.rows_to_db
+    * First converts data to a csv then inserts it into the database
+    * CSVs are used for fast bulk database insertion
+5. An index is created on the roa prefix
+    * The purpose of this is to make the SQL query faster when joining with the mrt announcements
+
 ### Roas Usage
 #### In a Script
+Initializing the Roas Collector:
+> The default params for the Roas Collector are:
+> name = self.\_\_class\_\_.\_\_name\_\_  # The purpose of this is to make sure when we clean up paths at the end it doesn't delete files from other parsers.
+> path = "/tmp/bgp_{}".format(name)  # This is for the roa files
+> CSV directory = "/dev/shm/bgp_{}".format(name) # Path for CSV files, located in RAM
+> logging stream level = logging.INFO  # Logging level for printing
+> Note that any one of the above attributes can be changed or all of them can be changed in any combination
+
+To initialize ROAs_Collector with default values:
+```python
+from lib_bgp_data import ROAs_Collector
+roas_parser = ROAs_Collector()
+```                 
+To initialize ROAs_Collector with custom path, CSV directory, and logging level:
+```python
+from logging import DEBUG
+from lib_bgp_data import ROAs_Collector
+roas_parser = ROAs_Collector({"path": "/my_custom_path",
+                              "csv_dir": "/my_custom_csv_dir",
+                              "stream_level": DEBUG})
+```
+To run the ROAs_Collector with defaults (there are no optional parameters):
+```python
+from lib_bgp_data import ROAs_Collector
+ROAs_Collector().parse_roas()
+```
+
+#### From the Command Line
+Coming Soon to a theater near you
 #### From the Command Line
 ### Roas Table Schema
+* This table contains information on the ROAs retrieved from the https://rpki-validator.ripe.net/api/export.json
+* Unlogged tables are used for speed
+* asn: The ASN of an AS *(bigint)*
+* prefix: The prefix of an AS *(CIDR)*
+* max_length: Max length specified by roa (*bigint)*
+
+* Create Table SQL:
+    ```
+    CREATE UNLOGGED TABLE IF NOT EXISTS
+        roas (
+			asn bigint
+            prefix cidr,
+            max_length integer
+        );
+    ```
 ### Roas Design Choices
+* CSVs are used for fast database bulk insertion
+* An index on the prefix is created on the roas for fast SQL joins
 ### Roas Possible Future Improvements
+* Add test cases
 ## Extrapolator Submodule
    * [lib\_bgp\_data](#lib_bgp_data)
    * [Extrapolator Short Description](#extrapolator-short-description)

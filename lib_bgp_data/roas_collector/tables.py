@@ -49,7 +49,7 @@ class ROAs_Table(Database):
 
         sql = """CREATE UNLOGGED TABLE IF NOT EXISTS roas (
               asn bigint,
-              prefix inet,
+              prefix cidr,
               max_length integer
               ) ;"""
         self.cursor.execute(sql)
