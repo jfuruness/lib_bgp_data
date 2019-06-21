@@ -69,7 +69,6 @@ The purpose of this submodule is to parse MRT files received from https://bgpstr
 ### MRT Announcements Long description
 This submodule downloads and parses MRT Files. This is done through a series of steps.
 1. Make an api call to https://bgpstream.caida.org/broker/data
-    * Docs located here: https://bgpstream.caida.org/docs/api/broker
     * Handled in _get_mrt_urls function
     * This will return json for rib files which contain BGP announcements
     * From this we parse out urls for the BGP dumps
