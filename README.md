@@ -162,8 +162,8 @@ MRT_Parser().parse_files()
 To run the MRT Parser with specific time intervals:
 ```python
 from lib_bgp_data import MRT_Parser
-MRT_Parser().parse_files("start": 1558974033,
-                         "end": 1558974033)
+MRT_Parser().parse_files(start=1558974033,
+                         end=1558974033)
 ```
 To run the MRT Parser with specific time intervals and custom api parameters:
 
@@ -172,35 +172,35 @@ See: [https://bgpstream.caida.org/docs/api/broker](https://bgpstream.caida.org/d
 In this example we get all RIB files from a specific collector, route-views2
 ```python
 from lib_bgp_data import MRT_Parser
-MRT_Parser().parse_files("start": 1558974033,
-                         "end": 1558974033,
-                         "api_param_mods": {"collector": "route-views2",
-                                             "types": ['ribs']})
+MRT_Parser().parse_files(start=1558974033,
+                         end=1558974033,
+                         api_param_mods={"collector": "route-views2",
+                                         "types": ['ribs']})
 ```
 To run the MRT Parser with specific time intervals and bgpdump:
 ```python
 from lib_bgp_data import MRT_Parser
-MRT_Parser().parse_files("start": 1558974033,
-                         "end": 1558974033,
-                         "bgpscanner": False)
+MRT_Parser().parse_files(start=1558974033,
+                         end=1558974033,
+                         bgpscanner=False)
 ```
 
 To run the MRT Parser with specific time intervals and IPV4 and IPV6 data:
 ```python
 from lib_bgp_data import MRT_Parser
-MRT_Parser().parse_files("start": 1558974033,
-                         "end": 1558974033,
-                         "IPV4": True,
-                         "IPV6": True)
+MRT_Parser().parse_files(start=1558974033,
+                         end=1558974033,
+                         IPV4=True,
+                         IPV6=True)
 ```
 To run the MRT Parser with specific time intervals and different number of threads:
 ```python
 from multiprocessing import cpu_count
 from lib_bgp_data import MRT_Parser
-MRT_Parser().parse_files("start": 1558974033,
-                         "end": 1558974033,
-                         "download_threads": cpu_count(),
-                         "parse_threads": cpu_count()/4)
+MRT_Parser().parse_files(start=1558974033,
+                         end=1558974033,
+                         download_threads=cpu_count(),
+                         parse_threads=cpu_count()/4)
 ```
 #### From the Command Line
 Coming Soon to a theater near you
@@ -319,8 +319,8 @@ To initialize Relationships_Parser with custom path, CSV directory, and logging 
 from logging import DEBUG
 from lib_bgp_data import Relationships_Parser
 relationships_parser = Relationships_Parser({"path": "/my_custom_path",
-                                             "csv_dir": "/my_custom_csv_dir",
-                                             "stream_level": DEBUG})
+					                         "csv_dir": "/my_custom_csv_dir",
+					                         "stream_level": DEBUG})
 ```
 Running the Relationships_Parser:
 > The default params for the relationships parser's parse_files are:
@@ -336,7 +336,7 @@ To run the Relationships Parser for ROVPP with a specific URL:
 ```python
 from lib_bgp_data import Relationships_Parser
 Relationships_Parser().parse_files(rovpp=True,
-                                   url="my_specific_url")
+								   url="my_specific_url")
 ```
 #### From the Command Line
 Coming Soon to a theater near you
@@ -368,8 +368,19 @@ Coming Soon to a theater near you
         );
     ```
 ### Relationships Design Choices
+* CSV insertion is done because the relationships file is a CSV
+* Dates are stored and checked to prevent redoing old work
+* An enum was used to make the code cleaner in relationship_file
+	* Classes are more messy in this case
 
 ### Relationships Possible Future Improvements
+* Add test cases
+* Possibly take out date checking for cleaner code?
+	* Saves very little time
+* Move unzip_bz2 to this file? Nothing else uses it anymore
+* Possibly change the name of the table to provider_customers
+	* That is the order the data is in, it is like that in all files
+
 ## Roas Submodule
    * [lib\_bgp\_data](#lib_bgp_data)
    * [Short Description](#roas-short-description)
@@ -494,6 +505,7 @@ PUT LINK HERE TO DB INSTALL INSTRUCTIONS BELOW!!
    * [Installation Instructions](#installation-instructions)
    * [Postgres Installation](#postgres-instructions)
    * [System Requirements](#system-requirements)
+   * [Installation Class Details](#installation-class-details)
 ### Installation instructions
 First you need some dependencies. Run
 ```bash
@@ -572,6 +584,10 @@ sudo systemctl status postgresql@11-main.service
 
 ### RPKI Validator Installation
 ### System Requirements
+### Installation Class Details
+#### Installation Class Description
+#### Installation Class Design Choices
+#### Installation Class Future Extensions
 ## Development/Contributing
    * [lib\_bgp\_data](#lib_bgp_data)
 ## History
@@ -588,4 +604,3 @@ remove all in person crap like we from the readme you idjiout
 (if something is from a submodule, post a link to that specific possible future improvements? say that this is a summary of stuff?)
 ## FAQ
    * [lib\_bgp\_data](#lib_bgp_data)
-
