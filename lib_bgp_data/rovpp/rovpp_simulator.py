@@ -135,7 +135,7 @@ class ROVPP_Simulator:
             self._populate_rovpp_mrt_announcements(subprefix_hijack)
             Extrapolator().run_rovpp(subprefix_hijack["attacker"],
                                      subprefix_hijack["victim"],
-                                     subprefix_hijack["expected_prefix"])
+                                     subprefix_hijack["more_specific_prefix"])
             self.statistics_calculator.calculate_stats(as_table,
                                                        subprefix_hijack,
                                                        percentage,
