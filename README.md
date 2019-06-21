@@ -319,8 +319,8 @@ To initialize Relationships_Parser with custom path, CSV directory, and logging 
 from logging import DEBUG
 from lib_bgp_data import Relationships_Parser
 relationships_parser = Relationships_Parser({"path": "/my_custom_path",
-					                         "csv_dir": "/my_custom_csv_dir",
-					                         "stream_level": DEBUG})
+                                             "csv_dir": "/my_custom_csv_dir",
+                                             "stream_level": DEBUG})
 ```
 Running the Relationships_Parser:
 > The default params for the relationships parser's parse_files are:
@@ -336,7 +336,7 @@ To run the Relationships Parser for ROVPP with a specific URL:
 ```python
 from lib_bgp_data import Relationships_Parser
 Relationships_Parser().parse_files(rovpp=True,
-								   url="my_specific_url")
+                                   url="my_specific_url")
 ```
 #### From the Command Line
 Coming Soon to a theater near you
@@ -371,15 +371,15 @@ Coming Soon to a theater near you
 * CSV insertion is done because the relationships file is a CSV
 * Dates are stored and checked to prevent redoing old work
 * An enum was used to make the code cleaner in relationship_file
-	* Classes are more messy in this case
+    * Classes are more messy in this case
 
 ### Relationships Possible Future Improvements
 * Add test cases
 * Possibly take out date checking for cleaner code?
-	* Saves very little time
+    * Saves very little time
 * Move unzip_bz2 to this file? Nothing else uses it anymore
 * Possibly change the name of the table to provider_customers
-	* That is the order the data is in, it is like that in all files
+    * That is the order the data is in, it is like that in all files
 
 ## Roas Submodule
    * [lib\_bgp\_data](#lib_bgp_data)

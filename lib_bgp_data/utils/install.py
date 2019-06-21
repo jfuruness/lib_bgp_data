@@ -50,7 +50,7 @@ Possible Future Extensions:
 """
 
 from getpass import getpass
-from subprocess import call, check_call
+from subprocess import check_call
 import os
 from multiprocess import cpu_count
 from logging import DEBUG
@@ -138,7 +138,7 @@ class Install:
         database will be corrupted if there is a crash. These changes
         work at a cluster level, so all databases will be changed"""
 
-        # First get the amount of ram 
+        # First get the amount of ram
         print("The amount of ram can be found with free -h, shown below")
         check_call("free -h", shell=True)
         ram = int(input("What is the amount of ram on the system in MB? "))
@@ -196,7 +196,7 @@ class Install:
                 # Since this is now manual it can be higher
                 "ALTER SYSTEM SET autovacuum_max_workers TO {};".format(
                     cpu_count() - 1),
-                # Change the number of max_parallel_maintenance_workers 
+                # Change the number of max_parallel_maintenance_workers
                 # Since its manual it can be higher
                 "ALTER SYSTEM SET max_parallel_maintenance_workers TO {};"\
                     .format(cpu_count() - 1),
@@ -206,8 +206,8 @@ class Install:
                 # Yes I know I could call this, but this is just for machines
                 # that might not have it or whatever
                 # stack_limit = int(input("What is the output of ulimit -s?"))
-                # https://www.postgresql.org/docs/9.1/runtime-config-resource.html 
-                #"ALTER SYSTEM SET max_stack_depth TO '{}MB';".format(
+                # https://www.postgresql.org/docs/9.1/runtime-config-resource.html
+                # "ALTER SYSTEM SET max_stack_depth TO '{}MB';".format(
                 # int(stack_limit/1024)-1)]
 
         # Writes sql file
@@ -251,7 +251,7 @@ class Install:
         for line in fileinput.input("BGPExtrapolator/SQLQuerier.cpp",
                                     inplace=1):
             line = line.replace('    string file_location = "./bgp.conf";',
-                                '    string file_location = "/etc/bgp/bgp.conf";')
+                            '    string file_location = "/etc/bgp/bgp.conf";')
             sys.stdout.write(line)
 
         # Install extrapolator
@@ -321,4 +321,4 @@ class Install:
         except FileNotFoundError:
             # If the file is not found nbd
             # This is just to clean out for a fresh install
-            self.logger.debug("{} was not previously installed".format(remove_me))
+            self.logger.debug("{} not previously installed".format(remove_me))

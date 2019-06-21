@@ -92,6 +92,7 @@ class Peers_Table(Database):
               );"""
         self.cursor.execute(sql)
 
+
 class ROVPP_Customer_Providers_Table(Database):
     """Class with database functionality.
 

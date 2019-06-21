@@ -166,11 +166,10 @@ class Rel_File:
 
         # For the ROVPP simulation
         if rovpp:
-           return {Rel_Types.CUSTOMER_PROVIDERS:
-                       ROVPP_Customer_Providers_Table,
-                   Rel_Types.PEERS: ROVPP_Peers_Table}
+            return {Rel_Types.CUSTOMER_PROVIDERS:
+                    ROVPP_Customer_Providers_Table,
+                    Rel_Types.PEERS: ROVPP_Peers_Table}
         # If it is for the other simulations we want these tables:
         else:
             return {Rel_Types.CUSTOMER_PROVIDERS: Customer_Providers_Table,
                     Rel_Types.PEERS: Peers_Table}
-
