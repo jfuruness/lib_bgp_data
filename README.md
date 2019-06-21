@@ -418,8 +418,8 @@ source ./env/bin/activate
 ```
 You now have a python virtual environment where you do not need sudo to install packages. Then run:
 ```bash
-pip3 install wheel
-pip3 install lib_bgp_data
+pip3 install wheel --upgrade
+pip3 install lib_bgp_data --upgrade
 ```
 This will install the package and all of it's python dependencies. 
 
@@ -427,7 +427,8 @@ If you want to install the project for development:
 ```bash
 git clone https://github.com/jfuruness/lib_bgp_data.git
 cd lib_bgp_data
-pip3 install -r requirements.txt
+pip3 install wheel --upgrade
+pip3 install -r requirements.txt --upgrade
 python3 setup.py sdist bdist_wheel
 python3 setup.py develop
 ```
