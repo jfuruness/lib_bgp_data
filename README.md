@@ -418,6 +418,7 @@ source ./env/bin/activate
 ```
 You now have a python virtual environment where you do not need sudo to install packages. Then run:
 ```bash
+pip3 install wheel
 pip3 install lib_bgp_data
 ```
 This will install the package and all of it's python dependencies. 
