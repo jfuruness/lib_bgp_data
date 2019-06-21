@@ -137,7 +137,7 @@ class MRT_Parser:
     def parse_files(self,
                     start=(utils.now()-timedelta(days=7)).timestamp(),
                     end=(utils.now()-timedelta(days=6)).timestamp(),
-                    api_params_mods=None,
+                    api_param_mods=None,
                     download_threads=None,
                     parse_threads=None,
                     IPV4=True,
@@ -159,7 +159,7 @@ class MRT_Parser:
         """
 
         # Gets urls of all mrt files needed
-        urls = self._get_mrt_urls(start, end, api_params_mods)
+        urls = self._get_mrt_urls(start, end, api_param_mods)
         self.logger.debug("Total files {}".format(len(urls)))
         # Get downloaded instances of mrt files using multithreading
         mrt_files = self._multiprocess_download(download_threads, urls)
