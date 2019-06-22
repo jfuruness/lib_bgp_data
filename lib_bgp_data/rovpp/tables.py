@@ -54,10 +54,10 @@ class ROVPP_ASes_Table(Database):
         self.clear_table()
         sql = """CREATE UNLOGGED TABLE IF NOT EXISTS rovpp_ases AS (
                  SELECT customer_as AS asn, 'bgp' AS as_type FROM (
-                     SELECT DISTINCT customer_as FROM customer_providers
-                     UNION SELECT provider_as FROM customer_providers
-                     UNION SELECT peer_as_1 FROM peers
-                     UNION SELECT peer_as_2 FROM peers) union_temp
+                     SELECT DISTINCT customer_as FROM rovpp_customer_providers
+                     UNION SELECT provider_as FROM rovpp_customer_providers
+                     UNION SELECT peer_as_1 FROM rovpp_peers
+                     UNION SELECT peer_as_2 FROM rovpp_peers) union_temp
                  );"""
         self.cursor.execute(sql)
 

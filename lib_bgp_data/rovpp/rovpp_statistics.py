@@ -42,13 +42,14 @@ class ROVPP_Statistics_Calculator:
         self.stats = dict()
         for non_bgp_policy in Non_BGP_Policies.__members__.values():
             self.stats[non_bgp_policy.value] = dict()
-            for percent in range(101):
+            for percent in args.get("percents"):
                 self.stats[non_bgp_policy.value][percent] = dict()
                 sim = self.stats[non_bgp_policy.value][percent]
                 # For each policy
                 for policy in Policies.__members__.values():
                     # Set that policy to have a dict which will contain data planes
                     sim[policy.value] = dict()
+                    # For storing the total number of ases
                     # For each kind of data plane
                     for plane in Planes.__members__.values():
                         sim[policy.value][plane.value] = dict()
@@ -123,6 +124,7 @@ class ROVPP_Statistics_Calculator:
         ases = {AS_Type.RECIEVED_HIJACK.value: {x["asn"]: x for x in
                                          as_table.execute(sql, data)}}
 
+
         # Get's all asns that do not have a corresponding entry for a hijack
         sql = """SELECT exr.asn, exr.prefix, exr.origin, exr.received_from_asn,
                  ases.as_type FROM rovpp_extrapolation_results exr
@@ -134,6 +136,7 @@ class ROVPP_Statistics_Calculator:
 
         ases[AS_Type.NOT_RECIEVED_HIJACK.value] = {x["asn"]: x for x in 
                                              as_table.execute(sql, data)}
+
         # Inits data plane onditions to be none
         for recieved_or_not in ases.keys():
             for asn in ases[recieved_or_not].keys():
