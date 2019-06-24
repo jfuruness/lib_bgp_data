@@ -26,6 +26,7 @@ Possible Future Extensions:
 from random import sample
 from subprocess import check_call
 from copy import deepcopy
+from pprint import pprint
 from .enums import Policies, Non_BGP_Policies
 from .tables import ROVPP_ASes_Table, Subprefix_Hijack_Temp_Table
 from .tables import ROVPP_MRT_Announcements_Table
@@ -61,7 +62,7 @@ class ROVPP_Simulator:
         # Sets path vars, logger, config, etc
         utils.set_common_init_args(self, args)
         # Percents from 0, 10, 20 ... 100
-        self.percents = range(0, 101, 10)
+        self.percents = range(0, 101, 1000)
         args["percents"] = self.percents
         # Define statistics calculator - also where stats are stored
         self.statistics_calculator = ROVPP_Statistics_Calculator(args)
@@ -69,7 +70,7 @@ class ROVPP_Simulator:
 
     @error_catcher()
     @utils.run_parser()
-    def simulate(self, trials=100, real_data=False):
+    def simulate(self, trials=1, real_data=False):
         """Runs ROVPP simulation.
 
         In depth explanation at top of module.
@@ -153,6 +154,8 @@ class ROVPP_Simulator:
                                                        subprefix_hijack,
                                                        percentage,
                                                        policy)
+            pprint(self.statistics_calculator.stats)
+            input("???????")
 
     @error_catcher()
     def _change_routing_policy(self, percentage, ases, as_table, policy,
