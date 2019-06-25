@@ -62,7 +62,9 @@ class ROVPP_Simulator:
         # Sets path vars, logger, config, etc
         utils.set_common_init_args(self, args)
         # Percents from 0, 10, 20 ... 100
-        self.percents = range(0, 101, 1000)
+        # Later put in the code to run with 0% once for bgp with trials
+        # but we already ran this trial so we can take it out for now
+        self.percents = range(10, 101, 100)
         args["percents"] = self.percents
         # Define statistics calculator - also where stats are stored
         self.statistics_calculator = ROVPP_Statistics_Calculator(args)
@@ -84,22 +86,37 @@ class ROVPP_Simulator:
         # Populates table
         self.logger.info("Initializing rovpp_as_table")
         with db_connection(ROVPP_ASes_Table, self.logger) as as_table:
+            as_table.clear_table()
+            as_table._create_tables()
             # Gets all ASes within the topology
-            ases = [x["asn"] for x in as_table.get_all()]
+            ases = {x["asn"]: Policies.BGP.value for x in as_table.get_all()}
+            ases_list = list(ases)
+            # For each percent adoption
+            for percent in self.percents:
+                # For each trial in that percent
+                for i in range(trials):
+                    # Note that we do the hijack data here
+                    # and security policy implimentation here
+                    # Because it should be the same across all policies
+                    # for comparison
 
-            for i in range(trials):
-                # Gets hijack data
-                self._get_hijack_data(real_data, ases)
-    
-                # Could be done in list comp but this is more readable
-                # We use non bgp policies because bgp is the default
-                for policy in Non_BGP_Policies.__members__.values():
-#                    if policy.value == 'rovpp':#########################
-#                        continue
-                    # For every percent
-                    for percent in self.percents:
+                    # Gets hijack data
+                    subprefix_hijacks = self._get_hijack_data(real_data,
+                                                              ases_list)
+
+                    # Done here so that the same ases are used between policies
+                    ases_to_change = self._get_ases_to_change(percent,
+                                                              ases_list,
+                                                              subprefix_hijacks)
+
+                    for policy in Non_BGP_Policies.__members__.values():
                         # Run that specific simulation
-                        self._run_simulation(policy.value, percent, ases, as_table)
+                        self._run_simulation(policy.value,
+                                             percent,
+                                             ases,
+                                             ases_to_change,
+                                             as_table,
+                                             subprefix_hijacks)
         self.graph_data.graph_data(self.statistics_calculator.stats)
 
 ########################
@@ -113,7 +130,9 @@ class ROVPP_Simulator:
         # Runs relationships parser
         caida_url = "http://data.caida.org/datasets/as-relationships/serial-2/"
         may_data_url = caida_url + "20190501.as-rel2.txt.bz2"
-        Relationships_Parser.parse_files(self, rovpp=True, url=may_data_url)
+        Relationships_Parser().parse_files(rovpp=True, url=may_data_url)
+        return
+        return Relationships_Parser().top_hundred_connected_ases()
 
     @error_catcher()
     def _get_hijack_data(self, real_data=False, ases=[]):
@@ -129,22 +148,34 @@ class ROVPP_Simulator:
             self.logger.info("Creating fake data for subprefix hijacks")
             # Initializes the fake table
             with db_connection(Subprefix_Hijack_Temp_Table,
-                               self.logger) as fake_table:
-                fake_table.populate(ases)
+                               self.logger) as fake_data:
+                fake_data.populate(ases)
+                # Returns all the subprefix hijacks
+                return fake_data.execute("SELECT * FROM subprefix_hijack_temp")
             self.logger.debug("Done creating fake data for subprefix hijacks")
 
     @error_catcher()
-    def _run_simulation(self, policy, percentage, ases, as_table):
+    def _run_simulation(self,
+                        policy,
+                        percentage,
+                        ases,
+                        ases_w_policy,
+                        as_table,
+                        subprefix_hijacks):
         """Runs one single simulation with the extrapolator"""
 
         self.logger.info("Running policy: {} percent {}".format(percentage,
             policy))
-        subprefix_hijacks = as_table.execute("SELECT * FROM subprefix_hijack_temp")
+
+
         self._change_routing_policy(percentage,
                                     ases,
+                                    ases_w_policy,
                                     as_table,
                                     policy,
                                     subprefix_hijacks)
+
+
         for i, subprefix_hijack in enumerate(subprefix_hijacks):
             self._populate_rovpp_mrt_announcements(subprefix_hijack)
             Extrapolator().run_rovpp(subprefix_hijack["attacker"],
@@ -154,15 +185,9 @@ class ROVPP_Simulator:
                                                        subprefix_hijack,
                                                        percentage,
                                                        policy)
-            pprint(self.statistics_calculator.stats)
-            input("???????")
 
     @error_catcher()
-    def _change_routing_policy(self, percentage, ases, as_table, policy,
-                               subprefix_hijacks):
-        """Changes the routing policy for that percentage of ASes"""
-
-        self.logger.info("About to change the routing policies")
+    def _get_ases_to_change(self, percentage, ases, subprefix_hijacks):
         # Gets the number of ases to change for that percent
         # Could be moved on to the next line but this is cleaner
         number_of_ases_to_change = int(len(ases) * percentage / 100)
@@ -176,12 +201,25 @@ class ROVPP_Simulator:
                 ases_to_change.remove(subprefix_hijack["attacker"])
         if int(len(subprefix_hijacks) * 100 / len(ases)) > 1:
             raise Exception("CHANGE THIS CODE YOU IDIOT!!!")
-        ases_temp_dict = {x: Policies.BGP.value for x in ases}
+
+        return ases_to_change
+
+
+    @error_catcher()
+    def _change_routing_policy(self, percentage, ases, ases_to_change,
+                               as_table, policy, subprefix_hijacks):
+        """Changes the routing policy for that percentage of ASes"""
+
+        self.logger.info("About to change the routing policies")
+        ases_temp_dict = deepcopy(ases)
         # My brain is tired of list comps
         for asn in ases_to_change:
             ases_temp_dict[asn] = policy
         rows = [[key, value] for key, value in ases_temp_dict.items()]
-        utils.rows_to_db(self.logger, rows, self.csv_dir, ROVPP_ASes_Table)
+        utils.rows_to_db(self.logger,
+                         rows,
+                         self.csv_dir + "/ases.csv",
+                         ROVPP_ASes_Table)
         #as_table.change_routing_policies(ases_to_change, policy)
         self.logger.debug("Done changing routing policies")
 

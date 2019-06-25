@@ -6,7 +6,7 @@
 from .api import application
 
 __author__ = "Justin Furuness"
-__credits__ = ["Justin Furuness"]
+__credits__ = ["Justin Furuness", "Reynaldo"]
 __Lisence__ = "MIT"
 __Version__ = "0.1.0"
 __maintainer__ = "Justin Furuness"

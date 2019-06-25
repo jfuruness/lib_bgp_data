@@ -84,11 +84,7 @@ class ROVPP_Statistics_Calculator:
 
         ROVPP_Data_Plane_Statistics().calculate_not_recieved_hijack_stats(
             ases_dict, subprefix_hijack["victim"], hijacked_ases, sim)
-        ########################################
-##############################333
-#########################################################3
-        # ERROR IS HERE! MESSES UP ARRAYS!!!!!!
-        pprint(sim)
+        self.logger.debug(sim)
 
     def _update_ases_recieved_hijack_stats(self, sim, hijacked, ases_dict):
         """Updates stats for all ASes that recieved the hijack"""

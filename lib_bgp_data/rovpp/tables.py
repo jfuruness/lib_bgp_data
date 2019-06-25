@@ -51,7 +51,6 @@ class ROVPP_ASes_Table(Database):
         Called during initialization of the database class.
         """
 
-        self.clear_table()
         sql = """CREATE UNLOGGED TABLE IF NOT EXISTS rovpp_ases AS (
                  SELECT customer_as AS asn, 'bgp' AS as_type FROM (
                      SELECT DISTINCT customer_as FROM rovpp_customer_providers

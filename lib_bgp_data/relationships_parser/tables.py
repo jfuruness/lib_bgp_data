@@ -29,7 +29,7 @@ Possible future improvements:
 from ..utils import error_catcher, Database
 
 __author__ = "Justin Furuness"
-__credits__ = ["Justin Furuness"]
+__credits__ = ["Justin Furuness", "James Breslin"]
 __Lisence__ = "MIT"
 __Version__ = "0.1.0"
 __maintainer__ = "Justin Furuness"
@@ -146,4 +146,54 @@ class ROVPP_Peers_Table(Database):
               peer_as_1 bigint,
               peer_as_2 bigint
               );"""
+        self.cursor.execute(sql)
+
+class ROVPP_AS_Connectivity_Table(Database):
+    """Class with database functionality.
+
+    This table contains each ASN and it's associated connectivity.
+    Connectivity = # customers + # peers"""
+
+    __slots__ = []
+
+    @error_catcher()
+    def __init__(self, logger):
+        """Initializes the ROVPP Peers table"""
+
+        Database.__init__(self, logger)
+
+    @error_catcher()
+    def _create_tables(self):
+        """Creates tables if they do not exist.
+
+        Called during initialization of the database class."""
+
+        # Drops the table if it exists
+        self.cursor.execute("DROP TABLE IF EXISTS rovpp_as_connectivity;")
+        # I know there is a better way to do this, but due to this deadline
+        # I must press forward. Apologies for the bad code.
+        sql = """CREATE UNLOGGED TABLE IF NOT EXISTS
+              rovpp_as_connectivity AS (
+              SELECT ases.asn AS asn,
+              COALESCE(cp.connectivity, 0) + COALESCE(p1.connectivity, 0) + COALESCE(p2.connectivity, 0)
+                  AS connectivity
+              FROM rovpp_ases ases
+              LEFT JOIN (SELECT cp.provider_as AS asn,
+                         COUNT(cp.provider_as) AS connectivity
+                         FROM rovpp_customer_providers cp
+                         GROUP BY cp.provider_as) cp
+              ON ases.asn = cp.asn
+              LEFT JOIN (SELECT p.peer_as_1 AS asn,
+                         COUNT(p.peer_as_1) AS connectivity
+                         FROM rovpp_peers p GROUP BY p.peer_as_1) p1
+              ON ases.asn = p1.asn
+              LEFT JOIN (SELECT p.peer_as_2 AS asn,
+                         COUNT(p.peer_as_2) AS connectivity
+                         FROM rovpp_peers p GROUP BY p.peer_as_2) p2
+              ON ases.asn = p2.asn
+              );"""
+
+
+        # Lol that's what I tried to do 
+
         self.cursor.execute(sql)
