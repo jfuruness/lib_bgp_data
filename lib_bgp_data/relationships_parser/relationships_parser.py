@@ -93,8 +93,6 @@ class Relationships_Parser:
                      self.csv_dir,
                      url,
                      self.logger).parse_file(rovpp)
-            # Gets connectivity, see table class for in depth explanation
-            ROVPP_AS_Connectivity_Table(self.logger).close()
             return
 
         # Gets the url and the integer date for the latest file

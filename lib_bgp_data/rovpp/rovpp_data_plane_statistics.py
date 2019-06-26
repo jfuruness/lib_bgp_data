@@ -66,20 +66,20 @@ class ROVPP_Data_Plane_Statistics:
             # Conditions reached at the end of the traceback
             self.conds_reached = []
     
+            og_as = self._get_as_info(asn, ases_dict)
             while(len(self.conds_reached) == 0):
-    
-                _as = self._get_as_info(asn, ases_dict) 
+                _as = self._get_as_info(asn, ases_dict)
                 # If it traces back to the victims AS
                 if asn == victim_asn:
-                    self._reached_victim_as(sim, _as)
+                    self._reached_victim_as(sim, og_as)
     
                 # If it reaches the attackers AS or a hijacked one
                 elif asn in hijacked_ases:
-                    self._reached_hijacked_as(sim, _as)
+                    self._reached_hijacked_as(sim, og_as)
     
                 # Or if it reaches an AS that we've seen before:
                 elif len(_as["data_plane_conditions"]) > 0:
-                    self._reached_previously_seen_as(sim, _as)
+                    self._reached_previously_seen_as(sim, _as, og_as)
     
                 # Else we go back another node
                 else:
@@ -117,11 +117,11 @@ class ROVPP_Data_Plane_Statistics:
         # Increase the data plane not hijacked
         self._add_stat(sim, _as, self.plane, Conditions.HIJACKED.value)
 
-    def _reached_previously_seen_as(self, sim, _as):
+    def _reached_previously_seen_as(self, sim, _as, og_as):
         """When we reach an AS that has been previously reached"""
 
         for cond in _as["data_plane_conditions"]:
-            self._add_stat(sim, _as, self.plane, cond)
+            self._add_stat(sim, og_as, self.plane, cond)
 
     def _update_ases_reached(self, traceback_ases, ases_dict):
         """Updates all ases at the end of the traceback"""

@@ -219,6 +219,10 @@ def write_csv(logger, rows, csv_path, files_to_delete=None):
     """Writes rows into csv_path, a tab delimited csv"""
 
     logger.info("Writing to {}".format(csv_path))
+    try:
+        os.remove(csv_path)
+    except:
+        pass
     with open(csv_path, mode='w') as temp_csv:
         csv_writer = csv.writer(temp_csv,
                                 delimiter='\t',
@@ -242,10 +246,10 @@ def csv_to_db(logger, Table, csv_path, clear_table=False):
     with db_connection(Table, logger) as t:
         if clear_table:
             t.clear_table()
+            t._create_tables()
         logger.info("Copying {} into the database".format(csv_path))
         # Opens temporary file
         with open(r'{}'.format(csv_path), 'r') as f:
-
             # Copies data from the csv to the db, this is the fastest way
             t.cursor.copy_from(f, t.name, sep='\t', columns=t.columns, null="")
             t.cursor.execute("CHECKPOINT;")
@@ -255,8 +259,8 @@ def csv_to_db(logger, Table, csv_path, clear_table=False):
 def rows_to_db(logger, rows, csv_path, Table, clear_table=True):
     """Writes rows to csv and from csv to database"""
 
-    write_csv(logger, rows, csv_path, clear_table)
-    csv_to_db(logger, Table, csv_path)
+    write_csv(logger, rows, csv_path)
+    csv_to_db(logger, Table, csv_path, clear_table)
 
 def get_tags(url, tag):
     """Gets the html of a given url, and returns a list of tags"""

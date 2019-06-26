@@ -197,3 +197,15 @@ class ROVPP_AS_Connectivity_Table(Database):
         # Lol that's what I tried to do 
 
         self.cursor.execute(sql)
+
+    @error_catcher()
+    def get_top_100_ases(self):
+        sql = """SELECT * FROM rovpp_as_connectivity
+              ORDER BY connectivity DESC LIMIT 100;"""
+        return [x["asn"] for x in self.execute(sql)]
+
+    @error_catcher()
+    def get_not_top_100_ases(self):
+        sql = """SELECT * FROM rovpp_as_connectivity
+              ORDER BY connectivity DESC OFFSET 100;"""
+        return [x["asn"] for x in self.execute(sql)]

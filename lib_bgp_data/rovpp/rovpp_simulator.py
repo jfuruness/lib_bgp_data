@@ -1,3 +1,4 @@
+
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
@@ -33,6 +34,7 @@ from .tables import ROVPP_MRT_Announcements_Table
 from .rovpp_statistics import ROVPP_Statistics_Calculator
 from .graph_data import Graph_Data
 from ..relationships_parser import Relationships_Parser
+from ..relationships_parser.tables import ROVPP_AS_Connectivity_Table
 from ..bgpstream_website_parser import BGPStream_Website_Parser
 from ..extrapolator import Extrapolator
 from ..utils import utils, Database, Config, error_catcher, db_connection
@@ -64,7 +66,7 @@ class ROVPP_Simulator:
         # Percents from 0, 10, 20 ... 100
         # Later put in the code to run with 0% once for bgp with trials
         # but we already ran this trial so we can take it out for now
-        self.percents = range(10, 101, 100)
+        self.percents = range(5, 31, 5)
         args["percents"] = self.percents
         # Define statistics calculator - also where stats are stored
         self.statistics_calculator = ROVPP_Statistics_Calculator(args)
@@ -86,11 +88,17 @@ class ROVPP_Simulator:
         # Populates table
         self.logger.info("Initializing rovpp_as_table")
         with db_connection(ROVPP_ASes_Table, self.logger) as as_table:
-            as_table.clear_table()
-            as_table._create_tables()
+            as_table.fill_table()
+
             # Gets all ASes within the topology
             ases = {x["asn"]: Policies.BGP.value for x in as_table.get_all()}
             ases_list = list(ases)
+
+            with db_connection(ROVPP_AS_Connectivity_Table,
+                               self.logger) as connectivity_table:
+                top_100_ases = connectivity_table.get_top_100_ases()
+                not_top_100_ases = connectivity_table.get_not_top_100_ases()
+
             # For each percent adoption
             for percent in self.percents:
                 # For each trial in that percent
@@ -102,19 +110,24 @@ class ROVPP_Simulator:
 
                     # Gets hijack data
                     subprefix_hijacks = self._get_hijack_data(real_data,
-                                                              ases_list)
+                                                              not_top_100_ases)
 
                     # Done here so that the same ases are used between policies
-                    ases_to_change = self._get_ases_to_change(percent,
-                                                              ases_list,
+                    top_100_to_change, not_top_100_to_change =\
+                                     self._get_ases_to_change(percent,
+                                                              top_100_ases,
+                                                              not_top_100_ases,
                                                               subprefix_hijacks)
 
                     for policy in Non_BGP_Policies.__members__.values():
+
+
                         # Run that specific simulation
                         self._run_simulation(policy.value,
                                              percent,
                                              ases,
-                                             ases_to_change,
+                                             top_100_to_change,
+                                             not_top_100_to_change,
                                              as_table,
                                              subprefix_hijacks)
         self.graph_data.graph_data(self.statistics_calculator.stats)
@@ -131,8 +144,6 @@ class ROVPP_Simulator:
         caida_url = "http://data.caida.org/datasets/as-relationships/serial-2/"
         may_data_url = caida_url + "20190501.as-rel2.txt.bz2"
         Relationships_Parser().parse_files(rovpp=True, url=may_data_url)
-        return
-        return Relationships_Parser().top_hundred_connected_ases()
 
     @error_catcher()
     def _get_hijack_data(self, real_data=False, ases=[]):
@@ -159,7 +170,8 @@ class ROVPP_Simulator:
                         policy,
                         percentage,
                         ases,
-                        ases_w_policy,
+                        top_100_to_change,
+                        not_top_100_to_change,
                         as_table,
                         subprefix_hijacks):
         """Runs one single simulation with the extrapolator"""
@@ -167,14 +179,13 @@ class ROVPP_Simulator:
         self.logger.info("Running policy: {} percent {}".format(percentage,
             policy))
 
-
         self._change_routing_policy(percentage,
                                     ases,
-                                    ases_w_policy,
+                                    top_100_to_change,
+                                    not_top_100_to_change,
                                     as_table,
                                     policy,
                                     subprefix_hijacks)
-
 
         for i, subprefix_hijack in enumerate(subprefix_hijacks):
             self._populate_rovpp_mrt_announcements(subprefix_hijack)
@@ -187,34 +198,47 @@ class ROVPP_Simulator:
                                                        policy)
 
     @error_catcher()
-    def _get_ases_to_change(self, percentage, ases, subprefix_hijacks):
-        # Gets the number of ases to change for that percent
-        # Could be moved on to the next line but this is cleaner
-        number_of_ases_to_change = int(len(ases) * percentage / 100)
-        # Gets number of ases to change randomly without duplicates
-        ases_to_change = set(sample(ases, k=number_of_ases_to_change))
-        # Makes sure attackers aren't implimenting anything but BGP
-        # We can do this because this there are few attacks and lots of asns
-        # NOTE: If you ever have a lot of attacks, this will affect results
-        for subprefix_hijack in subprefix_hijacks:
-            if subprefix_hijack["attacker"] in ases_to_change:
-                ases_to_change.remove(subprefix_hijack["attacker"])
-        if int(len(subprefix_hijacks) * 100 / len(ases)) > 1:
-            raise Exception("CHANGE THIS CODE YOU IDIOT!!!")
+    def _get_ases_to_change(self,
+                            percentage,
+                            top_100_ases,
+                            not_top_100_ases,
+                            subprefix_hijacks):
+        ases_to_change = []
+        for ases in [top_100_ases, not_top_100_ases]:
+            # Gets the number of ases to change for that percent
+            # Could be moved on to the next line but this is cleaner
+            number_of_ases_to_change = int(len(ases) * percentage / 100)
+            # Gets number of ases to change randomly without duplicates
+            ases_to_change.append(set(sample(ases, k=number_of_ases_to_change)))
+            # Makes sure attackers aren't implimenting anything but BGP
+            # We can do this because this there are few attacks and lots of asns
+            # NOTE: If you ever have a lot of attacks, this will affect results
+            for subprefix_hijack in subprefix_hijacks:
+                if subprefix_hijack["attacker"] in ases_to_change:
+                    ases_to_change.remove(subprefix_hijack["attacker"])
+            if int(len(subprefix_hijacks) * 100 / len(ases)) > 1:
+                raise Exception("CHANGE THIS CODE YOU IDIOT!!!")
 
-        return ases_to_change
+        return ases_to_change[0], ases_to_change[1]
 
 
     @error_catcher()
-    def _change_routing_policy(self, percentage, ases, ases_to_change,
-                               as_table, policy, subprefix_hijacks):
+    def _change_routing_policy(self,
+                               percentage,
+                               ases,
+                               top_100_to_change,
+                               not_top_100_to_change,
+                               as_table,
+                               policy,
+                               subprefix_hijacks):
         """Changes the routing policy for that percentage of ASes"""
 
         self.logger.info("About to change the routing policies")
         ases_temp_dict = deepcopy(ases)
         # My brain is tired of list comps
-        for asn in ases_to_change:
-            ases_temp_dict[asn] = policy
+        for ases_to_change in [top_100_to_change, not_top_100_to_change]:
+            for asn in ases_to_change:
+                ases_temp_dict[asn] = policy
         rows = [[key, value] for key, value in ases_temp_dict.items()]
         utils.rows_to_db(self.logger,
                          rows,

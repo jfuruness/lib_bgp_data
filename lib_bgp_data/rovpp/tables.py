@@ -51,12 +51,9 @@ class ROVPP_ASes_Table(Database):
         Called during initialization of the database class.
         """
 
-        sql = """CREATE UNLOGGED TABLE IF NOT EXISTS rovpp_ases AS (
-                 SELECT customer_as AS asn, 'bgp' AS as_type FROM (
-                     SELECT DISTINCT customer_as FROM rovpp_customer_providers
-                     UNION SELECT provider_as FROM rovpp_customer_providers
-                     UNION SELECT peer_as_1 FROM rovpp_peers
-                     UNION SELECT peer_as_2 FROM rovpp_peers) union_temp
+        sql = """CREATE UNLOGGED TABLE IF NOT EXISTS rovpp_ases (
+                 asn bigint,
+                 as_type text
                  );"""
         self.cursor.execute(sql)
 
@@ -70,6 +67,19 @@ class ROVPP_ASes_Table(Database):
         self.logger.info("Dropping ROVPP_ASes")
         self.cursor.execute("DROP TABLE IF EXISTS rovpp_ases")
         self.logger.info("ROVPP_ASes Table dropped")
+
+    @error_catcher()
+    def fill_table(self):
+        self.clear_table()
+        sql = """CREATE UNLOGGED TABLE IF NOT EXISTS rovpp_ases AS (
+                 SELECT customer_as AS asn, 'bgp' AS as_type FROM (
+                     SELECT DISTINCT customer_as FROM rovpp_customer_providers
+                     UNION SELECT provider_as FROM rovpp_customer_providers
+                     UNION SELECT peer_as_1 FROM rovpp_peers
+                     UNION SELECT peer_as_2 FROM rovpp_peers) union_temp
+                 );"""
+        self.cursor.execute(sql)
+
 
     @error_catcher()
     def change_routing_policies(self, asns, policy):
