@@ -56,12 +56,27 @@ class Graph_Data:
                 percent_hijacked_list = []
                 hijacked_for_sim = []
                 not_hijacked_for_sim = []
+                temp_sim = dict()
                 for policy in sim:                   
                     policy_stats = sim[policy][Planes.DATA_PLANE.value]
                     hijacked_for_sim.append(
                         policy_stats[Conditions.HIJACKED.value])
                     not_hijacked_for_sim.append(
                         policy_stats[Conditions.NOT_HIJACKED.value])
+                    policy_percent_hijacked = []
+                    policy_info = zip(policy_stats[Conditions.HIJACKED.value],
+                                      policy_stats[
+                                          Conditions.NOT_HIJACKED.value])
+                    include_policy=True
+                    for hijacked, not_hijacked in policy_info:
+                        total = hijacked + not_hijacked
+                        if total == 0:
+                            include_policy=False
+                            policy_percent_hijacked.append(0)
+                        else:
+                            policy_percent_hijacked.append(hijacked * 100 / total)
+                    if include_policy:
+                        temp_sim["percent_hijacked_{}".format(policy)] = mean(policy_percent_hijacked)
                 # https://stackoverflow.com/a/28822227
                 # Adds all policies together into a list of trials
                 hijacked_for_sim_totals = list(map(sum, zip(*hijacked_for_sim)))
@@ -70,15 +85,17 @@ class Graph_Data:
                                                   not_hijacked_for_sim_totals):
                     total = hijacked + not_hijacked
                     percent_hijacked_list.append(hijacked * 100 / total)
-                sim["percent_hijacked"] = mean(percent_hijacked_list)
+                sim["percent_hijacked_overall"] = mean(percent_hijacked_list)
+                sim.update(temp_sim)
         for non_bgp_policy in stats:
             if non_bgp_policy == 'bgp':
                 continue
             print("Policy: {}".format(non_bgp_policy))
-            for percent in stats[non_bgp_policy]:
+            for percent in sorted(stats[non_bgp_policy]):
                 print("\tpercent adoption: {}".format(percent))
-                print("\tpercent hijacked: {}\n".format(
-                    stats[non_bgp_policy][percent]["percent_hijacked"]))
+                for percent_hijacked in sorted(stats[non_bgp_policy][percent]):
+                    if "percent" in percent_hijacked:
+                        print("\t\t{}: {}\n".format(percent_hijacked, stats[non_bgp_policy][percent][percent_hijacked]))
 
     def _graph(self, formatted_stats):
         pass

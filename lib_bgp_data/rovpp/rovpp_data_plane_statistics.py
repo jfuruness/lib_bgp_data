@@ -58,6 +58,7 @@ class ROVPP_Data_Plane_Statistics:
                                             hijacked_ases, sim):
         """Calculates statistics for data plane ASes that did not recieve hijack"""
 
+
         # If the AS didn't recieve the hijack:
         for asn in ases_dict[AS_Type.NOT_RECIEVED_HIJACK.value]:
             # SAVES THE ASES AS TRACEBACK HAPPENS
@@ -67,8 +68,13 @@ class ROVPP_Data_Plane_Statistics:
             self.conds_reached = []
     
             og_as = self._get_as_info(asn, ases_dict)
+            i = 1
             while(len(self.conds_reached) == 0):
+                i += 1
+#                print(i)
+#                print(og_as)
                 _as = self._get_as_info(asn, ases_dict)
+#                print(_as)
                 # If it traces back to the victims AS
                 if asn == victim_asn:
                     self._reached_victim_as(sim, og_as)

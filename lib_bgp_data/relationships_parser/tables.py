@@ -199,6 +199,17 @@ class ROVPP_AS_Connectivity_Table(Database):
         self.cursor.execute(sql)
 
     @error_catcher()
+    def get_ases_by_transitivity(self):
+        sql = """SELECT * FROM rovpp_as_connectivity
+              WHERE connectivity = 0;"""
+        non_transit_ases = [x["asn"] for x in self.execute(sql)]
+        sql = """SELECT * FROM rovpp_as_connectivity
+              WHERE connectivity > 0;"""
+        transit_ases = [x["asn"] for x in self.execute(sql)]
+        return transit_ases, non_transit_ases
+        
+
+    @error_catcher()
     def get_top_100_ases(self):
         sql = """SELECT * FROM rovpp_as_connectivity
               ORDER BY connectivity DESC LIMIT 100;"""

@@ -98,6 +98,13 @@ class ROVPP_Simulator:
                                self.logger) as connectivity_table:
                 top_100_ases = connectivity_table.get_top_100_ases()
                 not_top_100_ases = connectivity_table.get_not_top_100_ases()
+                transit_ases, non_transit_ases =\
+                    connectivity_table.get_ases_by_transitivity()
+                # These are the ases that we choose to change
+                list_of_lists_of_ases_to_possibly_impliment = [non_transit_ases]
+                # These are the ases that we choose atk and vic from
+                bottom_ases = non_transit_ases
+                
 
             # For each percent adoption
             for percent in self.percents:
@@ -110,14 +117,13 @@ class ROVPP_Simulator:
 
                     # Gets hijack data
                     subprefix_hijacks = self._get_hijack_data(real_data,
-                                                              not_top_100_ases)
+                                                              bottom_ases)
 
                     # Done here so that the same ases are used between policies
-                    top_100_to_change, not_top_100_to_change =\
-                                     self._get_ases_to_change(percent,
-                                                              top_100_ases,
-                                                              not_top_100_ases,
-                                                              subprefix_hijacks)
+                    ases_to_change = self._get_ases_to_change(
+                        percent,
+                        list_of_lists_of_ases_to_possibly_impliment,
+                        subprefix_hijacks)
 
                     for policy in Non_BGP_Policies.__members__.values():
 
@@ -126,8 +132,7 @@ class ROVPP_Simulator:
                         self._run_simulation(policy.value,
                                              percent,
                                              ases,
-                                             top_100_to_change,
-                                             not_top_100_to_change,
+                                             ases_to_change,
                                              as_table,
                                              subprefix_hijacks,
                                              i)
@@ -171,8 +176,7 @@ class ROVPP_Simulator:
                         policy,
                         percentage,
                         ases,
-                        top_100_to_change,
-                        not_top_100_to_change,
+                        ases_to_change,
                         as_table,
                         subprefix_hijacks,
                         trial_num):
@@ -183,8 +187,7 @@ class ROVPP_Simulator:
 
         self._change_routing_policy(percentage,
                                     ases,
-                                    top_100_to_change,
-                                    not_top_100_to_change,
+                                    ases_to_change,
                                     as_table,
                                     policy,
                                     subprefix_hijacks)
@@ -202,16 +205,15 @@ class ROVPP_Simulator:
     @error_catcher()
     def _get_ases_to_change(self,
                             percentage,
-                            top_100_ases,
-                            not_top_100_ases,
+                            list_of_lists_of_ases_to_possibly_impliment,
                             subprefix_hijacks):
-        ases_to_change = []
-        for ases in [top_100_ases, not_top_100_ases]:
+        ases_to_change = set()
+        for ases in list_of_lists_of_ases_to_possibly_impliment:
             # Gets the number of ases to change for that percent
             # Could be moved on to the next line but this is cleaner
             number_of_ases_to_change = int(len(ases) * percentage / 100)
             # Gets number of ases to change randomly without duplicates
-            ases_to_change.append(set(sample(ases, k=number_of_ases_to_change)))
+            ases_to_change.update(sample(ases, k=number_of_ases_to_change))
             # Makes sure attackers aren't implimenting anything but BGP
             # We can do this because this there are few attacks and lots of asns
             # NOTE: If you ever have a lot of attacks, this will affect results
@@ -221,27 +223,28 @@ class ROVPP_Simulator:
             if int(len(subprefix_hijacks) * 100 / len(ases)) > 1:
                 raise Exception("CHANGE THIS CODE YOU IDIOT!!!")
 
-        return ases_to_change[0], ases_to_change[1]
+        return ases_to_change
 
 
     @error_catcher()
     def _change_routing_policy(self,
                                percentage,
                                ases,
-                               top_100_to_change,
-                               not_top_100_to_change,
+                               ases_to_change,
                                as_table,
                                policy,
                                subprefix_hijacks):
         """Changes the routing policy for that percentage of ASes"""
 
         self.logger.info("About to change the routing policies")
-        ases_temp_dict = deepcopy(ases)
         # My brain is tired of list comps
-        for ases_to_change in [top_100_to_change, not_top_100_to_change]:
-            for asn in ases_to_change:
-                ases_temp_dict[asn] = policy
-        rows = [[key, value] for key, value in ases_temp_dict.items()]
+        for asn in ases_to_change:
+            ases[asn] = policy
+        rows = [[key, value] for key, value in ases.items()]
+        # Could we do this in a deep copy dict? Sure but since adoption percentage
+        # will probably be low this will prob be faster
+        for asn in ases_to_change:
+            ases[asn] = Policies.BGP.value
         utils.rows_to_db(self.logger,
                          rows,
                          self.csv_dir + "/ases.csv",

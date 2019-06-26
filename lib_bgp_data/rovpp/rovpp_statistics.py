@@ -89,6 +89,9 @@ class ROVPP_Statistics_Calculator:
     def _update_ases_recieved_hijack_stats(self, sim, hijacked, ases_dict):
         """Updates stats for all ASes that recieved the hijack"""
 
+        # THIS SHOULD BE OPTIMIZED - THIS SHOULD BE A COUNT QUERY TO POSTGRES
+        # NOT A FOR LOOP IN PYTHON!!!
+
         # If the AS has recieved the hijack:
         for asn in hijacked:
             # Increase control plane and data plane hijacked
