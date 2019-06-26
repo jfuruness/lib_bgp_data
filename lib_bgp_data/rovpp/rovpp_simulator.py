@@ -129,7 +129,8 @@ class ROVPP_Simulator:
                                              top_100_to_change,
                                              not_top_100_to_change,
                                              as_table,
-                                             subprefix_hijacks)
+                                             subprefix_hijacks,
+                                             i)
         self.graph_data.graph_data(self.statistics_calculator.stats)
 
 ########################
@@ -173,11 +174,12 @@ class ROVPP_Simulator:
                         top_100_to_change,
                         not_top_100_to_change,
                         as_table,
-                        subprefix_hijacks):
+                        subprefix_hijacks,
+                        trial_num):
         """Runs one single simulation with the extrapolator"""
 
-        self.logger.info("Running policy: {} percent {}".format(percentage,
-            policy))
+        self.logger.info("Running policy: {} percent: {} trial: {}".format(
+            percentage, policy, trial_num))
 
         self._change_routing_policy(percentage,
                                     ases,
