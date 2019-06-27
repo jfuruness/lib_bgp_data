@@ -277,7 +277,7 @@ class ROVPP_Simulator:
                         34019,
                         28571]
         for asn in hardcoded_bs:
-            ases[asn] = 'rov'
+            ases[asn] = 'rovpp'
 
         rows = [[key, value] for key, value in ases.items()]
         # Could we do this in a deep copy dict? Sure but since adoption percentage
