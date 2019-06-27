@@ -97,7 +97,7 @@ class Install:
             Config(self.logger).create_config(self.db_pass)
             self._create_database()
         # Set unhinged to true to prevent automated writes to disk
-        #self._modify_database(unhinged)
+        self._modify_database(unhinged)
         self._install_extrapolator()
         self._install_bgpscanner()
         self._install_bgpdump()

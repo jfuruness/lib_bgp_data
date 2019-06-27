@@ -2,6 +2,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+"""I am being forced to make all kinds of terrible changes right before the deadline.
+this crappy code is not my fault"""
+
+
 """This module contains class ROVPP_Simulator
 
 The purpose of this class is to run simulations for the ROVPP project.
@@ -66,7 +70,7 @@ class ROVPP_Simulator:
         # Percents from 0, 10, 20 ... 100
         # Later put in the code to run with 0% once for bgp with trials
         # but we already ran this trial so we can take it out for now
-        self.percents = [25] #range(5, 31, 35)
+        self.percents = range(5, 31, 5)
         args["percents"] = self.percents
         # Define statistics calculator - also where stats are stored
         self.statistics_calculator = ROVPP_Statistics_Calculator(args)
@@ -101,7 +105,7 @@ class ROVPP_Simulator:
                 transit_ases, non_transit_ases =\
                     connectivity_table.get_ases_by_transitivity()
                 # These are the ases that we choose to change
-                list_of_lists_of_ases_to_possibly_impliment = [top_100_ases]#non_transit_ases]
+                list_of_lists_of_ases_to_possibly_impliment = [not_top_100_ases]#non_transit_ases]
                 # These are the ases that we choose atk and vic from
                 bottom_ases = not_top_100_ases #non_transit_ases
                 
@@ -240,6 +244,41 @@ class ROVPP_Simulator:
         # My brain is tired of list comps
         for asn in ases_to_change:
             ases[asn] = policy
+
+
+
+        ######################################## TKAE OUT!!!!
+#        for asn in ases_to_change:
+#            ases[asn] = 'bgp'
+        # This is hardcoded bs due to deadline
+        hardcoded_bs = [47692,
+                        25933,
+                        1103,
+                        262317,
+                        57695,
+                        12859,
+                        30844,
+                        262757,
+                        18106,       
+                        39122,
+                        59605,
+                        33891,
+                        12389,
+                        23106,
+                        63927,
+                        8492,
+                        12552,        
+                        31133,
+                        264268,
+                        8468,
+                        42473,
+                        36351,
+                        30781,
+                        34019,
+                        28571]
+        for asn in hardcoded_bs:
+            ases[asn] = 'rov'
+
         rows = [[key, value] for key, value in ases.items()]
         # Could we do this in a deep copy dict? Sure but since adoption percentage
         # will probably be low this will prob be faster
