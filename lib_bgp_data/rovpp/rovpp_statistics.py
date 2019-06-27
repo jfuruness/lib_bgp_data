@@ -79,11 +79,13 @@ class ROVPP_Statistics_Calculator:
 
         self._update_ases_recieved_hijack_stats(sim, hijacked_ases, ases_dict)
 
+        blackholed_asns = self._get_blackhole_asns(as_table)
+
         ROVPP_Control_Plane_Statistics().calculate_not_received_hijack_stats(
-            as_table, sim, ases_dict)
+            as_table, sim, ases_dict, blackholed_asns)
 
         ROVPP_Data_Plane_Statistics().calculate_not_recieved_hijack_stats(
-            ases_dict, subprefix_hijack["victim"], hijacked_ases, sim)
+            ases_dict, subprefix_hijack["victim"], hijacked_ases, sim, blackholed_asns)
         self.logger.debug(sim)
 
     def _update_ases_recieved_hijack_stats(self, sim, hijacked, ases_dict):
@@ -146,3 +148,9 @@ class ROVPP_Statistics_Calculator:
                 ases[recieved_or_not][asn]["data_plane_conditions"] = set()
 
         return ases
+
+    def _get_blackhole_asns(self, as_table):
+        """Gets all blackhole asns"""
+
+        return set([x["asn"]
+                for x in as_table.execute("SELECT * FROM rovpp_blackholes;")])

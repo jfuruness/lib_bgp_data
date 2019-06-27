@@ -55,7 +55,8 @@ class ROVPP_Data_Plane_Statistics:
 ########################
 
     def calculate_not_recieved_hijack_stats(self, ases_dict, victim_asn,
-                                            hijacked_ases, sim):
+                                            hijacked_ases, sim,
+                                            blackholed_asns):
         """Calculates statistics for data plane ASes that did not recieve hijack"""
 
 
@@ -75,8 +76,10 @@ class ROVPP_Data_Plane_Statistics:
 #                print(og_as)
                 _as = self._get_as_info(asn, ases_dict)
 #                print(_as)
+                if asn in blackholed_asns:
+                    self._reached_blackholed_as(sim, og_as)
                 # If it traces back to the victims AS
-                if asn == victim_asn:
+                elif asn == victim_asn:
                     self._reached_victim_as(sim, og_as)
     
                 # If it reaches the attackers AS or a hijacked one
@@ -116,6 +119,12 @@ class ROVPP_Data_Plane_Statistics:
                        _as,
                        self.plane,
                        Conditions.NOT_HIJACKED_NOT_DROPPED.value)
+
+    def _reached_blackholed_as(self, sim, _as):
+        # Increase the data plane not hijacked
+        self._add_stat(sim, _as, self.plane, Conditions.NOT_HIJACKED.value)
+        # Increase the data plane not hijacked not blocked
+        self._add_stat(sim, _as, self.plane, Conditions.DROPPED.value)
 
     def _reached_hijacked_as(self, sim, _as):
         """When a hijacked AS is reached"""

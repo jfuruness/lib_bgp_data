@@ -41,10 +41,9 @@ class ROVPP_Control_Plane_Statistics:
 ########################
 
     @error_catcher()
-    def calculate_not_received_hijack_stats(self, as_table, sim, ases_dict):
+    def calculate_not_received_hijack_stats(self, as_table, sim, ases_dict,
+                                            blackholed_asns):
         """Calculates success rates"""
-
-        blackholed_asns = self._get_blackhole_asns(as_table)
 
         # If the AS didn't recieve the hijack:
         for asn in ases_dict[AS_Type.NOT_RECIEVED_HIJACK.value]:
@@ -63,12 +62,6 @@ class ROVPP_Control_Plane_Statistics:
                                _as,
                                self.plane,
                                Conditions.NOT_HIJACKED_NOT_DROPPED.value)
-
-    def _get_blackhole_asns(self, as_table):
-        """Gets all blackhole asns"""
-
-        return set([x["asn"] 
-                for x in as_table.execute("SELECT * FROM rovpp_blackholes;")])
 
     @error_catcher()
     def _add_stat(self, sim, _as, plane, condition):

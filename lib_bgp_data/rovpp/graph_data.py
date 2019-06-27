@@ -47,7 +47,7 @@ class Graph_Data:
         """Formats stats for graph creation"""
 
         pprint(stats)
-        input("shut the front door")
+        print("shut the front door")
         for non_bgp_policy in stats:
             if non_bgp_policy == 'bgp':
                 continue ########WHY IS THIS? ERROR!!!
