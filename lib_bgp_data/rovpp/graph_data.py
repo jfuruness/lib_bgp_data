@@ -74,7 +74,7 @@ class Graph_Data:
                     for hijacked, not_hijacked in policy_info:
                         total = hijacked + not_hijacked
                         if total == 0:
-                            include_policy=False
+#                            include_policy=False
                             policy_percent_hijacked.append(0)
                         else:
                             policy_percent_hijacked.append(hijacked * 100 / total)

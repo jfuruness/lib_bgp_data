@@ -136,8 +136,9 @@ class ROVPP_Data_Plane_Statistics:
             # Update the conditions reached
             self._update_ases_reached(traceback_ases, ases_dict)
         if rovpp_hijacks + rovpp_not_hijacks == 0:
-            pprint(sim)
-            input("BUG HERE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+#            pprint(sim)
+            pass
+#            input("BUG HERE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
 
 
     def _get_as_info(self, asn, ases_dict):
