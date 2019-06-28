@@ -70,7 +70,7 @@ class ROVPP_Simulator:
         # Percents from 0, 10, 20 ... 100
         # Later put in the code to run with 0% once for bgp with trials
         # but we already ran this trial so we can take it out for now
-        self.percents = [25]#range(5, 31, 5)
+        self.percents = [10]#range(5, 31, 5)
         args["percents"] = self.percents
         # Define statistics calculator - also where stats are stored
         self.statistics_calculator = ROVPP_Statistics_Calculator(args)
@@ -105,9 +105,9 @@ class ROVPP_Simulator:
                 transit_ases, non_transit_ases =\
                     connectivity_table.get_ases_by_transitivity()
                 # These are the ases that we choose to change
-                list_of_lists_of_ases_to_possibly_impliment = [not_top_100_ases]#non_transit_ases]
+                list_of_lists_of_ases_to_possibly_impliment = [non_transit_ases]
                 # These are the ases that we choose atk and vic from
-                bottom_ases = not_top_100_ases #non_transit_ases
+                bottom_ases = non_transit_ases
                 
 
             # For each percent adoption
