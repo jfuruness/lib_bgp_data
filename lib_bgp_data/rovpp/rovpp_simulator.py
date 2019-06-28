@@ -78,7 +78,7 @@ class ROVPP_Simulator:
 
     @error_catcher()
     @utils.run_parser()
-    def simulate(self, trials=100, real_data=False):
+    def simulate(self, trials=1, real_data=False):
         """Runs ROVPP simulation.
 
         In depth explanation at top of module.
