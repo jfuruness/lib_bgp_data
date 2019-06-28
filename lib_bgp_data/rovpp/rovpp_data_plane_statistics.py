@@ -77,7 +77,7 @@ class ROVPP_Data_Plane_Statistics:
                     print(i)
                     print(og_as)
                     print(_as)
-                if asn in blackholed_asns and _as["as_type"] in [Policies.ROVPP.value, Policies.ROVPPF.value, Policies.ROVPPFP.value]:
+                if asn in blackholed_asns and _as["as_type"] in [Policies.ROVPP.value]:
                     self._reached_blackholed_as(sim, og_as)
                 # If it traces back to the victims AS
                 elif asn == victim_asn:
