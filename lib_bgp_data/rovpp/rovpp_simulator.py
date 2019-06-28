@@ -70,7 +70,7 @@ class ROVPP_Simulator:
         # Percents from 0, 10, 20 ... 100
         # Later put in the code to run with 0% once for bgp with trials
         # but we already ran this trial so we can take it out for now
-        self.percents = [10]#range(5, 31, 5)
+        self.percents = [15]#range(5, 31, 5)
         args["percents"] = self.percents
         # Define statistics calculator - also where stats are stored
         self.statistics_calculator = ROVPP_Statistics_Calculator(args)
