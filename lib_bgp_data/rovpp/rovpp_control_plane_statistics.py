@@ -45,6 +45,9 @@ class ROVPP_Control_Plane_Statistics:
                                             blackholed_asns):
         """Calculates success rates"""
 
+        if len(ases_dict[AS_Type.NOT_RECIEVED_HIJACK.value]) == 0 and len(ases_dict[AS_Type.RECIEVED_HIJACK.value]) == 0:
+            input("noooooooooooo")
+
         # If the AS didn't recieve the hijack:
         for asn in ases_dict[AS_Type.NOT_RECIEVED_HIJACK.value]:
             # First increase the control plane not hijacked

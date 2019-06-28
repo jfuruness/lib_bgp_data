@@ -72,10 +72,11 @@ class ROVPP_Data_Plane_Statistics:
             i = 1
             while(len(self.conds_reached) == 0):
                 i += 1
-#                print(i)
-#                print(og_as)
                 _as = self._get_as_info(asn, ases_dict)
-#                print(_as)
+                if i >= 100:
+                    print(i)
+                    print(og_as)
+                    print(_as)
                 if asn in blackholed_asns:
                     self._reached_blackholed_as(sim, og_as)
                 # If it traces back to the victims AS
