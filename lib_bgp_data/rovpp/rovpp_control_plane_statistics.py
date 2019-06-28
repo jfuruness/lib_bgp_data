@@ -59,7 +59,6 @@ class ROVPP_Control_Plane_Statistics:
             # Then increase the control plane not hijacked not droped
             if asn in blackholed_asns and _as["as_type"] in [Policies.ROVPP.value]:
                 self._add_stat(sim, _as, self.plane, Conditions.DROPPED.value)
-
             else:
                 self._add_stat(sim,
                                _as,

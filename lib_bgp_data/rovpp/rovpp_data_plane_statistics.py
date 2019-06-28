@@ -60,6 +60,12 @@ class ROVPP_Data_Plane_Statistics:
         """Calculates statistics for data plane ASes that did not recieve hijack"""
 
 
+        # hardcoded error checking
+        rovpp_hijacks = 0
+        rovpp_not_hijacks = 0
+        rov_hijacks = 0
+        rov_not_hijacks = 0
+
         # If the AS didn't recieve the hijack:
         for asn in ases_dict[AS_Type.NOT_RECIEVED_HIJACK.value]:
             # SAVES THE ASES AS TRACEBACK HAPPENS
@@ -79,17 +85,47 @@ class ROVPP_Data_Plane_Statistics:
                     print(_as)
                 if asn in blackholed_asns and _as["as_type"] in [Policies.ROVPP.value]:
                     self._reached_blackholed_as(sim, og_as)
+                    rovpp_not_hijacks += 1
                 # If it traces back to the victims AS
                 elif asn == victim_asn:
                     self._reached_victim_as(sim, og_as)
-    
+                    if _as["as_type"] in [Policies.ROVPP.value]:
+                        rovpp_not_hijacks += 1
+                    elif _as["as_type"] in [Policies.BGP.value]:
+                        pass
+                    else:
+                        rov_not_hijacks += 1
                 # If it reaches the attackers AS or a hijacked one
                 elif asn in hijacked_ases:
                     self._reached_hijacked_as(sim, og_as)
-    
+                    if _as["as_type"] in [Policies.ROVPP.value]:
+                        rovpp_hijacks += 1
+                    elif _as["as_type"] in [Policies.BGP.value]:
+                        pass
+                    else:
+                        rov_hijacks += 1
+ 
+
+
                 # Or if it reaches an AS that we've seen before:
                 elif len(_as["data_plane_conditions"]) > 0:
                     self._reached_previously_seen_as(sim, _as, og_as)
+                    if Conditions.HIJACKED.value in _as["data_plane_conditions"]:
+                        if _as["as_type"] in [Policies.ROVPP.value]:
+                            rovpp_hijacks += 1
+                        elif _as["as_type"] in [Policies.BGP.value]:
+                            pass
+                        else:
+                            rov_hijacks += 1
+                    elif Conditions.NOT_HIJACKED.value in _as["data_plane_conditions"]:
+                        if _as["as_type"] in [Policies.ROVPP.value]:
+                            rovpp_not_hijacks += 1
+                        elif _as["as_type"] in [Policies.BGP.value]:
+                            pass
+                        else:
+                            rov_not_hijacks += 1
+
+
     
                 # Else we go back another node
                 else:
@@ -99,6 +135,10 @@ class ROVPP_Data_Plane_Statistics:
     
             # Update the conditions reached
             self._update_ases_reached(traceback_ases, ases_dict)
+        if rovpp_hijacks + rovpp_not_hijacks == 0:
+            pprint(sim)
+            input("BUG HERE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+
 
     def _get_as_info(self, asn, ases_dict):
 

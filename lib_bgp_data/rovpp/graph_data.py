@@ -13,6 +13,7 @@ __status__ = "Development"
 
 from pprint import pprint
 from statistics import mean
+from copy import deepcopy
 from .enums import Policies, Non_BGP_Policies, AS_Type, Planes, Conditions
 from ..utils import error_catcher, utils
 from .rovpp_data_plane_statistics import ROVPP_Data_Plane_Statistics
@@ -46,6 +47,8 @@ class Graph_Data:
     def _format_stats(self, stats):
         """Formats stats for graph creation"""
 
+        tstats = deepcopy(stats)
+        stats = tstats
         pprint(stats)
         print("shut the front door")
         for non_bgp_policy in stats:
