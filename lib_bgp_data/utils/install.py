@@ -53,7 +53,8 @@ from getpass import getpass
 from subprocess import check_call
 import os
 from multiprocess import cpu_count
-from logging import DEBUG
+# From logging module, but can't import it because it deadlocks!!!!!
+DEBUG = 10
 import fileinput
 import sys
 from shutil import rmtree

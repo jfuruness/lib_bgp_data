@@ -9,8 +9,11 @@ For the specifics on how the extrapolator is run see each function
 """
 
 from subprocess import check_call, DEVNULL
-from logging import DEBUG, INFO
 from ..utils import Config, error_catcher, utils, db_connection
+# Justin globals are bad yah you know what else is bad? the logging
+# module that deadlocks upon import
+DEBUG = 10
+INFO = 20
 
 __author__ = "Justin Furuness"
 __credits__ = ["Justin Furuness"]
