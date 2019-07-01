@@ -12,6 +12,7 @@ This package contains multiple submodules that are used to gather and manipulate
 * [RPKI Validator Submodule](#rpki-validator-submodule)
 * [What if Analysis Submodule](#what-if-analysis-submodule)
 * [API Submodule](#api-submodule)
+* [ROVPP Submodule](#rovpp-submodule)
 * [Utils](#utils)
 * [Database](#database-submodule)
 * [Logging](#logging-submodule)
@@ -365,6 +366,60 @@ Coming Soon to a theater near you
             peer_as_2 bigint
         );
     ```
+##### ROVPP Tables:
+###### rovpp_customer_providers Table Schema:
+* Contains data for customer provider pairs
+* provider_as: Provider ASN *(bigint)*
+* customer_as: Customer ASN (*bigint)*
+* Create Table SQL:
+    ```
+    CREATE UNLOGGED TABLE IF NOT EXISTS
+        rovpp_customer_providers (
+            provider_as bigint,
+            customer_as bigint
+        );
+    ```
+###### peers Table Schema:
+* Contains data for peer pairs
+* peer_as_1: An ASN that is a peer *(bigint)*
+* peer_as_2: An ASN that is another peer *(bigint)*
+* Create Table SQL:
+    ```
+    CREATE UNLOGGED TABLE IF NOT EXISTS
+        rovpp_peers (
+            peer_as_1 bigint,
+            peer_as_2 bigint
+        );
+    ```
+###### rovpp_as_connectivity:
+* Contains connectivity information for all ASes
+* asn: An ASes ASN *(bigint)*
+* connectivity: number of customers + number of peers *(integer)*
+* Create Table SQL:
+    ```
+    CREATE UNLOGGED TABLE IF NOT EXISTS
+              rovpp_as_connectivity AS (
+              SELECT ases.asn AS asn,
+              COALESCE(cp.connectivity, 0) + 
+                COALESCE(p1.connectivity, 0) + 
+                COALESCE(p2.connectivity, 0)
+                  AS connectivity
+              FROM rovpp_ases ases
+              LEFT JOIN (SELECT cp.provider_as AS asn,
+                         COUNT(cp.provider_as) AS connectivity
+                         FROM rovpp_customer_providers cp
+                         GROUP BY cp.provider_as) cp
+              ON ases.asn = cp.asn
+              LEFT JOIN (SELECT p.peer_as_1 AS asn,
+                         COUNT(p.peer_as_1) AS connectivity
+                         FROM rovpp_peers p GROUP BY p.peer_as_1) p1
+              ON ases.asn = p1.asn
+              LEFT JOIN (SELECT p.peer_as_2 AS asn,
+                         COUNT(p.peer_as_2) AS connectivity
+                         FROM rovpp_peers p GROUP BY p.peer_as_2) p2
+              ON ases.asn = p2.asn
+              );
+    ```
 ### Relationships Design Choices
 * CSV insertion is done because the relationships file is a CSV
 * Dates are stored and checked to prevent redoing old work
@@ -449,7 +504,7 @@ Coming Soon to a theater near you
     ```
     CREATE UNLOGGED TABLE IF NOT EXISTS
         roas (
-			asn bigint
+            asn bigint
             prefix cidr,
             max_length integer
         );
@@ -462,10 +517,27 @@ Coming Soon to a theater near you
 ## Extrapolator Submodule
    * [lib\_bgp\_data](#lib_bgp_data)
    * [Extrapolator Short Description](#extrapolator-short-description)
+   * [Long Description](#extrapolator-long-description)
+   * [Usage](#extrapolator-usage)
 ### Extrapolator Short description
-The Extrapolator takes as input mrt announcement data from the [MRT Parser](#mrt-announcements-submodule) and relationships data (peer and customer-provider data) from the [Relationships Parser](#relationships-submodule). The Extrapolator then propagates announcements to all appropriate AS's which would receive them, and outputs this data. 
+The Extrapolator takes as input mrt announcement data from the [MRT Parser](#mrt-announcements-submodule) and relationships data (peer and customer-provider data) from the [Relationships Parser](#relationships-submodule). The Extrapolator then propagates announcements to all appropriate AS's which would receive them, and outputs this data. This submodule is a simple wrapper to make it easier for a python script to run the extrapolator. It can run the rovpp version of the extrapolator or the forecast version of the extrapolator. Details other than how to run the wrapper are not included because up to date information should be found on the actual github page.
 
 For more in depth documentation please refer to: [https://github.com/c-morris/BGPExtrapolator](https://github.com/c-morris/BGPExtrapolator)
+### Extrapolator Usage
+#### In a Script
+To run the forecast extrapolator:
+(coming soon)
+To run the rovpp extrapolator:
+> The params for the rovpp extrapolator function are:
+> attacker_asn: The asn of the attacker
+> victim_asn: The asn of the victim
+> victim_prefix: This is misleading and should really be fixed in the extrapolator. This is the attackers prefix.
+
+To initialize Extrapolator and run the rovpp version:
+```python
+from lib_bgp_data import Extrapolator
+Extrapolator().run_rovpp(attacker_asn, victim_asn, more_specific_prefix)
+```                                                            
 ## BGPStream Website Submodule
    * [lib\_bgp\_data](#lib_bgp_data)
    * [Short Description](#bgpstream-website-short-description)
@@ -530,6 +602,23 @@ For more in depth documentation please refer to: [https://github.com/c-morris/BG
 ### API JSON Format
 ### API Design Choices
 ### API Possible Future Improvements
+## ROVPP Submodule
+   * [lib\_bgp\_data](#lib_bgp_data)
+   * [Short Description](#rovpp-short-description)
+   * [Long Description](#rovpp-long-description)
+   * [Usage](#rovppusage)
+   * [Table Schema](#rovpp-table-schema)
+   * [Design Choices](#rovpp-design-choices)
+   * [Possible Future Improvements](#rovpp-possible-future-improvements)
+### ROVPP Short description
+This module was created to simulate ROV++ over the topology of the internet for a hotnets paper. Due to numerous major last minute changes hardcoding was necessary to meet the deadline, and this submodule quickly turned into garbage. Hopefully we will revisit this and make it into a much better test automation script once we know how we want to run our tests. Due to this, I am not going to write documentation on this currently.
+### ROVPP Long description
+### ROVPP  Usage
+#### In a Script
+#### From the Command Line
+### ROVPP  Table Schema
+### ROVPP  Design Choices
+### ROVPP  Possible Future Improvements
 ## Utils
    * [lib\_bgp\_data](#lib_bgp_data)
    * [Description](#utils-description)
@@ -666,3 +755,4 @@ remove all in person crap like we from the readme you idjiout
 (if something is from a submodule, post a link to that specific possible future improvements? say that this is a summary of stuff?)
 ## FAQ
    * [lib\_bgp\_data](#lib_bgp_data)
+

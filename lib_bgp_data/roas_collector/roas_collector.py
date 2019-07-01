@@ -58,7 +58,7 @@ class ROAs_Collector:
 
     @error_catcher()
     @utils.run_parser()
-    def parse_roas(self, db=True):
+    def parse_roas(self):
         """Downloads and stores roas from a json
 
         For more in depth explanation see top of file"""

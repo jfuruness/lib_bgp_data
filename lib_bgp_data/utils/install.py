@@ -247,12 +247,12 @@ class Install:
                 "git checkout remotes/origin/rovpp",
                 "git checkout -b rovpp"]
 
-        # Must change this line - should be changed in extrapolator
-        for line in fileinput.input("BGPExtrapolator/SQLQuerier.cpp",
-                                    inplace=1):
-            line = line.replace('    string file_location = "./bgp.conf";',
-                            '    string file_location = "/etc/bgp/bgp.conf";')
-            sys.stdout.write(line)
+        path = "BGPExtrapolator/SQLQuerier.cpp"
+        prepend = '    string file_location = "'
+        replace = './bgp.conf";'
+        replace_with = '/etc/bgp/bgp.conf";'
+
+        self._replace_line(path, prepend, replace, replace_with)
 
         # Install extrapolator
         cmds = ["cd BGPExtrapolator",
@@ -277,8 +277,19 @@ class Install:
                 "sudo apt-get install libbz2-dev",
                 "sudo apt-get install liblzma-dev",
                 "sudo apt-get install liblz4-dev",
+                "sudo apt-get install ninja-build",
+                "pip3 install --user meson",
                 "git clone https://gitlab.com/Isolario/bgpscanner.git",
-                "cd bgpscanner",
+                "cd bgpscanner"]
+        check_call("&& ".join(cmds), shell=True)
+
+        path = "bgpscanner/src/mrtdataread.c"
+        prepend = '                if ('
+        replace = 'rib->peer->as_size == sizeof(uint32_t))'
+        replace_with = 'true)'
+        self._replace_line(path, prepend, replace, replace_with)
+
+        cmds = ["cd bgpscanner",
                 "mkdir build && cd build",
                 "meson ..",
                 "ninja",
@@ -322,3 +333,11 @@ class Install:
             # If the file is not found nbd
             # This is just to clean out for a fresh install
             self.logger.debug("{} not previously installed".format(remove_me))
+
+    def _replace_line(self, path, prepend, line_to_replace, replace_with):
+        """Replaces a line withing a file that has the path path"""
+
+        lines = [prepend + x for x in [line_to_replace, replace_with]]
+        for line in fileinput.input(path, inplace=1):
+            line = line.replace(*lines)
+            sys.stdout.write(line)

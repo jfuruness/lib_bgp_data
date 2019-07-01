@@ -53,6 +53,7 @@ def error_catcher(msg=None):
                 error_class, error_desc, tb = sys.exc_info()
                 # Makes sure it's not a system exit call
                 if not str(error_desc) == '1':
+                    self.logger.debug(traceback.format_tb(tb))
                     # Gets last call from program
                     tb_to_re = [x for x in str(traceback.format_tb(tb))
                         .split("File") if "lib_bgp_data" in x][-1]
@@ -235,6 +236,7 @@ class Thread_Safe_Logger:
         stream_level = args.get("stream_level")
         # Sets stream level
         stream_level = int(stream_level) if stream_level else logging.INFO
+        self.level = stream_level
         # Sets all the standard logging functions
         levels = ["notset", "debug", "info", "warning", "error", "critical"]
         # Makes log functions

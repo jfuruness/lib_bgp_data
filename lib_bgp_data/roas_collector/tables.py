@@ -38,10 +38,10 @@ class ROAs_Table(Database):
     __slots__ = []
 
     @error_catcher()
-    def __init__(self, logger, cursor_factory=RealDictCursor, test=False):
+    def __init__(self, logger, cursor_factory=RealDictCursor):
         """Initializes the announcement table"""
 
-        Database.__init__(self, logger, cursor_factory, test)
+        Database.__init__(self, logger, cursor_factory)
 
     @error_catcher()
     def _create_tables(self):
@@ -68,5 +68,5 @@ class ROAs_Table(Database):
 
         self.logger.info("Creating index on roas")
         sql = """CREATE INDEX IF NOT EXISTS roas_index
-              ON roas USING GIST(prefix inet_ops)""",
+              ON roas USING GIST(prefix inet_ops)"""
         self.cursor.execute(sql)

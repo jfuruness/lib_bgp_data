@@ -5,9 +5,11 @@
 
 The purpose of this class is to run the extrapolator.
 For more info see: https://github.com/c-morris/BGPExtrapolator
+For the specifics on how the extrapolator is run see each function
 """
 
 from subprocess import check_call, DEVNULL
+from logging import DEBUG, INFO
 from ..utils import Config, error_catcher, utils, db_connection
 
 __author__ = "Justin Furuness"
@@ -41,8 +43,7 @@ class Extrapolator:
 
     @error_catcher()
     @utils.run_parser()
-    def run_rovpp(self, attacker_asn, victim_asn, expected_prefix,
-                  quiet=True):
+    def run_rovpp(self, attacker_asn, victim_asn, expected_prefix):
         """Runs extrapolator with a subprefix hijack"""
 
         self.logger.info("About to run the rovpp extrapolator")
@@ -57,9 +58,9 @@ class Extrapolator:
         # Gives the more specific prefix that the attacker sent out
         bash_args += "--victim_prefix={}".format(expected_prefix)
         self.logger.info("Caling extrapolator with:\n{}".format(bash_args)) 
-        if quiet:
-            check_call(bash_args, stdout=DEVNULL, shell=True)
-        else:
+        if self.logger.level in [DEBUG, INFO]:
             check_call(bash_args, shell=True)
+        else:
+            check_call(bash_args, stdout=DEVNULL, stderr=DEVNLL, shell=True)
         
         self.logger.debug("Done running the rovpp extrapolator")
