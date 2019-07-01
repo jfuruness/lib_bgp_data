@@ -23,9 +23,9 @@ class Hijack_Table(Database):
     __slots__ = []
 
     @error_catcher()
-    def __init__(self, logger, cursor_factory=RealDictCursor, test=False):
+    def __init__(self, logger, cursor_factory=RealDictCursor):
         """Initializes the Hijack table"""
-        Database.__init__(self, logger, cursor_factory, test)
+        Database.__init__(self, logger, cursor_factory)
 
     @error_catcher()
     def _create_tables(self):
@@ -109,9 +109,11 @@ class Hijack_Table(Database):
         """Filters by IPV4 and IPV6"""
 
         if not IPV6:
-            self.cursor.execute("DELETE FROM hijack WHERE family(prefix) = 6;")
+            sql  = "DELETE FROM hijack WHERE family(expected_prefix) = 6;"
+            self.cursor.execute(sql)
         if not IPV4:
-            self.cursor.execute("DELETE FROM hijack WHERE family(prefix) = 4;")
+            sql = "DELETE FROM hijack WHERE family(expected_prefix) = 4;"
+            self.cursor.execute(sql)
 
     @property
     def columns(self):
@@ -146,7 +148,7 @@ class Leak_Table(Database):
     __slots__ = []
 
     @error_catcher()
-    def __init__(self, logger, cursor_factory=RealDictCursor, test=False):
+    def __init__(self, logger, cursor_factory=RealDictCursor):
         """Initializes the leak table"""
         Database.__init__(self, logger, cursor_factory, test)
 
@@ -218,7 +220,7 @@ class Outage_Table(Database):
     __slots__ = []
 
     @error_catcher()
-    def __init__(self, logger, cursor_factory=RealDictCursor, test=False):
+    def __init__(self, logger, cursor_factory=RealDictCursor):
         """Initializes the outage table"""
         Database.__init__(self, logger, cursor_factory, test)
 

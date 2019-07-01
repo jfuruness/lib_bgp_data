@@ -64,9 +64,6 @@ class ROAs_Collector:
         For more in depth explanation see top of file"""
 
         with db_connection(ROAs_Table, self.logger) as roas_table:
-            # Clear roas table
-            roas_table.clear_table()
-            # Get json for roas and format for database insertion
             roas = self._format_roas(self._get_json_roas())
             # Inserts the data into a CSV and then the database
             utils.rows_to_db(self.logger, roas, self.csv_path, ROAs_Table)

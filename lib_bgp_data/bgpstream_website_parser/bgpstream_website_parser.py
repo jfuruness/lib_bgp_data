@@ -42,15 +42,12 @@ class BGPStream_Website_Parser:
 
         # Inits paths, args, logger, config, etc
         utils.set_common_init_args(self, args)
-        print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-        self.logger.info("AAAAAAAAAAAA")
         self.data = {Event_Types.HIJACK.value: Hijack(self.logger,
                                                       self.csv_dir),
                      Event_Types.LEAK.value: Leak(self.logger,
                                                   self.csv_dir),
                      Event_Types.OUTAGE.value: Outage(self.logger,
                                                       self.csv_dir)}
-        print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
 
     @error_catcher()
     @utils.run_parser()
