@@ -15,6 +15,10 @@ table name followed by a _Table since it inherits from the Database
 class. In addition, since this data is used for the rovpp simulation,
 there are also rovpp tables
 
+There is also the rovpp_as_connectivity_table. This table is generated
+from the rovpp relationship tables, and contains info on the
+connectivity of all ASes.
+
 Design choices:
     -There is no index creation function since indexes are never used
      for the typical purpose of the relationship data
@@ -175,7 +179,9 @@ class ROVPP_AS_Connectivity_Table(Database):
         sql = """CREATE UNLOGGED TABLE IF NOT EXISTS
               rovpp_as_connectivity AS (
               SELECT ases.asn AS asn,
-              COALESCE(cp.connectivity, 0) + COALESCE(p1.connectivity, 0) + COALESCE(p2.connectivity, 0)
+              COALESCE(cp.connectivity, 0) + 
+                COALESCE(p1.connectivity, 0) + 
+                COALESCE(p2.connectivity, 0)
                   AS connectivity
               FROM rovpp_ases ases
               LEFT JOIN (SELECT cp.provider_as AS asn,
