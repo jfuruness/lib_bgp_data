@@ -227,7 +227,6 @@ Coming Soon to a theater near you
 * Due to I/O bound downloading:
     * Multithreading is used over multiprocessing for less memory
     * Four times CPUs is used for thread count
-* I have a misquito bite that is quite large.
 * Downloading is done and completed before parsing
     * This is done to ensure largest files get parsed first
     * Results in fastest time
