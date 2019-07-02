@@ -220,7 +220,7 @@ class Thread_Safe_Logger:
     so I will be using my own crap class from now on
     """
 
-    def __init__(self, args):
+    def __init__(self, args={}):
         """Initializes logger
         Logging levels are, in order:
         logging.CRITICAL

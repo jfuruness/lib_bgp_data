@@ -11,7 +11,7 @@ from .what_if_analysis import What_If_Analysis
 from .api import application
 from .extrapolator import Extrapolator
 from .rovpp import ROVPP_Simulator
-from .utils import Install, Database
+from .utils import Install, Database, db_connection, Thread_Safe_Logger
 from .__main__ import BGP_Data_Parser
 
 __author__ = "Justin Furuness"
