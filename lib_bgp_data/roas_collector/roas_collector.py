@@ -46,7 +46,7 @@ __status__ = "Development"
 class ROAs_Collector:
     """This class downloads, and stores ROAs from rpki validator"""
 
-    __slots__ = ['path', 'csv_dir', 'args', 'logger', 'csv_path', 'all_files']
+    __slots__ = ['path', 'csv_dir', 'logger', 'csv_path']
 
     @error_catcher()
     def __init__(self, args={}):

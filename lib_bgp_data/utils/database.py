@@ -113,7 +113,9 @@ class Database:
               WHERE table_schema = 'public' AND table_name = %s;
               """
         self.cursor.execute(sql, [self.name])
-        return [x['column_name'] for x in self.cursor.fetchall()]
+        # Make sure that we don't get the _id columns
+        return [x['column_name'] for x in self.cursor.fetchall()
+                if "_id" not in x['column_name']]
 
     @property
     def name(self):

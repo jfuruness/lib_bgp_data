@@ -17,6 +17,7 @@ This package contains multiple submodules that are used to gather and manipulate
 * [Database](#database-submodule)
 * [Logging](#logging-submodule)
 * [Installation](#installation)
+* [Adding a Submodule](#adding-a-submodule)
 * [Development/Contributing](#developmentcontributing)
 * [History](#history)
 * [Credits](#credits)
@@ -87,11 +88,9 @@ This submodule downloads and parses MRT Files. This is done through a series of 
     * The mrt_files class handles the actual parsing of the files
     * CPUs - 1 is used for thread count since this is a CPU bound process
     * Largest files are parsed first for faster overall parsing
-    * bgpscanner is used to parse files because it is the fastest
-    * BGP dump scanner for testing
-        * By default bgpdump is used because bgpscanner ignores malformed attributes, which AS's should ignore but not all do
-        * This is a small portion of announcements, so we ignore them for tests but not for simulations, which is why we use bgpdump for full runs
-    * Announcements with malformed attributes are ignored
+    * bgpscanner is the fastest BGP dump scanner so it is used for tests
+    * bgpdump used to be the only parser that didn't ignore malformed announcements, but now with a change bgpscanner does this as well
+        * This was a problem because some ASes do not ignore these errors
     * sed is used because it is cross compatible and fast
         * Must use regex parser that can find/replace for array format
     * Possible future extensions:
@@ -241,9 +240,9 @@ Coming Soon to a theater near you
     * Not as compatable as CSV files
 * Duplicates are not deleted to save time, since there are very few
     * A duplicate has the same AS path and prefix
-* bgpscanner is the fastest BGP dump scanner so it is used for tests
-* bgpscanner ignores announcements with malformed attributes
-* bgpdump is used for full runs because it does not ignore announcements with malformed attributes, which some ASs don't ignore
+* bgpscanner is the fastest BGP dump scanner so it is used
+* bgpdump used to be the only parser that didn't ignore malformed announcements, but now with a change bgpscanner does this as well
+    * This was a problem because some ASes do not ignore these errors
 * sed is used for regex parsing because it is fast and portable
 ### MRT Announcements Possible Future Improvements
 * Add functionality to download and parse updates?
@@ -645,9 +644,11 @@ PUT LINK HERE TO DB INSTALL INSTRUCTIONS BELOW!!
 ## Logging Submodule
    * [lib\_bgp\_data](#lib_bgp_data)
    * [Description](#logging-description)
+   * [Error Catcher](#error-catcher)
    * [Design Choices](#logging-design-choices)
    * [Possible Future Improvements](#logging-possible-future-improvements)
 ### Logging Description
+### Error Catcher
 ### Logging Design Choices
 ### Logging Possible Future Improvements
 ## Installation
@@ -738,8 +739,55 @@ sudo systemctl status postgresql@11-main.service
 #### Installation Class Description
 #### Installation Class Design Choices
 #### Installation Class Future Extensions
+## Adding a Submodule
+   * [lib\_bgp\_data](#lib_bgp_data)
+   * [How to Add a Submodule](#how-to-add-a-submodule)
+### How to Add a Submodule
+To explain this easier we will look at the roas collector submodule. Do not use this submodule. Instead, copy it and all of it's contents into another directory. If you have access to a bash terminal you can accomplish this by copying doing:
+```bash
+cp -R roas_collector my_submodule
+```
+Then you can manipulate this submodule to do what you want. If you want to look at a very simple submodule for another example, the relationships_parser is also fairly straightforward.
+
+Let's first look at the \_\_init\_\_.py file inside this new submodule. For formatting of all python files, I looked it up and the proper way to do it is to have a shebang at the top defining that it is python and that the coding is in utf8, as you can see. Then there is usually a docstring containing all the information you would need about the file. For a normal file someone should be able to read it and obtain a thorough understanding of what's in the file. For the \_\_init\_\_.py file a user should be able to read it and obtain a thorough understanding of the whole submodule. I like to split these docstrings into a series of parts. The first line, as is specified by pep8, is a short description. Then a new line, and then a slightly longer description. Then I like to list out the steps that my file will perform. After that there is a design choices section, which should summarize design choices from above. This section is important because you can clearly detail why certain decisions where made for future users. There is also a future extensions section, which should contain all possible future work for the current file, or, in the case of the \_\_init\_\_.py file, all the future work for the current submodule. Then we are going to include some python headers with some metadata. This data should be kept up to date, and make sure to give credit where credit is due. Another thing, for the love of god please make your files pep8 compliant. There are numerous tools to do this automatically that exist for many different text editors.
+
+If you are not familiar with the \_\_init\_\_.py file, this is a file in python that the package manager will look at to determine what is inside of a folder. That is a very short explanation, a much better explanation can be found at:
+google.com
+just kidding lol.  I thought I had a good tutorial but I couldn't find it. However, some of this python code is not basic stuff, if you are ever confused I suggest searching the problem with "Corey Shafer" on youtube, his tutorials are usually pretty good.
+All classes, functions, etc. that will be used outside of your submodule should be imported in \_\_init\_\_.py . Similar import statements should again occur at the top level \_\_init\_\_.py file. Only the programs that are in the top level \_\_init\_\_.py file can be easily accessed in a script. Also notice how my submodule name, my file in the submodule that contains the most important class required to run that will be imported above, and the class that will be imported to upper level folders are almost all the same name. This will let a user know what the main files are in a program.
+
+Before you continue, you should try to get your new submodule to run. Make sure that you have imported it correctly in both the \_\_init\_\_.py file that is located within your submodules folder, and also the \_\_init\_\_.py file located in the folder above. Then try to import it from lib_bgp_data in a script and run it. Note that to get the traceback from errors, you should pass in as an argument to the initialization of your class {"stream_level": logging.DEBUG}. Good luck! Let me know if you have any problems!
+
+Now lets take a look at the roas_collector. Aside from the stuff at the top which is similar to the \_\_init\_\_.py file, the imports are very different. You'll notice that normal packages import normally, such as the re function. To import classes from files outside of your current folder (in the folder above) you need to do 
+```python
+from ..<above folder> import <stuff you want to import>
+```
+You can see this as an example in the line:
+```python
+from ..utils import utils, error_catcher, db_connection
+```
+This imports the utils file, error_catcher, and db_connection from the utils folder, which is outside of our current folder. To import classes and other things from the current folder, do the same as above but with one less period. Example below.
+```python
+from .tables import ROAs_Table
+```
+After that we have the class. Notice all the docstrings and comments throughout the code. If the information is included in the docstring at the top of the file, just say for a more in depth explanation refer to the top of the file. Also notice the use of \_\_slots\_\_. This is not required, but turns the class almost like into a named tuple. Attributes that are not included in the \_\_slots\_\_ cannot be added. It decreases the reference time for a value significantly, I think by about a third. You probably won't need this, and it can cause lots of errors if you don't understand it, so probably just delete it.
+
+In the \_\_init\_\_ method the utils.set_common_init_args is called. You can view this function in the utils file, but in short this initializes the logger, the path for files, and the csv directory. Leaving these as the default is usually fine.
+
+Also notice the @error_catcher decorator. This catches any errors that occur. For a better explanation, view [Error Catcher](#error-catcher). In short, this is a nice convenient way to log errors.
+
+Then we have the parse_roas function. Notice the decorator for the run_parser. This decorator runs the parser, logs all errors, and records the start and end time of the parser.
+
+Inside this function we have a db_connection context manager. This will open a connection to the database with the table specified and also create that table. 
+
+After this function we have a helper functions sign. This is usually if you have a long list of functions, and want to group them somehow. Helper functions just means that they are private. Notice these functions, and all other variables that should be private (hopefully I do that soon, forgot to do all the variables, oops!) have an underscore underneath them. 
+
+Lets take a look at the file tables.py. This file typically contains all the database interactions side of things. All the tables that get generated. The names of these classes are important and are used in the program. The name of the class should be the name of the table followed by _Table. They inherit from a database class. When this class is initialized it connects to the database, and calls the _create_tables function. This function should create whatever table you are trying to create. Another function, clear_table, should be included in whatever class you created. This is the function that is called whenever db_connection is initiated, to drop whatever previous data was there before. For SQL all table names should be hardcoded in. The \_\_slots\_\_ is empty here because it inherits from the database class. The real dict cursor is used to make all return values into a list of dictionaries, to make it easier to use. Note that this is not the most effective memory wise, and other cursor factories should be used if memory consumption is a problem.
+
+There you have it. Please let me know any questions you might have. Take a look at the [Utils](#utils) section for things you may want to use in your submodule.
 ## Development/Contributing
    * [lib\_bgp\_data](#lib_bgp_data)
+   add note here about how to add a submodule and stuff
 ## History
    * [lib\_bgp\_data](#lib_bgp_data)
 ## Credits

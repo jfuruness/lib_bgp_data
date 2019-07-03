@@ -30,10 +30,10 @@ mrt files. This is done through a series of steps
     -Unnessecary files deleted for space
 
 Design choices (summarizing from above):
-    -bgpscanner is the fastest BGP dump scanner so it is used to parse
-    -bgpscanner ignores announcements with malformed attributes
-    -bgpdump can be used for full runs since it does not ignore
-     malformed announcements, which some AS's do not ignore
+    -bgpscanner is the fastest BGP dump scanner so it is used for tests
+    -bgpdump used to be the only parser that didn't ignore malformed
+     announcements, but now with a change bgpscanner does this as well
+        -This was a problem because some ASes do not ignore these errors
     -sed is used for regex parsing because it is fast and portable
     -Data is bulk inserted into postgres
         -Bulk insertion using COPY is the fastest way to insert data

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-"""This module contains class Caida_MRT_Parser
+"""This module contains class MRT_Parser
 
 The purpose of this class is to download the mrt files and insert them
 into a database. This is done through a series of steps.
@@ -29,9 +29,10 @@ into a database. This is done through a series of steps.
     -The mrt_files class handles the actual parsing of the files
     -CPUs - 1 is used for thread count since this is a CPU bound process
     -Largest files are parsed first for faster overall parsing
-    -Parsing with bgpscanner is faster, but ignores malformed
-     announcements. Use this for testing, and bgpdump is used for full
-     runs
+    -bgpscanner is the fastest BGP dump scanner so it is used for tests
+    -bgpdump used to be the only parser that didn't ignore malformed
+     announcements, but now with a change bgpscanner does this as well
+        -This was a problem because some ASes do not ignore these errors
 4. Parsed information is stored in csv files, and old files are deleted
     -This is handled by the mrt_file class
     -This is done because there is thirty to one hundred gigabytes
@@ -60,7 +61,6 @@ Design choices (summarizing from above):
     -Due to I/O bound downloading:
         -Multithreading is used over multiprocessing for less memory
         -Four times CPUs is used for thread count
-    -I have a misquito bite that is quite large.
     -Downloading is done and completed before parsing
         -This is done to ensure largest files get parsed first
         -Results in fastest time
@@ -72,9 +72,10 @@ Design choices (summarizing from above):
      largest files first resulting in a faster overall time
     -CPUs - 1 is used for thread count since the process is CPU bound
         -For our machine this is the fastest, feel free to experiment
-    -Parsing with bgpscanner is faster, but ignores malformed
-     announcements. Use this for testing, and bgpdump is used for full
-     runs
+    -bgpscanner is the fastest BGP dump scanner so it is used for tests
+    -bgpdump used to be the only parser that didn't ignore malformed
+     announcements, but now with a change bgpscanner does this as well
+        -This was a problem because some ASes do not ignore these errors
     -Data is bulk inserted into postgres
         -Bulk insertion using COPY is the fastest way to insert data
          into postgres and is neccessary due to massive data size
@@ -83,8 +84,8 @@ Design choices (summarizing from above):
         -Not as compatable as CSV files
     -Duplicates are not deleted to save time, since there are very few
         -A duplicate has the same AS path and prefix
-    -Announcements with malformed attributes are disregarded thanks to
-     bgpscanner
+
+
 
 Possible Future Extensions:
     -Add functionality to download and parse updates?
@@ -118,7 +119,7 @@ class MRT_Parser:
     In depth explanation at the top of module.
     """
 
-    __slots__ = ['path', 'csv_dir', 'logger', 'start_time', 'dl_pool','p_pool']
+    __slots__ = ['path', 'csv_dir', 'logger', 'dl_pool','p_pool']
 
     @error_catcher()
     def __init__(self, args={}):
