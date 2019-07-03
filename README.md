@@ -792,6 +792,7 @@ There you have it. Please let me know any questions you might have. Take a look 
    * [lib\_bgp\_data](#lib_bgp_data)
 ## Credits
    * [lib\_bgp\_data](#lib_bgp_data)
+    Make sure to credit everyone in the files, profs, stack overflow posts, and bgpscaner team for helping out
 ## License
    * [lib\_bgp\_data](#lib_bgp_data)
 ## TODO/Possible Future Improvements
