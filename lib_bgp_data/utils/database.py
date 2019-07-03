@@ -5,9 +5,12 @@
 
 # Due to circular imports this must be here
 from contextlib import contextmanager
+from .logger import Thread_Safe_Logger as Logger
 
 @contextmanager
-def db_connection(table, logger):
+def db_connection(table, logger=None):
+    if not logger:
+        logger = Logger()
     t = table(logger)
     yield t
     t.close()

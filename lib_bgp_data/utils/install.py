@@ -201,19 +201,19 @@ class Install:
                 # Since its manual it can be higher
                 "ALTER SYSTEM SET max_parallel_maintenance_workers TO {};"\
                     .format(cpu_count() - 1),
-                "ALTER SYSTEM maintenance_work_mem TO '{}MB';".format(
+                "ALTER SYSTEM SET maintenance_work_mem TO '{}MB';".format(
                     int(ram/5))])
-                # Couldn't figure out this part exactly so it's commented out
                 # Yes I know I could call this, but this is just for machines
                 # that might not have it or whatever
-                # stack_limit = int(input("What is the output of ulimit -s?"))
+                # Gets the maximum safe depth of a servers execution stack in kilobytes
+                stack_limit = int(input("What is the output of ulimit -s?"))
                 # https://www.postgresql.org/docs/9.1/runtime-config-resource.html
-                # "ALTER SYSTEM SET max_stack_depth TO '{}MB';".format(
-                # int(stack_limit/1024)-1)]
+                "ALTER SYSTEM SET max_stack_depth TO '{}MB';".format(
+                int(stack_limit/1000)-1)]  # Conversion from kb to mb then minus one
 
         # Writes sql file
         with open("/tmp/db_modify.sql", "w+") as db_mod_file:
-            for sql in sqls:
+            for sql in sqls:db_mod_fileb
                 db_mod_file.write(sql + "\n")
         # Calls sql file
         check_call("sudo -u postgres psql -f /tmp/db_modify.sql", shell=True)
