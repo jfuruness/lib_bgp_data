@@ -9,7 +9,7 @@ For the specifics on how the extrapolator is run see each function
 """
 
 from subprocess import check_call, DEVNULL
-from ..utils import Config, error_catcher, utils, db_connection
+from ..utils import error_catcher, utils
 # Justin globals are bad yah you know what else is bad? the logging
 # module that deadlocks upon import
 DEBUG = 10
@@ -42,7 +42,13 @@ class Extrapolator:
     @error_catcher()
     @utils.run_parser()
     def run_forecast(self):
-        pass
+        self.logger.info("About to run the forecast extrapolator")
+        bash_args = "forecast-extrapolator"
+        if self.logger.level in [DEBUG, INFO]:
+            check_call(bash_args, shell=True)
+        else:
+            check_call(bash_args, stdout=DEVNULL, stderr=DEVNULL, shell=True)
+
 
     @error_catcher()
     @utils.run_parser()
@@ -60,10 +66,10 @@ class Extrapolator:
         bash_args += "--victim_asn={} ".format(victim_asn)
         # Gives the more specific prefix that the attacker sent out
         bash_args += "--victim_prefix={}".format(expected_prefix)
-        self.logger.info("Caling extrapolator with:\n{}".format(bash_args)) 
+        self.logger.info("Caling extrapolator with:\n{}".format(bash_args))
         if self.logger.level in [DEBUG, INFO]:
             check_call(bash_args, shell=True)
         else:
-            check_call(bash_args, stdout=DEVNULL, stderr=DEVNLL, shell=True)
-        
+            check_call(bash_args, stdout=DEVNULL, stderr=DEVNULL, shell=True)
+
         self.logger.debug("Done running the rovpp extrapolator")

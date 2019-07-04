@@ -5,7 +5,7 @@
 
 The purpose of these classes is to parse information for BGP hijacks,
 leaks, and outages from bgpstream.com. This information is then stored
-in the database. Please note that each data class inherits from the 
+in the database. Please note that each data class inherits from the
 Data class. For each data class, This is done through a series of steps.
 
 1. Initialize the class
@@ -51,14 +51,7 @@ Possible Future Extensions:
 """
 
 
-import sys
-import urllib.request
-import shutil
-from pprint import pprint
-import os
 import re
-import requests
-import bs4
 from ..utils import utils, error_catcher, db_connection
 from .tables import Hijack_Table, Outage_Table, Leak_Table
 
@@ -70,13 +63,15 @@ __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
+
 class Data:
     """Parent Class for parsing rows of bgpstream.com.
 
     For a more in depth explanation see the top of the file.
     """
 
-    __slots__ = ['logger', 'as_regex', 'nums_regex', 'ip_regex', 'temp_row', 'data', 'columns']
+    __slots__ = ['logger', 'as_regex', 'nums_regex', 'ip_regex', 'temp_row',
+                 'data', 'columns']
 
     @error_catcher()
     def __init__(self, logger):
@@ -129,7 +124,7 @@ class Data:
 
         # Inserts data into the database
         utils.rows_to_db(self.logger, self.data, self.csv_path, self.table,
-            clear_table=False)
+                         clear_table=False)
 
         with db_connection(self.table, self.logger) as db_table:
             # Removes unwanted prefixes
@@ -140,7 +135,7 @@ class Data:
             db_table.delete_duplicates()
             # Creates all subtables
             db_table.create_temp_table(start, end)
-            
+
 
 ########################
 ### Helper Functions ###
@@ -164,7 +159,7 @@ class Data:
         try:
             # If there is just one string this will work
             as_info = children[5].string.strip()
-        except:
+        except:  # Should not use bare except
             # If there is more than one AS this will work
             stripped = children[5].stripped_strings
             as_info = [x for x in stripped]
@@ -192,7 +187,7 @@ class Data:
             try:
                 return None, re.findall(r'\d+', as_info)[0]
             # Sometimes not
-            except:
+            except:  # Should not use bare except
                 return None, None
         else:
             # This is the first way the string can be formatted:
@@ -220,6 +215,7 @@ class Data:
                 return_list.append(val)
         return return_list
 
+
 class Hijack(Data):
     """Class for parsing Hijack events. Inherits from Data.
 
@@ -243,10 +239,10 @@ class Hijack(Data):
 
         self.temp_row["expected_origin_name"],\
             self.temp_row["expected_origin_number"]\
-                = self._parse_as_info(as_info[1])
+            = self._parse_as_info(as_info[1])
         self.temp_row["detected_origin_name"],\
             self.temp_row["detected_origin_number"]\
-                = self._parse_as_info(as_info[3])
+            = self._parse_as_info(as_info[3])
         # We must work from the end of the elements, because the number
         # of elements at the beginning may vary depending on whether or not
         # end time is specified
@@ -259,21 +255,21 @@ class Hijack(Data):
             extended_children[end - 4].string).group(1).strip()
         self.temp_row["detected_as_path"] = self.nums_regex.search(
             extended_children[end - 2].string.strip()).group(1)
-        self.temp_row["detected_as_path"] = str([int(s) for s in\
+        self.temp_row["detected_as_path"] = str([int(s) for s in
             self.temp_row.get("detected_as_path").split(' ')])
         self.temp_row["detected_as_path"] =\
             self.temp_row.get("detected_as_path"
-                ).replace('[', '{').replace(']', '}')
+                              ).replace('[', '{').replace(']', '}')
         self.temp_row["detected_by_bgpmon_peers"] = self.nums_regex.search(
             extended_children[end - 1].string.strip()).group(1)
         self.logger.debug("Parsed Hijack Row")
+
 
 class Leak(Data):
     """Class for parsing Leak events. Inherits from Data.
 
     For a more in depth explanation see the top of the file.
     """
-
 
     __slots__ = ['table', 'csv_path']
 
@@ -286,7 +282,7 @@ class Leak(Data):
         self.table = Leak_Table
         self.csv_path = "{}/leak.csv".format(csv_dir)
         Data.__init__(self, logger)
-        
+
     def _parse_uncommon_info(self, as_info, extended_children):
         """Parses misc leak row info."""
 
@@ -327,12 +323,12 @@ class Leak(Data):
             extended_children[end - 1].string.strip()).group(1)
         self.logger.debug("Parsed leak")
 
+
 class Outage(Data):
     """Class for parsing outage events. Inherits from Data.
 
     For a more in depth explanation see the top of the file.
     """
-
 
     __slots__ = ['table', 'csv_path']
 

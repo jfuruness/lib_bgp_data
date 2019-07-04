@@ -50,7 +50,6 @@ Possible Future Extensions:
 
 import re
 from .relationships_file import Rel_File
-from .tables import ROVPP_AS_Connectivity_Table
 from ..utils import utils, Config, error_catcher
 
 __author__ = "Justin Furuness"

@@ -152,6 +152,7 @@ class ROVPP_Peers_Table(Database):
               );"""
         self.cursor.execute(sql)
 
+
 class ROVPP_AS_Connectivity_Table(Database):
     """Class with database functionality.
 
@@ -179,8 +180,8 @@ class ROVPP_AS_Connectivity_Table(Database):
         sql = """CREATE UNLOGGED TABLE IF NOT EXISTS
               rovpp_as_connectivity AS (
               SELECT ases.asn AS asn,
-              COALESCE(cp.connectivity, 0) + 
-                COALESCE(p1.connectivity, 0) + 
+              COALESCE(cp.connectivity, 0) +
+                COALESCE(p1.connectivity, 0) +
                 COALESCE(p2.connectivity, 0)
                   AS connectivity
               FROM rovpp_ases ases
@@ -199,9 +200,6 @@ class ROVPP_AS_Connectivity_Table(Database):
               ON ases.asn = p2.asn
               );"""
 
-
-        # Lol that's what I tried to do 
-
         self.cursor.execute(sql)
 
     @error_catcher()
@@ -213,7 +211,6 @@ class ROVPP_AS_Connectivity_Table(Database):
               WHERE connectivity > 0;"""
         transit_ases = [x["asn"] for x in self.execute(sql)]
         return transit_ases, non_transit_ases
-        
 
     @error_catcher()
     def get_top_100_ases(self):

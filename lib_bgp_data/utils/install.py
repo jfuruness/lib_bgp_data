@@ -217,6 +217,8 @@ class Install:
                 db_mod_file.write(sql + "\n")
         # Calls sql file
         check_call("sudo -u postgres psql -f /tmp/db_modify.sql", shell=True)
+        cmd = "systemctl restart postgres"
+        input("Restart the db with a command similar to", cmd, ". Hit enter")
         # Removes sql file to clean up
         self._remove("/tmp/db_modify.sql")
 

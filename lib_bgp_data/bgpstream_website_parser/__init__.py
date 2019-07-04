@@ -8,7 +8,7 @@ leaks, and outages from bgpstream.com. This information is then stored
 in the database. This is done through a series of steps.
 
 1. Initialize the three different kinds of data classes.
-    -Handled in the __init__ function in BGPStream_Website_Parser 
+    -Handled in the __init__ function in BGPStream_Website_Parser
     -This class mainly deals with accessing the website, the data
      classes deal with parsing the information. These data classes
      inherit from the parent class Data

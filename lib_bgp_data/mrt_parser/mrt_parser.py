@@ -119,7 +119,7 @@ class MRT_Parser:
     In depth explanation at the top of module.
     """
 
-    __slots__ = ['path', 'csv_dir', 'logger', 'dl_pool','p_pool']
+    __slots__ = ['path', 'csv_dir', 'logger', 'dl_pool', 'p_pool']
 
     @error_catcher()
     def __init__(self, args={}):

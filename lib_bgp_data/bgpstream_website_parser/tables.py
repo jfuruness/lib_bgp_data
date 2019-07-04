@@ -22,11 +22,9 @@ Possible future improvements:
     -Add test cases
 """
 
-import psycopg2
 from psycopg2.extras import RealDictCursor
-from datetime import datetime
-from time import strptime, strftime, mktime, gmtime
-from ..utils import Config, Database, error_catcher
+from time import strftime, gmtime
+from ..utils import Database, error_catcher
 
 __author__ = "Justin Furuness"
 __credits__ = ["Justin Furuness"]
@@ -35,6 +33,7 @@ __Version__ = "0.1.0"
 __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
+
 
 class Hijack_Table(Database):
     """Hijack table class, inherits from database.
@@ -129,7 +128,7 @@ class Hijack_Table(Database):
         self._create_subprefix_hijack_table()
 
     @error_catcher()
-    def _create_subprefix_hijack_table():
+    def _create_subprefix_hijack_table(self):
         """Creates a subprefix hijack tablei. Used in ROVPP sims."""
 
         # This will get all of the subprefix hijackings within the temp table
@@ -144,7 +143,6 @@ class Hijack_Table(Database):
                 WHERE h.prefix << h.expected_prefix
                 );"""
         self.cursor.execute(sql)
-
 
     @error_catcher()
     def delete_duplicates(self):
@@ -163,7 +161,7 @@ class Hijack_Table(Database):
         """Filters by IPV4 and IPV6."""
 
         if not IPV6:
-            sql  = "DELETE FROM hijack WHERE family(expected_prefix) = 6;"
+            sql = "DELETE FROM hijack WHERE family(expected_prefix) = 6;"
             self.cursor.execute(sql)
         if not IPV4:
             sql = "DELETE FROM hijack WHERE family(expected_prefix) = 4;"
@@ -175,7 +173,6 @@ class Leak_Table(Database):
 
     For a more in depth explanation see the top of the file.
     """
-
 
     __slots__ = []
 
@@ -225,7 +222,7 @@ class Leak_Table(Database):
         """Filters by IPV4 and IPV6"""
 
         if not IPV6:
-            sql  = "DELETE FROM leak WHERE family(leaked_prefix) = 6;"
+            sql = "DELETE FROM leak WHERE family(leaked_prefix) = 6;"
             self.cursor.execute(sql)
         if not IPV4:
             sql = "DELETE FROM leak WHERE family(leaked_prefix) = 4;"
@@ -244,6 +241,7 @@ class Leak_Table(Database):
         """We don't deal with this data yet."""
 
         pass  # Unnessecary at this time
+
 
 class Outage_Table(Database):
     """Outage Table class, inherits from Database.
@@ -284,7 +282,8 @@ class Outage_Table(Database):
 
         self.logger.info("About to delete duplicates from outage")
         sql = """DELETE FROM outage a USING outage b
-              WHERE a.outage_id < b.outage_id AND a.event_number = b.event_number
+              WHERE a.outage_id < b.outage_id
+              AND a.event_number = b.event_number
               ;"""
         self.cursor.execute(sql)
         self.logger.info("Deleted duplicates from outage")

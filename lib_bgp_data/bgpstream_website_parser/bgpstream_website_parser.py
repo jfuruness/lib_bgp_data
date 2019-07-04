@@ -10,7 +10,7 @@ in the database. This is done through a series of steps.
 1. Initialize the three different kinds of data classes.
     -Handled in the __init__ function
     -This class mainly deals with accessing the website, the data
-     classes deal with parsing the information. 
+     classes deal with parsing the information.
 2. All rows are recieved from the main page of the website
     -This is handled in the utils.get_tags function
     -This has some initial data for all bgp events
@@ -42,15 +42,10 @@ Possible Future Extensions:
     -Add test cases
 """
 
-import re
-import requests
-import shutil
-import os
-import bs4
 from enum import Enum
 from ..utils import error_catcher, utils, db_connection
 from .tables import Hijack_Table, Leak_Table, Outage_Table
-from .data_classes import Leak, Hijack, Outage 
+from .data_classes import Leak, Hijack, Outage
 
 __author__ = "Justin Furuness"
 __credits__ = ["Justin Furuness"]
@@ -93,8 +88,9 @@ class BGPStream_Website_Parser:
 
     @error_catcher()
     @utils.run_parser()
-    def parse(self, start=None, end=None, row_limit=None, IPV4=True, IPV6=False,
-              data_types=[Event_Types.OUTAGE.value], refresh=False):
+    def parse(self, start=None, end=None, row_limit=None, IPV4=True,
+              IPV6=False, data_types=[Event_Types.HIJACK.value],
+              refresh=False):
         """Parses rows in the bgpstream website.
 
         start and end should be epoch time. The temporary tables will be
@@ -107,7 +103,8 @@ class BGPStream_Website_Parser:
         is set to True then all rows with a type in data_types will be
         parsed.
 
-        For a more in depth explanation, refer to the top of the file"""
+        For a more in depth explanation, refer to the top of the file.
+        """
 
         # The data types to parse, from the enum
         self.data_types = data_types
@@ -136,11 +133,12 @@ class BGPStream_Website_Parser:
 
     @error_catcher()
     def _parse_row(self, row, num, total, known_events, refresh):
-        """Parsies all rows that fit certain requirements.
+        """Parses all rows that fit certain requirements.
 
         Each row must have a type withing self.data_types.
         Each row must be new, and have a different start/end
-        or refresh must be set to true."""
+        or refresh must be set to true.
+        """
 
         self.logger.debug("Starting to parse row {}/{}".format(num, total))
         # Gets the type of event (in the events enum) for the row
