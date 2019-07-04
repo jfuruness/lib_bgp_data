@@ -145,6 +145,7 @@ class Install:
         ram = int(input("What is the amount of ram on the system in MB? "))
         # Extension neccessary for some postgres scripts
         sqls = ["CREATE EXTENSION IF NOT EXISTS btree_gist;",
+                "ALTER DATABASE bgp SET timezone TO 'UTC';",
                 # These are settings that ensure data isn't corrupted in
                 # the event of a crash. We don't care so...
                 "ALTER SYSTEM SET fsync TO off;",

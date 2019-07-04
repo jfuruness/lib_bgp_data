@@ -24,7 +24,7 @@ in the database. This is done through a series of steps.
 5. Rows are iterated over until row_limit is reached
     -This is handled in the parse function
 6. For each row, if that row is of a datatype passed in the parameters,
-   add that to the self.data dictionary
+   and the row is new (by default) add that to the self.data dictionary
     -This causes that row to be parsed as well
     -Rows are parsed into CSVs and inserted into the database
 7. Call the db_insert funtion on each of the data classes in self.data
@@ -40,6 +40,7 @@ Design Choices (summarizing from above):
     -Only the data types that are passed in as a parameter are parsed
         -This is because querying each individual events page for info
          takes a long time
+        -Only new rows by default are parsed for the same reason
     -Multithreading isn't used because the website blocks the requests
     -Parsing is done from the end of the page to the top
         -The start of the page is not always the same

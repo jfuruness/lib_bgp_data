@@ -127,8 +127,6 @@ class Data:
         in depth explanation see the top of the file.
         """
 
-        pprint(self.data)
-
         # Inserts data into the database
         utils.rows_to_db(self.logger, self.data, self.csv_path, self.table,
             clear_table=False)
@@ -211,7 +209,16 @@ class Data:
         _id columns are excluded from the columns.
         """
 
-        return [self.temp_row.get(x) for x in self.columns]
+        # Quotes need to be replaced because it screws up csv insertion
+        # for like that one stupid AS that has a quote in it's name
+        return_list = []
+        for column in self.columns:
+            val = self.temp_row.get(column)
+            if val is not None:
+                return_list.append(val.replace('"', ""))
+            else:
+                return_list.append(val)
+        return return_list
 
 class Hijack(Data):
     """Class for parsing Hijack events. Inherits from Data.
@@ -344,7 +351,6 @@ class Outage(Data):
 
         self.temp_row["as_name"], self.temp_row["as_number"] =\
             self._parse_as_info(as_info)
-
         # We must work from the end of the elements, because the number
         # of elements at the beginning may vary depending on whether or not
         # end time is specified
