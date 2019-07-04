@@ -10,18 +10,17 @@ job"""
 # future improvement: improving logging (can literally replace the logging class)
 from multiprocessing import Process
 from subprocess import Popen, PIPE
-from .relationships_parser import Relationships_Parser
-from .roas_collector import ROAs_Collector
-from .bgpstream_website_parser import BGPStream_Website_Parser
-from .mrt_parser import MRT_Parser
-from .what_if_analysis import What_If_Analysis, RPKI_Validator
-from .utils import utils, Database, db_connection, Install
-from .utils import MRT_W_Roas_Table
+from ..relationships_parser import Relationships_Parser
+from ..roas_collector import ROAs_Collector
+from ..bgpstream_website_parser import BGPStream_Website_Parser
+from ..mrt_parser import MRT_Parser
+from ..what_if_analysis import What_If_Analysis, RPKI_Validator
+from ..utils import utils, Database, db_connection, Install
+from .tables import MRT_W_Roas_Table
 
 __author__ = "Justin Furuness"
 __credits__ = ["Justin Furuness"]
 __Lisence__ = "MIT"
-__Version__ = "0.1.0"
 __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
@@ -29,7 +28,7 @@ __status__ = "Development"
 class Forecast:
     """This class contains all the neccessary parsing functions"""
 
-    @utils.run_parser()
+#    @utils.run_parser()
     def __init__(self,
                  start=utils.get_default_start(),
                  end=utils.get_default_end(),
@@ -41,7 +40,6 @@ class Forecast:
                  rel_args={},
                  rel_parse_args={},
                  roas_args={},
-                 roas_parse_args={},
                  web_args={},
                  web_parse_args={},
                  what_if_args={},
@@ -64,7 +62,7 @@ class Forecast:
         # multithreaded because it is so fast, there is no point
         Relationships_Parser(rel_args).parse_files(**rel_parse_args)
         # Now lets get roas, its fast so no multiprocessing
-        ROAs_Collector(roas_args).parse_roas(roas_parse_args)
+        ROAs_Collector(roas_args).parse_roas()
         # Get hijack data. The first time takes a while
         BGPStream_Website_Parser(web_args).parse(start, end, **web_parse_args)
         if filter_by_roas:
@@ -130,6 +128,3 @@ class Forecast:
         # install all dependencies using pyenv and activate
         # parse relationships, bgpstream website, roas, mrt_files, index, vaccuum, extrapolator
         # delete unnessecary tables, vaccuum again
-
-if __name__ == "__main__":
-    bgp_data_parser()

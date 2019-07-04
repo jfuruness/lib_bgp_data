@@ -6,12 +6,7 @@
 import psycopg2
 from psycopg2.extras import RealDictCursor
 from multiprocessing import Process, cpu_count
-from .config import Config
-from .logger import error_catcher
-from .database import Database
-from .database import db_connection
-from .utils import Pool
-from . import utils
+from ..utils import Database, db_connection, error_catcher, Config, utils
 
 __author__ = "Justin Furuness"
 __credits__ = ["Justin Furuness"]

@@ -1,3 +1,4 @@
+
 # lib\_bgp\_data
 This package contains multiple submodules that are used to gather and manipulate real data in order to simulate snapshots of the internet. The purpose of this is to test different security policies to determine their accuracy, and hopefully find ones that will create a safer, more secure, internet as we know it.
 
@@ -25,6 +26,7 @@ This package contains multiple submodules that are used to gather and manipulate
 * [Todo and Possible Future Improvements](#todopossible-future-improvements)
 * [FAQ](#faq)
 ## Package Description
+* [lib\_bgp\_data](#lib_bgp_data)
 This README is split up into several subsections for each of the submodules included in this package. Each subsection has it's own descriptions, usage instructions, etc. The main (LINK HERE) subsection details how all of the submodules combine to completely simulate the internet. For an overall view of how the project will work, see below:
 
 **![](https://docs.google.com/drawings/u/0/d/sx3R9HBevCu5KN2luxDuOzw/image?w=864&h=650&rev=1621&ac=1&parent=1fh9EhU9yX9X4ylwg_K-izE2T7C7CK--X-Vfk1qqd1sc)**
@@ -42,21 +44,34 @@ Please note: These steps are not necessarily linear, as much of this is done in 
 9. the [What if Analysis](#what-if-analysis-submodule) data as well as the [Extrapolator](#extrapolator-submodule) data is then available to query form a web interface through the [API](#api-submodule), the last last submodule. All of these steps are done in the submodule called [Main](#main-submodule), in which many of these steps are done in parallel for efficiency. These results are then displayed on our website at [https://bgpforecast.uconn.edu/](https://bgpforecast.uconn.edu/)
 
 ## Main Submodule
-   * [Short Description](#main-short-description)
-   * [Long Description](#main-long-description)
-   * [Usage](#main-usage)
-   * [Table Schema](#main-table-schema)
-   * [Design Choices](#main-design-choices)
-   * [Possible Future Improvements](#main-possible-future-improvements)
+* [lib\_bgp\_data](#lib_bgp_data)
+* [Short Description](#main-short-description)
+* [Long Description](#main-long-description)
+* [Usage](#main-usage)
+* [Table Schema](#main-table-schema)
+* [Design Choices](#main-design-choices)
+* [Possible Future Improvements](#main-possible-future-improvements)
 ### Main Short description
+* [lib\_bgp\_data](#lib_bgp_data)
+* [Main Submodule](#main-submodule)
 ### Main Long description
+* [lib\_bgp\_data](#lib_bgp_data)
+* [Main Submodule](#main-submodule)
 -make sure to include about how much time each one takes, and how bgpstream.com takes a lot longer the first run through but then afterwards is extremely fast
 ### Main Usage
+* [lib\_bgp\_data](#lib_bgp_data)
+* [Main Submodule](#main-submodule)
 #### In a Script
 #### From the Command Line
 ### Main Table Schema
+* [lib\_bgp\_data](#lib_bgp_data)
+* [Main Submodule](#main-submodule)
 ### Main Design Choices
+* [lib\_bgp\_data](#lib_bgp_data)
+* [Main Submodule](#main-submodule)
 ### Main Possible Future Improvements
+* [lib\_bgp\_data](#lib_bgp_data)
+* [Main Submodule](#main-submodule)
 ## MRT Announcements Submodule
    * [lib\_bgp\_data](#lib_bgp_data)
    * [Short Description](#mrt-announcements-short-description)
@@ -66,8 +81,14 @@ Please note: These steps are not necessarily linear, as much of this is done in 
    * [Design Choices](#mrt-announcements-design-choices)
    * [Possible Future Improvements](#mrt-announcements-possible-future-improvements)
 ### MRT Announcements Short description
+* [lib\_bgp\_data](#lib_bgp_data)
+* [MRT Announcements Submodule](#mrt-announcements-submodule)
+
 The purpose of this submodule is to parse MRT files received from https://bgpstream.caida.org/broker/data using bgpscanner to obtain the prefix, origin, time, and AS path, and insert this information into the database.
 ### MRT Announcements Long description
+* [lib\_bgp\_data](#lib_bgp_data)
+* [MRT Announcements Submodule](#mrt-announcements-submodule)
+
 This submodule downloads and parses MRT Files. This is done through a series of steps.
 1. Make an api call to https://bgpstream.caida.org/broker/data
     * Handled in _get_mrt_urls function
@@ -94,6 +115,7 @@ This submodule downloads and parses MRT Files. This is done through a series of 
         * This was a problem because some ASes do not ignore these errors
     * sed is used because it is cross compatible and fast
         * Must use regex parser that can find/replace for array format
+        * AS Sets are not parsed because they are unreliable
     * Possible future extensions:
         * Use a faster regex parser?
         * Add parsing updates functionality?
@@ -116,6 +138,9 @@ This submodule downloads and parses MRT Files. This is done through a series of 
 6. VACUUM ANALYZE is then called to analyze the table for statistics
     * An index is never created on the mrt announcements because when the announcements table is intersected with roas table, only a parallel sequential scan is used
 ### MRT Announcements Usage
+* [lib\_bgp\_data](#lib_bgp_data)
+* [MRT Announcements Submodule](#mrt-announcements-submodule)
+
 #### In a Script
 Initializing the MRT Parser:
 > The default params for the mrt parser are:
@@ -204,6 +229,9 @@ MRT_Parser().parse_files(start=1558974033,
 #### From the Command Line
 Coming Soon to a theater near you
 ### MRT Announcements Table Schema
+* [lib\_bgp\_data](#lib_bgp_data)
+* [MRT Announcements Submodule](#mrt-announcements-submodule)
+
 * This table contains information on the MRT Announcements retrieved from the https://bgpstream.caida.org/broker/data
 * Unlogged tables are used for speed
 * prefix: The prefix of an AS *(CIDR)*
@@ -221,6 +249,9 @@ Coming Soon to a theater near you
         );
     ```
 ### MRT Announcements Design Choices 
+* [lib\_bgp\_data](#lib_bgp_data)
+* [MRT Announcements Submodule](#mrt-announcements-submodule)
+
 * We only want the first BGP dump
     * Multiple dumps have conflicting announcements
     * Instead, for longer intervals use one BGP dump and updates
@@ -245,7 +276,11 @@ Coming Soon to a theater near you
 * bgpdump used to be the only parser that didn't ignore malformed announcements, but now with a change bgpscanner does this as well
     * This was a problem because some ASes do not ignore these errors
 * sed is used for regex parsing because it is fast and portable
+* AS Sets are not parsed because they are unreliable
 ### MRT Announcements Possible Future Improvements
+* [lib\_bgp\_data](#lib_bgp_data)
+* [MRT Announcements Submodule](#mrt-announcements-submodule)
+
 * Add functionality to download and parse updates?
     * This would allow for a longer time interval
     * After the first dump it is assumed this would be faster?
@@ -262,8 +297,14 @@ Coming Soon to a theater near you
    * [Design Choices](#relationships-design-choices)
    * [Possible Future Improvements](#relationships-possible-future-improvements)
 ### Relationships Short description
+* [lib\_bgp\_data](#lib_bgp_data)
+* [Relationships Submodule](#relationships-submodule)
+
 The purpose of this submodule is to parse Relationship files received from http://data.caida.org/datasets/as-relationships/serial-2/, converting this file into csvs with customer provider and peer relationships, and inserting this data into the database.
 ### Relationships Long description
+* [lib\_bgp\_data](#lib_bgp_data)
+* [Relationships Submodule](#relationships-submodule)
+
 The purpose of this class is to download relationship files and insert the data into a database. This is done through a series of steps.
 
 1. Make an API call to:
@@ -297,6 +338,9 @@ The purpose of this class is to download relationship files and insert the data 
 9. The config is updated with the last date a file was parsed
 
 ### Relationships Usage
+* [lib\_bgp\_data](#lib_bgp_data)
+* [Relationships Submodule](#relationships-submodule)
+
 #### In a Script
 
 Initializing the Relationships Parser:
@@ -339,9 +383,19 @@ Relationships_Parser().parse_files(rovpp=True,
 #### From the Command Line
 Coming Soon to a theater near you
 ### Relationships Table Schema
+* [lib\_bgp\_data](#lib_bgp_data)
+* [Relationships Submodule](#relationships-submodule)
+* [customer_providers Table Schema](#customer_providers-table-schema)
+* [peers Table Schema](#peers-table-schema)
+* [rovpp_customer_providers Table Schema](#rovpp_customer_providers-table-schema)
+* [rovpp_peers Table Schema](#rovpp_peers-table-schema)
+* [rovpp_as_connectivity Table Schema](#rovpp_as_connectivity-table-schema)
+
 * These tables contains information on the relationship data retrieved from http://data.caida.org/datasets/as-relationships/serial-2/
 * Unlogged tables are used for speed
 #### customer_providers Table Schema:
+* [Relationships Table Schema](#relationships-table-schema)
+
 * Contains data for customer provider pairs
 * provider_as: Provider ASN *(bigint)*
 * customer_as: Customer ASN (*bigint)*
@@ -354,6 +408,8 @@ Coming Soon to a theater near you
         );
     ```
 #### peers Table Schema:
+* [Relationships Table Schema](#relationships-table-schema)
+
 * Contains data for peer pairs
 * peer_as_1: An ASN that is a peer *(bigint)*
 * peer_as_2: An ASN that is another peer *(bigint)*
@@ -367,6 +423,8 @@ Coming Soon to a theater near you
     ```
 ##### ROVPP Tables:
 ###### rovpp_customer_providers Table Schema:
+* [Relationships Table Schema](#relationships-table-schema)
+
 * Contains data for customer provider pairs
 * provider_as: Provider ASN *(bigint)*
 * customer_as: Customer ASN (*bigint)*
@@ -378,7 +436,9 @@ Coming Soon to a theater near you
             customer_as bigint
         );
     ```
-###### peers Table Schema:
+###### rovpp_peers Table Schema:
+* [Relationships Table Schema](#relationships-table-schema)
+
 * Contains data for peer pairs
 * peer_as_1: An ASN that is a peer *(bigint)*
 * peer_as_2: An ASN that is another peer *(bigint)*
@@ -390,7 +450,9 @@ Coming Soon to a theater near you
             peer_as_2 bigint
         );
     ```
-###### rovpp_as_connectivity:
+###### rovpp_as_connectivity Table Schema:
+* [Relationships Table Schema](#relationships-table-schema)
+
 * Contains connectivity information for all ASes
 * asn: An ASes ASN *(bigint)*
 * connectivity: number of customers + number of peers *(integer)*
@@ -420,12 +482,16 @@ Coming Soon to a theater near you
               );
     ```
 ### Relationships Design Choices
+* [lib\_bgp\_data](#lib_bgp_data)
+* [Relationships Submodule](#relationships-submodule)
 * CSV insertion is done because the relationships file is a CSV
 * Dates are stored and checked to prevent redoing old work
 * An enum was used to make the code cleaner in relationship_file
     * Classes are more messy in this case
 
 ### Relationships Possible Future Improvements
+* [lib\_bgp\_data](#lib_bgp_data)
+* [Relationships Submodule](#relationships-submodule)
 * Add test cases
 * Possibly take out date checking for cleaner code?
     * Saves very little time
@@ -442,8 +508,13 @@ Coming Soon to a theater near you
    * [Design Choices](#roas-design-choices)
    * [Possible Future Improvements](#roas-possible-future-improvements)
 ### Roas Short description
+* [lib\_bgp\_data](#lib_bgp_data)
+* [Roas Submodule](#roas-submodule)
 The purpose of this submodule is to parse Roa data received from https://rpki-validator.ripe.net/api/export.json, converting this data into csvs and inserting this data into the database.
-### Roas Long description
+### Roas Long Description
+* [lib\_bgp\_data](#lib_bgp_data)
+* [Roas Submodule](#roas-submodule)
+
 The purpose of this parser is to download ROAs from rpki and insert them into a database. This is done through a series of steps.
 
 1. Clear the Roas table
@@ -461,6 +532,8 @@ The purpose of this parser is to download ROAs from rpki and insert them into a 
     * The purpose of this is to make the SQL query faster when joining with the mrt announcements
 
 ### Roas Usage
+* [lib\_bgp\_data](#lib_bgp_data)
+* [Roas Submodule](#roas-submodule)
 #### In a Script
 Initializing the Roas Collector:
 > The default params for the Roas Collector are:
@@ -493,6 +566,8 @@ ROAs_Collector().parse_roas()
 Coming Soon to a theater near you
 #### From the Command Line
 ### Roas Table Schema
+* [lib\_bgp\_data](#lib_bgp_data)
+* [Roas Submodule](#roas-submodule)
 * This table contains information on the ROAs retrieved from the https://rpki-validator.ripe.net/api/export.json
 * Unlogged tables are used for speed
 * asn: The ASN of an AS *(bigint)*
@@ -509,9 +584,13 @@ Coming Soon to a theater near you
         );
     ```
 ### Roas Design Choices
+* [lib\_bgp\_data](#lib_bgp_data)
+* [Roas Submodule](#roas-submodule)
 * CSVs are used for fast database bulk insertion
 * An index on the prefix is created on the roas for fast SQL joins
 ### Roas Possible Future Improvements
+* [lib\_bgp\_data](#lib_bgp_data)
+* [Roas Submodule](#roas-submodule)
 * Add test cases
 ## Extrapolator Submodule
    * [lib\_bgp\_data](#lib_bgp_data)
@@ -519,10 +598,14 @@ Coming Soon to a theater near you
    * [Long Description](#extrapolator-long-description)
    * [Usage](#extrapolator-usage)
 ### Extrapolator Short description
+* [lib\_bgp\_data](#lib_bgp_data)
+* [Extrapolator Submodule](#extrapolator-submodule)
 The Extrapolator takes as input mrt announcement data from the [MRT Parser](#mrt-announcements-submodule) and relationships data (peer and customer-provider data) from the [Relationships Parser](#relationships-submodule). The Extrapolator then propagates announcements to all appropriate AS's which would receive them, and outputs this data. This submodule is a simple wrapper to make it easier for a python script to run the extrapolator. It can run the rovpp version of the extrapolator or the forecast version of the extrapolator. Details other than how to run the wrapper are not included because up to date information should be found on the actual github page.
 
 For more in depth documentation please refer to: [https://github.com/c-morris/BGPExtrapolator](https://github.com/c-morris/BGPExtrapolator)
 ### Extrapolator Usage
+* [lib\_bgp\_data](#lib_bgp_data)
+* [Extrapolator Submodule](#extrapolator-submodule)
 #### In a Script
 To run the forecast extrapolator:
 (coming soon)
@@ -546,8 +629,14 @@ Extrapolator().run_rovpp(attacker_asn, victim_asn, more_specific_prefix)
    * [Design Choices](#bgpstream-website-design-choices)
    * [Possible Future Improvements](#bgpstream-website-possible-future-improvements)
 ### BGPStream Website Short description
+* [lib\_bgp\_data](#lib_bgp_data)
+* [BGPStream Website Submodule](#bgpstream-website-submodule)
+
 The purpose of this submodule is to parse information received from https://bgpstream.com to obtain information about real BGP hijacks, leaks, and outages that actually occurred.
 ### BGPStream Website Long description
+* [lib\_bgp\_data](#lib_bgp_data)
+* [BGPStream Website Submodule](#bgpstream-website-submodule)
+
 This submodule parses through the html of bgpstream.com and formats the data for actual hjacks, leaks, and outages into a CSV for later insertion into a database. This is done through a series of steps.
 
 1. Initialize the three different kinds of data classes.                                            
@@ -576,13 +665,17 @@ This submodule parses through the html of bgpstream.com and formats the data for
         * Duplicates are deleted
         * Temporary tables that are subsets of the data are created                                  
 ### BGPStream Website Usage
+* [lib\_bgp\_data](#lib_bgp_data)
+* [BGPStream Website Submodule](#bgpstream-website-submodule)
+
 #### In a Script
 Initializing the BGPStream_Website_Parser:
-> The default params for the parser are:
-> name = self.\_\_class\_\_.\_\_name\_\_  # The purpose of this is to make sure when we clean up paths at the end it doesn't delete files from other parsers.
-> path = "/tmp/bgp_{}".format(name)  # This is for the mrt files
-> CSV directory = "/dev/shm/bgp_{}".format(name) # Path for CSV files, located in RAM
-> logging stream level = logging.INFO  # Logging level for printing
+| Parameter    | Default                             | Description                                                                                                       |
+|--------------|-------------------------------------|-------------------------------------------------------------------------------------------------------------------|
+| name         | ```self.__class__.__name__```     | The purpose of this is to make sure when we clean up paths at the end it doesn't delete files from other parsers. |
+| path         | ```"/tmp/bgp_{}".format(name)```     | This is for the mrt files                                                                                         |
+| csv_dir      | ```"/dev/shm/bgp_{}".format(name)``` | Path for CSV files, located in RAM                                                                                |
+| stream_level | ```logging.INFO```                        | Logging level for printing                                                                                        |
 > Note that any one of the above attributes can be changed or all of them can be changed in any combination
 
 To initialize BGPStream_Website_Parser with default values:
@@ -599,16 +692,15 @@ parser = BGPStream_Website_Parser({"path": "/my_custom_path",
                                    "stream_level": DEBUG})
 ```
 Running the BGPStream_Website_Parser:
-> The default params for the BGPStream_Website_Parser's parse are:
-> start = epoch time, for the start of when to look for the desired event type in subtables that get created
-> end = epoch time, for the end of when to look for the desired event type in subtables that get created
-> row_limit = None  # Purely for testing, limits the number of rows to parse through for speed
-> download_threads = Number of CPU cores * 4  # Number of threads used to download MRT Files
-> parse_threads = Number of CPU cores  # Number of threads to parse MRT Files
-> IPV4  = True  # Whether or not to include IPV4 data
-> IPV6 = False  # Whether or not to include IPV6 data
-> data_types = [Event_Types.HIJACK.value]  # This is used to determine types of events to parse.
-> refresh = False  # If this is true parse rows regardless of whether we've seen them or not
+| Parameter  | Default                    | Description                                                                                        |
+|------------|----------------------------|----------------------------------------------------------------------------------------------------|
+| start      | 7 days ago, epoch time     | epoch time, for the start of when to look for the desired event type in subtables that get created |
+| end        | 6 days ago, epoch time     | epoch time, for the end of when to look for the desired event type in subtables that get created   |
+| row_limit  | None                       | Purely for testing, limits the number of rows to parse through for speed                           |
+| IPV4       | True                       | Whether or not to include IPV4 data                                                                |
+| IPV6       | False                      | Whether or not to include IPV6 data                                                                |
+| data_types | [Event_Types.HIJACK.value] | This is used to determine types of events to parse                                                 |
+| refresh    | False                      | If this is true, parse rows regardless of whether we've seen them or not                           |
 > Note that any one of the above attributes can be changed or all of them can be changed in any combination
 
 To run the BGPStream_Website_Parser with defaults:
@@ -655,10 +747,15 @@ BGPStream_Website_Parser().parse(start=1558974033,
 #### From the Command Line
 Coming Soon to a theater near you
 ### BGPStream Website Table Schema
+* [lib\_bgp\_data](#lib_bgp_data)
+* [BGPStream Website Submodule](#bgpstream-website-submodule)
+
 * These tables contains information on the relationship data retrieved from bgpstream.com
 * Unlogged tables are used for speed
 * Note that explanations are not provided because these fields are chosen by bgpstream.com
 #### hijack Table Schema:
+* [lib\_bgp\_data](#lib_bgp_data)
+* [BGPStream Website Table Schema](#bgpstream-website-table-schema)
 * Contains data for hijack events
 * hijack_id: *(serial PRIMARY KEY)*
 * country: Two letter country abbreviation *(varchar (50))*
@@ -696,6 +793,8 @@ Coming Soon to a theater near you
               );
     ```
 ##### hijack_temp Table Schema:
+* [lib\_bgp\_data](#lib_bgp_data)
+* [BGPStream Website Table Schema](#bgpstream-website-table-schema)
 * Contains data for hijack events within a certain time frame
 * prefix: Previously more specific prefix, aka the attackers prefix *(cidr)*
 * origin: Previously the detected_origin_number *(bigint)*
@@ -721,6 +820,8 @@ Coming Soon to a theater near you
     );
     ```
 ##### subprefix_hijack_temp Table Schema:
+* [lib\_bgp\_data](#lib_bgp_data)
+* [BGPStream Website Table Schema](#bgpstream-website-table-schema)
 * Contains data for subprefix hijack events within a certain time frame
 * more_specific_prefix: The attackers prefix *(cidr)*
 * attacker: Previously the detected_origin_number *(bigint)*
@@ -744,6 +845,8 @@ Coming Soon to a theater near you
     );
     ```
 #### leak Table Schema:
+* [lib\_bgp\_data](#lib_bgp_data)
+* [BGPStream Website Table Schema](#bgpstream-website-table-schema)
 * Contains data for leak events
 * leak_id: *(serial PRIMARY KEY)*
 * country: Two letter country abbreviation *(varchar (50))*
@@ -783,6 +886,8 @@ Coming Soon to a theater near you
     );
     ```
 #### outage Table Schema:
+* [lib\_bgp\_data](#lib_bgp_data)
+* [BGPStream Website Table Schema](#bgpstream-website-table-schema)
 * Contains data for outage events
 * outage_id: *(serial PRIMARY KEY)*
 * as_name: *(varchar (200))*
@@ -812,6 +917,8 @@ Coming Soon to a theater near you
     );
     ```
 ### BGPStream Website Design Choices
+* [lib\_bgp\_data](#lib_bgp_data)
+* [BGPStream Website Submodule](#bgpstream-website-submodule)
 * The last ten rows of the website are not parsed due to html errors                             
 * Only the data types that are passed in as a parameter are parsed                               
     * This is because querying each individual events page for info takes a long time
@@ -820,6 +927,8 @@ Coming Soon to a theater near you
 * Parsing is done from the end of the page to the top                                            
     * The start of the page is not always the same                                               
 ### BGPStream Website Possible Future Improvements
+* [lib\_bgp\_data](#lib_bgp_data)
+* [BGPStream Website Submodule](#bgpstream-website-submodule)
 * Add test cases
 * Request of make bgpstream.com an api for faster request time?
     * It would cause less querying to their site
@@ -834,13 +943,37 @@ Coming Soon to a theater near you
    * [Design Choices](#rpki-validator-design-choices)
    * [Possible Future Improvements](#rpki-validator-possible-future-improvements)
 ### RPKI Validator Short description
+* [lib\_bgp\_data](#lib_bgp_data)
+* [RPKI Validator Submodule](#rpki-validator-submodule)
+
+
 ### RPKI Validator Long description
+* [lib\_bgp\_data](#lib_bgp_data)
+* [RPKI Validator Submodule](#rpki-validator-submodule)
+
+
 ### RPKI Validator Usage
+* [lib\_bgp\_data](#lib_bgp_data)
+* [RPKI Validator Submodule](#rpki-validator-submodule)
+
+
 #### In a Script
 #### From the Command Line
 ### RPKI Validator Table Schema
+* [lib\_bgp\_data](#lib_bgp_data)
+* [RPKI Validator Submodule](#rpki-validator-submodule)
+
+
 ### RPKI Validator Design Choices
+* [lib\_bgp\_data](#lib_bgp_data)
+* [RPKI Validator Submodule](#rpki-validator-submodule)
+
+
 ### RPKI Validator Possible Future Improvements
+* [lib\_bgp\_data](#lib_bgp_data)
+* [RPKI Validator Submodule](#rpki-validator-submodule)
+
+
 ## What if Analysis Submodule
    * [lib\_bgp\_data](#lib_bgp_data)
    * [Short Description](#what-if-analysis-short-description)
@@ -850,13 +983,37 @@ Coming Soon to a theater near you
    * [Design Choices](#what-if-analysis-design-choices)
    * [Possible Future Improvements](#what-if-analysis-possible-future-improvements)
 ### What if Analysis  Short description
+* [lib\_bgp\_data](#lib_bgp_data)
+* [What if Analysis Submodule](#what-if-analysis-submodule)
+
+
 ### What if Analysis  Long description
+* [lib\_bgp\_data](#lib_bgp_data)
+* [What if Analysis Submodule](#what-if-analysis-submodule)
+
+
 ### What if Analysis  Usage
+* [lib\_bgp\_data](#lib_bgp_data)
+* [What if Analysis Submodule](#what-if-analysis-submodule)
+
+
 #### In a Script
 #### From the Command Line
 ### What if Analysis  Table Schema
+* [lib\_bgp\_data](#lib_bgp_data)
+* [What if Analysis Submodule](#what-if-analysis-submodule)
+
+* [What if Analysis Table Schema](#what-if-analysis-table-schema)
 ### What if Analysis  Design Choices
+* [lib\_bgp\_data](#lib_bgp_data)
+* [What if Analysis Submodule](#what-if-analysis-submodule)
+
+
 ### What if Analysis  Possible Future Improvements
+* [lib\_bgp\_data](#lib_bgp_data)
+* [What if Analysis Submodule](#what-if-analysis-submodule)
+
+
 ## API Submodule
    * [lib\_bgp\_data](#lib_bgp_data)
    * [Short Description](#api-short-description)
@@ -866,13 +1023,37 @@ Coming Soon to a theater near you
    * [Design Choices](#api-design-choices)
    * [Possible Future Improvements](#api-possible-future-improvements)
 ### API Short Description
+* [lib\_bgp\_data](#lib_bgp_data)
+* [API Submodule](#api-submodule)
+
+
 ### API Long Description
+* [lib\_bgp\_data](#lib_bgp_data)
+* [API Submodule](#api-submodule)
+
+
 ### API Usage
+* [lib\_bgp\_data](#lib_bgp_data)
+* [API Submodule](#api-submodule)
+
+
 #### In a Script
 #### From the Command Line
 ### API JSON Format
+* [lib\_bgp\_data](#lib_bgp_data)
+* [API Submodule](#api-submodule)
+
+
 ### API Design Choices
+* [lib\_bgp\_data](#lib_bgp_data)
+* [API Submodule](#api-submodule)
+
+
 ### API Possible Future Improvements
+* [lib\_bgp\_data](#lib_bgp_data)
+* [API Submodule](#api-submodule)
+
+
 ## ROVPP Submodule
    * [lib\_bgp\_data](#lib_bgp_data)
    * [Short Description](#rovpp-short-description)
@@ -882,22 +1063,61 @@ Coming Soon to a theater near you
    * [Design Choices](#rovpp-design-choices)
    * [Possible Future Improvements](#rovpp-possible-future-improvements)
 ### ROVPP Short description
+* [lib\_bgp\_data](#lib_bgp_data)
+* [ROVPP Submodule](#rovpp-submodule)
+
 This module was created to simulate ROV++ over the topology of the internet for a hotnets paper. Due to numerous major last minute changes hardcoding was necessary to meet the deadline, and this submodule quickly turned into garbage. Hopefully we will revisit this and make it into a much better test automation script once we know how we want to run our tests. Due to this, I am not going to write documentation on this currently.
 ### ROVPP Long description
+* [lib\_bgp\_data](#lib_bgp_data)
+* [ROVPP Submodule](#rovpp-submodule)
+
+
 ### ROVPP  Usage
+* [lib\_bgp\_data](#lib_bgp_data)
+* [ROVPP Submodule](#rovpp-submodule)
+
+
 #### In a Script
 #### From the Command Line
 ### ROVPP  Table Schema
+* [lib\_bgp\_data](#lib_bgp_data)
+* [ROVPP Submodule](#rovpp-submodule)
+
+* [ROVPP Table Schema](#rovpp-table-schema)
 ### ROVPP  Design Choices
+* [lib\_bgp\_data](#lib_bgp_data)
+* [ROVPP Submodule](#rovpp-submodule)
+
+
 ### ROVPP  Possible Future Improvements
+* [lib\_bgp\_data](#lib_bgp_data)
+* [ROVPP Submodule](#rovpp-submodule)
+
+
 ## Utils
    * [lib\_bgp\_data](#lib_bgp_data)
    * [Description](#utils-description)
    * [Design Choices](#utils-design-choices)
    * [Possible Future Improvements](#utils-possible-future-improvements)
 ### Utils Description
+* [lib\_bgp\_data](#lib_bgp_data)
+* [Utils](#utils)
+
+### Utils Features
+* [lib\_bgp\_data](#lib_bgp_data)
+* [Utils](#utils)
+
+
 ### Utils Design Choices
+* [lib\_bgp\_data](#lib_bgp_data)
+* [Utils](#utils)
+
+
 ### Utils Possible Future Improvements
+* [lib\_bgp\_data](#lib_bgp_data)
+* [Utils](#utils)
+
+
 ## Database Submodule
    * [lib\_bgp\_data](#lib_bgp_data)
    * [Description](#database-description)
@@ -905,14 +1125,38 @@ This module was created to simulate ROV++ over the topology of the internet for 
    * [Design Choices](#database-design-choices)
    * [Possible Future Improvements](#database-possible-future-improvements)
 ### Database Description
+* [lib\_bgp\_data](#lib_bgp_data)
+* [Database Submodule](#database-submodule)
+
+
 ### Database Enhancements
+* [lib\_bgp\_data](#lib_bgp_data)
+* [Database Submodule](#database-submodule)
+
+
 ### Database  Usage
+* [lib\_bgp\_data](#lib_bgp_data)
+* [Database Submodule](#database-submodule)
+
+
 #### In a Script
 #### From the Command Line
 ### Database Design Choices
+* [lib\_bgp\_data](#lib_bgp_data)
+* [Database Submodule](#database-submodule)
+
+
 unlogged tables
 ### Database Possible Future Improvements
+* [lib\_bgp\_data](#lib_bgp_data)
+* [Database Submodule](#database-submodule)
+
+
 ### Database Installation
+* [lib\_bgp\_data](#lib_bgp_data)
+* [Database Submodule](#database-submodule)
+
+
 PUT LINK HERE TO DB INSTALL INSTRUCTIONS BELOW!!
 ## Logging Submodule
    * [lib\_bgp\_data](#lib_bgp_data)
@@ -921,9 +1165,25 @@ PUT LINK HERE TO DB INSTALL INSTRUCTIONS BELOW!!
    * [Design Choices](#logging-design-choices)
    * [Possible Future Improvements](#logging-possible-future-improvements)
 ### Logging Description
+* [lib\_bgp\_data](#lib_bgp_data)
+* [Logger Submodule](#logger-submodule)
+
+
 ### Error Catcher
+* [lib\_bgp\_data](#lib_bgp_data)
+* [Logger Submodule](#logger-submodule)
+
+
 ### Logging Design Choices
+* [lib\_bgp\_data](#lib_bgp_data)
+* [Logger Submodule](#logger-submodule)
+
+
 ### Logging Possible Future Improvements
+* [lib\_bgp\_data](#lib_bgp_data)
+* [Logger Submodule](#logger-submodule)
+
+
 ## Installation
    * [lib\_bgp\_data](#lib_bgp_data)
    * [Installation Instructions](#installation-instructions)
@@ -931,6 +1191,10 @@ PUT LINK HERE TO DB INSTALL INSTRUCTIONS BELOW!!
    * [System Requirements](#system-requirements)
    * [Installation Class Details](#installation-class-details)
 ### Installation instructions
+* [lib\_bgp\_data](#lib_bgp_data)
+* [Installation Submodule](#installation-submodule)
+
+
 First you need some dependencies. Run
 ```bash
 sudo apt-get install python-psycopg2
@@ -989,6 +1253,10 @@ Install().install(fresh_install=False)
 ```
 This will automate the installation process, and from here you should be ready to go
 ### Postgres Installation
+* [lib\_bgp\_data](#lib_bgp_data)
+* [Installation Submodule](#installation-submodule)
+
+
 For this, you are going to need postgres 11. You need this because it allows for parallel query execution, which significantly speeds up processing time. For installing postgres on your machine, see:
 Ubuntu Install:
 [https://computingforgeeks.com/install-postgresql-11-on-ubuntu-18-04-ubuntu-16-04/](https://computingforgeeks.com/install-postgresql-11-on-ubuntu-18-04-ubuntu-16-04/)
@@ -1007,11 +1275,35 @@ sudo systemctl status postgresql@11-main.service
 ```
 
 ### RPKI Validator Installation
+* [lib\_bgp\_data](#lib_bgp_data)
+* [Installation Submodule](#installation-submodule)
+
+
 ### System Requirements
+* [lib\_bgp\_data](#lib_bgp_data)
+* [Installation Submodule](#installation-submodule)
+
+
 ### Installation Class Details
+* [lib\_bgp\_data](#lib_bgp_data)
+* [Installation Submodule](#installation-submodule)
+
+
 #### Installation Class Description
+* [lib\_bgp\_data](#lib_bgp_data)
+* [Installation Submodule](#installation-submodule)
+
+
 #### Installation Class Design Choices
+* [lib\_bgp\_data](#lib_bgp_data)
+* [Installation Submodule](#installation-submodule)
+
+
 #### Installation Class Future Extensions
+* [lib\_bgp\_data](#lib_bgp_data)
+* [Installation Submodule](#installation-submodule)
+
+
 ## Adding a Submodule
    * [lib\_bgp\_data](#lib_bgp_data)
    * [How to Add a Submodule](#how-to-add-a-submodule)

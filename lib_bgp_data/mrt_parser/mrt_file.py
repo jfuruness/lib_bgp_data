@@ -15,6 +15,7 @@ mrt files. This is done through a series of steps
      malformed attributes, because some ASs do not ignore them
     -sed is used because it is cross compatable and fast
         -Must use regex parser that can find/replace for array format
+        -AS Sets are not parsed because they are unreliable
     -Possible future extensions:
         -Use a faster regex parser?
         -Add parsing updates functionality?
@@ -35,6 +36,7 @@ Design choices (summarizing from above):
      announcements, but now with a change bgpscanner does this as well
         -This was a problem because some ASes do not ignore these errors
     -sed is used for regex parsing because it is fast and portable
+    -AS Sets are not parsed because they are unreliable
     -Data is bulk inserted into postgres
         -Bulk insertion using COPY is the fastest way to insert data
          into postgres and is neccessary due to massive data size
@@ -56,7 +58,6 @@ from .tables import MRT_Announcements_Table
 __author__ = "Justin Furuness"
 __credits__ = ["Justin Furuness", "Cameron Morris"]
 __Lisence__ = "MIT"
-__Version__ = "0.1.0"
 __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Development"

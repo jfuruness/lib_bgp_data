@@ -12,12 +12,11 @@ from .api import application
 from .extrapolator import Extrapolator
 from .rovpp import ROVPP_Simulator
 from .utils import Install, Database, db_connection, Thread_Safe_Logger
-from .__main__ import Forecast
+from .forecast import Forecast
 
 __author__ = "Justin Furuness"
 __credits__ = ["Justin Furuness"]
 __Lisence__ = "MIT"
-__Version__ = "0.1.0"
 __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Development"

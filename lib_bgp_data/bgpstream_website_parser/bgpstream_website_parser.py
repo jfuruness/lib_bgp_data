@@ -50,7 +50,6 @@ from .data_classes import Leak, Hijack, Outage
 __author__ = "Justin Furuness"
 __credits__ = ["Justin Furuness"]
 __Lisence__ = "MIT"
-__Version__ = "0.1.0"
 __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
@@ -159,8 +158,10 @@ class BGPStream_Website_Parser:
                 # Note that the append method is overriden
                 # This will parse the row and then append the parsed
                 # information in a list inside self.data[_type]
-                self.logger.info("Parsing row {}/{}".format(num, total))
+                self.logger.debug("Parsing row {}/{}".format(num, total))
                 self.data[_type].append(row)
+                if num % 250 == 0:
+                    self.logger.info("Parsed {}/{} rows".format(num, total))
 
     @error_catcher()
     def _generate_known_events(self):

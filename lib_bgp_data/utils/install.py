@@ -65,7 +65,6 @@ from .database import Database, db_connection
 __author__ = "Justin Furuness"
 __credits__ = ["Justin Furuness"]
 __Lisence__ = "MIT"
-__Version__ = "0.1.0"
 __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
@@ -213,7 +212,7 @@ class Install:
                 "sudo apt install libboost-test-dev",
                 "cd ..",
                 "make -j{}".format(cpu_count()),
-                "cp bgp-extrapolator /usr/bin/forecast-extrapolator",
+                "sudo cp bgp-extrapolator /usr/bin/forecast-extrapolator",
                 "rm -rf BGPExtrapolator"]
         check_call("&& ".join(cmds), shell=True)
 
@@ -233,7 +232,7 @@ class Install:
         # Install extrapolator
         cmds = ["cd BGPExtrapolator",
                 "make -j{}".format(cpu_count()),
-                "cp bgp-extrapolator /usr/bin/rovpp-extrapolator"]
+                "sudo cp bgp-extrapolator /usr/bin/rovpp-extrapolator"]
 
         check_call("&& ".join(cmds), shell=True)
         # Remove unnessecary stuff
@@ -255,8 +254,8 @@ class Install:
                 "sudo apt-get install liblz4-dev",
                 "sudo apt-get install ninja-build",
                 "pip3 install --user meson",
-                "git clone https://gitlab.com/Isolario/bgpscanner.git",
-                "cd bgpscanner"]
+                "sudo apt-get -y install cmake",
+                "git clone https://gitlab.com/Isolario/bgpscanner.git"]
         check_call("&& ".join(cmds), shell=True)
 
         path = "bgpscanner/src/mrtdataread.c"
@@ -268,8 +267,8 @@ class Install:
         cmds = ["cd bgpscanner",
                 "mkdir build && cd build",
                 "meson ..",
-                "ninja",
-                "cp bgpscanner /usr/bin/bgpscanner"]
+                "sudo ninja install",
+                "sudo ldconfig"]
         check_call("&& ".join(cmds), shell=True)
         self._remove("bgpscanner")
 
@@ -290,7 +289,7 @@ class Install:
                 "./bootstrap.sh",
                 "make",
                 "./bgpdump -T",
-                "cp bgpdump /usr/bin/bgpdump"]
+                "sudo cp bgpdump /usr/bin/bgpdump"]
         check_call("&& ".join(cmds), shell=True)
         # Removes bgpdump unnessecary stuff
         self._remove("bgpdump/")

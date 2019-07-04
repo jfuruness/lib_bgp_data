@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-"""This subpackage contains the functionality to run the extrapolator
-see: https://github.com/c-morris/BGPExtrapolator"""
+"""omg I hate docs"""
 
-from .extrapolator import Extrapolator
+
+from .forecast import Forecast
 
 __author__ = "Justin Furuness"
 __credits__ = ["Justin Furuness"]

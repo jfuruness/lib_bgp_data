@@ -37,6 +37,7 @@ into a database. This is done through a series of steps.
     -Announcements with malformed attributes are ignored
     -sed is used because it is cross compatable and fast
         -Must use regex parser that can find/replace for array format
+        -AS Sets are not parsed because they are unreliable
     -Possible future extensions:
         -Use a faster regex parser?
         -Add parsing updates functionality?
@@ -112,7 +113,6 @@ from .mrt_parser import MRT_Parser
 __author__ = "Justin Furuness"
 __credits__ = ["Justin Furuness"]
 __Lisence__ = "MIT"
-__Version__ = "0.1.0"
 __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Development"

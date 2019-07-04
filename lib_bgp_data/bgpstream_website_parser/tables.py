@@ -29,7 +29,6 @@ from ..utils import Database, error_catcher
 __author__ = "Justin Furuness"
 __credits__ = ["Justin Furuness"]
 __Lisence__ = "MIT"
-__Version__ = "0.1.0"
 __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
@@ -88,10 +87,10 @@ class Hijack_Table(Database):
         """
 
         if None in [start, end]:
-            self.logger.info("Not creating temporary tables")
+            self.logger.debug("Not creating temporary tables")
             return
 
-        self.logger.info("About to create temporary hijack table")
+        self.logger.debug("About to create temporary hijack table")
         self.logger.debug("About to drop hijack temp")
         self.cursor.execute("DROP TABLE IF EXISTS hijack_temp;")
         self.logger.debug("Dropped hijack temp")
@@ -143,6 +142,7 @@ class Hijack_Table(Database):
                 WHERE h.prefix << h.expected_prefix
                 );"""
         self.cursor.execute(sql)
+        self.logger.info("Created subprefix hijack table")
 
     @error_catcher()
     def delete_duplicates(self):
@@ -154,7 +154,7 @@ class Hijack_Table(Database):
               AND a.event_number = b.event_number
               ;"""
         self.cursor.execute(sql)
-        self.logger.info("Duplicates deleted in hijack")
+        self.logger.debug("Duplicates deleted in hijack")
 
     @error_catcher()
     def filter(self, IPV4=True, IPV6=False):
@@ -166,6 +166,7 @@ class Hijack_Table(Database):
         if not IPV4:
             sql = "DELETE FROM hijack WHERE family(expected_prefix) = 4;"
             self.cursor.execute(sql)
+        self.logger.debug("Filtered by IPV4 and IPV6")
 
 
 class Leak_Table(Database):
@@ -215,7 +216,7 @@ class Leak_Table(Database):
               WHERE a.leak_id < b.leak_id AND a.event_number = b.event_number
               ;"""
         self.cursor.execute(sql)
-        self.logger.info("Deleted duplicates from leak")
+        self.logger.debug("Deleted duplicates from leak")
 
     @error_catcher()
     def filter(self, IPV4=True, IPV6=False):
@@ -227,6 +228,7 @@ class Leak_Table(Database):
         if not IPV4:
             sql = "DELETE FROM leak WHERE family(leaked_prefix) = 4;"
             self.cursor.execute(sql)
+        self.logger.debug("Filtered by IPV4 and IPV6")
 
     @error_catcher()
     def create_index(self):
@@ -286,7 +288,7 @@ class Outage_Table(Database):
               AND a.event_number = b.event_number
               ;"""
         self.cursor.execute(sql)
-        self.logger.info("Deleted duplicates from outage")
+        self.logger.debug("Deleted duplicates from outage")
 
     @error_catcher()
     def filter(self, IPV4=True, IPV6=False):

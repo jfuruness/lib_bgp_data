@@ -58,7 +58,6 @@ from .tables import Hijack_Table, Outage_Table, Leak_Table
 __author__ = "Justin Furuness"
 __credits__ = ["Justin Furuness"]
 __Lisence__ = "MIT"
-__Version__ = "0.1.0"
 __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
@@ -141,6 +140,7 @@ class Data:
 ### Helper Functions ###
 ########################
 
+    @error_catcher()
     def _parse_common_elements(self, row):
         """Parses common tags and adds data to temp_row.
 
@@ -173,6 +173,7 @@ class Data:
         # Returns the as info and html for the page with more info
         return as_info, utils.get_tags(url, "td")[0]
 
+    @error_catcher()
     def _parse_as_info(self, as_info):
         """Performs regex on as_info to return AS number and AS name.
 
@@ -198,6 +199,7 @@ class Data:
                 return as_parsed.group("as_name2"),\
                     as_parsed.group("as_number2")
 
+    @error_catcher()
     def _format_temp_row(self):
         """Formats row vals for input into the csv files.
 
@@ -234,6 +236,7 @@ class Hijack(Data):
         self.csv_path = "{}/hijack.csv".format(csv_dir)
         Data.__init__(self, logger)
 
+    @error_catcher()
     def _parse_uncommon_info(self, as_info, extended_children):
         """Parses misc hijack row info."""
 
@@ -283,6 +286,7 @@ class Leak(Data):
         self.csv_path = "{}/leak.csv".format(csv_dir)
         Data.__init__(self, logger)
 
+    @error_catcher()
     def _parse_uncommon_info(self, as_info, extended_children):
         """Parses misc leak row info."""
 
@@ -342,6 +346,7 @@ class Outage(Data):
         self.csv_path = "{}/outage.csv".format(csv_dir)
         Data.__init__(self, logger)
 
+    @error_catcher()
     def _parse_uncommon_info(self, as_info, extended_children):
         """Parses misc outage row info."""
 
