@@ -88,6 +88,10 @@ class Hijack_Table(Database):
         Also creates a subprefix hijack table, used in rovpp sims.
         """
 
+        if None in [start, end]:
+            self.logger.info("Not creating temporary tables")
+            return
+
         self.logger.info("About to create temporary hijack table")
         self.logger.debug("About to drop hijack temp")
         self.cursor.execute("DROP TABLE IF EXISTS hijack_temp;")
@@ -202,7 +206,7 @@ class Leak_Table(Database):
               origin_as_name varchar (200),
               origin_as_number bigint,
               url varchar (250)
-              ) ;"""
+              );"""
         self.cursor.execute(sql)
 
     @error_catcher()
@@ -271,7 +275,7 @@ class Outage_Table(Database):
               number_prefixes_affected integer,
               percent_prefixes_affected smallint,
               url varchar(150)
-              ) ;"""
+              );"""
         self.cursor.execute(sql)
 
     @error_catcher()

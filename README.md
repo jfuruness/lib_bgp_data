@@ -50,6 +50,7 @@ Please note: These steps are not necessarily linear, as much of this is done in 
    * [Possible Future Improvements](#main-possible-future-improvements)
 ### Main Short description
 ### Main Long description
+-make sure to include about how much time each one takes, and how bgpstream.com takes a lot longer the first run through but then afterwards is extremely fast
 ### Main Usage
 #### In a Script
 #### From the Command Line
@@ -545,13 +546,285 @@ Extrapolator().run_rovpp(attacker_asn, victim_asn, more_specific_prefix)
    * [Design Choices](#bgpstream-website-design-choices)
    * [Possible Future Improvements](#bgpstream-website-possible-future-improvements)
 ### BGPStream Website Short description
+The purpose of this submodule is to parse information received from https://bgpstream.com to obtain information about real BGP hijacks, leaks, and outages that actually occurred.
 ### BGPStream Website Long description
+This submodule parses through the html of bgpstream.com and formats the data for actual hjacks, leaks, and outages into a CSV for later insertion into a database. This is done through a series of steps.
+
+1. Initialize the three different kinds of data classes.                                            
+   * Handled in the \_\_init\_\_ function in the BGPStream\_Website\_Parser class
+   * This class mainly deals with accessing the website, the data classes deal with parsing the information. These data classes inherit from the parent class Data and are located in the data_classes file
+2. All rows are received from the main page of the website                                          
+    * This is handled in the utils.get_tags function                                                 
+    * This has some initial data for all bgp events                                                  
+3. The last ten rows on the website are removed
+    * This is handled in the parse function in the BGPStream_Website_Parser
+    * There is some html errors there, which causes errors when parsing                              
+4. The row limit is set so that it is not too high                                                  
+    * This is handled in the parse function in the BGPStream_Website_Parser
+    * This is to prevent going over the maximum number of rows on website                            
+5. Rows are iterated over until row_limit is reached                                                
+    * This is handled in the parse function in the BGPStream_Website_Parser
+6. For each row, if that row is of a datatype passed in the parameters,                             
+   and the row is new (by default) add that to the self.data dictionary                             
+    * This causes that row to be parsed as well
+    * Rows are parsed into CSVs and inserted into the database                                       
+7. Call the db_insert funtion on each of the data classes in self.data                              
+    * This will parse all rows and insert them into the database                                     
+    * This formats the tables as well
+        * Unwanted IPV4 or IPV6 prefixes are removed                                                 
+        * Indexes are created if they don't exist
+        * Duplicates are deleted
+        * Temporary tables that are subsets of the data are created                                  
 ### BGPStream Website Usage
 #### In a Script
+Initializing the BGPStream_Website_Parser:
+> The default params for the parser are:
+> name = self.\_\_class\_\_.\_\_name\_\_  # The purpose of this is to make sure when we clean up paths at the end it doesn't delete files from other parsers.
+> path = "/tmp/bgp_{}".format(name)  # This is for the mrt files
+> CSV directory = "/dev/shm/bgp_{}".format(name) # Path for CSV files, located in RAM
+> logging stream level = logging.INFO  # Logging level for printing
+> Note that any one of the above attributes can be changed or all of them can be changed in any combination
+
+To initialize BGPStream_Website_Parser with default values:
+```python
+from lib_bgp_data import BGPStream_Website_Parser
+parser = BGPStream_Website_Parser()
+```                 
+To initialize BGPStream_Website_Parser with custom path, CSV directory, and logging level:
+```python
+from logging import DEBUG
+from lib_bgp_data import MRT_Parser
+parser = BGPStream_Website_Parser({"path": "/my_custom_path",
+                                   "csv_dir": "/my_custom_csv_dir",
+                                   "stream_level": DEBUG})
+```
+Running the BGPStream_Website_Parser:
+> The default params for the BGPStream_Website_Parser's parse are:
+> start = epoch time, for the start of when to look for the desired event type in subtables that get created
+> end = epoch time, for the end of when to look for the desired event type in subtables that get created
+> row_limit = None  # Purely for testing, limits the number of rows to parse through for speed
+> download_threads = Number of CPU cores * 4  # Number of threads used to download MRT Files
+> parse_threads = Number of CPU cores  # Number of threads to parse MRT Files
+> IPV4  = True  # Whether or not to include IPV4 data
+> IPV6 = False  # Whether or not to include IPV6 data
+> data_types = [Event_Types.HIJACK.value]  # This is used to determine types of events to parse.
+> refresh = False  # If this is true parse rows regardless of whether we've seen them or not
+> Note that any one of the above attributes can be changed or all of them can be changed in any combination
+
+To run the BGPStream_Website_Parser with defaults:
+```python
+from lib_bgp_data import BGPStream_Website_Parser
+BGPStream_Website_Parser().parse()
+```
+To run the BGPStream_Website_Parser with specific time intervals for subtables:
+```python
+from lib_bgp_data import BGPStream_Website_Parser
+BGPStream_Website_Parser().parse(start=1558974033,
+                                 end=1558974033)
+```
+To run the BGPStream_Website_Parser with specific time intervals and custom row_limit (parses 10 rows):
+```python
+from lib_bgp_data import BGPStream_Website_Parser
+MRT_Parser().parse_files(start=1558974033,
+                         end=1558974033,
+                         row_limit=10)
+```
+To run the BGPStream_Website_Parser with specific time intervals and get all outages:
+```python
+from lib_bgp_data import BGPStream_Website_Parser
+BGPStream_Website_Parser().parse(start=1558974033,
+                                 end=1558974033,
+                                 data_types=[Event_Types.OUTAGE.value])
+```
+
+To run the BGPStream_Website_Parser with specific time intervals and IPV4 and IPV6 data:
+```python
+from lib_bgp_data import BGPStream_Website_Parser
+BGPStream_Website_Parser().parse(start=1558974033,
+                                 end=1558974033,
+                                 IPV4=True,
+                                 IPV6=True)
+```
+To run the BGPStream Website Parser with specific time intervals and new data regardless of whether or not it exists in the database:
+```python
+from lib_bgp_data import BGPStream_Website_Parser
+BGPStream_Website_Parser().parse(start=1558974033,
+                                 end=1558974033,
+                                 refresh=True)
+```
 #### From the Command Line
+Coming Soon to a theater near you
 ### BGPStream Website Table Schema
+* These tables contains information on the relationship data retrieved from bgpstream.com
+* Unlogged tables are used for speed
+* Note that explanations are not provided because these fields are chosen by bgpstream.com
+#### hijack Table Schema:
+* Contains data for hijack events
+* hijack_id: *(serial PRIMARY KEY)*
+* country: Two letter country abbreviation *(varchar (50))*
+* detected_as_path: detected_as_path of the hijack *(bigint ARRAY)*
+* detected_by_bgpmon_peers: *(integer)*
+* detected_origin_name: *(varchar (200))*
+* detected_origin_number: *(bigint)*
+* start_time: *(timestamp with time zone)* - Note that the server and website are set to UTC
+* end_time: *(timestamp with time zone)* - Note that the server and website are set to UTC
+* event_number: *(integer)*
+* event_type: *(varchar (50))*
+* expected_origin_name: *(varchar (200))*
+* expected_origin_number: *(bigint)*
+* expected_prefix: *(cidr)*
+* more_specific_prefix: *(cidr)*
+* url: *(varchar (250))*
+* Create Table SQL:
+    ```
+    CREATE UNLOGGED TABLE IF NOT EXISTS hijack (
+              hijack_id serial PRIMARY KEY,
+              country varchar (50),
+              detected_as_path bigint ARRAY,
+              detected_by_bgpmon_peers integer,
+              detected_origin_name varchar (200),
+              detected_origin_number bigint,
+              start_time timestamp with time zone,
+              end_time timestamp with time zone,
+              event_number integer,
+              event_type varchar (50),
+              expected_origin_name varchar (200),
+              expected_origin_number bigint,
+              expected_prefix cidr,
+              more_specific_prefix cidr,
+              url varchar (250)
+              );
+    ```
+##### hijack_temp Table Schema:
+* Contains data for hijack events within a certain time frame
+* prefix: Previously more specific prefix, aka the attackers prefix *(cidr)*
+* origin: Previously the detected_origin_number *(bigint)*
+* start_time: *(timestamp with time zone)* - Note that the server and website are set to UTC
+* end_time: *(timestamp with time zone)* - Note that the server and website are set to UTC
+* url: *(varchar (250))*
+* expected_prefix: *(cidr)*
+* expected_origin_number: *(bigint)*
+* Create Table SQL:
+    ```
+    CREATE UNLOGGED TABLE hijack_temp AS
+        (SELECT h.more_specific_prefix AS prefix,
+        h.detected_origin_number AS origin,
+        h.start_time,
+        COALESCE(h.end_time, now()) AS end_time,
+        h.url,
+        h.expected_prefix,
+        h.expected_origin_number
+    FROM hijack h
+    WHERE
+        (h.start_time, COALESCE(h.end_time, now())) OVERLAPS
+        (%s::timestamp with time zone, %s::timestamp with time zone)
+    );
+    ```
+##### subprefix_hijack_temp Table Schema:
+* Contains data for subprefix hijack events within a certain time frame
+* more_specific_prefix: The attackers prefix *(cidr)*
+* attacker: Previously the detected_origin_number *(bigint)*
+* url: *(varchar (250))*
+* expected_prefix: *(cidr)*
+* victim: Previously expected_origin_number *(bigint)*
+* Create Table SQL:
+    ```
+    CREATE UNLOGGED TABLE hijack_temp AS
+        (SELECT h.more_specific_prefix AS prefix,
+        h.detected_origin_number AS origin,
+        h.start_time,
+        COALESCE(h.end_time, now()) AS end_time,
+        h.url,
+        h.expected_prefix,
+        h.expected_origin_number
+    FROM hijack h
+    WHERE
+        (h.start_time, COALESCE(h.end_time, now())) OVERLAPS
+        (%s::timestamp with time zone, %s::timestamp with time zone)
+    );
+    ```
+#### leak Table Schema:
+* Contains data for leak events
+* leak_id: *(serial PRIMARY KEY)*
+* country: Two letter country abbreviation *(varchar (50))*
+* detected_by_bgpmon_peers: *(integer)*
+* start_time: *(timestamp with time zone)* - Note that the server and website are set to UTC
+* end_time: *(timestamp with time zone)* - Note that the server and website are set to UTC
+* event_number: *(integer)*
+* event_type: *(varchar (50))*
+* example_as_path: *(bigint ARRAY)*
+* leaked_prefix: *(cidr)*
+* leaked_to_name: *(varchar (200) ARRAY)*
+* leaked_to_number: *(bigint ARRAY)*
+* leaker_as_name: *(varchar (200))*
+* leaker_as_number: *(bigint)*
+* origin_as_name: *(varchar (200))*
+* origin_as_number: *(bigint)*
+* url: *(varchar (250))*
+* Create Table SQL:
+    ```
+    CREATE UNLOGGED TABLE IF NOT EXISTS Leak (
+        leak_id serial PRIMARY KEY,
+        country varchar (50),
+        detected_by_bgpmon_peers integer,
+        start_time timestamp with time zone,
+        end_time timestamp with time zone,
+        event_number integer,
+        event_type varchar (50),
+        example_as_path bigint ARRAY,
+        leaked_prefix cidr,
+        leaked_to_name varchar (200) ARRAY,
+        leaked_to_number bigint ARRAY,
+        leaker_as_name varchar (200),
+        leaker_as_number bigint,
+        origin_as_name varchar (200),
+        origin_as_number bigint,
+        url varchar (250)
+    );
+    ```
+#### outage Table Schema:
+* Contains data for outage events
+* outage_id: *(serial PRIMARY KEY)*
+* as_name: *(varchar (200))*
+* as_number: *(bigint)*
+* country: Two letter country abbreviation *(varchar (50))*
+* start_time: *(timestamp with time zone)* - Note that the server and website are set to UTC
+* end_time: *(timestamp with time zone)* - Note that the server and website are set to UTC
+* event_number: *(integer)*
+* event_type: *(varchar (50))*
+* number_prefixes_affected: *(integer)*
+* percent_prefixes_affected: *(smallint)*
+* url: *(varchar (250))*
+* Create Table SQL:
+    ```
+    CREATE UNLOGGED TABLE IF NOT EXISTS outage (
+        outage_id serial PRIMARY KEY,
+        as_name varchar (200),
+        as_number bigint,
+        country varchar (25),
+        start_time timestamp with time zone,
+        end_time timestamp with time zone,
+        event_number integer,
+        event_type varchar (25),
+        number_prefixes_affected integer,
+        percent_prefixes_affected smallint,
+        url varchar(150)
+    );
+    ```
 ### BGPStream Website Design Choices
+* The last ten rows of the website are not parsed due to html errors                             
+* Only the data types that are passed in as a parameter are parsed                               
+    * This is because querying each individual events page for info takes a long time
+    * Only new rows by default are parsed for the same reason                                    
+* Multithreading isn't used because the website blocks the requests                              
+* Parsing is done from the end of the page to the top                                            
+    * The start of the page is not always the same                                               
 ### BGPStream Website Possible Future Improvements
+* Add test cases
+* Request of make bgpstream.com an api for faster request time?
+    * It would cause less querying to their site
+* Multithread the first hundred results?
+    * If we only parse new info this is the common case
 ## RPKI Validator Submodule
    * [lib\_bgp\_data](#lib_bgp_data)
    * [Short Description](#rpki-validator-short-description)

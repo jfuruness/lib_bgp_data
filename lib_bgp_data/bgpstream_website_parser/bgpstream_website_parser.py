@@ -93,7 +93,7 @@ class BGPStream_Website_Parser:
 
     @error_catcher()
     @utils.run_parser()
-    def parse(self, start, end, row_limit=None, IPV4=True, IPV6=False,
+    def parse(self, start=None, end=None, row_limit=None, IPV4=True, IPV6=False,
               data_types=[Event_Types.OUTAGE.value], refresh=False):
         """Parses rows in the bgpstream website.
 
