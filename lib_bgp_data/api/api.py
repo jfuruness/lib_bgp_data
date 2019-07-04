@@ -5,7 +5,7 @@ from random import random
 from datetime import datetime, timedelta
 from flasgger import Swagger, swag_from
 from ..utils import Database, db_connection, Thread_Safe_Logger as Logger
-from ..utils import utils, Stubs_Table
+from ..utils import utils
 
 
 class ListConverter(BaseConverter):

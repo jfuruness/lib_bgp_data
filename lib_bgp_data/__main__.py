@@ -16,7 +16,7 @@ from .bgpstream_website_parser import BGPStream_Website_Parser
 from .mrt_parser import MRT_Parser
 from .what_if_analysis import What_If_Analysis, RPKI_Validator
 from .utils import utils, Database, db_connection, Install
-from .utils import Announcements_Covered_By_Roas_Table, Stubs_Table
+from .utils import MRT_W_Roas_Table
 
 __author__ = "Justin Furuness"
 __credits__ = ["Justin Furuness"]
@@ -30,21 +30,21 @@ class Forecast:
     """This class contains all the neccessary parsing functions"""
 
     def __init__(self,
-                 start=(utils.now()-timedelta(days=7)).timestamp(),
-                 end=(utils.now()-timedelta(days=6)).timestamp(),
+                 start=utils.get_default_start(),
+                 end=utils.get_default_end(),
                  filter_by_roas=True,
                  first_run=False,
-                 forecast_args={}
+                 forecast_args={},
                  mrt_args={},
                  mrt_parse_args={},
                  rel_args={},
-                 rel_parse_args={}
+                 rel_parse_args={},
                  roas_args={},
-                 roas_parse_args={}
+                 roas_parse_args={},
                  web_args={},
-                 web_parse_args={}
+                 web_parse_args={},
                  what_if_args={},
-                 what_if_parse_args={}
+                 what_if_parse_args={},
                  rpki_args={},
                  rpki_parse_args={}):
         """Initializes vars such as log level etc

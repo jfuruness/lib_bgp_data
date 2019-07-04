@@ -136,8 +136,8 @@ class MRT_Parser:
     @error_catcher()
     @utils.run_parser()
     def parse_files(self,
-                    start=(utils.now()-timedelta(days=7)).timestamp(),
-                    end=(utils.now()-timedelta(days=6)).timestamp(),
+                    start=utils.get_default_start(),
+                    end=utils.get_default_end(),
                     api_param_mods=None,
                     download_threads=None,
                     parse_threads=None,

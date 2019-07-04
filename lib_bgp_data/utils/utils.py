@@ -25,7 +25,7 @@ import shutil
 import os
 import sys
 import functools
-from datetime import datetime
+from datetime import datetime, timedelta
 import csv
 import gzip
 import json
@@ -88,6 +88,12 @@ def now():
     """Returns current time"""
 
     return datetime.utcnow()
+
+def get_default_start():
+    return (now()-timedelta(days=7)).timestamp()
+
+def get_default_end():
+    return (now()-timedelta(days=6)).timestamp()
 
 def set_common_init_args(self, args, non_essentials=False):
     """Sets self attributes for arguments common across many classes"""
