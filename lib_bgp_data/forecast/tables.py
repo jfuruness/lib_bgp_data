@@ -22,9 +22,9 @@ class MRT_W_Roas_Table(Database):
     __slots__ = []
 
     @error_catcher()
-    def __init__(self, logger, cursor_factory=RealDictCursor, test=False):
+    def __init__(self, logger, cursor_factory=RealDictCursor):
         """Initializes the announcement table"""
-        Database.__init__(self, logger, cursor_factory, test)
+        Database.__init__(self, logger, cursor_factory=cursor_factory)
 
     @error_catcher()
     def _create_tables(self):
@@ -32,6 +32,7 @@ class MRT_W_Roas_Table(Database):
 
         self.clear_table()
         self.unhinge_db()
+        self.logger.info("Creating mrt_w_roas")
         sql = """CREATE UNLOGGED TABLE IF NOT EXISTS
               mrt_w_roas AS (
               SELECT m.time, m.prefix, m.as_path, m.origin
@@ -40,6 +41,7 @@ class MRT_W_Roas_Table(Database):
               );"""
         self.cursor.execute(sql)
         self.rehinge_db()
+        self.logger.debug("mrt_w_roas created")
 
     @error_catcher()
     def clear_table(self):

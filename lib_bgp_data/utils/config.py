@@ -4,6 +4,7 @@
 """This module contains class Config that can parse a config file"""
 
 import os
+from subprocess import check_call
 from configparser import ConfigParser as SCP
 from .logger import error_catcher
 
@@ -123,7 +124,7 @@ class Config:
         cmd = self._read_config(section, subsection)
         if cmd == "":
             prompt = "Enter the command to restart postgres\n"
-            prompt += "Typically sudo systemctl restart postgres: "
+            prompt += "Typically sudo systemctl restart postgresql: "
             cmd = input(prompt)
             self._write_to_config(section, subsection, cmd)
         return cmd

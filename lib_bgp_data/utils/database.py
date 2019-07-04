@@ -20,6 +20,7 @@ from psycopg2.extras import RealDictCursor
 from multiprocessing import cpu_count
 from subprocess import check_call
 import os
+import time
 from .config import Config
 from .logger import error_catcher
 from .utils import Pool
@@ -47,19 +48,25 @@ class Database:
         self._connect(cursor_factory)
 
     @error_catcher()
-    def _connect(self, cursor_factory):
+    def _connect(self, cursor_factory=RealDictCursor, create_tables=True):
         """Connects to db"""
 
         kwargs = Config(self.logger).get_db_creds()
         if cursor_factory:
             kwargs["cursor_factory"] = cursor_factory
-        conn = psycopg2.connect(**kwargs)
-        self.logger.info("Database Connected")
-        self.conn = conn
-        self.conn.autocommit = True
-        self.cursor = conn.cursor()
-        # Creates tables if do not exist
-        self._create_tables()
+        for i in range(10):
+            try:
+                conn = psycopg2.connect(**kwargs)
+                self.logger.info("Database Connected")
+                self.conn = conn
+                self.conn.autocommit = True
+                self.cursor = conn.cursor()
+                break
+            except:
+                time.sleep(10)
+        if create_tables:
+            # Creates tables if do not exist
+            self._create_tables()
 
     def _create_tables(self):
         """Method that is overwritten when inherited"""
@@ -77,7 +84,7 @@ class Database:
         try:
             return self.cursor.fetchall()
         except psycopg2.ProgrammingError:
-            self.logger.warning("No results to fetch")
+            self.logger.debug("No results to fetch")
             return {}
 
     def multiprocess_execute(self, sqls):
@@ -131,15 +138,17 @@ class Database:
                 "ALTER SYSTEM SET maintenance_work_mem TO '{}MB';".format(
                     int(ram/5))]
 
+        try:
+            os.remove("/tmp/db_modify.sql")
+        except:
+            pass
         # Writes sql file
         with open("/tmp/db_modify.sql", "w+") as db_mod_file:
             for sql in sqls:
                 db_mod_file.write(sql + "\n")
         # Calls sql file
         check_call("sudo -u postgres psql -f /tmp/db_modify.sql", shell=True)
-        # SHOULD BE MOVED TO CONF!!! LET USER SET THEIR OWN CMD!!!
-        check_call(Config(self.logger).restart_postgres_cmd, shell=True)
-        time.sleep(10)
+        self._restart_postgres()
         # Removes sql file to clean up
         os.remove("/tmp/db_modify.sql")
 
@@ -166,18 +175,25 @@ class Database:
                 # Since its manual it can be higher
                 "ALTER SYSTEM SET max_parallel_maintenance_workers TO 2;",
                 "ALTER SYSTEM SET maintenance_work_mem TO '64MB';"]
-
+        try:
+            os.remove("/tmp/db_modify.sql")
+        except:
+            pass
         # Writes sql file
         with open("/tmp/db_modify.sql", "w+") as db_mod_file:
             for sql in sqls:
                 db_mod_file.write(sql + "\n")
         # Calls sql file
         check_call("sudo -u postgres psql -f /tmp/db_modify.sql", shell=True)
-        # SHOULD BE MOVED TO CONF!!! LET USER SET THEIR OWN CMD!!!
-        check_call(Config(self.logger).restart_postgres_cmd, shell=True)
-        time.sleep(10)
+        self._restart_postgres()
         # Removes sql file to clean up
         os.remove("/tmp/db_modify.sql")
+
+    @error_catcher()
+    def _restart_postgres(self):
+        self.close()
+        check_call(Config(self.logger).restart_postgres_cmd, shell=True)
+        self._connect(create_tables=False)
 
     @property
     def columns(self):

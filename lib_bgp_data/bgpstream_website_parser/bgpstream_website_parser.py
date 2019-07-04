@@ -117,6 +117,7 @@ class BGPStream_Website_Parser:
 
         known_events = self._generate_known_events()
 
+        self.logger.info("Beginning to parse rows")
         # Parses rows if they are the event types desired
         for i, row in enumerate(rows):
             # Make sure the row_limit is not reached
