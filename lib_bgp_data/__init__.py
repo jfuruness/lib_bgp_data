@@ -12,7 +12,7 @@ from .api import application
 from .extrapolator import Extrapolator
 from .rovpp import ROVPP_Simulator
 from .utils import Install, Database, db_connection, Thread_Safe_Logger
-from .__main__ import BGP_Data_Parser
+from .__main__ import Forecast
 
 __author__ = "Justin Furuness"
 __credits__ = ["Justin Furuness"]

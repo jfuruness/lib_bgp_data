@@ -87,7 +87,7 @@ def Pool(logger, threads, multiplier, name):
 def now():
     """Returns current time"""
 
-    return datetime.now()
+    return datetime.utcnow()
 
 def set_common_init_args(self, args, non_essentials=False):
     """Sets self attributes for arguments common across many classes"""

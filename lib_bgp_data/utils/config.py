@@ -46,7 +46,9 @@ class Config:
         except FileNotFoundError:
             pass
         config = SCP()
-        ram = input("Total amount of ram in MB: ")
+        print("The amount of ram can be found with free -h, shown below")
+        check_call("free -h", shell=True)
+        ram = str(int(input("What is the amount of ram on the system in MB? ")))
         config["bgp"] = {"host": "localhost",
                          "database": "bgp",
                          "password": password,

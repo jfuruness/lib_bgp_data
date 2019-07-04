@@ -41,9 +41,11 @@ class Extrapolator:
 
     @error_catcher()
     @utils.run_parser()
-    def run_forecast(self):
+    def run_forecast(self, input_table=None):
         self.logger.info("About to run the forecast extrapolator")
         bash_args = "forecast-extrapolator"
+        if input_table:
+            bash_args += " -a {}".format(input_table)
         if self.logger.level in [DEBUG, INFO]:
             check_call(bash_args, shell=True)
         else:
