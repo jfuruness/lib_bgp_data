@@ -29,6 +29,7 @@ __status__ = "Development"
 class Forecast:
     """This class contains all the neccessary parsing functions"""
 
+    @utils.run_parser()
     def __init__(self,
                  start=utils.get_default_start(),
                  end=utils.get_default_end(),
