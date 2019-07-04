@@ -180,7 +180,14 @@ class Install:
                 # Set random page cost to 2 if no ssd, with ssd
                 # seek time is one for ssds
                 "ALTER SYSTEM SET random_page_cost TO {};".format(
-                    float(input("If SSD, enter 1, else enter 2: ")))]
+                    float(input("If SSD, enter 1, else enter 2: "))),
+                # Yes I know I could call this, but this is just for machines
+                # that might not have it or whatever
+                # Gets the maximum safe depth of a servers execution stack in kilobytes from ulimit -s
+                # https://www.postgresql.org/docs/9.1/runtime-config-resource.html
+                "ALTER SYSTEM SET max_stack_depth TO '{}MB';".format(
+                int(int(input("What is the output of ulimit -s?"))/1000)-1)]  # Conversion from kb to mb then minus one
+
         if unhinge:
             # This will make it so that your database never writes to
             # disk unless you tell it to. It's faster, but harder to use
@@ -203,13 +210,7 @@ class Install:
                 "ALTER SYSTEM SET max_parallel_maintenance_workers TO {};"\
                     .format(cpu_count() - 1),
                 "ALTER SYSTEM SET maintenance_work_mem TO '{}MB';".format(
-                    int(ram/5)),
-                # Yes I know I could call this, but this is just for machines
-                # that might not have it or whatever
-                # Gets the maximum safe depth of a servers execution stack in kilobytes from ulimit -s
-                # https://www.postgresql.org/docs/9.1/runtime-config-resource.html
-                "ALTER SYSTEM SET max_stack_depth TO '{}MB';".format(
-                int(int(input("What is the output of ulimit -s?"))/1000)-1)])  # Conversion from kb to mb then minus one
+                    int(ram/5))])
 
         # Writes sql file
         with open("/tmp/db_modify.sql", "w+") as db_mod_file:
@@ -248,7 +249,7 @@ class Install:
         cmds = ["git clone https://github.com/c-morris/BGPExtrapolator.git",
                 "cd BGPExtrapolator",
                 "git checkout remotes/origin/rovpp",
-                "git checkout -b rovpp"]
+               "git checkout -b rovpp"]
 
         path = "BGPExtrapolator/SQLQuerier.cpp"
         prepend = '    string file_location = "'

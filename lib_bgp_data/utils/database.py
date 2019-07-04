@@ -17,9 +17,13 @@ def db_connection(table, logger=None):
 
 import psycopg2
 from psycopg2.extras import RealDictCursor
+from multiprocessing import cpu_count
+from subprocess import check_call
+import os
 from .config import Config
 from .logger import error_catcher
 from .utils import Pool
+from .config import Config
 
 __author__ = "Justin Furuness"
 __credits__ = ["Justin Furuness"]
@@ -102,6 +106,79 @@ class Database:
         """Vaccums db for efficiency"""
 
         self.cursor.execute("VACUUM")
+
+    @error_catcher()
+    def unhinge_db(self):
+        ram = Config(self.logger).ram
+        # This will make it so that your database never writes to
+        # disk unless you tell it to. It's faster, but harder to use
+        sqls = [# https://www.2ndquadrant.com/en/blog/
+                # basics-of-tuning-checkpoints/
+                # manually do all checkpoints to abuse this thing
+                "ALTER SYSTEM SET checkpoint_timeout TO '1d';",
+                "ALTER SYSTEM SET checkpoint_completion_target TO .9;",
+                # The amount of ram that needs to be hit before a write do disk
+                "ALTER SYSTEM SET max_wal_size TO '{}MB';".format(ram-1000),
+                # Disable autovaccum
+                "ALTER SYSTEM SET autovacuum TO off;",
+                # Change max number of workers
+                # Since this is now manual it can be higher
+                "ALTER SYSTEM SET autovacuum_max_workers TO {};".format(
+                    cpu_count() - 1),
+                # Change the number of max_parallel_maintenance_workers
+                # Since its manual it can be higher
+                "ALTER SYSTEM SET max_parallel_maintenance_workers TO {};"\
+                    .format(cpu_count() - 1),
+                "ALTER SYSTEM SET maintenance_work_mem TO '{}MB';".format(
+                    int(ram/5))]
+
+        # Writes sql file
+        with open("/tmp/db_modify.sql", "w+") as db_mod_file:
+            for sql in sqls:
+                db_mod_file.write(sql + "\n")
+        # Calls sql file
+        check_call("sudo -u postgres psql -f /tmp/db_modify.sql", shell=True)
+        # SHOULD BE MOVED TO CONF!!! LET USER SET THEIR OWN CMD!!!
+        check_call(Config(self.logger).restart_postgres_cmd, shell=True)
+        time.sleep(10)
+        # Removes sql file to clean up
+        os.remove("/tmp/db_modify.sql")
+
+    @error_catcher()
+    def rehinge_db(self):
+        """Restores postgres 11 defaults"""
+
+        ram = Config(self.logger).ram
+        # This will make it so that your database never writes to
+        # disk unless you tell it to. It's faster, but harder to use
+        sqls = [# https://www.2ndquadrant.com/en/blog/
+                # basics-of-tuning-checkpoints/
+                # manually do all checkpoints to abuse this thing
+                "ALTER SYSTEM SET checkpoint_timeout TO '5min';",
+                "ALTER SYSTEM SET checkpoint_completion_target TO .5;",
+                # The amount of ram that needs to be hit before a write do disk
+                "ALTER SYSTEM SET max_wal_size TO '1GB';",
+                # Disable autovaccum
+                "ALTER SYSTEM SET autovacuum TO ON;",
+                # Change max number of workers
+                # Since this is now manual it can be higher
+                "ALTER SYSTEM SET autovacuum_max_workers TO 3;",
+                # Change the number of max_parallel_maintenance_workers
+                # Since its manual it can be higher
+                "ALTER SYSTEM SET max_parallel_maintenance_workers TO 2;",
+                "ALTER SYSTEM SET maintenance_work_mem TO '64MB';"]
+
+        # Writes sql file
+        with open("/tmp/db_modify.sql", "w+") as db_mod_file:
+            for sql in sqls:
+                db_mod_file.write(sql + "\n")
+        # Calls sql file
+        check_call("sudo -u postgres psql -f /tmp/db_modify.sql", shell=True)
+        # SHOULD BE MOVED TO CONF!!! LET USER SET THEIR OWN CMD!!!
+        check_call(Config(self.logger).restart_postgres_cmd, shell=True)
+        time.sleep(10)
+        # Removes sql file to clean up
+        os.remove("/tmp/db_modify.sql")
 
     @property
     def columns(self):

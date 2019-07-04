@@ -30,8 +30,8 @@ class Config:
 
     def create_config(self,
                       password,
-                      exr_path="/home/jmf/forecast-extrapolator",
-                      rovpp_exr_path="/home/jmf/rovpp-extrapolator"):
+                      exr_path="/usr/bin/forecast-extrapolator",
+                      rovpp_exr_path="/usr/bin/rovpp-extrapolator"):
         """Creates a blank config file"""
 
         try:
@@ -46,11 +46,14 @@ class Config:
         except FileNotFoundError:
             pass
         config = SCP()
+        ram = input("Total amount of ram in MB: ")
         config["bgp"] = {"host": "localhost",
                          "database": "bgp",
                          "password": password,
                          "user": "bgp_user",
-                         "last_relationship_update": "0"}
+                         "last_relationship_update": "0",
+                         "ram": ram,
+                         "restart_postgres_cmd": ""}
         with open(self.path, "w+") as config_file:
             config.write(config_file)
 
@@ -103,7 +106,27 @@ class Config:
         section = "bgp"
         subsection = "forecast_extrapolator_path"
         return self._read_config(section, subsection)
-        
+
+    @property
+    def ram(self):
+        """Returns the amount of ram on a system"""
+
+        section = "bgp"
+        subsection = "ram"
+        return self._read_config(section, subsection)
+
+    @property
+    def restart_postgres_cmd(self):
+        section = "bgp"
+        subsection = "restart_postgres_cmd"
+        cmd = self._read_config(section, subsection)
+        if cmd == "":
+            prompt = "Enter the command to restart postgres\n"
+            prompt += "Typically sudo systemctl restart postgres: "
+            cmd = input(prompt)
+            self._write_to_config(section, subsection, cmd)
+        return cmd
+
     @error_catcher()
     def update_last_date(self, _date):
         """Edits the last date parsed in the config file"""
