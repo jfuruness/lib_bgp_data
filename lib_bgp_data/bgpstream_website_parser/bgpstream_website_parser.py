@@ -69,7 +69,7 @@ class BGPStream_Website_Parser:
     For a more in depth explanation, read the top of the file.
     """
 
-    __slots__ = ['path', 'csv_dir', 'logger', 'data', 'data_types']
+    __slots__ = ['path', 'csv_dir', 'logger', '_data', '_data_types']
 
     @error_catcher()
     def __init__(self, args={}):
@@ -78,12 +78,12 @@ class BGPStream_Website_Parser:
         # Inits paths, csv_dir, logger
         utils.set_common_init_args(self, args)
         # These classes are used for parsing rows
-        self.data = {Event_Types.HIJACK.value: Hijack(self.logger,
-                                                      self.csv_dir),
-                     Event_Types.LEAK.value: Leak(self.logger,
-                                                  self.csv_dir),
-                     Event_Types.OUTAGE.value: Outage(self.logger,
-                                                      self.csv_dir)}
+        self._data = {Event_Types.HIJACK.value: Hijack(self.logger,
+                                                       self.csv_dir),
+                      Event_Types.LEAK.value: Leak(self.logger,
+                                                   self.csv_dir),
+                      Event_Types.OUTAGE.value: Outage(self.logger,
+                                                       self.csv_dir)}
 
     @error_catcher()
     @utils.run_parser()
@@ -106,7 +106,7 @@ class BGPStream_Website_Parser:
         """
 
         # The data types to parse, from the enum
-        self.data_types = data_types
+        self._data_types = data_types
         # Gets the rows to parse
         rows, _ = utils.get_tags("https://bgpstream.com", "tr")
         # The last few rows are screwed up so they are removed
@@ -128,7 +128,7 @@ class BGPStream_Website_Parser:
 
         # Writes to csvs and dbs, deletes duplicatesm and creates indexes
         # Also creates the temporary tables
-        [self.data[x].db_insert(start, end, IPV4, IPV6) for x in data_types]
+        [self._data[x].db_insert(start, end, IPV4, IPV6) for x in data_types]
 
     @error_catcher()
     def _parse_row(self, row, num, total, known_events, refresh):
@@ -152,14 +152,14 @@ class BGPStream_Website_Parser:
         # If the event_type is in the list of types we are parsing
         # If we've seen the event before, and the start and end haven't changed
         # then ignore the event entirely
-        if _type in self.data_types:
+        if _type in self._data_types:
             # Can't fit all on one line whatevs man idc
             if known_events.get(int(event_num)) != (start, end) or refresh:
                 # Note that the append method is overriden
                 # This will parse the row and then append the parsed
                 # information in a list inside self.data[_type]
                 self.logger.debug("Parsing row {}/{}".format(num, total))
-                self.data[_type].append(row)
+                self._data[_type].append(row)
                 if num % 250 == 0:
                     self.logger.info("Parsed {}/{} rows".format(num, total))
 
