@@ -34,7 +34,7 @@ class Forecast:
                  start=utils.get_default_start(),
                  end=utils.get_default_end(),
                  filter_by_roas=True,
-                 first_run=False,
+                 fresh_install=False,
                  forecast_args={},
                  mrt_args={},
                  mrt_parse_args={},
@@ -54,18 +54,18 @@ class Forecast:
         utils.set_common_init_args(self, forecast_args)
         self.logger.info("starting Forecast")
 
-        if first_run:
-            Install().install(fresh_install=True)
+        if fresh_install:
+            Install().install(fresh_install)
         # First we want to parse the mrt files and create the index
         # This uses all the threads, so no need to multithread
-#        MRT_Parser(mrt_args).parse_files(start, end, **mrt_parse_args)
+        MRT_Parser(mrt_args).parse_files(start, end, **mrt_parse_args)
         # Then we get the relationships data. We aren't going to run this
         # multithreaded because it is so fast, there is no point
-#        Relationships_Parser(rel_args).parse_files(**rel_parse_args)
+        Relationships_Parser(rel_args).parse_files(**rel_parse_args)
         # Now lets get roas, its fast so no multiprocessing
-#        ROAs_Collector(roas_args).parse_roas()
+        ROAs_Collector(roas_args).parse_roas()
         # Get hijack data. The first time takes a while
-#        BGPStream_Website_Parser(web_args).parse(start, end, **web_parse_args)
+        BGPStream_Website_Parser(web_args).parse(start, end, **web_parse_args)
         if filter_by_roas:
             # Only keep announcements covered by a roa
             # drops old table, unhinges db, performs query, rehinges db
@@ -81,7 +81,7 @@ class Forecast:
                 USING GIST(prefix inet_ops, origin);"""]
 
 
-        input("!!!!!")
+        input("!!!!!!!!!!!!!!!!!!!!!!!!!!")
         RPKI_Validator(rpki_args).run_validator(rpki_parse_args)
         input("ABOUT TO PERFORM Multiproc exec")
         input("PRESS ONE MORE TIME")

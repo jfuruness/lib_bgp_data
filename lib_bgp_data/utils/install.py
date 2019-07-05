@@ -239,7 +239,27 @@ class Install:
         self._remove("BGPExtrapolator/")
 
     def _install_rpki_validator(self):
-        pass
+        self._remove("rpki-validator/")
+
+        rpki_url = ("https://ftp.ripe.net/tools/rpki/validator3/beta/generic/"
+                    "rpki-validator-3-latest-dist.tar.gz")
+        arin_tal = ("https://www.arin.net/resources/manage/rpki/"
+                    "arin-ripevalidator.tal")
+        # This is the java version they use so we will use it
+        cmds = ["sudo apt-get install openjdk-8-jre",
+                "wget {}".format(rpki_url),
+                "tar -xvf rpki-validator-3-latest-dist.tar.gz",
+                "rm -rf rpki-validator-3-latest-dist.tar.gz",
+                "mv rpki-validator* rpki-validator",
+                "cd rpki-validator",
+                "mv rpki-validator* rpki-validator.sh",
+                "cd preconfigured-tals",
+                "wget {}".format(arin_tal),
+                "cd ../..",
+                "cp -R rpki-validator /usr/bin/rpki-validator"] 
+        check_call("&& ".join(cmds), shell=True)
+
+
 
     def _install_bgpscanner(self):
         """Installs bgpscanner and moves to /usr/bin/bgpscanner"""

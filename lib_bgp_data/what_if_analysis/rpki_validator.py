@@ -76,9 +76,7 @@ class RPKI_Validator:
 
         # Writes the file that the validator uses for validation
         validator_file, total_rows = self._write_validator_file()
-        rpki_path = ("/mnt/dbstorage/validator/dev/"
-                     "rpki-validator-3.0-DEV20180902182639/"
-                     "rpki-validator-3.sh")
+        rpki_path = ("/usr/bin/rpki-validator/rpki-validator.sh")
         # This runs the rpki validator
         with _run_rpki_validator(self, validator_file, rpki_path):
             # First we wait for the validator to load the data
