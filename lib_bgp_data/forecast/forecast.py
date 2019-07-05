@@ -75,6 +75,7 @@ class Forecast:
                 db.execute("VACUUM ANALYZE")
         input_table = "mrt_w_roas" if filter_by_roas else None
         Extrapolator().run_forecast(input_table)
+        return
         create_exr_index_sqls = ["""CREATE INDEX ON 
             extrapolation_inverse_results USING GIST(prefix inet_ops);""",
             """CREATE INDEX ON extrapolation_inverse_results
