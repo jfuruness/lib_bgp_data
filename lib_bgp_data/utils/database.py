@@ -57,7 +57,7 @@ class Database:
         for i in range(10):
             try:
                 conn = psycopg2.connect(**kwargs)
-                self.logger.info("Database Connected")
+                self.logger.debug("Database Connected")
                 self.conn = conn
                 self.conn.autocommit = True
                 self.cursor = conn.cursor()

@@ -124,15 +124,17 @@ class BGPStream_Website_Parser:
             # Should this be on two lines? Probably, I just didn't
             # even know you could do this, likely because it's so dumb
             if i > row_limit: break
+            # Print every 250 rows
+            print_me = True if i % 250 == 0 or i == row_limit -1 else False
             # Parses the row
-            self._parse_row(row, i, len(rows), known_events, refresh)
+            self._parse_row(row, i, len(rows), known_events, refresh, print_me)
 
         # Writes to csvs and dbs, deletes duplicatesm and creates indexes
         # Also creates the temporary tables
         [self._data[x].db_insert(start, end, IPV4, IPV6) for x in data_types]
 
     @error_catcher()
-    def _parse_row(self, row, num, total, known_events, refresh):
+    def _parse_row(self, row, num, total, known_events, refresh, primt_me):
         """Parses all rows that fit certain requirements.
 
         Each row must have a type withing self.data_types.
@@ -150,6 +152,10 @@ class BGPStream_Website_Parser:
         event_num = url.split("/")[-1]
         if end == "+00:00":
             end = 'None'
+
+        if print_me:
+            self.logger.info("Parsed {}/{} rows".format(num, total))
+
         # If the event_type is in the list of types we are parsing
         # If we've seen the event before, and the start and end haven't changed
         # then ignore the event entirely
@@ -161,8 +167,6 @@ class BGPStream_Website_Parser:
                 # information in a list inside self.data[_type]
                 self.logger.debug("Parsing row {}/{}".format(num, total))
                 self._data[_type].append(row)
-                if num % 250 == 0:
-                    self.logger.info("Parsed {}/{} rows".format(num, total))
 
     @error_catcher()
     def _generate_known_events(self):
