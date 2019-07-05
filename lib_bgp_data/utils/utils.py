@@ -14,7 +14,12 @@ def Pool(logger, threads, multiplier, name):
     p = ProcessingPool(threads if threads else cpu_count() * multiplier)
     logger.info("Created {} pool".format(name))
     yield p
-    (p.close(), p.join())
+    # Need to clear due to:
+    # https://github.com/uqfoundation/pathos/issues/111
+    p.close()
+    p.join()
+    p.clear()
+#    (p.close(), p.join(), p.clear())
 
 
 
