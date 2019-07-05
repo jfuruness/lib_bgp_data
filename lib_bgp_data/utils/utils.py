@@ -106,6 +106,15 @@ def set_common_init_args(self, args, non_essentials=False):
         "/tmp/bgp_{}".format(name)
     self.csv_dir = args.get("csv_dir") if args.get("csv_dir") else\
         "/dev/shm/bgp_{}".format(name)
+    for dirs in [self.path, self.csv_dir]:
+        try:
+            shutil.rmtree(dirs)
+        except FileNotFoundError:
+            pass
+        try:
+            os.makedirs(dirs)
+        except FileExistsError:
+            pass
     self.logger = args.get("logger") if args.get("logger") else\
         Logger(args)
     if non_essentials:

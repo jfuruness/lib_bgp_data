@@ -36,6 +36,9 @@ tb_re = re.compile(r'''
                     ''', re.VERBOSE | re.DOTALL
                     )
 
+
+
+
 # This decorator wraps all funcs in a try except statement
 # Note that it can only be put outside of funcs with self
 # The point of the decorator is so code errors nicely with useful information
@@ -46,7 +49,7 @@ def error_catcher(msg=None):
             # Inside the decorator
             try:
                 return func(self, *args, **kwargs)
-            except:
+            except Exception as e:
 #                raise
                 # Gets traceback object and error information
                 error_class, error_desc, tb = sys.exc_info()
@@ -81,7 +84,8 @@ def error_catcher(msg=None):
                     # hahaha so professional
                     print('\a')
                 # Exit program and also kills all parents/ancestors
-                sys.exit(1)
+                #sys.exit(1)###################### FIGURE OUT A WAY TO TURN THIS OFF FOR PYTEST AND BACK ON FOR EVERYTHING ELSE - perhaps a pytest that sets a global var?that we import? idk
+                raise e 
         return function_that_runs_func
     return my_decorator
 

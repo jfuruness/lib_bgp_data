@@ -197,8 +197,7 @@ In this example we get all RIB files from a specific collector, route-views2
 from lib_bgp_data import MRT_Parser
 MRT_Parser().parse_files(start=1558974033,
                          end=1558974033,
-                         api_param_mods={"collector": "route-views2",
-                                         "types": ['ribs']})
+                         api_param_mods={"collectors[]": ["route-views2", "rrc03"})
 ```
 To run the MRT Parser with specific time intervals and bgpdump:
 ```python
@@ -607,12 +606,25 @@ For more in depth documentation please refer to: [https://github.com/c-morris/BG
 * [Extrapolator Submodule](#extrapolator-submodule)
 #### In a Script
 To run the forecast extrapolator:
-(coming soon)
-To run the rovpp extrapolator:
+> The params for the forecast extrapolator function are:
+
+| Parameter   | Default | Description                                                                                                        |
+|-------------|---------|--------------------------------------------------------------------------------------------------------------------|
+| input_table | None    | Announcements table the extrapolator will pull data from, if it is none the default is the mrt_announcements table |
+
+To initialize Extrapolator and run the forecast version:
+```python
+from lib_bgp_data import Extrapolator
+Extrapolator().run_forecast(input_table="mrt_w_roas")
+```                                                            
+To initialize the Extrapolator and run the rovpp version:
 > The params for the rovpp extrapolator function are:
-> attacker_asn: The asn of the attacker
-> victim_asn: The asn of the victim
-> victim_prefix: This is misleading and should really be fixed in the extrapolator. This is the attackers prefix.
+
+| Parameter            | Default | Description                                                                                                                                                   |
+|----------------------|---------|---------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| attacker_asn         | N/A     | Attacker's asn                                                                                                                                                |
+| victim_asn           | N/A     | Victim's asn                                                                                                                                                  |
+| more_specific_prefix | N/A     | The more specific prefix, or attackers prefix, that is doing the hijack. For example, if the victims prefix was 1.2.0.0/16, the attackers would be 1.2.3.0/24. The extrapolator calls this victim_prefix, this is misleading and should really be changed. |
 
 To initialize Extrapolator and run the rovpp version:
 ```python
@@ -1267,10 +1279,14 @@ or redhat install:
 After the database is installed, we are going to need to make a couple of changes. First, we need to start the database. To do this run:
 ```bash
 sudo systemctl start postgresql@11-main.service
+# or maybe
+sudo systemctl start postgresql
 ```
 To check to see if it is running:
 ```bash
 sudo systemctl status postgresql@11-main.service
+# or maybe
+sudo systemctl status postgresql
 ```
 
 ### RPKI Validator Installation

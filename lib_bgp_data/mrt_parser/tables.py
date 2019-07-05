@@ -71,7 +71,7 @@ class MRT_Announcements_Table(Database):
         """
 
         self.logger.info("Dropping MRT Announcements")
-        self.cursor.execute("DROP TABLE mrt_announcements")
+        self.cursor.execute("DROP TABLE IF EXISTS mrt_announcements")
         self.logger.info("MRT Announcements Table dropped")
 
     @error_catcher()

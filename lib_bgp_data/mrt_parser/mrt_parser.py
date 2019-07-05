@@ -172,27 +172,27 @@ class MRT_Parser:
 ########################
 
     @error_catcher()
-    def _get_mrt_urls(self, start, end, PARAMS_modification=None):
+    def _get_mrt_urls(self, start, end, PARAMS_modification={}):
         """Gets urls to download MRT files. Start and end should be epoch."""
 
         # Parameters for the get request, look at caida for more in depth info
         # This must be included in every API query
         PARAMS = {'human': True,
                   'intervals': ["{},{}".format(start, end)],
+                  'types': ['ribs']
                   }
-        # By default the type is ribs
-        if PARAMS_modification is None:
-            PARAMS.update({'types': ['ribs']})
         # Other api calls can be made with these modifications
-        else:
-            PARAMS.update(PARAMS_modification)
+        PARAMS.update(PARAMS_modification)
+        # API docs: https://bgpstream.caida.org/docs/api/broker#data
         # URL to make the api call to
         URL = 'https://bgpstream.caida.org/broker/data'
         # Request for data and conversion to json
+        self.logger.debug(requests.get(url=URL, params=PARAMS).url)
         data = requests.get(url=URL, params=PARAMS).json()
         # Returns the urls from the json
         return [x.get('url') for x in data.get('data').get('dumpFiles')]
 
+    @error_catcher()
     def _multiprocess_download(self, dl_threads, urls):
         """Downloads MRT files in parallel.
 
@@ -217,6 +217,7 @@ class MRT_Parser:
             self.logger.debug("started to download files")
         return mrt_files
 
+    @error_catcher()
     def _multiprocess_parse_dls(self, p_threads, mrt_files, bgpscanner):
         """Multiprocessingly(ooh cool verb, too bad it's not real)parse files.
 
@@ -230,6 +231,7 @@ class MRT_Parser:
             p_pool.map(lambda f: f.parse_file(bgpscanner),
                        sorted(mrt_files, reverse=True))
 
+    @error_catcher()
     def _filter_and_clean_up_db(self, IPV4, IPV6):
         """This function filters mrt data by IPV family and cleans up db
 

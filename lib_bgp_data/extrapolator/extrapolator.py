@@ -13,7 +13,6 @@ from ..utils import error_catcher, utils
 # Justin globals are bad yah you know what else is bad? the logging
 # module that deadlocks upon import
 DEBUG = 10
-INFO = 20
 
 __author__ = "Justin Furuness"
 __credits__ = ["Justin Furuness"]
@@ -29,7 +28,7 @@ class Extrapolator:
     In depth explanation at the top of module.
     """
 
-    __slots__ = ['path', 'csv_dir', 'logger', 'start_time']
+    __slots__ = ['path', 'csv_dir', 'logger']
 
     @error_catcher()
     def __init__(self, args={}):
@@ -45,7 +44,7 @@ class Extrapolator:
         bash_args = "forecast-extrapolator"
         if input_table:
             bash_args += " -a {}".format(input_table)
-        if self.logger.level in [DEBUG, INFO]:
+        if self.logger.level == DEBUG:
             check_call(bash_args, shell=True)
         else:
             check_call(bash_args, stdout=DEVNULL, stderr=DEVNULL, shell=True)
@@ -54,7 +53,7 @@ class Extrapolator:
     @error_catcher()
     @utils.run_parser()
     def run_rovpp(self, attacker_asn, victim_asn, expected_prefix):
-        """Runs extrapolator with a subprefix hijack"""
+        """Runs extrapolator with a subprefix hijack."""
 
         self.logger.info("About to run the rovpp extrapolator")
         # Run the extrapolator
@@ -68,9 +67,7 @@ class Extrapolator:
         # Gives the more specific prefix that the attacker sent out
         bash_args += "--victim_prefix={}".format(expected_prefix)
         self.logger.info("Caling extrapolator with:\n{}".format(bash_args))
-        if self.logger.level in [DEBUG, INFO]:
+        if self.logger.level == DEBUG:
             check_call(bash_args, shell=True)
         else:
             check_call(bash_args, stdout=DEVNULL, stderr=DEVNULL, shell=True)
-
-        self.logger.debug("Done running the rovpp extrapolator")
