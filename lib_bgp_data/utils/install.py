@@ -189,13 +189,13 @@ class Install:
                 int(int(input("What is the output of ulimit -s?"))/1000)-1)]  # Conversion from kb to mb then minus one
 
         
-            with db_connection(Database, self.logger) as db:
-                if unhinge:
-                    # This will make it so that your database never writes to
-                    # disk unless you tell it to. It's faster, but harder to use
-                    db.unhinge_db()
-                else:
-                    db.rehinge_db()
+        with db_connection(Database, self.logger) as db:
+            if unhinge:
+                # This will make it so that your database never writes to
+                # disk unless you tell it to. It's faster, but harder to use
+                db.unhinge_db()
+            else:
+                db.rehinge_db()
         
 
     @error_catcher()
