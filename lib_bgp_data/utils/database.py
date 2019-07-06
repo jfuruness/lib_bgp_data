@@ -8,10 +8,13 @@ from contextlib import contextmanager
 from .logger import Thread_Safe_Logger as Logger
 
 @contextmanager
-def db_connection(table, logger=None):
+def db_connection(table, logger=None, clear=True):
     if not logger:
         logger = Logger()
     t = table(logger)
+    if clear:
+        t.clear_tables()
+        t._create_tables()
     yield t
     t.close()
 

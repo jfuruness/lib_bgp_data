@@ -165,6 +165,10 @@ def download_file(logger, url, path, file_num=1, total_files=1, sleep_time=0):
 def delete_paths(logger, paths):
     """Removes directory if directory, or removes path if path"""
 
+    # For unit tests
+    if logger is None:
+        logger = Logger()
+
     if not paths:
         paths = []
     # If a single path is passed in, convert it to a list
