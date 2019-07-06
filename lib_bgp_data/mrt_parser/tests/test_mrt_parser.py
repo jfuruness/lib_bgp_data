@@ -129,10 +129,10 @@ class Test_MRT_Parser:
             pass
         for mrt_file in mrt_files:
             # Remove as sets
-            if bgpscanner:
-                bash_args = 'bgpscanner {} | grep -v "\{" >> {}'.format(mrt_file.path, test_path)
-            else:
-                bash_args = 'bgpdump {} | grep -v "\{" >> {}'.format(mrt_file.path, test_path)
+            tool = "bgpscanner" if bgpscanner else "bgpdump"
+            bash_args = '{} {} | grep -v '.format(tool, mrt_file_path)
+            bash_args += '"{"' 
+            bash_args += ">> {}".format(, test_path)
             print(bash_args)
             check_call(bash_args, shell=True)
         with open(test_path) as test_file:
