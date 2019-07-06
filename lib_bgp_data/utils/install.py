@@ -287,7 +287,7 @@ class Install:
         # Meson refuses to be installed right so:
         cmds = ["python3 -m venv delete_me",
                 "source ./delete_me/bin/activate",
-                "pip3 install meson"
+                "pip3 install meson",
                 "cd bgpscanner",
                 "mkdir build && cd build",
                 "../../delete_me/bin/meson ..",
