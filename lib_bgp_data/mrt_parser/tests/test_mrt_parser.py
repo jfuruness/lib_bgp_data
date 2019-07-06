@@ -130,7 +130,7 @@ class Test_MRT_Parser:
         for mrt_file in mrt_files:
             # Remove as sets
             tool = "bgpscanner" if bgpscanner else "bgpdump"
-            bash_args = '{} {} | grep -v '.format(tool, mrt_file_path)
+            bash_args = '{} {} | grep -v '.format(tool, mrt_file.path)
             bash_args += '"{"' 
             bash_args += ">> {}".format(test_path)
             print(bash_args)
