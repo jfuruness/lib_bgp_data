@@ -277,6 +277,8 @@ class Install:
                 "sudo apt-get -y install cmake",
                 "git clone https://gitlab.com/Isolario/bgpscanner.git"]
         check_call("&& ".join(cmds), shell=True)
+        # Modded to install meson with sudo su craziness
+        check_call("exit && pip3 install --user meson", shell=True)
 
         path = "bgpscanner/src/mrtdataread.c"
         prepend = '                if ('
@@ -284,9 +286,12 @@ class Install:
         replace_with = 'true)'
         self._replace_line(path, prepend, replace, replace_with)
 
-        cmds = ["cd bgpscanner",
+        cmds = ["exit",
+                "cd bgpscanner",
                 "mkdir build && cd build",
-                "meson ..",
+                "meson .."]
+        check_call("&& ".join(cmds), shell=True)
+        cmds = ["cd bgpscanner/build",
                 "sudo ninja install",
                 "sudo ldconfig"]
         check_call("&& ".join(cmds), shell=True)
