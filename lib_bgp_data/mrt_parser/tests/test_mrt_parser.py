@@ -98,14 +98,27 @@ class Test_MRT_Parser:
             assert os.path.exists(mrt_file.path)
 
     def test_multiprocess_parse_dls_bgpscanner(self):
+        dl_threads = 3
+        parse_threads = 2
+        bgpscanner = True
+        self._multiprocess_parse_dls(dl_threads, parse_threads, bgpscanner)
+
+    def test_multiprocess_parse_dls_bgpdump(self):
+        dl_threads = 4
+        parse_threads = 3
+        bgpscanner = False
+        self._multiprocess_parse_dls(dl_threads, parse_threads, bgpscanner)
+
+
+    def _multiprocess_parse_dls(self, dl_threads, parse_threads, bgpscanner):
         start = 1559394000
         end = 1559397600
         api_param_mods = {"collectors[]": ["route-views.telxatl", "route-views2"]}
         # Must be 3 or else:
         # https://github.com/uqfoundation/pathos/issues/111
         # Couldn't fix this in the code no matter what
-        download_threads = 3
-        parse_threads = 2
+        download_threads = dl_threads
+        parse_threads = parse_threads
         parser = MRT_Parser()
         urls = parser._get_mrt_urls(start, end, api_param_mods)
         mrt_files = parser._multiprocess_download(download_threads, urls)
@@ -116,14 +129,19 @@ class Test_MRT_Parser:
             pass
         for mrt_file in mrt_files:
             # Remove as sets
-            check_call('bgpscanner {} | grep -v "{" >> {}'.format(mrt_file.path, test_path), shell=True)
+            if bgpscanner:
+                bash_args = 'bgpscanner {} | grep -v "\{" >> {}'.format(mrt_file.path, test_path)
+            else:
+                bash_args = 'bgpdump {} | grep -v "\{" >> {}'.format(mrt_file.path, test_path)
+            print(bash_args)
+            check_call(bash_args, shell=True)
         with open(test_path) as test_file:
             num_lines = sum(1 for line in test_file)
         os.remove(test_path)
         with db_connection(MRT_Announcements_Table) as db:
             db.clear_table()
             db._create_tables()
-            parser._multiprocess_parse_dls(parse_threads, mrt_files, bgpscanner=True)
+            parser._multiprocess_parse_dls(parse_threads, mrt_files, bgpscanner=bgpscanner)
             print(num_lines)
             print(len(db.execute("SELECT * FROM mrt_announcements")))
             assert len(db.execute("SELECT * FROM mrt_announcements")) == num_lines
