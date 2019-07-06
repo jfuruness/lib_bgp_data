@@ -132,7 +132,7 @@ class Test_MRT_Parser:
             tool = "bgpscanner" if bgpscanner else "bgpdump"
             bash_args = '{} {} | grep -v '.format(tool, mrt_file_path)
             bash_args += '"{"' 
-            bash_args += ">> {}".format(, test_path)
+            bash_args += ">> {}".format(test_path)
             print(bash_args)
             check_call(bash_args, shell=True)
         with open(test_path) as test_file:
