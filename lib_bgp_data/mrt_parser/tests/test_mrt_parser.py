@@ -116,15 +116,16 @@ class Test_MRT_Parser:
             pass
         for mrt_file in mrt_files:
             # Remove as sets
-            check_call('bgpscanner {} | grep -v "{">> {}'.format(mrt_file.path, test_path), shell=True)
+            check_call('bgpscanner {} | grep -v "{" >> {}'.format(mrt_file.path, test_path), shell=True)
         with open(test_path) as test_file:
             num_lines = sum(1 for line in test_file)
-#        os.remove(test_path)
+        os.remove(test_path)
         with db_connection(MRT_Announcements_Table) as db:
             db.clear_table()
             db._create_tables()
             parser._multiprocess_parse_dls(parse_threads, mrt_files, bgpscanner=True)
-            return
+            print(num_lines)
+            print(len(db.execute("SELECT * FROM mrt_announcements")))
             assert len(db.execute("SELECT * FROM mrt_announcements")) == num_lines
             sqls = ["SELECT * FROM mrt_announcements WHERE prefix IS NULL",
                     "SELECT * FROM mrt_announcements WHERE as_path IS NULL",
