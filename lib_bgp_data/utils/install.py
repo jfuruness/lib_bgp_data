@@ -188,11 +188,15 @@ class Install:
                 "ALTER SYSTEM SET max_stack_depth TO '{}MB';".format(
                 int(int(input("What is the output of ulimit -s?"))/1000)-1)]  # Conversion from kb to mb then minus one
 
-        if unhinge:
-            # This will make it so that your database never writes to
-            # disk unless you tell it to. It's faster, but harder to use
+        
             with db_connection(Database, self.logger) as db:
-                db.unhinge_db()
+                if unhinge:
+                    # This will make it so that your database never writes to
+                    # disk unless you tell it to. It's faster, but harder to use
+                    db.unhinge_db()
+                else:
+                    db.rehinge_db()
+        
 
     @error_catcher()
     def _install_extrapolator(self):
