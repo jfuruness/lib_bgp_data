@@ -175,6 +175,26 @@ class Test_MRT_Parser:
         """
 
         self._multiprocess_parse_dls_test(bgpscanner=False)
+
+    def test_parse_files(self):
+        """Tests the parse_files function with IPV4=True, IPV6=True.
+
+        Just combines all of the tests basically
+        """
+
+        # This errors due to the amount of times the mrt parser is initialized
+        # https://github.com/uqfoundation/pathos/issues/111
+        # I tried the fixes suggested but it did not fix the problem
+        # So now I just changed the number of threads every time
+
+        self._dl_threads += 1
+        self.p_threads += 1
+        MRT_Parser().parse_files(api_param_mods=self.api_param_mods,
+                                 IPV4=True,
+                                 IPV6=True)
+        with db_connection(Database):
+            db.execute("SELECT * FROM mrt_announcements WHERE")
+            # check to make sure there are both families, then do two more tests
             
 ########################
 ### Helper Functions ###
