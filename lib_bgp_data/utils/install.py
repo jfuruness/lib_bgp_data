@@ -290,16 +290,16 @@ class Install:
 
         # Meson refuses to be installed right so:
         cmds = ["python3 -m venv delete_me",
-                "/delete_me/bin/pip3 install meson",
+                "delete_me/bin/pip3 install meson",
                 "cd bgpscanner",
                 "mkdir build && cd build",
                 "../../delete_me/bin/meson ..",
-                "cd ../../",
-                "rm -rf delete_me"]
+                "cd ../../"]
         check_call("&& ".join(cmds), shell=True)
         cmds = ["cd bgpscanner/build",
                 "sudo ninja install",
-                "sudo ldconfig"]
+                "sudo ldconfig",
+                "rm -rf delete_me"]
         check_call("&& ".join(cmds), shell=True)
         self._remove("bgpscanner")
 
