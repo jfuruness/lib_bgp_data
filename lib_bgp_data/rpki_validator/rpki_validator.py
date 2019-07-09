@@ -16,7 +16,7 @@ from subprocess import Popen, PIPE
 import time
 import urllib
 from ..utils import utils, error_catcher, Thread_Safe_Logger as Logger
-from .tables import Unique_Prefix_Origins_Table, Validity_Table
+from .tables import Unique_Prefix_Origins_Table, ROV_Validity_Table
 from ..utils import Database, db_connection
 
 __author__ = "Justin Furuness", "Cameron Morris"
@@ -47,10 +47,7 @@ def _run_rpki_validator(self, file_path, rpki_path):
         self.logger.info("About to run rpki validator")
         # Because the output of the rpki validator is garbage we omit it
         process = Popen([rpki_path], stdout=PIPE, stderr=PIPE)
-#        stdout, stderr = process.communicate()
-#        self.logger.debug(stdout)
-#        self.logger.debug(stderr)
-        self.logger.info("Running rpki validator")
+        self.logger.debug("Running rpki validator")
         yield 
         process.terminate()
         self.logger.info("Closed rpki validator")
@@ -59,7 +56,7 @@ def _run_rpki_validator(self, file_path, rpki_path):
 class RPKI_Validator:
     """This class gets validity data from ripe""" 
 
-    __slots__ = ['path', 'csv_dir', 'args', 'logger', 'csv_path', 'all_files']
+    __slots__ = ['path', 'csv_dir', 'logger']
 
     @error_catcher()
     def __init__(self, args={}):
@@ -67,6 +64,7 @@ class RPKI_Validator:
 
         # Sets common file paths and logger
         utils.set_common_init_args(self, args)
+        self.rpki_path = "/usr/bin/rpki-validator/rpki-validator.sh"
         
 
     @error_catcher()
@@ -76,21 +74,16 @@ class RPKI_Validator:
 
         # Writes the file that the validator uses for validation
         validator_file, total_rows = self._write_validator_file()
-        rpki_path = ("/usr/bin/rpki-validator/rpki-validator.sh")
         # This runs the rpki validator
-        with _run_rpki_validator(self, validator_file, rpki_path):
+        with _run_rpki_validator(self, validator_file, self.rpki_path):
             # First we wait for the validator to load the data
             self._wait_for_validator_load(total_rows)
             # Writes validator to database
-            with db_connection(Validity_Table, self.logger) as v_table:
-                v_table.execute("DROP TABLE IF EXISTS validity;")
             utils.rows_to_db(self.logger,
                              self._get_ripe_data(),
                              "{}/validity.csv".format(self.csv_dir),  #  CSV 
-                             Validity_Table)
+                             ROV_Validity_Table)
         utils.delete_paths(self.logger, [validator_file, "/tmp/validator.csv"])
-        with db_connection(Validity_Table, self.logger) as v_table:
-            v_table.split_table()
 
 ########################
 ### Helper Functions ###
@@ -112,12 +105,9 @@ class RPKI_Validator:
             # And write them to a table with the default placeholder of 100
             # For easy integration with rpki validator
             table.fill_table()
-            rpki_path = ("/validator/dev/"
-                         "rpki-validator-3.0-DEV20180902182639/"
-                         "rpki-validator-3.sh")
             # This writes the validator file that the rpki validator will use
             # And returns the file path and the total rows of the file
-            return table.write_validator_file(path=path)
+            return table.write_validator_file(path=self.rpki_path)
 
     @error_catcher()
     def _get_ripe_data(self):

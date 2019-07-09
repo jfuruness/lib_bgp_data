@@ -134,7 +134,7 @@ class BGPStream_Website_Parser:
         [self._data[x].db_insert(start, end, IPV4, IPV6) for x in data_types]
 
     @error_catcher()
-    def _parse_row(self, row, num, total, known_events, refresh, primt_me):
+    def _parse_row(self, row, num, total, known_events, refresh, print_me):
         """Parses all rows that fit certain requirements.
 
         Each row must have a type withing self.data_types.

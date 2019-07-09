@@ -15,7 +15,8 @@ from ..roas_collector import ROAs_Collector
 from ..bgpstream_website_parser import BGPStream_Website_Parser
 from ..mrt_parser import MRT_Parser
 from ..extrapolator import Extrapolator
-from ..what_if_analysis import What_If_Analysis, RPKI_Validator
+from ..rpki_validator import RPKI_Validator
+from ..what_if_analysis import What_If_Analysis
 from ..utils import utils, Database, db_connection, Install
 from .tables import MRT_W_Roas_Table
 
@@ -58,7 +59,7 @@ class Forecast:
             Install().install(fresh_install)
         # First we want to parse the mrt files and create the index
         # This uses all the threads, so no need to multithread
-        MRT_Parser(mrt_args).parse_files(start, end, **mrt_parse_args)
+#        MRT_Parser(mrt_args).parse_files(start, end, **mrt_parse_args)
         # Then we get the relationships data. We aren't going to run this
         # multithreaded because it is so fast, there is no point
         Relationships_Parser(rel_args).parse_files(**rel_parse_args)
@@ -74,8 +75,8 @@ class Forecast:
                 self.logger.info("analyzing now")
                 db.execute("VACUUM ANALYZE")
         input_table = "mrt_w_roas" if filter_by_roas else None
+        input("asdfasdfasdf")
         Extrapolator().run_forecast(input_table)
-        return
         create_exr_index_sqls = ["""CREATE INDEX ON 
             extrapolation_inverse_results USING GIST(prefix inet_ops);""",
             """CREATE INDEX ON extrapolation_inverse_results
@@ -107,17 +108,3 @@ class Forecast:
 
 
             db.cursor.execute("CHECKPOINT;")
-
-
-
-    def initialize_everything(self):
-        """Runs the data collection for all data within a period of time"""
-
-        pass##############################TODO
-
-        # Run initial setup - setup database
-        # Connect to database, make some tables, drop everything that is in there
-        # Optimize database for performance
-        # install all dependencies using pyenv and activate
-        # parse relationships, bgpstream website, roas, mrt_files, index, vaccuum, extrapolator
-        # delete unnessecary tables, vaccuum again

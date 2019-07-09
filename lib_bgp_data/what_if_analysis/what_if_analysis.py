@@ -13,7 +13,7 @@ from subprocess import Popen
 import time
 import urllib
 from ..utils import utils, Thread_Safe_Logger as Logger, error_catcher, Database
-from .tables import Unique_Prefix_Origins_Table, Validity_Table
+from .tables import Validity_Table
 
 __author__ = "Justin Furuness", "Cameron Morris"
 __credits__ = ["Justin Furuness", "Cameron Morris"]

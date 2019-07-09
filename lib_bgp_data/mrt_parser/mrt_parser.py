@@ -137,7 +137,7 @@ class MRT_Parser:
     def parse_files(self,
                     start=utils.get_default_start(),
                     end=utils.get_default_end(),
-                    api_param_mods=None,
+                    api_param_mods={},
                     download_threads=None,
                     parse_threads=None,
                     IPV4=True,

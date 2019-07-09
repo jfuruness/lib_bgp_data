@@ -144,7 +144,7 @@ class Install:
         check_call("free -h", shell=True)
         ram = int(input("What is the amount of ram on the system in MB? "))
         # Extension neccessary for some postgres scripts
-        sqls = ["CREATE EXTENSION IF NOT EXISTS btree_gist;",
+        sqls = ["CREATE EXTENSION btree_gist;",
                 "ALTER DATABASE bgp SET timezone TO 'UTC';",
                 # These are settings that ensure data isn't corrupted in
                 # the event of a crash. We don't care so...
@@ -188,7 +188,16 @@ class Install:
                 "ALTER SYSTEM SET max_stack_depth TO '{}MB';".format(
                 int(int(input("What is the output of ulimit -s?"))/1000)-1)]  # Conversion from kb to mb then minus one
 
-        
+        self._remove("/tmp/db_install.sql")
+        with open("/tmp/db_install.sql", "w+") as db_install_file:
+            for sql in sqls:
+                db_install_file.write(sql + "\n")
+        # Calls sql file
+        check_call("sudo -u postgres psql -f /tmp/db_install.sql", shell=True)
+        # Removes sql file
+        self._remove("/tmp/db_install.sql")
+
+        # This will make the restart happen here
         with db_connection(Database, self.logger) as db:
             if unhinge:
                 # This will make it so that your database never writes to
