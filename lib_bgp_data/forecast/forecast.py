@@ -59,7 +59,7 @@ class Forecast:
             Install().install(fresh_install)
         # First we want to parse the mrt files and create the index
         # This uses all the threads, so no need to multithread
-#        MRT_Parser(mrt_args).parse_files(start, end, **mrt_parse_args)
+        MRT_Parser(mrt_args).parse_files(start, end, **mrt_parse_args)
         # Then we get the relationships data. We aren't going to run this
         # multithreaded because it is so fast, there is no point
         Relationships_Parser(rel_args).parse_files(**rel_parse_args)
@@ -75,7 +75,7 @@ class Forecast:
                 self.logger.info("analyzing now")
                 db.execute("VACUUM ANALYZE")
         input_table = "mrt_w_roas" if filter_by_roas else None
-        input("asdfasdfasdf")
+
         Extrapolator().run_forecast(input_table)
         create_exr_index_sqls = ["""CREATE INDEX ON 
             extrapolation_inverse_results USING GIST(prefix inet_ops);""",
@@ -83,7 +83,7 @@ class Forecast:
                 USING GIST(prefix inet_ops, origin);"""]
 
 
-        input("!!!!!!!!!!!!!!!!!!!!!!!!!!")
+
         RPKI_Validator(rpki_args).run_validator(rpki_parse_args)
         input("ABOUT TO PERFORM Multiproc exec")
         input("PRESS ONE MORE TIME")

@@ -25,7 +25,7 @@ _create_tables = [
     (SELECT v.prefix, v.asn AS origin FROM rov_validity v
     LEFT OUTER JOIN hijack_temp h
     ON h.prefix = v.prefix AND h.origin = v.asn
-    WHERE v.validity = -1 AND h.prefix IS NULL and h.origin IS NULL);"""
+    WHERE v.validity = -1 AND h.prefix IS NULL AND h.origin IS NULL);"""
     """CREATE UNLOGGED TABLE invalid_length_blocked_hijacked AS
     (SELECT v.prefix, v.asn AS origin FROM rov_validity v
     INNER JOIN hijack_temp h
@@ -36,6 +36,8 @@ _create_tables = [
     INNER JOIN hijack_temp h
     ON h.prefix = v.prefix AND h.origin = v.asn
     WHERE v.validity>=0 OR v.validity=-2);""",
+
+
     """CREATE UNLOGGED TABLE invalid_asn_blocked_not_hijacked AS
     (SELECT v.prefix, v.asn AS origin FROM rov_validity v
     LEFT OUTER JOIN hijack_temp h
@@ -50,7 +52,7 @@ _create_tables = [
     (SELECT v.prefix, v.asn AS origin FROM rov_validity v
     INNER JOIN hijack_temp h
     ON h.prefix = v.prefix AND h.origin = v.asn
-    WHERE v.validity>=0 OR v.validity=-1);""",
+    WHERE v.validity>=-1);""",
     """CREATE UNLOGGED TABLE rov_unblocked_hijacked AS
     (SELECT v.prefix, v.asn AS origin FROM rov_validity v
     INNER JOIN hijack_temp h

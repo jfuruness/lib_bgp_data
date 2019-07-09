@@ -52,7 +52,7 @@ Possible Future Extensions:
 import random
 import string
 from getpass import getpass
-from subprocess import check_call
+from subprocess import check_call, call
 import os
 from multiprocess import cpu_count
 # From logging module, but can't import it because it deadlocks!!!!!
@@ -133,6 +133,9 @@ class Install:
                 db_install_file.write(sql + "\n")
         # Calls sql file
         check_call("sudo -u postgres psql -f /tmp/db_install.sql", shell=True)
+        create_extension_args = ('sudo -u postgres psql -d bgp'
+                                 ' -c "CREATE EXTENSION btree_gist;"')
+        call(create_extension_args, shell=True)
         # Removes sql file
         self._remove("/tmp/db_install.sql")
         # Removes postgres history to delete password change
