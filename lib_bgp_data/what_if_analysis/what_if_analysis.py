@@ -13,7 +13,8 @@ from subprocess import Popen
 import time
 import urllib
 from ..utils import utils, Thread_Safe_Logger as Logger, error_catcher, Database
-from .tables import Validity_Table
+from .split_validity_table_sql import split_validity_table_sql
+from .sql_queries import all_sql_queries
 
 __author__ = "Justin Furuness", "Cameron Morris"
 __credits__ = ["Justin Furuness", "Cameron Morris"]
@@ -62,7 +63,8 @@ class What_If_Analysis:
         self.run_simple_time_heuristic()
 
     def run_rov_policy(self):
-        for
+        for sql in split_validity_table_sql + all_sql_queries:
+            self.cursor.execute(sql)
 
     @error_catcher()
     @run_policy()

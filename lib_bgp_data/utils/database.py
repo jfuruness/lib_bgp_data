@@ -196,6 +196,7 @@ class Database:
     def _restart_postgres(self):
         self.close()
         check_call(Config(self.logger).restart_postgres_cmd, shell=True)
+        time.sleep(30)
         self._connect(create_tables=False)
 
     @property
