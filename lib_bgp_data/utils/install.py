@@ -49,6 +49,8 @@ Possible Future Extensions:
     -Add test cases
 """
 
+import random
+import string
 from getpass import getpass
 from subprocess import check_call
 import os
@@ -89,12 +91,16 @@ class Install:
             raise NotSudo("Sudo priveleges are required for install")
 
     @error_catcher()
-    def install(self, fresh_install=True, unhinged=False):
+    def install(self, fresh_install=True, unhinged=False, password=False):
         """Installs everything"""
 
         if fresh_install:
             # Gets password for database
-            self.db_pass = getpass("Password for database: ")
+            if password:
+                self.db_pass = getpass("Password for database: ")
+            else:
+                password_characters = string.ascii_letters + string.digits
+                self.db_pass = ''.join(random.SystemRandom().choice(password_characters) for i in range(24))
             Config(self.logger).create_config(self.db_pass)
             self._create_database()
         # Set unhinged to true to prevent automated writes to disk
@@ -119,7 +125,8 @@ class Install:
                 """GRANT ALL PRIVILEGES ON ALL SEQUENCES
                 IN SCHEMA public TO bgp_user;""",
                 "ALTER USER bgp_user WITH PASSWORD '{}';".format(self.db_pass),
-                "ALTER USER bgp_user WITH SUPERUSER;"]
+                "ALTER USER bgp_user WITH SUPERUSER;",
+                "CREATE EXTENSION btree_gist WITH SCHEMA bgp;"]
         # Writes sql file
         with open("/tmp/db_install.sql", "w+") as db_install_file:
             for sql in sqls:
@@ -139,10 +146,7 @@ class Install:
         database will be corrupted if there is a crash. These changes
         work at a cluster level, so all databases will be changed"""
 
-        # First get the amount of ram
-        print("The amount of ram can be found with free -h, shown below")
-        check_call("free -h", shell=True)
-        ram = int(input("What is the amount of ram on the system in MB? "))
+        ram = Config(self.logger).ram
         # Extension neccessary for some postgres scripts
         sqls = ["CREATE EXTENSION btree_gist;",
                 "ALTER DATABASE bgp SET timezone TO 'UTC';",
@@ -214,8 +218,6 @@ class Install:
         Moves to /usr/bin/rovpp-extrapolator
         Moves to /usr/bin/forecast-extrapolator"""
 
-        # Warning just in case extrapolator is in development
-        input("About to delete BGPExtrapolator if exists, press any key")
         # Removes extrapolator
         self._remove("BGPExtrapolator/")
         # Commands to install original extrapolator
