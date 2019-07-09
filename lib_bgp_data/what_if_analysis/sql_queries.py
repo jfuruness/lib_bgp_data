@@ -10,6 +10,30 @@ __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
+
+split_tables_sql = drop_split_tables_sq + create_split_tables_sql
+drop_split_tables_sql = [
+    "DROP TABLE IF EXISTS invalid_length_blocked_hijacked",
+    "DROP TABLE IF EXISTS invalid_length_blocked_not_hijacked",
+    "DROP TABLE IF EXISTS invalid_length_unblocked_hijacked",
+    "DROP TABLE IF EXISTS invalid_asn_blocked_hijacked",
+    "DROP TABLE IF EXISTS invalid_asn_blocked_not_hijacked",
+    "DROP TABLE IF EXISTS invalid_asn_unblocked_hijacked",
+    "DROP TABLE IF EXISTS rov_unblocked_hijacked"]
+create_split_tables_sql = [
+
+
+
+
+
+
+
+
+
+
+
+
+
 # I know the lines on this file will be off, it's crazy sql man whatever
 get_total_announcements_sql = [
     """CREATE UNLOGGED TABLE total_announcements  AS
