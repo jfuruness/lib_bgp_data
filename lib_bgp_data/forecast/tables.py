@@ -31,7 +31,11 @@ class MRT_W_Roas_Table(Database):
         """ Creates tables if they do not exist"""
 
         self.clear_table()
+        self.execute("VACUUM ANALYZE mrt_announcements")
+        self.execute("VACUUM ANALYZE roas")
         self.unhinge_db()
+        self.execute("VACUUM ANALYZE mrt_announcements")
+        self.execute("VACUUM ANALYZE roas")
         self.logger.info("Creating mrt_w_roas")
         sql = """CREATE UNLOGGED TABLE IF NOT EXISTS
               mrt_w_roas AS (
@@ -40,7 +44,11 @@ class MRT_W_Roas_Table(Database):
                   INNER JOIN roas r ON m.prefix <<= r.prefix
               );"""
         self.cursor.execute(sql)
+        self.execute("VACUUM ANALYZE mrt_announcements")
+        self.execute("VACUUM ANALYZE roas")
         self.rehinge_db()
+        self.execute("VACUUM ANALYZE mrt_announcements")
+        self.execute("VACUUM ANALYZE roas")
         self.logger.debug("mrt_w_roas created")
 
     @error_catcher()

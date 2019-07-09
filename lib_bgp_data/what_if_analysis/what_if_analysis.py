@@ -13,7 +13,7 @@ from subprocess import Popen
 import time
 import urllib
 from ..utils import utils, Thread_Safe_Logger as Logger, error_catcher, Database
-from .split_validity_table_sql import split_validity_table_sql
+from .split_validity_sql import split_validity_table_sql
 from .sql_queries import all_sql_queries
 
 __author__ = "Justin Furuness", "Cameron Morris"
@@ -55,7 +55,6 @@ class What_If_Analysis:
         
 
     @error_catcher()
-    @utils.run_parser()
     def run_policies(self):
         """Downloads and stores roas from a json"""
 
@@ -67,7 +66,6 @@ class What_If_Analysis:
             self.cursor.execute(sql)
 
     @error_catcher()
-    @run_policy()
     def run_simple_time_heuristic(self):
         """Makes policy decision based on age of announcements
 

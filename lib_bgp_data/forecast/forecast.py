@@ -59,7 +59,7 @@ class Forecast:
             Install().install(fresh_install)
         # First we want to parse the mrt files and create the index
         # This uses all the threads, so no need to multithread
-#        MRT_Parser(mrt_args).parse_files(start, end, **mrt_parse_args)
+        MRT_Parser(mrt_args).parse_files(start, end, **mrt_parse_args)
         # Then we get the relationships data. We aren't going to run this
         # multithreaded because it is so fast, there is no point
         Relationships_Parser(rel_args).parse_files(**rel_parse_args)

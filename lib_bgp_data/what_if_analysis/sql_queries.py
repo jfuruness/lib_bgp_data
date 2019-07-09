@@ -68,7 +68,7 @@ _invalid_length_drop_subtables_sql = [
     """DROP TABLE IF EXISTS invalid_asn_blocked_hijacked_stats""",
     """DROP TABLE IF EXISTS invalid_asn_blocked_not_hijacked_stats""",
     """DROP TABLE IF EXISTS invalid_asn_unblocked_hijacked_stats"""]
-_invalid_length_subtables_sql = [
+_invalid_length_create_subtables_sql = [
     """CREATE TABLE invalid_length_blocked_hijacked_stats  AS
         SELECT ta.asn, (SELECT COUNT(*) FROM invalid_length_blocked_hijacked)
             - COALESCE(missed.total, 0) AS total FROM total_announcements ta
@@ -99,7 +99,7 @@ _invalid_length_subtables_sql = [
             INNER JOIN invalid_length_unblocked_hijacked ilnbh
                 ON exir.prefix = ilnbh.prefix AND ilnbh.origin = exir.origin
             GROUP BY exir.asn) missed
-        ON ta.asn = missed.asn;""",
+        ON ta.asn = missed.asn;"""]
 _invalid_length_subtables_index_sql = [
     """CREATE INDEX ON invalid_length_blocked_hijacked_stats(asn);""",
     """CREATE INDEX ON invalid_length_blocked_not_hijacked_stats(asn);""",
@@ -123,7 +123,7 @@ _invalid_asn_policy_sql = [
     asns.total - iabhs.total - ianbhs.total - iabnhs.total
         AS not_hijacked_not_blocked,
     urls.url,
-    stubs.parent
+    stubs.parent_asn
     FROM total_announcements asns
         LEFT JOIN invalid_asn_blocked_hijacked_stats iabhs
             ON iabhs.asn = asns.asn
@@ -131,7 +131,7 @@ _invalid_asn_policy_sql = [
             ON ianbhs.asn = asns.asn
         LEFT JOIN invalid_asn_blocked_not_hijacked_stats iabnhs
             ON iabnhs.asn = asns.asn
-        LEFT JOIN stubs ON stubs.asn = asns.asn
+        LEFT JOIN stubs ON stubs.stub_asn = asns.asn
         LEFT JOIN urls_list urls ON urls.asn = asns.asn;""",
     """CREATE INDEX ON invalid_asn_policy USING asn"""]
 
@@ -144,7 +144,7 @@ _invalid_lenth_policy_sql = [
     asns.total - iabhs.total - ianbhs.total - iabnhs.total
         AS not_hijacked_not_blocked,
     urls.url,
-    stubs.parent
+    stubs.parent_asn
     FROM total_announcements asns
         LEFT JOIN invalid_length_blocked_hijacked_stats iabhs
             ON iabhs.asn = asns.asn
@@ -152,7 +152,7 @@ _invalid_lenth_policy_sql = [
             ON ianbhs.asn = asns.asn
         LEFT JOIN invalid_length_blocked_not_hijacked_stats iabnhs
             ON iabnhs.asn = asns.asn
-        LEFT JOIN stubs ON stubs.asn = asns.asn
+        LEFT JOIN stubs ON stubs.stub_asn = asns.asn
         LEFT JOIN urls_list urls ON urls.asn = asns.asn;""",
     """CREATE INDEX ON invalid_length_policy USING asn"""]
 
@@ -166,12 +166,12 @@ _rov_policy_sql = [
     asns.total - hijacked_blocked - hijacked_not_blocked
         - not_hijacked_blocked,
     urls.url,
-    stubs.parent
+    stubs.parent_asn
     FROM total_announcements asns
         LEFT JOIN FROM invalid_length_policy ilp ON ilp.asn = asns.asn
         LEFT JOIN FROM invalid_asn_policy iap ON iap.asn = asns.asn
         LEFT JOIN FROM urls ON urls.asn = asns.asn
-        LEFT JOIN stubs ON stubs.asn = asns.asn
+        LEFT JOIN stubs ON stubs.stub_asn = asns.asn
         LEFT JOIN urls_list urls ON urls.asn = asns.asn;""",
     """CREATE INDEX ON rov_policy USING asn;"""]
 
