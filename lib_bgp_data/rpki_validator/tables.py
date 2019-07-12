@@ -94,6 +94,10 @@ class ROV_Validity_Table(Database):
         self.cursor.execute(sql)
 
     @error_catcher()
+    def clear_table(self):
+        self.execute("DROP TABLE IF EXISTS rov_validity")
+
+    @error_catcher()
     def create_index(self):
         """Creates index on validity_table"""
 

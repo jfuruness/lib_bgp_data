@@ -102,6 +102,7 @@ class Install:
                 password_characters = string.ascii_letters + string.digits
                 self.db_pass = ''.join(random.SystemRandom().choice(password_characters) for i in range(24))
             Config(self.logger).create_config(self.db_pass)
+            input("AAAAAAAAAAAAAAA")
             self._create_database()
         # Set unhinged to true to prevent automated writes to disk
         self._modify_database(unhinged)
@@ -268,13 +269,11 @@ class Install:
                 "wget {}".format(rpki_url),
                 "tar -xvf rpki-validator-3-latest-dist.tar.gz",
                 "rm -rf rpki-validator-3-latest-dist.tar.gz",
-                "mv rpki-validator* rpki-validator",
-                "cd rpki-validator",
+                "mv rpki-validator* /ext/rpki-validator",
+                "cd /ext/rpki-validator",
                 "mv rpki-validator* rpki-validator.sh",
                 "cd preconfigured-tals",
-                "wget {}".format(arin_tal),
-                "cd ../..",
-                "cp -R rpki-validator /usr/bin/rpki-validator"] 
+                "wget {}".format(arin_tal)]
         check_call("&& ".join(cmds), shell=True)
 
 

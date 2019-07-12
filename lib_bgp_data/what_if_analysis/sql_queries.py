@@ -65,9 +65,9 @@ _invalid_asn_subtables_sql +=  _invalid_asn_subtables_index_sql
 
 # invalid_length_subtables_sql
 _invalid_length_drop_subtables_sql = [
-    """DROP TABLE IF EXISTS invalid_asn_blocked_hijacked_stats""",
-    """DROP TABLE IF EXISTS invalid_asn_blocked_not_hijacked_stats""",
-    """DROP TABLE IF EXISTS invalid_asn_unblocked_hijacked_stats"""]
+    """DROP TABLE IF EXISTS invalid_length_blocked_hijacked_stats""",
+    """DROP TABLE IF EXISTS invalid_length_blocked_not_hijacked_stats""",
+    """DROP TABLE IF EXISTS invalid_length_unblocked_hijacked_stats"""]
 _invalid_length_create_subtables_sql = [
     """CREATE TABLE invalid_length_blocked_hijacked_stats  AS
         SELECT ta.asn, (SELECT COUNT(*) FROM invalid_length_blocked_hijacked)
@@ -108,13 +108,15 @@ _invalid_length_subtables_sql = _invalid_length_drop_subtables_sql
 _invalid_length_subtables_sql += _invalid_length_create_subtables_sql
 _invalid_length_subtables_sql +=  _invalid_length_subtables_index_sql
 
-_url_table_sql = ["""CREATE TABLE urls_list AS (SELECT ta.asn, ARRAY_AGG(ht.url)
+_url_table_sql = ["DROP TABLE IF EXISTS urls_list",
+                  """CREATE TABLE urls_list AS (SELECT ta.asn, ARRAY_AGG(ht.url)
                      AS urls FROM hijack_temp ht
                  INNER JOIN total_announcements ta
                      ON ht.origin = ta.asn GROUP BY ta.asn);""",
-                 """CREATE INDEX ON url_table(asn)"""]
+                 """CREATE INDEX ON urls_lists(asn)"""]
     
-_invalid_asn_policy_sql = [ 
+_invalid_asn_policy_sql = [
+    "DROP TABLE IF EXISTS invalid_asn_policy",
     """CREATE TABLE invalid_asn_policy AS SELECT
     asns.asn AS asn,
     iabhs.total AS hijack_blocked,
@@ -136,6 +138,7 @@ _invalid_asn_policy_sql = [
     """CREATE INDEX ON invalid_asn_policy USING asn"""]
 
 _invalid_lenth_policy_sql = [
+    "DROP TABLE IF EXISTS invalid_length_policy",
     """CREATE TABLE invalid_length_policy AS SELECT
     asns.asn AS asn,
     iabhs.total AS hijack_blocked,
@@ -157,6 +160,7 @@ _invalid_lenth_policy_sql = [
     """CREATE INDEX ON invalid_length_policy USING asn"""]
 
 _rov_policy_sql = [
+    "DROP TABLE IF EXISTS rov_policy",
     """CREATE TABLE rov_policy AS SELECT
     asns.asn AS asn,
     ilp.hijacked_blocked + iap.hijacked_blocked AS hijacked_blocked,

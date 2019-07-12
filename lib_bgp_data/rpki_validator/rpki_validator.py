@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 """This module contains rpki validator to perform validation
@@ -19,8 +19,8 @@ from ..utils import utils, error_catcher, Thread_Safe_Logger as Logger
 from .tables import Unique_Prefix_Origins_Table, ROV_Validity_Table
 from ..utils import Database, db_connection
 
-__author__ = "Justin Furuness", "Cameron Morris"
-__credits__ = ["Justin Furuness", "Cameron Morris"]
+__author__ = "Cameron Morris", "Justin Furuness"
+__credits__ = ["Cameron Morris", "Justin Furuness"]
 __Lisence__ = "MIT"
 __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
@@ -45,8 +45,12 @@ def _run_rpki_validator(self, file_path, rpki_path):
     with _serve_file(self, file_path):
         # Subprocess
         self.logger.info("About to run rpki validator")
+        input("ASAS")
         # Because the output of the rpki validator is garbage we omit it
         process = Popen([rpki_path], stdout=PIPE, stderr=PIPE)
+#        stdout, stderr = process.communicate()
+#        self.logger.debug(stdout)
+#        self.logger.debug(stderr)
         self.logger.debug("Running rpki validator")
         yield 
         process.terminate()
@@ -56,7 +60,7 @@ def _run_rpki_validator(self, file_path, rpki_path):
 class RPKI_Validator:
     """This class gets validity data from ripe""" 
 
-    __slots__ = ['path', 'csv_dir', 'logger']
+    __slots__ = ['path', 'csv_dir', 'logger', 'rpki_path', 'upo_csv_path']
 
     @error_catcher()
     def __init__(self, args={}):
@@ -65,7 +69,8 @@ class RPKI_Validator:
         # Sets common file paths and logger
         utils.set_common_init_args(self, args)
         self.rpki_path = "/usr/bin/rpki-validator/rpki-validator.sh"
-        
+        self.rpki_path = "/ext/rpki-validator/rpki-validator.sh"
+        self.upo_csv_path = "/tmp/upo_csv_path.csv"
 
     @error_catcher()
     @utils.run_parser()
@@ -79,18 +84,19 @@ class RPKI_Validator:
             # First we wait for the validator to load the data
             self._wait_for_validator_load(total_rows)
             # Writes validator to database
+            self.logger.debug("validator load completed")
             utils.rows_to_db(self.logger,
                              self._get_ripe_data(),
                              "{}/validity.csv".format(self.csv_dir),  #  CSV 
                              ROV_Validity_Table)
-        utils.delete_paths(self.logger, [validator_file, "/tmp/validator.csv"])
+        utils.delete_paths(self.logger, [validator_file])
 
 ########################
 ### Helper Functions ###
 ########################
 
     @error_catcher()
-    def _write_validator_file(self, path="/tmp/validator.csv"):
+    def _write_validator_file(self):
         """Writes validator file
 
         This function write the validator file by taking the mrt announcements
@@ -104,10 +110,9 @@ class RPKI_Validator:
             # Gets the unique prefix origins from the mrt announcements
             # And write them to a table with the default placeholder of 100
             # For easy integration with rpki validator
-            table.fill_table()
             # This writes the validator file that the rpki validator will use
             # And returns the file path and the total rows of the file
-            return table.write_validator_file(path=self.rpki_path)
+            return table.write_validator_file(path=self.upo_csv_path)
 
     @error_catcher()
     def _get_ripe_data(self):
