@@ -101,8 +101,8 @@ class Install:
             else:
                 password_characters = string.ascii_letters + string.digits
                 self.db_pass = ''.join(random.SystemRandom().choice(password_characters) for i in range(24))
+            self.db_pass = "notsecure"#CHANGE THIS!!!! this was a request from the man upstairs
             Config(self.logger).create_config(self.db_pass)
-            input("AAAAAAAAAAAAAAA")
             self._create_database()
         # Set unhinged to true to prevent automated writes to disk
         self._modify_database(unhinged)
