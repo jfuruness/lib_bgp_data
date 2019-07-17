@@ -33,6 +33,7 @@ def _serve_file(self, path):
 
     p = Process(target=self._serve_file, args=(path, ))
     p.start()
+    self.logger.info("Serving file at {}".format(path))
     yield 
     p.terminate()
     p.join()
@@ -45,12 +46,13 @@ def _run_rpki_validator(self, file_path, rpki_path):
     with _serve_file(self, file_path):
         # Subprocess
         self.logger.info("About to run rpki validator")
-        input("ASAS")
         # Because the output of the rpki validator is garbage we omit it
+        input("fuck me")
         process = Popen([rpki_path], stdout=PIPE, stderr=PIPE)
+        print(rpki_path)
 #        stdout, stderr = process.communicate()
-#        self.logger.debug(stdout)
-#        self.logger.debug(stderr)
+#        self.logger.info(stdout)
+#        self.logger.info(stderr)
         self.logger.debug("Running rpki validator")
         yield 
         process.terminate()
@@ -69,7 +71,8 @@ class RPKI_Validator:
         # Sets common file paths and logger
         utils.set_common_init_args(self, args)
         self.rpki_path = "/usr/bin/rpki-validator/rpki-validator.sh"
-        self.rpki_path = "/ext/rpki-validator/rpki-validator.sh"
+        self.rpki_path = "/var/lib/rpki-validator-3/rpki-validator-3.sh"
+#        self.rpki_path = "/ext/rpki-validator/rpki-validator.sh"
         self.upo_csv_path = "/tmp/upo_csv_path.csv"
 
     @error_catcher()
@@ -121,7 +124,7 @@ class RPKI_Validator:
         self.logger.info("Getting data from ripe")
         # Then we get the data from the ripe RPKI validator
         # Todo for later, change 10mil to be total count
-        url = "http://localhost:8080/api/bgp/?pageSize=10000000"
+        url = "http://[::1]:8080/api/bgp/?pageSize=10000000"
         # Gets a list of dictionaries of asns
         asns = utils.get_json(url, self._get_headers())["data"]
         # Changes the validation states to numbers and returns them
@@ -143,7 +146,9 @@ class RPKI_Validator:
         """Returns row count of json object for waiting"""
 
         try:
-            return utils.get_json("http://localhost:8080/api/bgp/", headers)["metadata"]["totalCount"]
+            print(utils.get_json("http://[::1]:8080/api/bgp/", headers)["metadata"]["totalCount"])
+            time.sleep(300)
+            return utils.get_json("http://[::1]:8080/api/bgp/", headers)["metadata"]["totalCount"]
         except Exception as e:
             self.logger.debug("Problem with getting json: {}".format(e))
             return 0
@@ -161,6 +166,7 @@ class RPKI_Validator:
         """Waits for the rpki validator to load all of it's data"""
 
         time.sleep(30)
+        print("total rows  = {}".format(total_rows))
         while self._get_row_count(self._get_headers()) < total_rows:
             self.logger.info("Waiting for validator load")
             self.logger.debug(total_rows)
