@@ -48,7 +48,7 @@ def _run_rpki_validator(self, file_path, rpki_path):
         self.logger.info("About to run rpki validator")
         # Because the output of the rpki validator is garbage we omit it
         input("fuck me")
-        process = Popen([rpki_path], stdout=PIPE, stderr=PIPE)
+        process = Popen([rpki_path])#, stdout=PIPE, stderr=PIPE)
         print(rpki_path)
 #        stdout, stderr = process.communicate()
 #        self.logger.info(stdout)
