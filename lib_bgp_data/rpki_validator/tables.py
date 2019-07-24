@@ -88,7 +88,7 @@ class ROV_Validity_Table(Database):
 
         self.execute("DROP TABLE IF EXISTS rov_validity")
         sql = """CREATE UNLOGGED TABLE IF NOT EXISTS rov_validity (
-                 asn bigint,
+                 origin bigint,
                  prefix cidr,
                  validity smallint);"""
         self.cursor.execute(sql)
@@ -103,4 +103,6 @@ class ROV_Validity_Table(Database):
 
         sql = """CREATE INDEX IF NOT EXISTS rov_validity_valid_index ON validity
                   (validity);"""
+        return
+        # THIS WAS NEVER USED ON ANYTHING!!! INDEX NOT USED IN ANY QUERIES!!
         self.cursor.execute(sql)

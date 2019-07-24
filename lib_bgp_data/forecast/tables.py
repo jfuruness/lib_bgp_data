@@ -65,7 +65,8 @@ class MRT_W_Roas_Table(Database):
         self.logger.info("Creating index")
         sql = """CREATE INDEX IF NOT EXISTS mrt_w_roas_index
                  ON mrt_w_roas USING GIST (prefix inet_ops);"""
-        self.cursor.execute(sql)
+        # THIS IS NEVER USED!! SO ITS REMOVED!!
+        #self.cursor.execute(sql)
         self.logger.info("Index created")
 
     @error_catcher()
