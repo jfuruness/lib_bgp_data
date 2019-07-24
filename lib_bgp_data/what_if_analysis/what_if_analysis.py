@@ -64,6 +64,7 @@ class What_If_Analysis:
     def run_rov_policy(self):
         with db_connection(Database, self.logger) as db:
             for sql in split_validity_table_sql + all_sql_queries:
+                self.logger.info("Executing\n{}".format(sql))
                 db.cursor.execute(sql)
 
     @error_catcher()

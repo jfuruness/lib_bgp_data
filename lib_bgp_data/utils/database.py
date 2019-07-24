@@ -88,7 +88,7 @@ class Database:
             return self.cursor.fetchall()
         except psycopg2.ProgrammingError:
             self.logger.debug("No results to fetch")
-            return {}
+            return []
 
     def multiprocess_execute(self, sqls):
         """Executes sql statements in parallel"""
