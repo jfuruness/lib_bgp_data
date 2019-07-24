@@ -17,7 +17,7 @@ setup(
         'Flask',
         'multiprocess',
         'pathos',
-        'psycopg2',
+        'psycopg2-binary',
         'Werkzeug'
     ],
     classifiers=[
