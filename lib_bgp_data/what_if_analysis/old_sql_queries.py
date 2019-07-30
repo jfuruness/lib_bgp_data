@@ -19,7 +19,7 @@ __status__ = "Development"
 _get_total_announcements_sql = [
     """DROP TABLE IF EXISTS total_announcements""",
     """CREATE UNLOGGED TABLE total_announcements  AS
-        (SELECT exir.asn, (SELECT count(*) FROM (SELECT DISTINCT prefix, origin FROM mrt_w_roas) a) - count(exir.asn)
+        (SELECT exir.asn, (SELECT count(*) FROM mrt_w_roas) - count(exir.asn)
         AS total FROM extrapolation_inverse_results exir
         GROUP BY exir.asn);""",
     """CREATE INDEX ON total_announcements(asn);"""]
@@ -39,8 +39,6 @@ _invalid_asn_create_subtables_sql = [
                 ON exir.prefix = iabh.prefix AND iabh.origin = exir.origin
             GROUP BY exir.asn) missed
         ON ta.asn = missed.asn;""",
-
-
     """CREATE TABLE invalid_asn_blocked_not_hijacked_stats  AS
         SELECT ta.asn, (SELECT COUNT(*) FROM invalid_asn_blocked_not_hijacked)
             - COALESCE(missed.total, 0) AS total FROM total_announcements ta
@@ -51,9 +49,6 @@ _invalid_asn_create_subtables_sql = [
                 ON exir.prefix = iabnh.prefix AND iabnh.origin = exir.origin
                 GROUP BY exir.asn) missed
         ON ta.asn = missed.asn;""",
-
-
-
     """CREATE TABLE invalid_asn_not_blocked_hijacked_stats  AS
         SELECT ta.asn, (SELECT COUNT(*) FROM invalid_asn_not_blocked_hijacked)
             - COALESCE(missed.total, 0) AS total FROM total_announcements ta

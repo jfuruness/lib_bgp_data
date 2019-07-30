@@ -13,46 +13,28 @@ __status__ = "Development"
 #########3
 # This file has been checked and all indexes are used in queries
 
+total_ann_sql = """SELECT (SELECT count(*) FROM mrt_w_roas) - SUM(total) AS total FROM
+                (SELECT count(exir.asn) AS total
+                    FROM extrapolation_inverse_results exir
+                WHERE exir.asn = 42177 OR exir.asn = 1
+                GROUP BY exir.asn) a;"""
 
-
-# I know the lines on this file will be off, it's crazy sql man whatever
-_get_total_announcements_sql = [
-    """DROP TABLE IF EXISTS total_announcements""",
-    """CREATE UNLOGGED TABLE total_announcements  AS
-        (SELECT exir.asn, (SELECT count(*) FROM (SELECT DISTINCT prefix, origin FROM mrt_w_roas) a) - count(exir.asn)
-        AS total FROM extrapolation_inverse_results exir
-        GROUP BY exir.asn);""",
-    """CREATE INDEX ON total_announcements(asn);"""]
-# invalid_asn_subtables_sql\
-_invalid_asn_drop_subtables_sql = [
-    """DROP TABLE IF EXISTS invalid_asn_blocked_hijacked_stats""",
-    """DROP TABLE IF EXISTS invalid_asn_blocked_not_hijacked_stats""",
-    """DROP TABLE IF EXISTS invalid_asn_not_blocked_hijacked_stats"""]
 _invalid_asn_create_subtables_sql = [
-    """CREATE TABLE invalid_asn_blocked_hijacked_stats  AS
-        SELECT ta.asn, (SELECT COUNT(*) FROM invalid_asn_blocked_hijacked)
-            - COALESCE(missed.total, 0) AS total FROM total_announcements ta
-        LEFT JOIN (
-            SELECT exir.asn, COUNT(exir.asn) AS total
+    """SELECT (SELECT COUNT(*)  AS total FROM invalid_asn_blocked_hijacked) - 
+(SELECT COALESCE(COUNT(*), 0) AS total FROM (SELECT DISTINCT iabh.prefix, iabh.origin
                 FROM extrapolation_inverse_results exir
             INNER JOIN invalid_asn_blocked_hijacked iabh
                 ON exir.prefix = iabh.prefix AND iabh.origin = exir.origin
-            GROUP BY exir.asn) missed
-        ON ta.asn = missed.asn;""",
+            WHERE exir.asn = 1 OR exir.asn = 42177) missed) AS total;"""
 
 
-    """CREATE TABLE invalid_asn_blocked_not_hijacked_stats  AS
-        SELECT ta.asn, (SELECT COUNT(*) FROM invalid_asn_blocked_not_hijacked)
-            - COALESCE(missed.total, 0) AS total FROM total_announcements ta
-        LEFT JOIN (
-            SELECT exir.asn, COUNT(exir.asn) AS total
+"""
+SELECT (SELECT COUNT(*)  AS total FROM invalid_asn_blocked_not_hijacked) - 
+(SELECT COALESCE(COUNT(*), 0) AS total FROM (SELECT DISTINCT iabnh.prefix, iabnh.origin
                 FROM extrapolation_inverse_results exir
             INNER JOIN invalid_asn_blocked_not_hijacked iabnh
                 ON exir.prefix = iabnh.prefix AND iabnh.origin = exir.origin
-                GROUP BY exir.asn) missed
-        ON ta.asn = missed.asn;""",
-
-
+            WHERE exir.asn = 1 OR exir.asn = 42177) missed) AS total;"""
 
     """CREATE TABLE invalid_asn_not_blocked_hijacked_stats  AS
         SELECT ta.asn, (SELECT COUNT(*) FROM invalid_asn_not_blocked_hijacked)
