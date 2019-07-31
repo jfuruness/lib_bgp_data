@@ -56,9 +56,9 @@ descriptions = {"rov": ("Block route announcements using standard"
                                     " AS that is not authorized to do"
                                     " so are allowed.")}
 disclaimers = {"disclaimers": ("All announcements and hijacks in this"
-                               " dataset are covered by a roa. In other"
+                               " dataset are covered by a ROA. In other"
                                " words, the prefixes are a subset of a"
-                               "roa.")}
+                               " ROA.")}
 
 
 def policy_stats_validation(asns, policies):
@@ -93,11 +93,11 @@ def get_stats(asn, policy, db):
 def dictify(result):
     formatted = {key: val for key, val in result.items()}
     if "url" in formatted:
-        formatted["url"] = "bgpstream.com{}".format(formatted["url"])
+        formatted["url"] = "https://bgpstream.com{}".format(formatted["url"])
     return formatted
 
 def get_hijack_data(asn, policy, info, db):
-    og_sql = """SELECT ph.prefix, ph.origin, ph.url
+    og_sql = """SELECT DISTINCT ph.prefix, ph.origin, ph.url
              FROM (
                  SELECT ta.asn, iabh.prefix, iabh.origin, iabh.url
                      FROM total_announcements ta
@@ -143,4 +143,7 @@ def asn_policy_stats(asns, policies):
     final["metadata"] = {key: val for key, val in descriptions.items()
                            if key in policies}
     final["metadata"].update(disclaimers)
+    https://stackoverflow.com/questions/21498694/flask-get-current-route/21498747
+    USE THIS IN THE FINAL API ADD THIS TO THE METADATA!!!
+    ALSO USE THE TIME OF EXECUTION HERE!!!
     return jsonify(final)
