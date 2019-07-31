@@ -1379,7 +1379,6 @@ There you have it. Please let me know any questions you might have. Take a look 
    * [lib\_bgp\_data](#lib_bgp_data)
 command line args
 automate the database installation process
-remove all in person crap like we from the readme you idjiout
-(if something is from a submodule, post a link to that specific possible future improvements? say that this is a summary of stuff?)
+all the other stuff in paper and throughout readme and omg is there a lot of stuff to do(if something is from a submodule, post a link to that specific possible future improvements? say that this is a summary of stuff?)
 ## FAQ
    * [lib\_bgp\_data](#lib_bgp_data)
