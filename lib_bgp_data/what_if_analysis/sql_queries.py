@@ -126,7 +126,23 @@ _invalid_asn_policy_sql = [
     ianbhs.total AS not_blocked_hijacked,
     iabnhs.total AS blocked_not_hijacked,
     asns.total - iabhs.total - ianbhs.total - iabnhs.total
-        AS not_blocked_not_hijacked
+        AS not_blocked_not_hijacked,
+    TRUNC(
+      (iabhs.total::decimal*100::decimal
+        /
+        COALESCE(NULLIF(iabhs.total::decimal + ianbhs.total::decimal, 0),1)
+        ), 2)
+        AS percent_blocked_hijacked_out_of_total_hijacks,
+    TRUNC(
+      (ianbhs.total::decimal*100::decimal
+        /
+       COALESCE(NULLIF(iabhs.total::decimal + ianbhs.total::decimal, 0),1)
+       ), 2)
+        AS percent_not_blocked_hijacked_out_of_total_hijacks,
+    TRUNC(
+        (iabnhs.total::decimal*100::decimal/
+        COALESCE(NULLIF(asns.total::decimal, 0),1)), 2)
+        AS percent_blocked_not_hijacked_out_of_total_prefix_origin_pairs
     FROM total_announcements asns
         LEFT JOIN invalid_asn_blocked_hijacked_stats iabhs
             ON iabhs.asn = asns.asn
@@ -144,7 +160,26 @@ _invalid_length_policy_sql = [
     ianbhs.total AS not_blocked_hijacked,
     iabnhs.total AS blocked_not_hijacked,
     asns.total - iabhs.total - ianbhs.total - iabnhs.total
-        AS not_blocked_not_hijacked
+        AS not_blocked_not_hijacked,
+
+    TRUNC(
+      (iabhs.total::decimal*100::decimal
+        /
+        COALESCE(NULLIF(iabhs.total::decimal + ianbhs.total::decimal, 0),1)
+        ), 2)
+        AS percent_blocked_hijacked_out_of_total_hijacks,
+    TRUNC(
+      (ianbhs.total::decimal*100::decimal
+        /
+       COALESCE(NULLIF(iabhs.total::decimal + ianbhs.total::decimal, 0),1)
+       ), 2)
+        AS percent_not_blocked_hijacked_out_of_total_hijacks,
+    TRUNC(
+        (iabnhs.total::decimal*100::decimal/
+        COALESCE(NULLIF(asns.total::decimal, 0),1)), 2)
+        AS percent_blocked_not_hijacked_out_of_total_prefix_origin_pairs
+
+
     FROM total_announcements asns
         LEFT JOIN invalid_length_blocked_hijacked_stats iabhs
             ON iabhs.asn = asns.asn
@@ -167,7 +202,26 @@ _rov_policy_sql = [
     asns.total - ilp.blocked_hijacked - ilp.not_blocked_hijacked
         - ilp.blocked_not_hijacked - iap.blocked_hijacked
         - iap.not_blocked_hijacked - iap.blocked_not_hijacked
-            AS not_blocked_not_hijacked
+            AS not_blocked_not_hijacked,
+
+    TRUNC(
+      ((ilp.blocked_hijacked::decimal + iap.blocked_hijacked::decimal)*100
+           ::decimal/
+       COALESCE(NULLIF(
+       (ilp.blocked_hijacked::decimal + iap.blocked_hijacked::decimal),0),1)), 2)
+          AS percent_blocked_hijacked_out_of_total_hijacks,
+    TRUNC(
+      ((ilp.not_blocked_hijacked::decimal + ilp.blocked_hijacked::decimal
+          - iap.blocked_hijacked::decimal - ilp.blocked_hijacked::decimal)
+           ::decimal*100::decimal/
+       COALESCE(NULLIF(
+       (ilp.blocked_hijacked::decimal + iap.blocked_hijacked::decimal),0),1)), 2)
+        AS percent_not_blocked_hijacked_out_of_total_hijacks,
+    TRUNC(
+        ((ilp.blocked_not_hijacked::decimal + iap.blocked_not_hijacked::decimal)
+            ::decimal*100::decimal/COALESCE(NULLIF(asns.total::decimal,0),1)), 2)
+        AS percent_blocked_not_hijacked_out_of_total_prefix_origin_pairs
+
     FROM total_announcements asns
         LEFT JOIN invalid_length ilp ON ilp.parent_asn = asns.asn
         LEFT JOIN invalid_asn iap ON iap.parent_asn = asns.asn;""",
