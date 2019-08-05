@@ -9,7 +9,7 @@ from .bgpstream_website_parser import BGPStream_Website_Parser
 from .mrt_parser import MRT_Parser
 from .what_if_analysis import What_If_Analysis
 from .rpki_validator import RPKI_Validator
-from .api import application
+from .api import create_app
 from .extrapolator import Extrapolator
 from .rovpp import ROVPP_Simulator
 from .utils import Install, Database, db_connection, Thread_Safe_Logger

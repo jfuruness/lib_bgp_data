@@ -130,15 +130,23 @@ class RPKI_Validator:
         # Changes the validation states to numbers and returns them
         return [self._format_asn_dict(x) for x in asns]
 
+    @staticmethod
+    def get_validity_dict(self):
+        """Returns the validity dict for how the info is stored in db.
+
+        This is a static method because it is used in the api.
+        """
+
+        return {"VALID": 1,
+                "UNKNOWN": 0,
+                "INVALID_LENGTH": -1,
+                "INVALID_ASN": -2}
     
     @error_catcher()
     def _format_asn_dict(self, asn):
         """Formats json objects for csv rows"""
 
-        valid = {"VALID": 1,
-                 "UNKNOWN": 0,
-                 "INVALID_LENGTH": -1,
-                 "INVALID_ASN": -2}
+        valid = RPKI_Validator.get_validity_dict()
         return [int(asn["asn"][2:]), asn["prefix"], valid.get(asn["validity"])]
 
     @error_catcher()

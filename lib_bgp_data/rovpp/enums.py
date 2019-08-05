@@ -21,8 +21,8 @@ class Policies(Enum):
     BGP = "bgp"
     ROV = "rov"
     ROVPP = "rovpp"
-#    ROVPPFP = "rovppfp"
-#    ROVPPF = "rovppf"
+    ROVPPFP = "rovppb"
+    ROVPPF = "rovppbp"
 # This creates an enum that is for non bgp policies
 non_bgp_policies_dict = {x[0]: x[1].value
                          for x in Policies.__members__.items()
