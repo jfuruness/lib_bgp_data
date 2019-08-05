@@ -11,26 +11,15 @@ from ..utils import utils
 from .api_utils import validate_asns, validate_policies, format_json
 from pprint import pprint
 
-@application.route("/policy_stats/with_hijacks/<list:asns>/<list:policies>/")
+@application.route("/policy_stats/<list:asns>/<list:policies>/")
 @format_json(get_policy_metadata)
-def policy_stats_with_hijacks(asns, policies):
-    return policy_stats(asns, policies, hijack_info=True)
-
-
-@application.route("/policy_stats/without_hijacks/<list:asns>/<list:policies>/")
-@format_json(get_policy_metadata)
-def policy_stats_without_hijacks(asns, policies):
-    return policy_stats(asns, policies, hijack_info=False)
-
-
-def policy_stats(asns, policies, hijack_info):
+def policy_stats(asns, policies):
     asns, policies = validate_asns_and_policies(asns, policies)
     results = {policy: {} for policy in policies}
     for policy in policies:
         for asn in asns:
             results[policy][str(asn)] = get_stats(asn, policy)
-            if hijack_info:
-                results[policy][str(asn)].update(get_hijack_data(asn, policy))
+            results[policy][str(asn)].update(get_hijack_data(asn, policy))
         results.update(get_average_stats(dictify(results[policy])))
     return results
 
