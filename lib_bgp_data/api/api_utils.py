@@ -6,6 +6,7 @@ from random import random
 from datetime import datetime, timedelta
 from flasgger import Swagger, swag_from
 from copy import deepcopy
+from decimal import Decimal
 from ..utils import Database, db_connection, Thread_Safe_Logger as Logger
 from ..utils import utils
 from pprint import pprint
@@ -22,24 +23,24 @@ def format_json(metadata_getter, *args1):
                 # Inside the decorator
                 results = func(*args2, **kwargs)
                 final = {"data": results, "metadata": metadata_getter(*args1)}
-                api_url = "https://bgpforecast.uconn.edu/"
-                meta = data["metadata"]
+                api_url = "https://bgpforecast.uconn.edu"
+                meta = final["metadata"]
                 meta["query_url"] = api_url + request.path
                 meta["seconds"] = (utils.now() - start).total_seconds()
                 return jsonify(dictify(final))
             except InvalidInput:
-                return jsonify({"Invalid input"})
+                return jsonify({"ERROR": "Invalid input"})
             except Exception as e:
                 print(e)
-                return jsonify({"ERROR: Please contact jfuruness@gmail.com"})
+                return jsonify({"ERROR": "Please contact jfuruness@gmail.com"})
                 
         return function_that_runs_func
     return my_decorator
 
-def validate_asns(asns):
+def validate_asns(asns, db):
     try:
         asns = [int(asn) for asn in deepcopy(asns)]
-        return convert_stubs_to_parents(asns)
+        return convert_stubs_to_parents(asns, db)
     except ValueError:
         raise InvalidInput
 
@@ -52,21 +53,23 @@ def validate_policies(policies):
             raise InvalidInput
     return policies
 
-def validate_asns_and_policies(asns, policies):
-    return validate_asns(asns), validate_policies(policies)
-
-def convert_stubs_to_parents(asns):
+def convert_stubs_to_parents(asns, db):
     list_of_asns = []
     sql = "SELECT * FROM stubs WHERE stub_asn=%s"
     for asn in asns:
-        results = application.db.execute(sql, [asn])
+        results = db.execute(sql, [asn])
         if len(results) == 0:
             list_of_asns.append(asn)
         else:
-            return results[0]["parent_asn"]
+            list_of_asns.append(results[0]["parent_asn"])
+    return list_of_asns
 
 def dictify(result):
     if not isinstance(result, dict):
+        if isinstance(result, list):
+            return [dictify(x) for x in result]
+        if isinstance(result, Decimal):
+            return float(result)
         return result
     formatted = {key: dictify(val) for key, val in result.items()}
     if "url" in formatted:

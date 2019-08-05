@@ -1,0 +1,48 @@
+Returns average statistics across all ASNs.
+---
+responses:
+  200:
+    description: An object with a list of policies and their corresponding average stats.
+    examples:
+        {
+          "data": {
+            "invalid_asn": [
+              {
+                "blocked_hijacked_average": 9.92,
+                "blocked_not_hijacked_average": 4016.35,
+                "not_blocked_hijacked_average": 15.14,
+                "not_blocked_not_hijacked_average": 138190.26,
+                "percent_blocked_hijacked_out_of_total_hijacks_average": 39.45,
+                "percent_blocked_not_hijacked_out_of_total_prefix_origin_pairs_a": 2.82,
+                "percent_not_blocked_hijacked_out_of_total_hijacks_average": 59.89
+              }
+            ],
+            "invalid_length": [
+              {
+                "blocked_hijacked_average": 0,
+                "blocked_not_hijacked_average": 16136.81,
+                "not_blocked_hijacked_average": 25.07,
+                "not_blocked_not_hijacked_average": 126069.79,
+                "percent_blocked_hijacked_out_of_total_hijacks_average": 0,
+                "percent_blocked_not_hijacked_out_of_total_prefix_origin_pairs_a": 11.27,
+                "percent_not_blocked_hijacked_out_of_total_hijacks_average": 99.36
+              }
+            ],
+            "rov": [
+              {
+                "blocked_hijacked_average": 9.92,
+                "blocked_not_hijacked_average": 20153.17,
+                "not_blocked_hijacked_average": 15.14,
+                "not_blocked_not_hijacked_average": 122028.37,
+                "percent_blocked_hijacked_out_of_total_hijacks_average": 99.33,
+                "percent_blocked_not_hijacked_out_of_total_prefix_origin_pairs_a": 14.1,
+                "percent_not_blocked_hijacked_out_of_total_hijacks_average": 151.82
+              }
+            ]
+          },
+          "metadata": {
+            "description": "Average data across all ASes",
+            "query_url": "https://bgpforecast.uconn.edu//averages/",
+            "seconds": 0.062471
+          }
+        }

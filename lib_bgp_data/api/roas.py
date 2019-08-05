@@ -1,5 +1,5 @@
 import functools
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, Blueprint
 from werkzeug.contrib.fixers import ProxyFix
 from werkzeug.routing import BaseConverter
 from random import random
@@ -8,9 +8,12 @@ from flasgger import Swagger, swag_from
 from copy import deepcopy
 from ..utils import Database, db_connection, Thread_Safe_Logger as Logger
 from ..utils import utils
+from .api_utils import format_json
 from pprint import pprint
 
-@application.route("/roas_data/")
+roas_app = Blueprint("roas_app", __name__)
+
+@roas_app.route("/roas_data/")
 @format_json(lambda: {"description": "All ROAs used"})
 def roas():
-    return application.db.execute("SELECT * FROM roas;")
+    return roas_app.db.execute("SELECT * FROM roas;")

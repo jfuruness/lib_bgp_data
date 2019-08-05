@@ -1,0 +1,1215 @@
+*WARNING* this query may take up to 10 minutes to complete! Returns statistics on different policies.
+---
+parameters:
+  - name: asns
+    in: path
+    description: AS Number
+    type: array
+    items: 
+      type: string
+    required: true
+  - name: policies
+    in: path
+    type: array
+    items:
+      type: string
+      enum:
+        - all
+        - rov
+        - invalid_asn
+        - invalid_length
+    description: Policy Name
+    required: true
+responses:
+  200:
+    description: An object with a list of policies and their corresponding stats.
+    examples:
+        {
+          "data": {
+            "invalid_asn": {
+              "174": {
+                "blocked_hijacked": 10,
+                "blocked_not_hijacked": 4024,
+                "invalid_asn_hijack_data": {
+                  "blocked_hijacked_info": [
+                    {
+                      "origin": 205450,
+                      "prefix": "83.143.118.0/24",
+                      "url": "/event/196619"
+                    },
+                    {
+                      "origin": 33823,
+                      "prefix": "86.55.233.0/24",
+                      "url": "/event/205341"
+                    },
+                    {
+                      "origin": 7552,
+                      "prefix": "125.212.33.0/24",
+                      "url": "/event/205098"
+                    },
+                    {
+                      "origin": 20473,
+                      "prefix": "128.0.68.0/24",
+                      "url": "/event/189391"
+                    },
+                    {
+                      "origin": 201935,
+                      "prefix": "164.138.239.0/24",
+                      "url": "/event/204576"
+                    },
+                    {
+                      "origin": 34984,
+                      "prefix": "172.33.64.0/24",
+                      "url": "/event/187461"
+                    },
+                    {
+                      "origin": 34984,
+                      "prefix": "172.33.100.0/24",
+                      "url": "/event/187460"
+                    },
+                    {
+                      "origin": 201935,
+                      "prefix": "185.115.207.0/24",
+                      "url": "/event/205326"
+                    },
+                    {
+                      "origin": 7717,
+                      "prefix": "202.167.97.0/24",
+                      "url": "/event/202951"
+                    },
+                    {
+                      "origin": 18592,
+                      "prefix": "210.244.100.0/24",
+                      "url": "/event/189326"
+                    }
+                  ],
+                  "not_blocked_hijacked_info": [
+                    {
+                      "origin": 196682,
+                      "prefix": "5.188.234.0/24",
+                      "url": "/event/204155"
+                    },
+                    {
+                      "origin": 15681,
+                      "prefix": "83.137.240.0/24",
+                      "url": "/event/198501"
+                    },
+                    {
+                      "origin": 29405,
+                      "prefix": "91.200.59.0/24",
+                      "url": "/event/204300"
+                    },
+                    {
+                      "origin": 33835,
+                      "prefix": "130.185.170.0/24",
+                      "url": "/event/204713"
+                    },
+                    {
+                      "origin": 196725,
+                      "prefix": "151.252.96.0/21",
+                      "url": "/event/201996"
+                    },
+                    {
+                      "origin": 55002,
+                      "prefix": "185.16.88.0/24",
+                      "url": "/event/205324"
+                    },
+                    {
+                      "origin": 24940,
+                      "prefix": "185.36.144.0/22",
+                      "url": "/event/204624"
+                    },
+                    {
+                      "origin": 174,
+                      "prefix": "185.108.148.0/24",
+                      "url": "/event/201387"
+                    },
+                    {
+                      "origin": 174,
+                      "prefix": "185.108.149.0/24",
+                      "url": "/event/201388"
+                    },
+                    {
+                      "origin": 210234,
+                      "prefix": "185.225.205.0/24",
+                      "url": "/event/190721"
+                    },
+                    {
+                      "origin": 60721,
+                      "prefix": "185.254.31.0/24",
+                      "url": "/event/200731"
+                    },
+                    {
+                      "origin": 57356,
+                      "prefix": "194.140.208.0/20",
+                      "url": "/event/201884"
+                    },
+                    {
+                      "origin": 57356,
+                      "prefix": "194.140.208.0/22",
+                      "url": "/event/201885"
+                    },
+                    {
+                      "origin": 23031,
+                      "prefix": "200.12.154.0/24",
+                      "url": "/event/192020"
+                    },
+                    {
+                      "origin": 24940,
+                      "prefix": "201.131.3.0/24",
+                      "url": "/event/204041"
+                    },
+                    {
+                      "origin": 39855,
+                      "prefix": "212.19.211.0/24",
+                      "url": "/event/200527"
+                    }
+                  ]
+                },
+                "not_blocked_hijacked": 16,
+                "not_blocked_not_hijacked": 139265,
+                "parent_asn": 174,
+                "percent_blocked_hijacked_out_of_total_hijacks": 38.46,
+                "percent_blocked_not_hijacked_out_of_total_prefix_origin_pairs": 2.8,
+                "percent_not_blocked_hijacked_out_of_total_hijacks": 61.53
+              },
+              "198138": {
+                "blocked_hijacked": 10,
+                "blocked_not_hijacked": 4024,
+                "invalid_asn_hijack_data": {
+                  "blocked_hijacked_info": [
+                    {
+                      "origin": 205450,
+                      "prefix": "83.143.118.0/24",
+                      "url": "/event/196619"
+                    },
+                    {
+                      "origin": 33823,
+                      "prefix": "86.55.233.0/24",
+                      "url": "/event/205341"
+                    },
+                    {
+                      "origin": 7552,
+                      "prefix": "125.212.33.0/24",
+                      "url": "/event/205098"
+                    },
+                    {
+                      "origin": 20473,
+                      "prefix": "128.0.68.0/24",
+                      "url": "/event/189391"
+                    },
+                    {
+                      "origin": 201935,
+                      "prefix": "164.138.239.0/24",
+                      "url": "/event/204576"
+                    },
+                    {
+                      "origin": 34984,
+                      "prefix": "172.33.64.0/24",
+                      "url": "/event/187461"
+                    },
+                    {
+                      "origin": 34984,
+                      "prefix": "172.33.100.0/24",
+                      "url": "/event/187460"
+                    },
+                    {
+                      "origin": 201935,
+                      "prefix": "185.115.207.0/24",
+                      "url": "/event/205326"
+                    },
+                    {
+                      "origin": 7717,
+                      "prefix": "202.167.97.0/24",
+                      "url": "/event/202951"
+                    },
+                    {
+                      "origin": 18592,
+                      "prefix": "210.244.100.0/24",
+                      "url": "/event/189326"
+                    }
+                  ],
+                  "not_blocked_hijacked_info": [
+                    {
+                      "origin": 196682,
+                      "prefix": "5.188.234.0/24",
+                      "url": "/event/204155"
+                    },
+                    {
+                      "origin": 15681,
+                      "prefix": "83.137.240.0/24",
+                      "url": "/event/198501"
+                    },
+                    {
+                      "origin": 29405,
+                      "prefix": "91.200.59.0/24",
+                      "url": "/event/204300"
+                    },
+                    {
+                      "origin": 33835,
+                      "prefix": "130.185.170.0/24",
+                      "url": "/event/204713"
+                    },
+                    {
+                      "origin": 196725,
+                      "prefix": "151.252.96.0/21",
+                      "url": "/event/201996"
+                    },
+                    {
+                      "origin": 55002,
+                      "prefix": "185.16.88.0/24",
+                      "url": "/event/205324"
+                    },
+                    {
+                      "origin": 24940,
+                      "prefix": "185.36.144.0/22",
+                      "url": "/event/204624"
+                    },
+                    {
+                      "origin": 174,
+                      "prefix": "185.108.148.0/24",
+                      "url": "/event/201387"
+                    },
+                    {
+                      "origin": 174,
+                      "prefix": "185.108.149.0/24",
+                      "url": "/event/201388"
+                    },
+                    {
+                      "origin": 210234,
+                      "prefix": "185.225.205.0/24",
+                      "url": "/event/190721"
+                    },
+                    {
+                      "origin": 60721,
+                      "prefix": "185.254.31.0/24",
+                      "url": "/event/200731"
+                    },
+                    {
+                      "origin": 57356,
+                      "prefix": "194.140.208.0/20",
+                      "url": "/event/201884"
+                    },
+                    {
+                      "origin": 57356,
+                      "prefix": "194.140.208.0/22",
+                      "url": "/event/201885"
+                    },
+                    {
+                      "origin": 23031,
+                      "prefix": "200.12.154.0/24",
+                      "url": "/event/192020"
+                    },
+                    {
+                      "origin": 24940,
+                      "prefix": "201.131.3.0/24",
+                      "url": "/event/204041"
+                    },
+                    {
+                      "origin": 39855,
+                      "prefix": "212.19.211.0/24",
+                      "url": "/event/200527"
+                    }
+                  ]
+                },
+                "not_blocked_hijacked": 16,
+                "not_blocked_not_hijacked": 139265,
+                "parent_asn": 198138,
+                "percent_blocked_hijacked_out_of_total_hijacks": 38.46,
+                "percent_blocked_not_hijacked_out_of_total_prefix_origin_pairs": 2.8,
+                "percent_not_blocked_hijacked_out_of_total_hijacks": 61.53
+              },
+              "aggregate_average_data": {
+                "blocked_hijacked": 10,
+                "blocked_not_hijacked": 4024,
+                "not_blocked_hijacked": 16,
+                "not_blocked_not_hijacked": 139265,
+                "percent_blocked_hijacked_out_of_total_hijacks": 38.46,
+                "percent_blocked_not_hijacked_out_of_total_prefix_origin_pairs": 2.8,
+                "percent_not_blocked_hijacked_out_of_total_hijacks": 61.53
+              }
+            },
+            "invalid_length": {
+              "174": {
+                "blocked_hijacked": 0,
+                "blocked_not_hijacked": 16267,
+                "invalid_length_hijack_data": {
+                  "blocked_hijacked_info": [],
+                  "not_blocked_hijacked_info": [
+                    {
+                      "origin": 196682,
+                      "prefix": "5.188.234.0/24",
+                      "url": "/event/204155"
+                    },
+                    {
+                      "origin": 15681,
+                      "prefix": "83.137.240.0/24",
+                      "url": "/event/198501"
+                    },
+                    {
+                      "origin": 205450,
+                      "prefix": "83.143.118.0/24",
+                      "url": "/event/196619"
+                    },
+                    {
+                      "origin": 33823,
+                      "prefix": "86.55.233.0/24",
+                      "url": "/event/205341"
+                    },
+                    {
+                      "origin": 29405,
+                      "prefix": "91.200.59.0/24",
+                      "url": "/event/204300"
+                    },
+                    {
+                      "origin": 7552,
+                      "prefix": "125.212.33.0/24",
+                      "url": "/event/205098"
+                    },
+                    {
+                      "origin": 20473,
+                      "prefix": "128.0.68.0/24",
+                      "url": "/event/189391"
+                    },
+                    {
+                      "origin": 33835,
+                      "prefix": "130.185.170.0/24",
+                      "url": "/event/204713"
+                    },
+                    {
+                      "origin": 196725,
+                      "prefix": "151.252.96.0/21",
+                      "url": "/event/201996"
+                    },
+                    {
+                      "origin": 201935,
+                      "prefix": "164.138.239.0/24",
+                      "url": "/event/204576"
+                    },
+                    {
+                      "origin": 34984,
+                      "prefix": "172.33.64.0/24",
+                      "url": "/event/187461"
+                    },
+                    {
+                      "origin": 34984,
+                      "prefix": "172.33.100.0/24",
+                      "url": "/event/187460"
+                    },
+                    {
+                      "origin": 55002,
+                      "prefix": "185.16.88.0/24",
+                      "url": "/event/205324"
+                    },
+                    {
+                      "origin": 24940,
+                      "prefix": "185.36.144.0/22",
+                      "url": "/event/204624"
+                    },
+                    {
+                      "origin": 174,
+                      "prefix": "185.108.148.0/24",
+                      "url": "/event/201387"
+                    },
+                    {
+                      "origin": 174,
+                      "prefix": "185.108.149.0/24",
+                      "url": "/event/201388"
+                    },
+                    {
+                      "origin": 201935,
+                      "prefix": "185.115.207.0/24",
+                      "url": "/event/205326"
+                    },
+                    {
+                      "origin": 210234,
+                      "prefix": "185.225.205.0/24",
+                      "url": "/event/190721"
+                    },
+                    {
+                      "origin": 60721,
+                      "prefix": "185.254.31.0/24",
+                      "url": "/event/200731"
+                    },
+                    {
+                      "origin": 57356,
+                      "prefix": "194.140.208.0/20",
+                      "url": "/event/201884"
+                    },
+                    {
+                      "origin": 57356,
+                      "prefix": "194.140.208.0/22",
+                      "url": "/event/201885"
+                    },
+                    {
+                      "origin": 23031,
+                      "prefix": "200.12.154.0/24",
+                      "url": "/event/192020"
+                    },
+                    {
+                      "origin": 24940,
+                      "prefix": "201.131.3.0/24",
+                      "url": "/event/204041"
+                    },
+                    {
+                      "origin": 7717,
+                      "prefix": "202.167.97.0/24",
+                      "url": "/event/202951"
+                    },
+                    {
+                      "origin": 18592,
+                      "prefix": "210.244.100.0/24",
+                      "url": "/event/189326"
+                    },
+                    {
+                      "origin": 39855,
+                      "prefix": "212.19.211.0/24",
+                      "url": "/event/200527"
+                    }
+                  ]
+                },
+                "not_blocked_hijacked": 26,
+                "not_blocked_not_hijacked": 127022,
+                "parent_asn": 174,
+                "percent_blocked_hijacked_out_of_total_hijacks": 0,
+                "percent_blocked_not_hijacked_out_of_total_prefix_origin_pairs": 11.35,
+                "percent_not_blocked_hijacked_out_of_total_hijacks": 100
+              },
+              "198138": {
+                "blocked_hijacked": 0,
+                "blocked_not_hijacked": 16267,
+                "invalid_length_hijack_data": {
+                  "blocked_hijacked_info": [],
+                  "not_blocked_hijacked_info": [
+                    {
+                      "origin": 196682,
+                      "prefix": "5.188.234.0/24",
+                      "url": "/event/204155"
+                    },
+                    {
+                      "origin": 15681,
+                      "prefix": "83.137.240.0/24",
+                      "url": "/event/198501"
+                    },
+                    {
+                      "origin": 205450,
+                      "prefix": "83.143.118.0/24",
+                      "url": "/event/196619"
+                    },
+                    {
+                      "origin": 33823,
+                      "prefix": "86.55.233.0/24",
+                      "url": "/event/205341"
+                    },
+                    {
+                      "origin": 29405,
+                      "prefix": "91.200.59.0/24",
+                      "url": "/event/204300"
+                    },
+                    {
+                      "origin": 7552,
+                      "prefix": "125.212.33.0/24",
+                      "url": "/event/205098"
+                    },
+                    {
+                      "origin": 20473,
+                      "prefix": "128.0.68.0/24",
+                      "url": "/event/189391"
+                    },
+                    {
+                      "origin": 33835,
+                      "prefix": "130.185.170.0/24",
+                      "url": "/event/204713"
+                    },
+                    {
+                      "origin": 196725,
+                      "prefix": "151.252.96.0/21",
+                      "url": "/event/201996"
+                    },
+                    {
+                      "origin": 201935,
+                      "prefix": "164.138.239.0/24",
+                      "url": "/event/204576"
+                    },
+                    {
+                      "origin": 34984,
+                      "prefix": "172.33.64.0/24",
+                      "url": "/event/187461"
+                    },
+                    {
+                      "origin": 34984,
+                      "prefix": "172.33.100.0/24",
+                      "url": "/event/187460"
+                    },
+                    {
+                      "origin": 55002,
+                      "prefix": "185.16.88.0/24",
+                      "url": "/event/205324"
+                    },
+                    {
+                      "origin": 24940,
+                      "prefix": "185.36.144.0/22",
+                      "url": "/event/204624"
+                    },
+                    {
+                      "origin": 174,
+                      "prefix": "185.108.148.0/24",
+                      "url": "/event/201387"
+                    },
+                    {
+                      "origin": 174,
+                      "prefix": "185.108.149.0/24",
+                      "url": "/event/201388"
+                    },
+                    {
+                      "origin": 201935,
+                      "prefix": "185.115.207.0/24",
+                      "url": "/event/205326"
+                    },
+                    {
+                      "origin": 210234,
+                      "prefix": "185.225.205.0/24",
+                      "url": "/event/190721"
+                    },
+                    {
+                      "origin": 60721,
+                      "prefix": "185.254.31.0/24",
+                      "url": "/event/200731"
+                    },
+                    {
+                      "origin": 57356,
+                      "prefix": "194.140.208.0/20",
+                      "url": "/event/201884"
+                    },
+                    {
+                      "origin": 57356,
+                      "prefix": "194.140.208.0/22",
+                      "url": "/event/201885"
+                    },
+                    {
+                      "origin": 23031,
+                      "prefix": "200.12.154.0/24",
+                      "url": "/event/192020"
+                    },
+                    {
+                      "origin": 24940,
+                      "prefix": "201.131.3.0/24",
+                      "url": "/event/204041"
+                    },
+                    {
+                      "origin": 7717,
+                      "prefix": "202.167.97.0/24",
+                      "url": "/event/202951"
+                    },
+                    {
+                      "origin": 18592,
+                      "prefix": "210.244.100.0/24",
+                      "url": "/event/189326"
+                    },
+                    {
+                      "origin": 39855,
+                      "prefix": "212.19.211.0/24",
+                      "url": "/event/200527"
+                    }
+                  ]
+                },
+                "not_blocked_hijacked": 26,
+                "not_blocked_not_hijacked": 127022,
+                "parent_asn": 198138,
+                "percent_blocked_hijacked_out_of_total_hijacks": 0,
+                "percent_blocked_not_hijacked_out_of_total_prefix_origin_pairs": 11.35,
+                "percent_not_blocked_hijacked_out_of_total_hijacks": 100
+              },
+              "aggregate_average_data": {
+                "blocked_hijacked": 0,
+                "blocked_not_hijacked": 16267,
+                "not_blocked_hijacked": 26,
+                "not_blocked_not_hijacked": 127022,
+                "percent_blocked_hijacked_out_of_total_hijacks": 0,
+                "percent_blocked_not_hijacked_out_of_total_prefix_origin_pairs": 11.35,
+                "percent_not_blocked_hijacked_out_of_total_hijacks": 100
+              }
+            },
+            "rov": {
+              "174": {
+                "blocked_hijacked": 10,
+                "blocked_not_hijacked": 20291,
+                "invalid_asn_hijack_data": {
+                  "blocked_hijacked_info": [
+                    {
+                      "origin": 205450,
+                      "prefix": "83.143.118.0/24",
+                      "url": "/event/196619"
+                    },
+                    {
+                      "origin": 33823,
+                      "prefix": "86.55.233.0/24",
+                      "url": "/event/205341"
+                    },
+                    {
+                      "origin": 7552,
+                      "prefix": "125.212.33.0/24",
+                      "url": "/event/205098"
+                    },
+                    {
+                      "origin": 20473,
+                      "prefix": "128.0.68.0/24",
+                      "url": "/event/189391"
+                    },
+                    {
+                      "origin": 201935,
+                      "prefix": "164.138.239.0/24",
+                      "url": "/event/204576"
+                    },
+                    {
+                      "origin": 34984,
+                      "prefix": "172.33.64.0/24",
+                      "url": "/event/187461"
+                    },
+                    {
+                      "origin": 34984,
+                      "prefix": "172.33.100.0/24",
+                      "url": "/event/187460"
+                    },
+                    {
+                      "origin": 201935,
+                      "prefix": "185.115.207.0/24",
+                      "url": "/event/205326"
+                    },
+                    {
+                      "origin": 7717,
+                      "prefix": "202.167.97.0/24",
+                      "url": "/event/202951"
+                    },
+                    {
+                      "origin": 18592,
+                      "prefix": "210.244.100.0/24",
+                      "url": "/event/189326"
+                    }
+                  ],
+                  "not_blocked_hijacked_info": [
+                    {
+                      "origin": 196682,
+                      "prefix": "5.188.234.0/24",
+                      "url": "/event/204155"
+                    },
+                    {
+                      "origin": 15681,
+                      "prefix": "83.137.240.0/24",
+                      "url": "/event/198501"
+                    },
+                    {
+                      "origin": 29405,
+                      "prefix": "91.200.59.0/24",
+                      "url": "/event/204300"
+                    },
+                    {
+                      "origin": 33835,
+                      "prefix": "130.185.170.0/24",
+                      "url": "/event/204713"
+                    },
+                    {
+                      "origin": 196725,
+                      "prefix": "151.252.96.0/21",
+                      "url": "/event/201996"
+                    },
+                    {
+                      "origin": 55002,
+                      "prefix": "185.16.88.0/24",
+                      "url": "/event/205324"
+                    },
+                    {
+                      "origin": 24940,
+                      "prefix": "185.36.144.0/22",
+                      "url": "/event/204624"
+                    },
+                    {
+                      "origin": 174,
+                      "prefix": "185.108.148.0/24",
+                      "url": "/event/201387"
+                    },
+                    {
+                      "origin": 174,
+                      "prefix": "185.108.149.0/24",
+                      "url": "/event/201388"
+                    },
+                    {
+                      "origin": 210234,
+                      "prefix": "185.225.205.0/24",
+                      "url": "/event/190721"
+                    },
+                    {
+                      "origin": 60721,
+                      "prefix": "185.254.31.0/24",
+                      "url": "/event/200731"
+                    },
+                    {
+                      "origin": 57356,
+                      "prefix": "194.140.208.0/20",
+                      "url": "/event/201884"
+                    },
+                    {
+                      "origin": 57356,
+                      "prefix": "194.140.208.0/22",
+                      "url": "/event/201885"
+                    },
+                    {
+                      "origin": 23031,
+                      "prefix": "200.12.154.0/24",
+                      "url": "/event/192020"
+                    },
+                    {
+                      "origin": 24940,
+                      "prefix": "201.131.3.0/24",
+                      "url": "/event/204041"
+                    },
+                    {
+                      "origin": 39855,
+                      "prefix": "212.19.211.0/24",
+                      "url": "/event/200527"
+                    }
+                  ]
+                },
+                "invalid_length_hijack_data": {
+                  "blocked_hijacked_info": [],
+                  "not_blocked_hijacked_info": [
+                    {
+                      "origin": 196682,
+                      "prefix": "5.188.234.0/24",
+                      "url": "/event/204155"
+                    },
+                    {
+                      "origin": 15681,
+                      "prefix": "83.137.240.0/24",
+                      "url": "/event/198501"
+                    },
+                    {
+                      "origin": 205450,
+                      "prefix": "83.143.118.0/24",
+                      "url": "/event/196619"
+                    },
+                    {
+                      "origin": 33823,
+                      "prefix": "86.55.233.0/24",
+                      "url": "/event/205341"
+                    },
+                    {
+                      "origin": 29405,
+                      "prefix": "91.200.59.0/24",
+                      "url": "/event/204300"
+                    },
+                    {
+                      "origin": 7552,
+                      "prefix": "125.212.33.0/24",
+                      "url": "/event/205098"
+                    },
+                    {
+                      "origin": 20473,
+                      "prefix": "128.0.68.0/24",
+                      "url": "/event/189391"
+                    },
+                    {
+                      "origin": 33835,
+                      "prefix": "130.185.170.0/24",
+                      "url": "/event/204713"
+                    },
+                    {
+                      "origin": 196725,
+                      "prefix": "151.252.96.0/21",
+                      "url": "/event/201996"
+                    },
+                    {
+                      "origin": 201935,
+                      "prefix": "164.138.239.0/24",
+                      "url": "/event/204576"
+                    },
+                    {
+                      "origin": 34984,
+                      "prefix": "172.33.64.0/24",
+                      "url": "/event/187461"
+                    },
+                    {
+                      "origin": 34984,
+                      "prefix": "172.33.100.0/24",
+                      "url": "/event/187460"
+                    },
+                    {
+                      "origin": 55002,
+                      "prefix": "185.16.88.0/24",
+                      "url": "/event/205324"
+                    },
+                    {
+                      "origin": 24940,
+                      "prefix": "185.36.144.0/22",
+                      "url": "/event/204624"
+                    },
+                    {
+                      "origin": 174,
+                      "prefix": "185.108.148.0/24",
+                      "url": "/event/201387"
+                    },
+                    {
+                      "origin": 174,
+                      "prefix": "185.108.149.0/24",
+                      "url": "/event/201388"
+                    },
+                    {
+                      "origin": 201935,
+                      "prefix": "185.115.207.0/24",
+                      "url": "/event/205326"
+                    },
+                    {
+                      "origin": 210234,
+                      "prefix": "185.225.205.0/24",
+                      "url": "/event/190721"
+                    },
+                    {
+                      "origin": 60721,
+                      "prefix": "185.254.31.0/24",
+                      "url": "/event/200731"
+                    },
+                    {
+                      "origin": 57356,
+                      "prefix": "194.140.208.0/20",
+                      "url": "/event/201884"
+                    },
+                    {
+                      "origin": 57356,
+                      "prefix": "194.140.208.0/22",
+                      "url": "/event/201885"
+                    },
+                    {
+                      "origin": 23031,
+                      "prefix": "200.12.154.0/24",
+                      "url": "/event/192020"
+                    },
+                    {
+                      "origin": 24940,
+                      "prefix": "201.131.3.0/24",
+                      "url": "/event/204041"
+                    },
+                    {
+                      "origin": 7717,
+                      "prefix": "202.167.97.0/24",
+                      "url": "/event/202951"
+                    },
+                    {
+                      "origin": 18592,
+                      "prefix": "210.244.100.0/24",
+                      "url": "/event/189326"
+                    },
+                    {
+                      "origin": 39855,
+                      "prefix": "212.19.211.0/24",
+                      "url": "/event/200527"
+                    }
+                  ]
+                },
+                "not_blocked_hijacked": 16,
+                "not_blocked_not_hijacked": 122972,
+                "parent_asn": 174,
+                "percent_blocked_hijacked_out_of_total_hijacks": 100,
+                "percent_blocked_not_hijacked_out_of_total_prefix_origin_pairs": 14.15,
+                "percent_not_blocked_hijacked_out_of_total_hijacks": 160
+              },
+              "198138": {
+                "blocked_hijacked": 10,
+                "blocked_not_hijacked": 20291,
+                "invalid_asn_hijack_data": {
+                  "blocked_hijacked_info": [
+                    {
+                      "origin": 205450,
+                      "prefix": "83.143.118.0/24",
+                      "url": "/event/196619"
+                    },
+                    {
+                      "origin": 33823,
+                      "prefix": "86.55.233.0/24",
+                      "url": "/event/205341"
+                    },
+                    {
+                      "origin": 7552,
+                      "prefix": "125.212.33.0/24",
+                      "url": "/event/205098"
+                    },
+                    {
+                      "origin": 20473,
+                      "prefix": "128.0.68.0/24",
+                      "url": "/event/189391"
+                    },
+                    {
+                      "origin": 201935,
+                      "prefix": "164.138.239.0/24",
+                      "url": "/event/204576"
+                    },
+                    {
+                      "origin": 34984,
+                      "prefix": "172.33.64.0/24",
+                      "url": "/event/187461"
+                    },
+                    {
+                      "origin": 34984,
+                      "prefix": "172.33.100.0/24",
+                      "url": "/event/187460"
+                    },
+                    {
+                      "origin": 201935,
+                      "prefix": "185.115.207.0/24",
+                      "url": "/event/205326"
+                    },
+                    {
+                      "origin": 7717,
+                      "prefix": "202.167.97.0/24",
+                      "url": "/event/202951"
+                    },
+                    {
+                      "origin": 18592,
+                      "prefix": "210.244.100.0/24",
+                      "url": "/event/189326"
+                    }
+                  ],
+                  "not_blocked_hijacked_info": [
+                    {
+                      "origin": 196682,
+                      "prefix": "5.188.234.0/24",
+                      "url": "/event/204155"
+                    },
+                    {
+                      "origin": 15681,
+                      "prefix": "83.137.240.0/24",
+                      "url": "/event/198501"
+                    },
+                    {
+                      "origin": 29405,
+                      "prefix": "91.200.59.0/24",
+                      "url": "/event/204300"
+                    },
+                    {
+                      "origin": 33835,
+                      "prefix": "130.185.170.0/24",
+                      "url": "/event/204713"
+                    },
+                    {
+                      "origin": 196725,
+                      "prefix": "151.252.96.0/21",
+                      "url": "/event/201996"
+                    },
+                    {
+                      "origin": 55002,
+                      "prefix": "185.16.88.0/24",
+                      "url": "/event/205324"
+                    },
+                    {
+                      "origin": 24940,
+                      "prefix": "185.36.144.0/22",
+                      "url": "/event/204624"
+                    },
+                    {
+                      "origin": 174,
+                      "prefix": "185.108.148.0/24",
+                      "url": "/event/201387"
+                    },
+                    {
+                      "origin": 174,
+                      "prefix": "185.108.149.0/24",
+                      "url": "/event/201388"
+                    },
+                    {
+                      "origin": 210234,
+                      "prefix": "185.225.205.0/24",
+                      "url": "/event/190721"
+                    },
+                    {
+                      "origin": 60721,
+                      "prefix": "185.254.31.0/24",
+                      "url": "/event/200731"
+                    },
+                    {
+                      "origin": 57356,
+                      "prefix": "194.140.208.0/20",
+                      "url": "/event/201884"
+                    },
+                    {
+                      "origin": 57356,
+                      "prefix": "194.140.208.0/22",
+                      "url": "/event/201885"
+                    },
+                    {
+                      "origin": 23031,
+                      "prefix": "200.12.154.0/24",
+                      "url": "/event/192020"
+                    },
+                    {
+                      "origin": 24940,
+                      "prefix": "201.131.3.0/24",
+                      "url": "/event/204041"
+                    },
+                    {
+                      "origin": 39855,
+                      "prefix": "212.19.211.0/24",
+                      "url": "/event/200527"
+                    }
+                  ]
+                },
+                "invalid_length_hijack_data": {
+                  "blocked_hijacked_info": [],
+                  "not_blocked_hijacked_info": [
+                    {
+                      "origin": 196682,
+                      "prefix": "5.188.234.0/24",
+                      "url": "/event/204155"
+                    },
+                    {
+                      "origin": 15681,
+                      "prefix": "83.137.240.0/24",
+                      "url": "/event/198501"
+                    },
+                    {
+                      "origin": 205450,
+                      "prefix": "83.143.118.0/24",
+                      "url": "/event/196619"
+                    },
+                    {
+                      "origin": 33823,
+                      "prefix": "86.55.233.0/24",
+                      "url": "/event/205341"
+                    },
+                    {
+                      "origin": 29405,
+                      "prefix": "91.200.59.0/24",
+                      "url": "/event/204300"
+                    },
+                    {
+                      "origin": 7552,
+                      "prefix": "125.212.33.0/24",
+                      "url": "/event/205098"
+                    },
+                    {
+                      "origin": 20473,
+                      "prefix": "128.0.68.0/24",
+                      "url": "/event/189391"
+                    },
+                    {
+                      "origin": 33835,
+                      "prefix": "130.185.170.0/24",
+                      "url": "/event/204713"
+                    },
+                    {
+                      "origin": 196725,
+                      "prefix": "151.252.96.0/21",
+                      "url": "/event/201996"
+                    },
+                    {
+                      "origin": 201935,
+                      "prefix": "164.138.239.0/24",
+                      "url": "/event/204576"
+                    },
+                    {
+                      "origin": 34984,
+                      "prefix": "172.33.64.0/24",
+                      "url": "/event/187461"
+                    },
+                    {
+                      "origin": 34984,
+                      "prefix": "172.33.100.0/24",
+                      "url": "/event/187460"
+                    },
+                    {
+                      "origin": 55002,
+                      "prefix": "185.16.88.0/24",
+                      "url": "/event/205324"
+                    },
+                    {
+                      "origin": 24940,
+                      "prefix": "185.36.144.0/22",
+                      "url": "/event/204624"
+                    },
+                    {
+                      "origin": 174,
+                      "prefix": "185.108.148.0/24",
+                      "url": "/event/201387"
+                    },
+                    {
+                      "origin": 174,
+                      "prefix": "185.108.149.0/24",
+                      "url": "/event/201388"
+                    },
+                    {
+                      "origin": 201935,
+                      "prefix": "185.115.207.0/24",
+                      "url": "/event/205326"
+                    },
+                    {
+                      "origin": 210234,
+                      "prefix": "185.225.205.0/24",
+                      "url": "/event/190721"
+                    },
+                    {
+                      "origin": 60721,
+                      "prefix": "185.254.31.0/24",
+                      "url": "/event/200731"
+                    },
+                    {
+                      "origin": 57356,
+                      "prefix": "194.140.208.0/20",
+                      "url": "/event/201884"
+                    },
+                    {
+                      "origin": 57356,
+                      "prefix": "194.140.208.0/22",
+                      "url": "/event/201885"
+                    },
+                    {
+                      "origin": 23031,
+                      "prefix": "200.12.154.0/24",
+                      "url": "/event/192020"
+                    },
+                    {
+                      "origin": 24940,
+                      "prefix": "201.131.3.0/24",
+                      "url": "/event/204041"
+                    },
+                    {
+                      "origin": 7717,
+                      "prefix": "202.167.97.0/24",
+                      "url": "/event/202951"
+                    },
+                    {
+                      "origin": 18592,
+                      "prefix": "210.244.100.0/24",
+                      "url": "/event/189326"
+                    },
+                    {
+                      "origin": 39855,
+                      "prefix": "212.19.211.0/24",
+                      "url": "/event/200527"
+                    }
+                  ]
+                },
+                "not_blocked_hijacked": 16,
+                "not_blocked_not_hijacked": 122972,
+                "parent_asn": 198138,
+                "percent_blocked_hijacked_out_of_total_hijacks": 100,
+                "percent_blocked_not_hijacked_out_of_total_prefix_origin_pairs": 14.15,
+                "percent_not_blocked_hijacked_out_of_total_hijacks": 160
+              },
+              "aggregate_average_data": {
+                "blocked_hijacked": 10,
+                "blocked_not_hijacked": 20291,
+                "not_blocked_hijacked": 16,
+                "not_blocked_not_hijacked": 122972,
+                "percent_blocked_hijacked_out_of_total_hijacks": 100,
+                "percent_blocked_not_hijacked_out_of_total_prefix_origin_pairs": 14.15,
+                "percent_not_blocked_hijacked_out_of_total_hijacks": 160
+              }
+            }
+          },
+          "metadata": {
+            "disclaimers": "All announcements and hijacks in this dataset are covered by a ROA. In other words, the prefixes are a subset of a ROA.",
+            "invalid_asn": "Block route announcements only when the originating AS is in conflict with a Route Origin Authorization (ROA). Announcements containing prefixes exceeding the maximum length authorized by a ROA are allowed.",
+            "invalid_length": "Block route announcements only when the length of the announced prefix exceeds the maximum length authorized by a ROA. Announcements originating from an AS that is not authorized to do so are allowed.",
+            "query_url": "https://bgpforecast.uconn.edu//policy_stats/174,15/all/",
+            "rov": "Block route announcements using standard Resource Certification (RPKI) Route Origin Validation (ROV) as defined in RFC 6811",
+            "seconds": 4.700339
+          }
+        }

@@ -19,4 +19,21 @@ def create_app(args={}):
     application.wsgi_app = ProxyFix(application.wsgi_app)
     application.url_map.converters['list'] = ListConverter
     application.db = Database(Logger(args))
-    application.run(debug=True)
+
+    from .averages import averages_app
+    from .extrapolator_engine_results import extrapolator_engine_results_app\
+        as exr_app
+    from .hijacks import hijacks_app
+    from .policies import policies_app
+    from .relationships import relationships_app
+    from .roas import roas_app
+    from .rpki_validity_results import RPKI_app
+    
+
+
+    for sub_app in [averages_app, exr_app, hijacks_app, policies_app,
+                    relationships_app, roas_app, RPKI_app]:
+        sub_app.db = application.db
+        application.register_blueprint(sub_app)
+
+    application.run(host='0.0.0.0', debug=True)
