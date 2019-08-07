@@ -143,12 +143,12 @@ class Rel_File:
         """
 
         # The start of the grep strings
-        grep_temp = {Rel_Types.CUSTOMER_PROVIDERS:
-                     'grep "\-1" | grep -F -v "#"',
-                     Rel_Types.PEERS: 'grep -v "\-1" | grep -F -v "#"'}
+        _grep_temp = {Rel_Types.CUSTOMER_PROVIDERS:
+                      'grep "\-1" | grep -F -v "#"',
+                      Rel_Types.PEERS: 'grep -v "\-1" | grep -F -v "#"'}
         # Appended onto all grep strings to format for CSV insertion
         grep = {key: val + ' | cut -d "|" -f1,2 | sed -e "s/|/\t/g"'
-                for key, val in grep_temp.items()}
+                for key, val in _grep_temp.items()}
         # Paths for each csv
         csvs = {val: '{}/rel.csv'.format(self.csv_dir, val) for val in
                 Rel_Types.__members__.values()}

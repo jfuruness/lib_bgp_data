@@ -57,15 +57,15 @@ class ROAs_Table(Database):
     def clear_table(self):
         """Clears the tables. Should be called at the start of every run"""
 
-        self.logger.info("Clearing Roas")
+        self.logger.debug("Clearing Roas")
         self.cursor.execute("DROP TABLE IF EXISTS roas")
-        self.logger.info("ROAs Table Cleared")
+        self.logger.debug("ROAs Table Cleared")
 
     @error_catcher()
     def create_index(self):
         """Creates a bunch of indexes to be used on the table"""
 
-        self.logger.info("Creating index on roas")
+        self.logger.debug("Creating index on roas")
         sql = """CREATE INDEX IF NOT EXISTS roas_index
               ON roas USING GIST(prefix inet_ops)"""
         self.cursor.execute(sql)

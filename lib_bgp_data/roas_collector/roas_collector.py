@@ -62,12 +62,12 @@ class ROAs_Collector:
 
         For more in depth explanation see top of file"""
 
-        with db_connection(ROAs_Table, self.logger) as roas_table:
+        with db_connection(ROAs_Table, self.logger) as _roas_table:
             roas = self._format_roas(self._get_json_roas())
             # Inserts the data into a CSV and then the database
             utils.rows_to_db(self.logger, roas, self.csv_path, ROAs_Table)
             # Creates an index on the roas table prefix
-            roas_table.create_index()
+            _roas_table.create_index()
 
 ########################
 ### Helper Functions ###
@@ -90,7 +90,7 @@ class ROAs_Collector:
 
         # Returns a list of lists of formatted roas
         # Formats roas for csv
-        return [[int(re.findall('\d+', roa["asn"])[0]),  # Gets ASN
+        return [[int(re.findall(r'\d+', roa["asn"])[0]),  # Gets ASN
                  roa["prefix"],
                  int(roa["maxLength"])]
                 for roa in unformatted_roas]

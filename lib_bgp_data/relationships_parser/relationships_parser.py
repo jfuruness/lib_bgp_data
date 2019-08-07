@@ -120,8 +120,8 @@ class Relationships_Parser:
         # Api url
         url = 'http://data.caida.org/datasets/as-relationships/serial-2/'
         # Get all html tags that might have links
-        elements = [x for x in utils.get_tags(url, 'a')[0]]
+        _elements = [x for x in utils.get_tags(url, 'a')[0]]
         # Gets the last file of all bz2 files
-        file_url = [x["href"] for x in elements if "bz2" in x["href"]][-1]
+        file_url = [x["href"] for x in _elements if "bz2" in x["href"]][-1]
         # Returns the url plus the max number (the date) in the url
         return url + file_url, max(map(int, re.findall(r'\d+', file_url)))
