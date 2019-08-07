@@ -242,7 +242,7 @@ def unzip_gz(logger, old_path, new_path):
 def write_csv(logger, rows, csv_path, files_to_delete=None):
     """Writes rows into csv_path, a tab delimited csv"""
 
-    logger.info("Writing to {}".format(csv_path))
+    logger.debug("Writing to {}".format(csv_path))
     try:
         os.remove(csv_path)
     except:

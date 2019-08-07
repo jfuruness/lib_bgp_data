@@ -47,12 +47,10 @@ def _run_rpki_validator(self, file_path, rpki_path):
         # Subprocess
         self.logger.info("About to run rpki validator")
         # Because the output of the rpki validator is garbage we omit it
-        input("fuck me")
-        process = Popen([rpki_path])#, stdout=PIPE, stderr=PIPE)
-        print(rpki_path)
-#        stdout, stderr = process.communicate()
-#        self.logger.info(stdout)
-#        self.logger.info(stderr)
+        if self.logger.level < 20 # Info
+            process = Popen([rpki_path])
+        else:
+            process = Popen([rpki_path], stdout=PIPE, stderr=PIPE) 
         self.logger.debug("Running rpki validator")
         yield 
         process.terminate()
@@ -70,9 +68,7 @@ class RPKI_Validator:
 
         # Sets common file paths and logger
         utils.set_common_init_args(self, args)
-        self.rpki_path = "/usr/bin/rpki-validator/rpki-validator.sh"
         self.rpki_path = "/var/lib/rpki-validator-3/rpki-validator-3.sh"
-#        self.rpki_path = "/ext/rpki-validator/rpki-validator.sh"
         self.upo_csv_path = "/tmp/upo_csv_path.csv"
 
     @error_catcher()
