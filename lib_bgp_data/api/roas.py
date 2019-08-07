@@ -14,6 +14,7 @@ from pprint import pprint
 roas_app = Blueprint("roas_app", __name__)
 
 @roas_app.route("/roas_data/")
+@swag_from("flasgger_docs/roas.yml")
 @format_json(lambda: {"description": "All ROAs used"})
 def roas():
     return roas_app.db.execute("SELECT * FROM roas;")

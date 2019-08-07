@@ -131,7 +131,7 @@ class RPKI_Validator:
         return [self._format_asn_dict(x) for x in asns]
 
     @staticmethod
-    def get_validity_dict(self):
+    def get_validity_dict():
         """Returns the validity dict for how the info is stored in db.
 
         This is a static method because it is used in the api.

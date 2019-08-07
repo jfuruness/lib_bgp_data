@@ -1,0 +1,40 @@
+Returns all ROAs for our dataset pulled from the RPKI validator.
+---
+responses:
+  200:
+    description: All ROAs for our dataset pulled from the RPKI validator. More ROAs are returned than in this example.
+    examples:
+        {
+          "data": [
+            {
+              "asn": 0,
+              "max_length": 24,
+              "prefix": "103.116.194.0/24"
+            },
+            {
+              "asn": 0,
+              "max_length": 24,
+              "prefix": "103.138.210.0/24"
+            },
+            {
+              "asn": 0,
+              "max_length": 24,
+              "prefix": "103.209.125.0/24"
+            },
+            {
+              "asn": 0,
+              "max_length": 24,
+              "prefix": "103.209.127.0/24"
+            },
+            {
+              "asn": 0,
+              "max_length": 24,
+              "prefix": "103.237.95.0/24"
+            }
+          ],
+          "metadata": {
+            "description": "All ROAs used",
+            "query_url": "https://bgpforecast.uconn.edu/roas_data/",
+            "seconds": 1.702934
+          }
+        }

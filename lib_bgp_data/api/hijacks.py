@@ -23,33 +23,38 @@ def get_hijack_metadata(blocked_or_not=None, policy=None):
     if None not in [blocked_or_not, policy]:
         conds_list.append("{} by {}".format(blocked_or_not, policy))
 
-    return {"description": {"All bgpstream.com hijacks that are:": conds_dict}}
+    return {"description": {"All bgpstream.com hijacks that are:": conds_list}}
 
 @hijacks_app.route("/invalid_asn_blocked_hijacked_data/")
+@swag_from("flasgger_docs/invalid_asn_blocked_hijacked.yml")
 @format_json(get_hijack_metadata, "blocked", "invalid_asn")
 def invalid_asn_blocked_hijacked():
     sql = "SELECT * FROM invalid_asn_blocked_hijacked;"
     return hijacks_app.db.execute(sql)
 
 @hijacks_app.route("/invalid_asn_not_blocked_hijacked_data/")
+@swag_from("flasgger_docs/invalid_asn_not_blocked_hijacked.yml")
 @format_json(get_hijack_metadata, "not blocked", "invalid_asn")
 def invalid_asn_not_blocked_hijacked():
     sql = "SELECT * FROM invalid_asn_not_blocked_hijacked;"
     return hijacks_app.db.execute(sql)
 
 @hijacks_app.route("/invalid_length_blocked_hijacked_data/")
-@format_json(get_hijack_metadata, "not blocked", "invalid_asn")
+@swag_from("flasgger_docs/invalid_length_blocked_hijacked.yml")
+@format_json(get_hijack_metadata, "not blocked", "invalid_length")
 def invalid_length_blocked_hijacked():
     sql = "SELECT * FROM invalid_length_blocked_hijacked;"
     return hijacks_app.db.execute(sql)
 
 @hijacks_app.route("/invalid_length_not_blocked_hijacked_data/")
-@format_json(get_hijack_metadata, "not blocked", "invalid_asn")
+@swag_from("flasgger_docs/invalid_length_not_blocked_hijacked.yml")
+@format_json(get_hijack_metadata, "not blocked", "invalid_length")
 def invalid_length_not_blocked_hijacked():
     sql = "SELECT * FROM invalid_length_not_blocked_hijacked;"
     return hijacks_app.db.execute(sql)
 
 @hijacks_app.route("/hijack_data/")
+@swag_from("flasgger_docs/hijacks.yml")
 @format_json(get_hijack_metadata)
 def hijack():
     sqls = ["SELECT * FROM invalid_asn_blocked_hijacked;",

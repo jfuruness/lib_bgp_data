@@ -19,6 +19,7 @@ def get_rpki_validator_metadata():
             "decoder": RPKI_Validator.get_validity_dict()}
 
 @RPKI_app.route("/rpki_validator_data/")
+@swag_from("flasgger_docs/rpki_validator.yml")
 @format_json(get_rpki_validator_metadata)
 def rpki_validator_data():
-    return RPKI_app.db.execute("SELECT * FROM rov_validity;")
+    return RPKI_app.db.execute("SELECT * FROM rov_validity LIMIT 5;")

@@ -8,7 +8,7 @@ from flasgger import Swagger, swag_from
 from copy import deepcopy
 from ..utils import Database, db_connection, Thread_Safe_Logger as Logger
 from ..utils import utils
-from .api_utils import format_json
+from .api_utils import format_json, validate_asns
 from pprint import pprint
 
 extrapolator_engine_results_app = Blueprint("extrapolator_engine_results_app",
@@ -21,6 +21,7 @@ def get_extrapolator_metadata():
     return {"description": extrapolator_description}
 
 @extrapolator_engine_results_app.route("/extrapolator_data/<list:asns>/")
+@swag_from("flasgger_docs/extrapolator.yml")
 @format_json(get_extrapolator_metadata)
 def extrapolation(asns):
     db = extrapolator_engine_results_app.db

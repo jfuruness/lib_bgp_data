@@ -1,4 +1,4 @@
-*WARNING* this query may take up to 10 minutes to complete! Returns statistics on different policies.
+Returns statistics on different policies.
 ---
 parameters:
   - name: asns

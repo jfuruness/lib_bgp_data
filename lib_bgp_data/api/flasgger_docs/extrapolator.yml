@@ -1,0 +1,33 @@
+*Warning* This query takes 2 min to complete. Returns all prefix origin pairs in the local RIB(s) that have a ROA.
+---
+parameters:
+  - name: asns
+    in: path
+    description: AS Number
+    type: array
+    items: 
+      type: string
+    required: true
+responses:
+  200:
+    description: All prefix origin pairs in the local RIB(s) that have a ROA. There are more prefix origin pairs than are included in this ex.
+    examples:
+        {
+          "data": {
+            "174": [
+              {
+                "origin": 13335,
+                "prefix": "1.0.0.0/24"
+              },
+              {
+                "origin": 4782,
+                "prefix": "223.200.0.0/16"
+              }
+            ]
+          },
+          "metadata": {
+            "description": "All prefix origin pairs within the local RIB(s) according to the extrapolator-engine",
+            "query_url": "https://bgpforecast.uconn.edu/extrapolator_data/174/",
+            "seconds": 75.775531
+          }
+        }

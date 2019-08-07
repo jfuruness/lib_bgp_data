@@ -1,0 +1,59 @@
+Returns the peers, customers, and providers of ASN(s), according to our Caida relationship data.
+---
+parameters:
+  - name: asns
+    in: path
+    description: AS Number
+    type: array
+    items: 
+      type: string
+    required: true
+responses:
+  200:
+    description: The peers, customers, and providers of ASN(s), according to our Caida relationship data.
+    examples:
+        {
+          "data": {
+            "1": {
+              "customers": [],
+              "peers": [
+                3549,
+                11537,
+                133296
+              ],
+              "providers": [
+                26114,
+                27822,
+                29855,
+                33480,
+                48085,
+                197786,
+                199524,
+                265759
+              ]
+            },
+            "6147": {
+              "customers": [
+                28102,
+                52275,
+                52278,
+                264684,
+                264783,
+                265794
+              ],
+              "peers": [],
+              "providers": [
+                2,
+                3,
+                4,
+                12956,
+                262182
+              ]
+            }
+          },
+          "metadata": {
+            "description": "Relationship data according to Caida.",
+            "query_url": "https://bgpforecast.uconn.edu/relationships/1,6147",
+            "seconds": 0.107213
+          }
+        }

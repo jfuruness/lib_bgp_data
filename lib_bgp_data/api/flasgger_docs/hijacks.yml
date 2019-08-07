@@ -1,0 +1,164 @@
+Returns all prefix origin pairs of hijacks that are covered by a ROA, fall within the time frame, and exist within the MRT announcements.
+---
+responses:
+  200:
+    description: All prefix origin pairs of hijacks that are covered by a ROA, fall within the time frame, and exist within the MRT announcements.
+    examples:
+        {
+          "data": [
+            {
+              "origin": 205450,
+              "prefix": "83.143.118.0/24",
+              "url": "https://bgpstream.com/event/196619"
+            },
+            {
+              "origin": 33823,
+              "prefix": "86.55.233.0/24",
+              "url": "https://bgpstream.com/event/205341"
+            },
+            {
+              "origin": 7552,
+              "prefix": "125.212.33.0/24",
+              "url": "https://bgpstream.com/event/205098"
+            },
+            {
+              "origin": 20473,
+              "prefix": "128.0.68.0/24",
+              "url": "https://bgpstream.com/event/189391"
+            },
+            {
+              "origin": 201935,
+              "prefix": "164.138.239.0/24",
+              "url": "https://bgpstream.com/event/204576"
+            },
+            {
+              "origin": 34984,
+              "prefix": "172.33.64.0/24",
+              "url": "https://bgpstream.com/event/187461"
+            },
+            {
+              "origin": 34984,
+              "prefix": "172.33.100.0/24",
+              "url": "https://bgpstream.com/event/187460"
+            },
+            {
+              "origin": 201935,
+              "prefix": "185.115.207.0/24",
+              "url": "https://bgpstream.com/event/205326"
+            },
+            {
+              "origin": 7717,
+              "prefix": "202.167.97.0/24",
+              "url": "https://bgpstream.com/event/202951"
+            },
+            {
+              "origin": 18592,
+              "prefix": "210.244.100.0/24",
+              "url": "https://bgpstream.com/event/189326"
+            },
+            {
+              "origin": 196682,
+              "prefix": "5.188.234.0/24",
+              "url": "https://bgpstream.com/event/204155"
+            },
+            {
+              "origin": 15681,
+              "prefix": "83.137.240.0/24",
+              "url": "https://bgpstream.com/event/198501"
+            },
+            {
+              "origin": 29405,
+              "prefix": "91.200.59.0/24",
+              "url": "https://bgpstream.com/event/204300"
+            },
+            {
+              "origin": 6696,
+              "prefix": "109.69.218.0/24",
+              "url": "https://bgpstream.com/event/203291"
+            },
+            {
+              "origin": 6696,
+              "prefix": "109.69.220.0/24",
+              "url": "https://bgpstream.com/event/203292"
+            },
+            {
+              "origin": 33835,
+              "prefix": "130.185.170.0/24",
+              "url": "https://bgpstream.com/event/204713"
+            },
+            {
+              "origin": 196725,
+              "prefix": "151.252.96.0/21",
+              "url": "https://bgpstream.com/event/201996"
+            },
+            {
+              "origin": 55002,
+              "prefix": "185.16.88.0/24",
+              "url": "https://bgpstream.com/event/205324"
+            },
+            {
+              "origin": 24940,
+              "prefix": "185.36.144.0/22",
+              "url": "https://bgpstream.com/event/204624"
+            },
+            {
+              "origin": 174,
+              "prefix": "185.108.148.0/24",
+              "url": "https://bgpstream.com/event/201387"
+            },
+            {
+              "origin": 174,
+              "prefix": "185.108.149.0/24",
+              "url": "https://bgpstream.com/event/201388"
+            },
+            {
+              "origin": 210234,
+              "prefix": "185.225.205.0/24",
+              "url": "https://bgpstream.com/event/190721"
+            },
+            {
+              "origin": 60721,
+              "prefix": "185.254.31.0/24",
+              "url": "https://bgpstream.com/event/200731"
+            },
+            {
+              "origin": 57356,
+              "prefix": "194.140.208.0/20",
+              "url": "https://bgpstream.com/event/201884"
+            },
+            {
+              "origin": 57356,
+              "prefix": "194.140.208.0/22",
+              "url": "https://bgpstream.com/event/201885"
+            },
+            {
+              "origin": 23031,
+              "prefix": "200.12.154.0/24",
+              "url": "https://bgpstream.com/event/192020"
+            },
+            {
+              "origin": 24940,
+              "prefix": "201.131.3.0/24",
+              "url": "https://bgpstream.com/event/204041"
+            },
+            {
+              "origin": 39855,
+              "prefix": "212.19.211.0/24",
+              "url": "https://bgpstream.com/event/200527"
+            }
+          ],
+          "metadata": {
+            "description": {
+              "All bgpstream.com hijacks that are:": [
+                "Covered by a ROA",
+                [
+                  "The time of the hijack overlaps with the sample time",
+                  "Note that if there is no end time on https://bgpstream.comthe hijack is considered ongoing"
+                ],
+                "The hijack can be found in our MRT announcements data"
+              ]
+            },
+            "query_url": "https://bgpforecast.uconn.edu/hijack_data/",
+            "seconds": 0.003369
+          }
+        }

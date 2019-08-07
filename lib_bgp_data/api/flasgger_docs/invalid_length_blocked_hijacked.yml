@@ -1,0 +1,24 @@
+Returns all prefix origin pairs of hijacks that are covered by a ROA, fall within the time frame, exist within the MRT announcements, and are invalid by length.
+---
+responses:
+  200:
+    description: All prefix origin pairs of hijacks that are covered by a ROA, fall within the time frame, exist within the MRT announcements, and are invalid by length.
+    examples:
+        {
+          "data": [],
+          "metadata": {
+            "description": {
+              "All bgpstream.com hijacks that are:": [
+                "Covered by a ROA",
+                [
+                  "The time of the hijack overlaps with the sample time",
+                  "Note that if there is no end time on https://bgpstream.comthe hijack is considered ongoing"
+                ],
+                "The hijack can be found in our MRT announcements data",
+                "not blocked by invalid_length"
+              ]
+            },
+            "query_url": "https://bgpforecast.uconn.edu/invalid_length_blocked_hijacked_data/",
+            "seconds": 0.002024
+          }
+        }
