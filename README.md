@@ -3,7 +3,7 @@ This package contains multiple submodules that are used to gather and manipulate
 
 * [lib\_bgp\_data](#lib_bgp_data)
 * [Description](#package-description)
-* [Main Submodule](#main-submodule)
+* [Forecast Submodule](#forecast-submodule)
 * [MRT Announcements Submodule](#mrt-announcements-submodule)
 * [Relationships Submodule](#relationships-submodule)
 * [Roas Submodule](#roas-submodule)
@@ -31,46 +31,45 @@ This README is split up into several subsections for each of the submodules incl
 **![](https://docs.google.com/drawings/u/0/d/sx3R9HBevCu5KN2luxDuOzw/image?w=864&h=650&rev=1621&ac=1&parent=1fh9EhU9yX9X4ylwg_K-izE2T7C7CK--X-Vfk1qqd1sc)**
 Picture link: https://docs.google.com/document/d/1fh9EhU9yX9X4ylwg_K-izE2T7C7CK--X-Vfk1qqd1sc/edit?usp=sharing
 
-Please note: These steps are not necessarily linear, as much of this is done in parallel as possible. For more details please view the [Main Submodule](#main-submodule)
-1. The project first starts by using the [MRT Parser](#mrt-announcements-submodule) to collect all announcements sent over the internet for a specific time interval. 
-2. The [Roas Parser](#roas-submodule) also downloads all the roas for that time interval.
-3. A new table is formed with all mrt announcements that have roas. 
-4. The relationships data [Relationships Parser](#relationships-submodule) is also gathered in order to be able to simulate the connections between different AS's on the internet. 
-5. Each of these data sets gets fed into the [Extrapolator](#extrapolator-submodule) which then creates a graph of the internet and propagates announcements through it. After this stage is complete, there is a graph of the internet, with each AS having all of it's announcements that was propagated to it (with the best announcement for each prefix saved based on gao rexford).
-6. At this point we also run the [RPKI Validator](#rpki-validator-submodule), to get the validity of these announcements. With this data we can know whether an announcement that arrived at a particular AS (from the [Extrapolator](#extrapolator-submodule) and whether or not that announcement would have been blocked by standard ROV. 
-7. We also download all data from bgpstream.com with the [BGPStream Website Parser](#bgpstream-website-submodule). Using this data we can know whether an announcement is actually hijacked or not.
-8.  Using the bgpstream.com data from the [BGPStream Website Parser](#bgpstream-website-submodule) and the [RPKI Validator](#rpki-validator-submodule) data we can tell if an announcement would have been blocked or not, and whether or not that announcement would have been blocked correctly. For example, if the rpki validator says that a prefix origin pair is invalid by asn, that means it would be blocked (for the invalid by asn policy). If that announcement also occurs in bgpstream.com as a hijacking, then we know that the prefix origin pair is a hijacking, and then we add one point to the hijacked and blocked column. That is an over simplification, but this calculation is done in the last submodule, the [What if Analysis](#what-if-analysis-submodule). The output of this data is for each AS, a table of how many announcements have been blocked and were hijacks, blocked and were not hijacks, not blocked but were hijacks, and not blocked and were not hijacks.
-9. the [What if Analysis](#what-if-analysis-submodule) data as well as the [Extrapolator](#extrapolator-submodule) data is then available to query form a web interface through the [API](#api-submodule), the last last submodule. All of these steps are done in the submodule called [Main](#main-submodule), in which many of these steps are done in parallel for efficiency. These results are then displayed on our website at [https://bgpforecast.uconn.edu/](https://bgpforecast.uconn.edu/)
+Please note: These steps are not necessarily linear, as much of this is done in parallel as possible. For more details please view the [Forecast Submodule](#forecast-submodule)
+1. The project first starts by using the [MRT Parser](#mrt-announcements-submodule) to collect all announcements sent over the internet for a specific time interval. This usually takes around 15-20 minutes on our machine and results in approximately 40-100 GB of data.
+2. The [Roas Parser](#roas-submodule) also downloads all the ROAs for that time interval. This usually takes a couple of seconds.
+3. A new table is formed with all mrt announcements that have ROAs. This join is done by checking whether or not the prefixes of the MRT announcements are a subset of the prefixes in the ROAs table. Because this is an expensive operation, and is done on a 40GB+ table, this takes an hour or two on our machine.
+5. The relationships data [Relationships Parser](#relationships-submodule) is also gathered in order to be able to simulate the connections between different AS's on the internet. This takes a couple of seconds.
+6. Each of these data sets gets fed into the [Extrapolator](#extrapolator-submodule) which then creates a graph of the internet and propagates announcements through it. After this stage is complete, there is a graph of the internet, with each AS having all of it's announcements that was propagated to it (with the best announcement for each prefix saved based on gao rexford). The [Extrapolator](#extrapolator-submodule) itself takes around 5-6 hours on our machine, and results in a table around 10 GB large. This is also because we invert the results. This means that instead of storing the RIB for each AS, which results in a table that is 300GB+ large, we store what is not in the RIB for each AS. This allows us to save space, and it also saves time because joins we do on this table take less time.
+7. At this point we also run the [RPKI Validator](#rpki-validator-submodule), to get the validity of these announcements. With this data we can know whether an announcement that arrived at a particular AS (from the [Extrapolator](#extrapolator-submodule) and whether or not that announcement would have been blocked by standard ROV. This usually takes 10-20 minutes the first time, or about 1 minute every time thereafter, on our machine.
+8. We also download all data from bgpstream.com with the [BGPStream Website Parser](#bgpstream-website-submodule). Using this data we can know whether an announcement is actually hijacked or not. This takes about 2-3 hours the first time, and then about 1-5 minutes every time after on our machine. This takes a while because querying the website takes a while.
+9.  Using the bgpstream.com data from the [BGPStream Website Parser](#bgpstream-website-submodule) and the [RPKI Validator](#rpki-validator-submodule) data we can tell if an announcement would have been blocked or not, and whether or not that announcement would have been blocked correctly. For example, if the rpki validator says that a prefix origin pair is invalid by asn, that means it would be blocked (for the invalid by asn policy). If that announcement also occurs in bgpstream.com as a hijacking, then we know that the prefix origin pair is a hijacking, and then we add one point to the hijacked and blocked column. That is an over simplification, but this calculation is done in the last submodule, the [What if Analysis](#what-if-analysis-submodule). The output of this data is for each AS, a table of how many announcements have been blocked and were hijacks, blocked and were not hijacks, not blocked but were hijacks, and not blocked and were not hijacks. This does joins on massive tables, and takes 1-10 minutes on our server.
+10. The [What if Analysis](#what-if-analysis-submodule) data as well as the [Extrapolator](#extrapolator-submodule) data is then available to query form a web interface through the [API](#api-submodule), the last last submodule. All of these steps are done in the submodule called [Main](#main-submodule), in which many of these steps are done in parallel for efficiency. These results are then displayed on our website at [https://sidr.engr.uconn.edu/](https://sidr.engr.uconn.edu/)
 
-## Main Submodule
+## Forecast Submodule
 * [lib\_bgp\_data](#lib_bgp_data)
-* [Short Description](#main-short-description)
-* [Long Description](#main-long-description)
-* [Usage](#main-usage)
-* [Table Schema](#main-table-schema)
-* [Design Choices](#main-design-choices)
-* [Possible Future Improvements](#main-possible-future-improvements)
-### Main Short description
+* [Short Description](#forecast-short-description)
+* [Long Description](#forecast-long-description)
+* [Usage](#forecast-usage)
+* [Table Schema](#forecast-table-schema)
+* [Design Choices](#forecast-design-choices)
+* [Possible Future Improvements](#forecast-possible-future-improvements)
+### Forecast Short description
 * [lib\_bgp\_data](#lib_bgp_data)
-* [Main Submodule](#main-submodule)
-### Main Long description
+* [Forecast Submodule](#forecast-submodule)
+### Forecast Long description
 * [lib\_bgp\_data](#lib_bgp_data)
-* [Main Submodule](#main-submodule)
--make sure to include about how much time each one takes, and how bgpstream.com takes a lot longer the first run through but then afterwards is extremely fast
-### Main Usage
+* [Forecast Submodule](#forecast-submodule)
+### Forecast Usage
 * [lib\_bgp\_data](#lib_bgp_data)
-* [Main Submodule](#main-submodule)
+* [Forecast Submodule](#forecast-submodule)
 #### In a Script
 #### From the Command Line
-### Main Table Schema
+### Forecast Table Schema
 * [lib\_bgp\_data](#lib_bgp_data)
-* [Main Submodule](#main-submodule)
-### Main Design Choices
+* [Forecast Submodule](#forecast-submodule)
+### Forecast Design Choices
 * [lib\_bgp\_data](#lib_bgp_data)
-* [Main Submodule](#main-submodule)
-### Main Possible Future Improvements
+* [Forecast Submodule](#forecast-submodule)
+### Forecast Possible Future Improvements
 * [lib\_bgp\_data](#lib_bgp_data)
-* [Main Submodule](#main-submodule)
+* [Forecast Submodule](#forecast-submodule)
 ## MRT Announcements Submodule
    * [lib\_bgp\_data](#lib_bgp_data)
    * [Short Description](#mrt-announcements-short-description)
@@ -286,6 +285,14 @@ Coming Soon to a theater near you
 * Test again for different thread numbers now that bgpscanner is used
 * Test different regex parsers other than sed for speed?
 * Add test cases
+* Add cmd line args
+* Log properly for different levels
+* Put underscores in front of all private variables
+* Add: [https://www.isolar.io/Isolario_MRT_data/Alderaan/2019_07/](https://www.isolar.io/Isolario_MRT_data/Alderaan/2019_07/)
+* Update all docs about bgpscanner and fix it
+* Change parameter docs to be tables
+* Update docs on cmd line args and unit tests
+* Include in docs as set percentage is ~.05%
 ## Relationships Submodule
    * [lib\_bgp\_data](#lib_bgp_data)
    * [Short Description](#relationships-short-description)
@@ -491,6 +498,9 @@ Coming Soon to a theater near you
 * [lib\_bgp\_data](#lib_bgp_data)
 * [Relationships Submodule](#relationships-submodule)
 * Add test cases
+* Add cmd line args
+* Add docs on tests and cmd line args
+* Change parameter docs to be tables in docs
 * Possibly take out date checking for cleaner code?
     * Saves very little time
 * Move unzip_bz2 to this file? Nothing else uses it anymore
@@ -590,11 +600,15 @@ Coming Soon to a theater near you
 * [lib\_bgp\_data](#lib_bgp_data)
 * [Roas Submodule](#roas-submodule)
 * Add test cases
+* Add cmd line args
+* Change parameter docs to be tables in docs
+* Update docs with cmd line args and test cases
 ## Extrapolator Submodule
    * [lib\_bgp\_data](#lib_bgp_data)
    * [Extrapolator Short Description](#extrapolator-short-description)
    * [Long Description](#extrapolator-long-description)
    * [Usage](#extrapolator-usage)
+   * [Possible Future Improvements](#extrapolator-possible-future-improvements)
 ### Extrapolator Short description
 * [lib\_bgp\_data](#lib_bgp_data)
 * [Extrapolator Submodule](#extrapolator-submodule)
@@ -630,7 +644,12 @@ To initialize Extrapolator and run the rovpp version:
 ```python
 from lib_bgp_data import Extrapolator
 Extrapolator().run_rovpp(attacker_asn, victim_asn, more_specific_prefix)
-```                                                            
+```
+### Extrapolator Possible Future Improvements
+* [lib\_bgp\_data](#lib_bgp_data)
+* [Extrapolator Submodule](#extrapolator-submodule)
+* Unit tests
+* Update docs with unit tests                                                            
 ## BGPStream Website Submodule
    * [lib\_bgp\_data](#lib_bgp_data)
    * [Short Description](#bgpstream-website-short-description)
@@ -940,9 +959,12 @@ Coming Soon to a theater near you
 ### BGPStream Website Possible Future Improvements
 * [lib\_bgp\_data](#lib_bgp_data)
 * [BGPStream Website Submodule](#bgpstream-website-submodule)
+* Remove unnessecary indexes
+* Should not use bare except in files
+* cmd line args
 * Add test cases
-* Request of make bgpstream.com an api for faster request time?
-    * It would cause less querying to their site
+* Update docs on cmd line args, test cases, and indexes
+* Is there a paid version of an API for this?
 * Multithread the first hundred results?
     * If we only parse new info this is the common case
 ## RPKI Validator Submodule
