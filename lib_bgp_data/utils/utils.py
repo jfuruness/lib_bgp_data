@@ -74,7 +74,7 @@ def run_parser():
             # End the parser to delete all files and directories always
             finally:
                 # Clean up don't be messy yo
-                end_parser(self.logger, [self.path, self.csv_dir], start_time)
+                end_parser(self, [self.path, self.csv_dir], start_time)
         return function_that_runs_func
     return my_decorator
 
@@ -137,7 +137,7 @@ def set_common_init_args(self, args, non_essentials=False):
 def download_file(logger, url, path, file_num=1, total_files=1, sleep_time=0):
     """Downloads a file from a url into a path"""
 
-    logger.info("Downloading a file.\n    Path: {}\n    Link: {}\n"
+    logger.debug("Downloading a file.\n    Path: {}\n    Link: {}\n"
         .format(path, url))
 
     # This is to make sure that the network is not bombarded with requests or else it breaks
@@ -208,12 +208,13 @@ def clean_paths(logger, paths, end=False):
             # Where am I?
             os.makedirs(path, mode=0o777, exist_ok=False)
 
-def end_parser(logger, paths, start_time):
+def end_parser(self, paths, start_time):
     """To be run at the end of every parser, deletes paths and prints time"""
 
-    delete_paths(logger, paths)
-    logger.info("Parser started at {}".format(start_time))
-    logger.info("Parser completed at {}".format(now()))
+    delete_paths(self.logger, paths)
+    name = self.__class__.__name__
+    self.logger.info("{} started at {}".format(name, start_time))
+    self.logger.info("{} completed at {}".format(name, now()))
 
 def unzip_bz2(logger, old_path):
     """Unzips a bz2 file from old_path into new_path and deletes old file"""
@@ -270,13 +271,13 @@ def csv_to_db(logger, Table, csv_path, clear_table=False):
         if clear_table:
             t.clear_table()
             t._create_tables()
-        logger.info("Copying {} into the database".format(csv_path))
+        logger.debug("Copying {} into the database".format(csv_path))
         # Opens temporary file
         with open(r'{}'.format(csv_path), 'r') as f:
             # Copies data from the csv to the db, this is the fastest way
             t.cursor.copy_from(f, t.name, sep='\t', columns=t.columns, null="")
             t.cursor.execute("CHECKPOINT;")
-    logger.info("Done inserting {} into the database".format(csv_path))
+    logger.debug("Done inserting {} into the database".format(csv_path))
     delete_paths(logger, csv_path)
 
 def rows_to_db(logger, rows, csv_path, Table, clear_table=True):
