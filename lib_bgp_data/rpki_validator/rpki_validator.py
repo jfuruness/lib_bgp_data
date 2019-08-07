@@ -1,25 +1,68 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-"""This module contains rpki validator to perform validation
+"""This module contains class RPKI_Validator
 
-The ripe validator first starts up. Then all the prefix and origin
-pairs are uniquely """
+The purpose of this class is to obtain the validity data for all of the
+prefix origin pairs in our announcements data, and insert it into a
+database. This is done through a series of steps.
+
+1. Write the validator file.
+    -Handled in the _write_validator_file function
+    -Normally the RPKI Validator pulls all prefix origin pairs from the
+     internet, but those will not match old datasets
+    -Instead, our own validator file is written
+2. Host validator file
+    -Handled in _serve_file decorator
+    -Again, this is a file of all prefix origin pairs from our MRT
+     announcements table
+3. Run the RPKI Validator
+    -Handled in run_validator function
+4. Wait for the RPKI Validator to load the whole file
+    -Handled in the _wait_for_validator_load function
+    -This usually takes about 10 minutes
+5. Get the json for the prefix origin pairs and their validity
+    -Handled in the _get_ripe_data function
+    -Need to query IPV6 port because that's what it runs on
+6. Convert all strings to int's
+    -Handled in the format_asn function
+    -Done to save space and time when joining with later tables
+7. Parsed information is stored in csv files, and old files are deleted
+    -CSVs are chosen over binaries even though they are slightly slower
+        -CSVs are more portable and don't rely on postgres versions
+        -Binary file insertion relies on specific postgres instance
+    -Old files are deleted to free up space
+8. CSV files are inserted into postgres using COPY, and then deleted
+    -COPY is used for speedy bulk insertions
+    -Files are deleted to save space
+
+Design choices (summarizing from above):
+    -Data is bulk inserted into postgres
+        -Bulk insertion using COPY is the fastest way to insert data
+         into postgres and is neccessary due to massive data size
+    -Parsed information is stored in CSV files
+        -Binary files require changes based on each postgres version
+        -Not as compatable as CSV files
+
+Possible Future Extensions:
+    -Move the file serving functions into their own class
+        -Improves readability?
+    -Add test cases
+    -Reduce total information in the headers
+"""
 
 import http.server
 import socketserver
 from multiprocess import Process
-import functools
 from contextlib import contextmanager
 import os
 from subprocess import Popen, PIPE
 import time
-import urllib
-from ..utils import utils, error_catcher, Thread_Safe_Logger as Logger
+from ..utils import utils, error_catcher
 from .tables import Unique_Prefix_Origins_Table, ROV_Validity_Table
-from ..utils import Database, db_connection
+from ..utils import db_connection
 
-__author__ = "Cameron Morris", "Justin Furuness"
+__author__ = "Justin Furuness", "Cameron Morris"
 __credits__ = ["Cameron Morris", "Justin Furuness"]
 __Lisence__ = "MIT"
 __maintainer__ = "Justin Furuness"
@@ -29,36 +72,40 @@ __status__ = "Development"
 
 @contextmanager
 def _serve_file(self, path):
-    """Serves a file on a separate process, and kills it when done"""
+    """Serves a file on a separate process, and kills it when done."""
 
     p = Process(target=self._serve_file, args=(path, ))
     p.start()
-    self.logger.info("Serving file at {}".format(path))
-    yield 
+    self.logger.debug("Serving file at {}".format(path))
+    yield
     p.terminate()
     p.join()
 
+
 @contextmanager
 def _run_rpki_validator(self, file_path, rpki_path):
-    """Runs the ripe validator in a subprocess call and closes it correctly"""
+    """Runs the RPKI validator in a subprocess call.
+
+    Once finished the validator is closed correctly."""
 
     # Serves the ripe file
     with _serve_file(self, file_path):
         # Subprocess
         self.logger.info("About to run rpki validator")
         # Because the output of the rpki validator is garbage we omit it
-        if self.logger.level < 20 # Info
+        # Unless we are in debug mode
+        if self.logger.level < 20:  # Info
             process = Popen([rpki_path])
         else:
-            process = Popen([rpki_path], stdout=PIPE, stderr=PIPE) 
+            process = Popen([rpki_path], stdout=PIPE, stderr=PIPE)
         self.logger.debug("Running rpki validator")
-        yield 
+        yield
         process.terminate()
-        self.logger.info("Closed rpki validator")
+        self.logger.debug("Closed rpki validator")
 
 
 class RPKI_Validator:
-    """This class gets validity data from ripe""" 
+    """This class gets validity data from ripe"""
 
     __slots__ = ['path', 'csv_dir', 'logger', 'rpki_path', 'upo_csv_path']
 
@@ -86,7 +133,7 @@ class RPKI_Validator:
             self.logger.debug("validator load completed")
             utils.rows_to_db(self.logger,
                              self._get_ripe_data(),
-                             "{}/validity.csv".format(self.csv_dir),  #  CSV 
+                             "{}/validity.csv".format(self.csv_dir),  # CSV
                              ROV_Validity_Table)
         utils.delete_paths(self.logger, [validator_file])
 
@@ -137,7 +184,7 @@ class RPKI_Validator:
                 "UNKNOWN": 0,
                 "INVALID_LENGTH": -1,
                 "INVALID_ASN": -2}
-    
+
     @error_catcher()
     def _format_asn_dict(self, asn):
         """Formats json objects for csv rows"""
@@ -150,47 +197,51 @@ class RPKI_Validator:
         """Returns row count of json object for waiting"""
 
         try:
-            print(utils.get_json("http://[::1]:8080/api/bgp/", headers)["metadata"]["totalCount"])
-            time.sleep(300)
-            return utils.get_json("http://[::1]:8080/api/bgp/", headers)["metadata"]["totalCount"]
+            # Gets row count
+            return utils.get_json("http://[::1]:8080/api/bgp/",
+                                  headers)["metadata"]["totalCount"]
         except Exception as e:
             self.logger.debug("Problem with getting json: {}".format(e))
             return 0
 
+    @error_catcher()
     def _serve_file(self, path):
-        """Makes a simple http server and serves a file"""
+        """Makes a simple http server and serves a file in /tmp"""
 
         class Handler(http.server.SimpleHTTPRequestHandler):
             def __init__(self, *args, **kwargs):
                 super().__init__(*args, **kwargs)
+        # Changes directory to be in /tmp
         os.chdir("/tmp/")
+        # Serve the file on port 8000
         socketserver.TCPServer(("", 8000), Handler).serve_forever()
 
+    @error_catcher()
     def _wait_for_validator_load(self, total_rows):
         """Waits for the rpki validator to load all of it's data"""
 
         time.sleep(30)
-        print("total rows  = {}".format(total_rows))
+        # Check if the rows of the RPKI data are equal to the rows
+        # in the unique prefix origins file
         while self._get_row_count(self._get_headers()) < total_rows:
             self.logger.info("Waiting for validator load")
             self.logger.debug(total_rows)
             self.logger.debug(self._get_row_count(self._get_headers()))
             time.sleep(30)
 
-
     @error_catcher()
     def _get_headers(self):
-        """Returns the proper connection for the requests module"""
+        """Returns the proper headers for the requests module"""
 
         return {"Connection": "keep-alive",
-                   "Cache-Control": "max-age=0",
-                   "Upgrade-Insecure-Requests": 1,
-                   "User-Agent": ("Mozilla/5.0 (X11; Linux x86_64)"
-                                  " AppleWebKit/537.36 (KHTML, like Gecko) "
-                                  "Chrome/73.0.3683.86 Safari/537.36"),
-                    "Accept": ("text/html,application/xhtml+xml,"
-                               "application/xml;q=0.9,image/webp,"
-                               "image/apng,*/*;q=0.8,"
-                               "application/signed-exchange;v=b3"),
-                    "Accept-Encoding": "gzip, deflate, br",
-                    "Accept-Language": "en-US,en;q=0.9"}
+                "Cache-Control": "max-age=0",
+                "Upgrade-Insecure-Requests": 1,
+                "User-Agent": ("Mozilla/5.0 (X11; Linux x86_64)"
+                               " AppleWebKit/537.36 (KHTML, like Gecko) "
+                               "Chrome/73.0.3683.86 Safari/537.36"),
+                "Accept": ("text/html,application/xhtml+xml,"
+                           "application/xml;q=0.9,image/webp,"
+                           "image/apng,*/*;q=0.8,"
+                           "application/signed-exchange;v=b3"),
+                "Accept-Encoding": "gzip, deflate, br",
+                "Accept-Language": "en-US,en;q=0.9"}
