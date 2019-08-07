@@ -49,7 +49,6 @@ class Extrapolator:
         else:
             check_call(bash_args, stdout=DEVNULL, stderr=DEVNULL, shell=True)
 
-
     @error_catcher()
     @utils.run_parser()
     def run_rovpp(self, attacker_asn, victim_asn, expected_prefix):

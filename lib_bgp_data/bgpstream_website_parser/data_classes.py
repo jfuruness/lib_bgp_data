@@ -69,8 +69,8 @@ class Data:
     For a more in depth explanation see the top of the file.
     """
 
-    __slots__ = ['logger', '_as_regex', '_nums_regex', '_ip_regex', '_temp_row',
-                 'data', '_columns']
+    __slots__ = ['logger', '_as_regex', '_nums_regex', '_ip_regex',
+                 '_temp_row', 'data', '_columns']
 
     @error_catcher()
     def __init__(self, logger):
@@ -263,7 +263,7 @@ class Hijack(Data):
             self._temp_row.get("detected_as_path").split(' ')])
         self._temp_row["detected_as_path"] =\
             self._temp_row.get("detected_as_path"
-                              ).replace('[', '{').replace(']', '}')
+                               ).replace('[', '{').replace(']', '}')
         self._temp_row["detected_by_bgpmon_peers"] = self._nums_regex.search(
             extended_children[end - 1].string.strip()).group(1)
         self.logger.debug("Parsed Hijack Row")

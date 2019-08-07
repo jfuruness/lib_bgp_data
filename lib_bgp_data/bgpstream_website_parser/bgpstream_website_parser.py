@@ -125,7 +125,7 @@ class BGPStream_Website_Parser:
             # even know you could do this, likely because it's so dumb
             if i > row_limit: break
             # Print every 250 rows
-            print_me = True if i % 250 == 0 or i == row_limit -1 else False
+            print_me = True if i % 250 == 0 or i == row_limit - 1 else False
             # Parses the row
             self._parse_row(row, i, len(rows), known_events, refresh, print_me)
 
