@@ -1,23 +1,38 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-"""This module contains class Database that interacts with a database"""
+"""This module contains class Database and context manager db_connection
+
+The Database class can interact with a database. It can also be
+inherited to allow for its functions to be used for specific tables in
+the database. Other Table classes inherit the database class to be used
+in utils functions that write data to the database. To do this, the
+class that inherits the database must be named the table name plus
+_Table. For more information on how to do this, see the README on how to
+add a submodule.
+
+Fucntionality also exists to be able to unhinge and rehinge the
+database. When the database is unhinged, it becomes as optimized as
+possible. Checkpointing (writing to disk) is basically disabled, and
+must be done manually with checkpoints and db restarts. We use this for
+massive table joins that would otherwise take an extremely long amount
+of time.
+
+db_connection is used as a context manager to be able to connect to the
+database, and have the connection close properly upon leaving.
+
+Design Choices:
+-RealDictCursor was used as the default cursor factory so that if table
+ columns moved around everything wouldn't break, and using a dictionary
+ is very easy
+-Unlogged tables used for speed
+-Disable corruption safety measures for speed
+
+Possible Future improvements:
+-Move unhinge and rehinge db to different sql files."""
 
 # Due to circular imports this must be here
 from contextlib import contextmanager
-from .logger import Thread_Safe_Logger as Logger
-
-@contextmanager
-def db_connection(table, logger=None, clear=False):
-    if not logger:
-        logger = Logger()
-    t = table(logger)
-    if clear:
-        t.clear_tables()
-        t._create_tables()
-    yield t
-    t.close()
-
 import psycopg2
 from psycopg2.extras import RealDictCursor
 from multiprocessing import cpu_count
@@ -25,9 +40,8 @@ from subprocess import check_call
 import os
 import time
 from .config import Config
-from .logger import error_catcher
-from .utils import Pool
-from .config import Config
+from .logger import error_catcher, Thread_Safe_Logger as Logger
+from .utils import Pool, delete_paths
 
 __author__ = "Justin Furuness"
 __credits__ = ["Justin Furuness"]
@@ -37,14 +51,29 @@ __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
 
+@contextmanager
+def db_connection(table,
+                  logger=Logger(),
+                  clear=False,
+                  cursor_factory=RealDictCursor):
+    if not logger:
+        logger = Logger()
+    t = table(logger, cursor_factory)
+    if clear:
+        t.clear_tables()
+        t._create_tables()
+    yield t
+    t.close()
+
+
 class Database:
     """Interact with the database"""
 
     __slots__ = ['logger', 'conn', 'cursor']
 
     @error_catcher()
-    def __init__(self, logger, cursor_factory=RealDictCursor):
-        """Create a new connection with the databse"""
+    def __init__(self, logger=Logger({}), cursor_factory=RealDictCursor):
+        """Create a new connection with the database"""
 
         # Initializes self.logger
         self.logger = logger
@@ -52,16 +81,20 @@ class Database:
 
     @error_catcher()
     def _connect(self, cursor_factory=RealDictCursor, create_tables=True):
-        """Connects to db"""
+        """Connects to db with default RealDictCursor.
+
+        Note that RealDictCursor returns everything as a dictionary."""
 
         kwargs = Config(self.logger).get_db_creds()
         if cursor_factory:
             kwargs["cursor_factory"] = cursor_factory
+        # In case the database is somehow off we wait
         for i in range(10):
             try:
                 conn = psycopg2.connect(**kwargs)
                 self.logger.debug("Database Connected")
                 self.conn = conn
+                # Automatically execute queries
                 self.conn.autocommit = True
                 self.cursor = conn.cursor()
                 break
@@ -78,7 +111,7 @@ class Database:
 
     @error_catcher()
     def execute(self, sql, data=None):
-        """Executes a query"""
+        """Executes a query. Returns [] if no results."""
 
         if data is None:
             self.cursor.execute(sql)
@@ -101,8 +134,14 @@ class Database:
         self.__init__(self.logger)
 
     def _reconnect_execute(self, sql):
+        """To be used for parellel queries.
+
+        In parallel queries, one connection between multiple processes
+        is not allowed."""
+
         self.__init__(self.logger)
         self.execute(sql)
+        self.close()
 
     @error_catcher()
     def close(self):
@@ -118,10 +157,12 @@ class Database:
 
     @error_catcher()
     def unhinge_db(self):
+        """Enhances database, but doesn't allow for writing to disk."""
+
         ram = Config(self.logger).ram
         # This will make it so that your database never writes to
         # disk unless you tell it to. It's faster, but harder to use
-        sqls = [# https://www.2ndquadrant.com/en/blog/
+        sqls = [  # https://www.2ndquadrant.com/en/blog/
                 # basics-of-tuning-checkpoints/
                 # manually do all checkpoints to abuse this thing
                 "ALTER SYSTEM SET checkpoint_timeout TO '1d';",
@@ -141,10 +182,7 @@ class Database:
                 "ALTER SYSTEM SET maintenance_work_mem TO '{}MB';".format(
                     int(ram/5))]
 
-        try:
-            os.remove("/tmp/db_modify.sql")
-        except:
-            pass
+        delete_paths("/tmp/db_modify.sql")
         # Writes sql file
         with open("/tmp/db_modify.sql", "w+") as db_mod_file:
             for sql in sqls:
@@ -159,10 +197,9 @@ class Database:
     def rehinge_db(self):
         """Restores postgres 11 defaults"""
 
-        ram = Config(self.logger).ram
         # This will make it so that your database never writes to
         # disk unless you tell it to. It's faster, but harder to use
-        sqls = [# https://www.2ndquadrant.com/en/blog/
+        sqls = [  # https://www.2ndquadrant.com/en/blog/
                 # basics-of-tuning-checkpoints/
                 # manually do all checkpoints to abuse this thing
                 "ALTER SYSTEM SET checkpoint_timeout TO '5min';",
@@ -178,10 +215,7 @@ class Database:
                 # Since its manual it can be higher
                 "ALTER SYSTEM SET max_parallel_maintenance_workers TO 2;",
                 "ALTER SYSTEM SET maintenance_work_mem TO '64MB';"]
-        try:
-            os.remove("/tmp/db_modify.sql")
-        except:
-            pass
+        delete_paths("/tmp/db_modify.sql")
         # Writes sql file
         with open("/tmp/db_modify.sql", "w+") as db_mod_file:
             for sql in sqls:
@@ -194,6 +228,8 @@ class Database:
 
     @error_catcher()
     def _restart_postgres(self):
+        """Restarts postgres and all connections."""
+
         self.close()
         check_call(Config(self.logger).restart_postgres_cmd, shell=True)
         time.sleep(30)

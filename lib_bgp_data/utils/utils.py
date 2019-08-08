@@ -1,9 +1,38 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-"""This package contains functions used across classes"""
+"""This package contains functions used across classes.
 
+Possible future improvements:
+-Move functions that are only used in one file to that file
+-Refactor
+-Unit tests
+"""
+
+import requests
+import time
+import urllib
+import shutil
+import os
+import sys
+import functools
+from datetime import datetime, timedelta
+import csv
+import json
+from bz2 import BZ2Decompressor
+from bs4 import BeautifulSoup as Soup
+from pathos.multiprocessing import ProcessingPool
 from contextlib import contextmanager
+from multiprocessing import cpu_count
+from .logger import Thread_Safe_Logger as Logger
+from .database import db_connection
+
+__author__ = "Justin Furuness"
+__credits__ = ["Justin Furuness"]
+__Lisence__ = "MIT"
+__maintainer__ = "Justin Furuness"
+__email__ = "jfuruness@gmail.com"
+__status__ = "Development"
 
 # to prevent circular depencies
 @contextmanager
@@ -19,36 +48,6 @@ def Pool(logger, threads, multiplier, name):
     p.close()
     p.join()
     p.clear()
-#    (p.close(), p.join(), p.clear())
-
-
-
-import requests
-import time
-import urllib
-import shutil
-import os
-import sys
-import functools
-from datetime import datetime, timedelta
-import csv
-import gzip
-import json
-from bz2 import BZ2Decompressor
-from bs4 import BeautifulSoup as Soup
-from pathos.multiprocessing import ProcessingPool
-from contextlib import contextmanager 
-from multiprocessing import cpu_count
-from .logger import Thread_Safe_Logger as Logger
-from .config import Config
-from .database import db_connection
-
-__author__ = "Justin Furuness"
-__credits__ = ["Justin Furuness"]
-__Lisence__ = "MIT"
-__maintainer__ = "Justin Furuness"
-__email__ = "jfuruness@gmail.com"
-__status__ = "Development"
 
 
 # This decorator wraps any run parser function
@@ -78,28 +77,26 @@ def run_parser():
         return function_that_runs_func
     return my_decorator
 
-@contextmanager
-def Pool(logger, threads, multiplier, name):
-    """Context manager for pathos ProcessingPool"""
-
-    # Creates a pool with threads else cpu_count * multiplier
-    p = ProcessingPool(threads if threads else cpu_count() * multiplier)
-    logger.info("Created {} pool".format(name))
-    yield p
-    (p.close(), p.join())
 
 def now():
     """Returns current time"""
 
     return datetime.utcnow()
 
+
 def get_default_start():
+    """Gets default start time, used in multiple places."""
+
     return (now()-timedelta(days=7)).timestamp()
 
+
 def get_default_end():
+    """Gets default end time, used in multiple places."""
+
     return (now()-timedelta(days=6)).timestamp()
 
-def set_common_init_args(self, args, non_essentials=False):
+
+def set_common_init_args(self, args):
     """Sets self attributes for arguments common across many classes"""
 
     # The class name. This because when parsers are done,
@@ -111,36 +108,22 @@ def set_common_init_args(self, args, non_essentials=False):
         "/tmp/bgp_{}".format(name)
     self.csv_dir = args.get("csv_dir") if args.get("csv_dir") else\
         "/dev/shm/bgp_{}".format(name)
-    for dirs in [self.path, self.csv_dir]:
-        try:
-            shutil.rmtree(dirs)
-        except FileNotFoundError:
-            pass
-        try:
-            os.makedirs(dirs)
-        except FileExistsError:
-            pass
+
     self.logger = args.get("logger") if args.get("logger") else\
         Logger(args)
-    if non_essentials:
-        try:
-            self.args = args
-            self.config = Config(self.logger)
-            self.args["path"] = self.path
-            self.args["csv_dir"] = self.csv_dir
-            self.args["logger"] = self.logger
-        # Some classes won't set these
-        except AttributeError:
-            pass
+
+    # Deletes and creates dirs from fresh
+    clean_paths(self.logger, [self.path, self.csv_dir])
     self.logger.info("Initialized {} at {}".format(name, now()))
 
+
 def download_file(logger, url, path, file_num=1, total_files=1, sleep_time=0):
-    """Downloads a file from a url into a path"""
+    """Downloads a file from a url into a path."""
 
     logger.debug("Downloading a file.\n    Path: {}\n    Link: {}\n"
-        .format(path, url))
+                 .format(path, url))
 
-    # This is to make sure that the network is not bombarded with requests or else it breaks
+    # This is to make sure that the network is not bombarded with requests
     time.sleep(sleep_time)
     retries = 10
 
@@ -159,8 +142,9 @@ def download_file(logger, url, path, file_num=1, total_files=1, sleep_time=0):
             retries -= 1
             time.sleep(5)
             if retries <= 0:
-                logger.error("Failed download {}\n because of: {}".format(url, e))
+                logger.error("Failed download {}\nDue to: {}".format(url, e))
                 sys.exit(1)
+
 
 def delete_paths(logger, paths):
     """Removes directory if directory, or removes path if path"""
@@ -193,20 +177,21 @@ def delete_paths(logger, paths):
         except PermissionError:
             logger.warning("Permission error when deleting {}".format(path))
 
-def clean_paths(logger, paths, end=False):
+
+def clean_paths(logger, paths):
     """If path exists remove it, else create it"""
 
     delete_paths(logger, paths)
-    if not end:
-        for path in paths:
-            # Yes I know this is a security flaw, but
-            # Everything is becoming hacky since we need to demo soon
-            # We can fix it later
-            # No really, I mean it
-            # For real, I will fix it
-            # Hahaha I hate selinux
-            # Where am I?
-            os.makedirs(path, mode=0o777, exist_ok=False)
+    for path in paths:
+        # Yes I know this is a security flaw, but
+        # Everything is becoming hacky since we need to demo soon
+        # We can fix it later
+        # No really, I mean it
+        # For real, I will fix it
+        # Hahaha I hate selinux
+        # Where am I?
+        os.makedirs(path, mode=0o777, exist_ok=False)
+
 
 def end_parser(self, paths, start_time):
     """To be run at the end of every parser, deletes paths and prints time"""
@@ -215,6 +200,7 @@ def end_parser(self, paths, start_time):
     name = self.__class__.__name__
     self.logger.info("{} started at {}".format(name, start_time))
     self.logger.info("{} completed at {}".format(name, now()))
+
 
 def unzip_bz2(logger, old_path):
     """Unzips a bz2 file from old_path into new_path and deletes old file"""
@@ -229,24 +215,13 @@ def unzip_bz2(logger, old_path):
     delete_paths(logger, old_path)
     return new_path
 
-def unzip_gz(logger, old_path, new_path):
-    """Unzips a .gz file from old_path into new_path and deletes old file"""
 
-    with gzip.open(old_path, 'rb') as f_in:
-        with open(new_path, 'wb') as f_out:
-            shutil.copyfileobj(f_in, f_out)
-
-    logger.debug("Unzipped a file: {}".format(old_path))
-    delete_paths(logger, old_path)
-
-def write_csv(logger, rows, csv_path, files_to_delete=None):
+def write_csv(logger, rows, csv_path):
     """Writes rows into csv_path, a tab delimited csv"""
 
     logger.debug("Writing to {}".format(csv_path))
-    try:
-        os.remove(csv_path)
-    except:
-        pass
+    delete_paths(logger, csv_path)
+
     with open(csv_path, mode='w') as temp_csv:
         csv_writer = csv.writer(temp_csv,
                                 delimiter='\t',
@@ -256,9 +231,7 @@ def write_csv(logger, rows, csv_path, files_to_delete=None):
         # Writing to a csv then copying into the db
         # is the fastest way to insert files
         csv_writer.writerows(rows)
-    # If there are old files that are no longer needed, deleted them
-    if files_to_delete:
-        delete_paths(logger, files_to_delete)
+
 
 def csv_to_db(logger, Table, csv_path, clear_table=False):
     """Copies csv into table and deletes csv_path
@@ -280,11 +253,13 @@ def csv_to_db(logger, Table, csv_path, clear_table=False):
     logger.debug("Done inserting {} into the database".format(csv_path))
     delete_paths(logger, csv_path)
 
+
 def rows_to_db(logger, rows, csv_path, Table, clear_table=True):
     """Writes rows to csv and from csv to database"""
 
     write_csv(logger, rows, csv_path)
     csv_to_db(logger, Table, csv_path, clear_table)
+
 
 def get_tags(url, tag):
     """Gets the html of a given url, and returns a list of tags"""
@@ -293,7 +268,9 @@ def get_tags(url, tag):
     # Raises an exception if there was an error
     response.raise_for_status()
     # Get all tags within the beautiful soup from the html and return them
-    return [x for x in Soup(response.text, 'html.parser').select(tag)], response.close()
+    return [x for x in Soup(response.text, 'html.parser').select(tag)],\
+        response.close()
+
 
 def get_json(url, headers={}):
     """Gets the json from a url"""

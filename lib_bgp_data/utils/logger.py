@@ -1,13 +1,51 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-"""This module contains class Logger with logging functionality"""
+"""This module used to contains helpful logging functions.
+
+The Logger class used to be the logging class that was used. This class
+sets a logging level for printing and for writing to a file. However,
+it turns out that the logging module is insanely bad for multithreading.
+So insane, that you cannot even import the dang thing without having it
+deadlock on you. Crazy, I know. So therefore, I created another logging
+class called Thread_Safe_Logger. This class basically emulates a logger
+except that it only prints, and never writes to a file. It also never
+deadlocks.
+
+There is also a nice decorator called error_catcher. The point of this
+was supposed to be to catch any errors that occur and fail nicely with
+good debug statements, which is especially useful when multithreading.
+However with unit testing, it needs to be able fail really horribly,
+so that has become disabled as well. Still, eventually it will be
+fixed, so all functions that have self should be contained within the
+error catcher.
+
+For an explanation on how logging works:
+logging has different levels. If you are below the set logging level,
+nothing gets recorded. The levels are, in order top to bottom:
+
+        logging.CRITICAL
+        logging.ERROR
+        logging.WARNING
+        logging.INFO
+        logging.DEBUG
+        logging.NOTSET
+
+Design Choices:
+-Logger class is not used because logging deadlocks just on import
+-Thread_Safe_Logger is used because it does not deadlock
+-error_catcher is used so that functions fail nicely
+
+Possible Future Improvements:
+-Fix the error catcher
+-Possibly use the Logger class to log all things in the API?
+-Figure out how to use this class while multithreading
+-Figure out how to exit nicely and not ruin my unit tests
+"""
 
 import re
 import sys
 import datetime
-import multiprocessing
-import logging
 import os
 import functools
 import traceback
@@ -22,21 +60,19 @@ __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
 
-#compiled regex global to prevent unnessecary recompilation
+# compiled regex global to prevent unnessecary recompilation
 tb_re = re.compile(r'''
-                    .*?/lib_bgp_data
-                    (?P<file_name>.*?.py)
-                    .*?line.*?
-                    (?P<line_num>\d+)
-                    .*?in\s+
-                    (?P<function>.*?)
-                    \\n\s+
-                    (?P<line>.+)
-                    \\n
-                    ''', re.VERBOSE | re.DOTALL
-                    )
-
-
+                   .*?/lib_bgp_data
+                   (?P<file_name>.*?.py)
+                   .*?line.*?
+                   (?P<line_num>\d+)
+                   .*?in\s+
+                   (?P<function>.*?)
+                   \\n\s+
+                   (?P<line>.+)
+                   \\n
+                   ''', re.VERBOSE | re.DOTALL
+                   )
 
 
 # This decorator wraps all funcs in a try except statement
@@ -50,7 +86,6 @@ def error_catcher(msg=None):
             try:
                 return func(self, *args, **kwargs)
             except Exception as e:
-#                raise
                 # Gets traceback object and error information
                 error_class, error_desc, tb = sys.exc_info()
                 # Makes sure it's not a system exit call
@@ -59,7 +94,7 @@ def error_catcher(msg=None):
                         self.logger.debug(msg)
                     # Gets last call from program
                     tb_to_re = [x for x in str(traceback.format_tb(tb))
-                        .split("File") if "lib_bgp_data" in x][-1]
+                                .split("File") if "lib_bgp_data" in x][-1]
                     # Performs regex to capture useful information
                     capture = tb_re.search(tb_to_re)
                     # Formats error string nicely
@@ -70,8 +105,8 @@ def error_catcher(msg=None):
                                "      function:  {6}\n"
                                "      line #:    {7}\n"
                                "      line:      {8}\n"
-                              "{0}______{0}\n"
-                                ).format("_"*36,
+                               "{0}______{0}\n"
+                               ).format("_"*36,
                                         "ERROR!",
                                         msg,
                                         error_class,
@@ -84,8 +119,8 @@ def error_catcher(msg=None):
                     # hahaha so professional
                     print('\a')
                 # Exit program and also kills all parents/ancestors
-                #sys.exit(1)###################### FIGURE OUT A WAY TO TURN THIS OFF FOR PYTEST AND BACK ON FOR EVERYTHING ELSE - perhaps a pytest that sets a global var?that we import? idk
-                raise e 
+                # sys.exit(1) turning this on breaks pytest - figure it out
+                raise e
         return function_that_runs_func
     return my_decorator
 
@@ -119,6 +154,9 @@ class Logger:
 
     def _set_properties(self, args):
         """Inits different logging properties"""
+
+        # Import done here so as not to overwrite my enum
+        import logging
 
         # Sets variables if args is not set
         log_name = args.get("log_name")
@@ -154,6 +192,9 @@ class Logger:
     def _init_logging(self, args):
         """Initializes the initial logger"""
 
+        # Import done here so as not to overwrite my enum
+        import logging
+
         # Initialize logging
         logger = logging.getLogger(__name__)
         if logger.hasHandlers() and args.get("is_child") is None:
@@ -165,6 +206,9 @@ class Logger:
 
     def _init_file_handler(self, logger, args):
         """Initializes file handler for logging"""
+
+        # Import done here so as not to overwrite my enum
+        import logging
 
         # Initialize File Handler
         self.file_path = os.path.join(self.log_dir, self.log_name)
@@ -178,6 +222,9 @@ class Logger:
     def _init_stream_handler(self, logger, args):
         """Adds stream handler while avoiding multithreading problems"""
 
+        # Import done here so as not to overwrite my enum
+        import logging
+
         if args.get("is_child") is None:
             # Initialize Stream Handler
             self.stream_handler = logging.StreamHandler()
@@ -187,14 +234,15 @@ class Logger:
             self.stream_handler.setFormatter(stream_handler_formatter)
             logger.addHandler(self.stream_handler)
             # Must be done or else:
-            # https://stackoverflow.com/questions/21127360/python-2-7-log-displayed-twice-when-logging-module-is-used-in-two-python-scri?noredirect=1&lq=1
+            # https://stackoverflow.com/questions/21127360/
             logger.propogate = False
         else:
             logger.propogate = True
 
+
 @total_ordering
 class logging(Enum):
-    """Replacement for the logging class, explained above"""
+    """Replacement for the logging class"""
 
     # Defines order for the iterator
     __order__ = "NOTSET DEBUG INFO WARNING ERROR CRITICAL"
@@ -211,16 +259,15 @@ class logging(Enum):
 
         return self.value < other
 
+
 class Thread_Safe_Logger:
     """Logger class for process safe logging, explained below
 
-    This module contains class Logger with logging functionality
-    This module contains a logging class that impliments logging.
     Because the logging module deadlocks when used with lots of multiprocessing
-    I have decided to take it out and replace it with something simpler. Logging
+    I have taken it out and replaced it with something simpler. Logging
     to files are awesome, but clearly python logging sucks when using
-    multiprocessing, I cannot even import logging without it somehow deadlocking
-    so I will be using my own crap class from now on
+    multiprocessing, I cannot even import logging without it somehow
+    deadlocking so I will be using my own crap class from now on.
     """
 
     def __init__(self, args={}):
@@ -231,10 +278,6 @@ class Thread_Safe_Logger:
         logging.WARNING
         logging.INFO
         logging.DEBUG
-        Anything equal to or higher than file_level will be appended to path
-        Anything equal to or higher than stream_level will be printed
-        Explanation for the logger class at top of module, in short this
-        class works with multiprocessing
         """
 
         stream_level = args.get("stream_level")
@@ -249,7 +292,7 @@ class Thread_Safe_Logger:
         [setattr(self, x, y) for x, y in zip(levels, log_funcs)]
 
     def _make_log_func(self, stream_level, log_level):
-        """Dynamically creates functions"""
+        """Dynamically creates functions that emulate normal logging funcs"""
 
         def _function(msg):
             """Function that is created"""

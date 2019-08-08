@@ -81,6 +81,7 @@ def validate_asns(asns, db):
         # If asns are not ints raise invalid input error
         raise InvalidInput
 
+
 def get_policies():
     """Returns a list of valid policies.
 
