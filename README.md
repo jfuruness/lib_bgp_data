@@ -15,6 +15,7 @@ This package contains multiple submodules that are used to gather and manipulate
 * [API Submodule](#api-submodule)
 * [ROVPP Submodule](#rovpp-submodule)
 * [Utils](#utils)
+* [Config](#config-submodule)
 * [Database](#database-submodule)
 * [Logging](#logging-submodule)
 * [Installation](#installation)
@@ -545,6 +546,8 @@ The purpose of this parser is to download ROAs from rpki and insert them into a 
 * [Roas Submodule](#roas-submodule)
 #### In a Script
 Initializing the Roas Collector:
+
+
 | Parameter    | Default                             | Description                                                                                                       |
 |--------------|-------------------------------------|-------------------------------------------------------------------------------------------------------------------|
 | name         | ```self.__class__.__name__```     | The purpose of this is to make sure when we clean up paths at the end it doesn't delete files from other parsers. |
@@ -700,6 +703,8 @@ This submodule parses through the html of bgpstream.com and formats the data for
 
 #### In a Script
 Initializing the BGPStream_Website_Parser:
+
+
 | Parameter    | Default                             | Description                                                                                                       |
 |--------------|-------------------------------------|-------------------------------------------------------------------------------------------------------------------|
 | name         | ```self.__class__.__name__```     | The purpose of this is to make sure when we clean up paths at the end it doesn't delete files from other parsers. |
@@ -1215,42 +1220,56 @@ Coming Soon to a theater near you
 ## API Submodule
    * [lib\_bgp\_data](#lib_bgp_data)
    * [Short Description](#api-short-description)
-   * [Long Description](#api-long-description)
    * [Usage](#api-usage)
-   * [JSON Format](#api-json-format)
    * [Design Choices](#api-design-choices)
    * [Possible Future Improvements](#api-possible-future-improvements)
 ### API Short Description
 * [lib\_bgp\_data](#lib_bgp_data)
 * [API Submodule](#api-submodule)
+The API includes endpoints for:
+* Every variation of hijack data
+* ROAs data
+* Relationship data for specific ASNs
+* Extrapolator data for specific ASNs
+* Policy statistics for specific ASNs and policies
+	* Includes aggregate averages for ASNs
+* Average policy statistics
+* RPKI Validity results
 
-
-### API Long Description
-* [lib\_bgp\_data](#lib_bgp_data)
-* [API Submodule](#api-submodule)
-
+I could go into further details here, but it seems silly to write documentation twice, and there are flasgger docs and explanations in each file for each endpoint. To see examples of output and explanations, go to the usage examples and see the flasgger documentation.
 
 ### API Usage
 * [lib\_bgp\_data](#lib_bgp_data)
 * [API Submodule](#api-submodule)
+To view the API and use it, go to localhost:5000/api_docs in a web browser.
 
-
+To create and run the API on localhost:5000:
+(NOTE: This method should not be used in production)
 #### In a Script
+```python
+from lib_bgp_data import create_app
+create_app()
+```
 #### From the Command Line
-### API JSON Format
-* [lib\_bgp\_data](#lib_bgp_data)
-* [API Submodule](#api-submodule)
-
-
+Coming soon to a theater near you
 ### API Design Choices
 * [lib\_bgp\_data](#lib_bgp_data)
 * [API Submodule](#api-submodule)
-
+	* Some API endpoints are not done for all ASes in advance because it would take a significant amount of time and add a significant amount of data.
+	* Flasgger docs are used to provide an easy web interface
+	* All relationship data was not returned due to time constraints
+	* Separate blueprints are used for code readability
 
 ### API Possible Future Improvements
 * [lib\_bgp\_data](#lib_bgp_data)
 * [API Submodule](#api-submodule)
-
+	* Have better logging - record all queries and alert all errors
+	* Convert all stubs to parent ASNs at once
+	* Add cmd line args
+	* Add unit tests
+	* Update docs about cmd line args and unit tests
+	* Move the API to the sidr website
+	* Add documentation on how to add a new API endpoint
 
 ## ROVPP Submodule
    * [lib\_bgp\_data](#lib_bgp_data)
@@ -1290,31 +1309,73 @@ This module was created to simulate ROV++ over the topology of the internet for 
 ### ROVPP  Possible Future Improvements
 * [lib\_bgp\_data](#lib_bgp_data)
 * [ROVPP Submodule](#rovpp-submodule)
-
+* Aside from rewriting the script:
+	* Making multiple tiers of ASNs and percent adoptions
+	* geographical adoption
+	* Split up results between each tier of ASes
+	* Due to new ROVPP policy, must traceback to known AS, blackhole, hijacker, or victim
+	* Deadline for paper in january
+	* Link to paper here
+	* geographical adoption
+	* Real data with bgpstream.com
+	* unit tests
+	* cmd line args
+	* take out version metadata
+	* add python metadata/headers
+	* write documentation
 
 ## Utils
    * [lib\_bgp\_data](#lib_bgp_data)
    * [Description](#utils-description)
-   * [Design Choices](#utils-design-choices)
    * [Possible Future Improvements](#utils-possible-future-improvements)
 ### Utils Description
 * [lib\_bgp\_data](#lib_bgp_data)
 * [Utils](#utils)
-
+The utils folder contains a utils file that has many useful functions used across multiple files and submodules.
 ### Utils Features
 * [lib\_bgp\_data](#lib_bgp_data)
 * [Utils](#utils)
-
-
-### Utils Design Choices
-* [lib\_bgp\_data](#lib_bgp_data)
-* [Utils](#utils)
-
+Below is a quick list of functions that might be helpful. For more in depth explanations please view the utils file and the functions themselves:
+* Pool: A Context manager for multiprocessing pathos pools
+* run_parser: A decorator for running the main parser functions that has useful features like deleting files and printing start and end times
+* now: Returns current time
+* get_default_start: Gets the default start time
+* get_default_end: Gets default end time
+* set_common_init_args: Sets paths and logger
+* download_file: Downloads a file after waiting x seconds
+* delete_paths: Deletes anything, dir_path or file_path, or lists of either, that is passed to this function
+* clean_paths: Deletes paths and recreates them
+* end_parser: Prints end data for parser
+* unzip_bz2: Unzips a bz2 file
+* write_csv: Writes a csv file
+* csv_to_db: Copies a csv into the database
+* rows_to_db: Inserts data into a csv and then the database
+* get_tags: Gets html tags
+* get_json: Gets json with url and headers specified
 
 ### Utils Possible Future Improvements
 * [lib\_bgp\_data](#lib_bgp_data)
 * [Utils](#utils)
+	* Possibly move functions that are only used in one file out of the utils folder - find out what these are
+	* Refactor - shouldn't need much though
+	* Unit tests for some functions
 
+## Config Submodule
+   * [lib\_bgp\_data](#lib_bgp_data)
+   * [Description](#config-submodule-description)
+   * [Design Choices](#config-submodule-design-choices)
+   * [Possible Future Improvements](#config-submodule-possible-future-improvements)
+### Config Submodule Description
+* [lib\_bgp\_data](#lib_bgp_data)
+* [Config Submodule](#config-submodule)
+
+This module contains a config class that creates and parses a config file. To avoid outdated documentation to see the config format, please view the create_config function in utils/config.py
+
+### Config Submodule Possible Future Improvements
+* [lib\_bgp\_data](#lib_bgp_data)
+* [Config Submodule](#config-submodule)
+
+	* Unit tests
 
 ## Database Submodule
    * [lib\_bgp\_data](#lib_bgp_data)
@@ -1325,12 +1386,22 @@ This module was created to simulate ROV++ over the topology of the internet for 
 ### Database Description
 * [lib\_bgp\_data](#lib_bgp_data)
 * [Database Submodule](#database-submodule)
+This module contains class Database and context manager db_connection
 
+The Database class can interact with a database. It can also be inherited to allow for its functions to be used for specific tables in the database. Other Table classes inherit the database class to be used in utils functions that write data to the database. To do this, the class that inherits the database must be named the table name plus _Table. For more information on how to do this, see the README on how to
+add a submodule.
+
+Fucntionality also exists to be able to unhinge and rehinge the database. When the database is unhinged, it becomes as optimized as possible. Checkpointing (writing to disk) is basically disabled, and must be done manually with checkpoints and db restarts. We use this for massive table joins that would otherwise take an extremely long amount of time.
+
+db_connection is used as a context manager to be able to connect to the database, and have the connection close properly upon leaving
 
 ### Database Enhancements
 * [lib\_bgp\_data](#lib_bgp_data)
 * [Database Submodule](#database-submodule)
 
+Rather than repeat documentation, please view the Install Script to see all sql queries that alter the database. In addition, see the unhinge_db function, for when the database is unhinged. These are extensive lists of sql queries and the reasons why we use them in order to improve database performance.
+
+Note that we NEVER alter the config file for the database. We only ever use the ALTER SYSTEM command so that we can always have the default config to be able to go back to.
 
 ### Database  Usage
 * [lib\_bgp\_data](#lib_bgp_data)
@@ -1387,7 +1458,7 @@ PUT LINK HERE TO DB INSTALL INSTRUCTIONS BELOW!!
    * [Installation Instructions](#installation-instructions)
    * [Postgres Installation](#postgres-instructions)
    * [System Requirements](#system-requirements)
-   * [Installation Class Details](#installation-class-details)
+   * [Installation Submodule](#installation-submodule)
 ### Installation instructions
 * [lib\_bgp\_data](#lib_bgp_data)
 * [Installation Submodule](#installation-submodule)
@@ -1431,7 +1502,7 @@ python3 setup.py sdist bdist_wheel
 python3 setup.py develop
 ```
 
-After this you are going to need a install a couple of other things. bgscanner, bgpdump, and the extrapolator are all automatically installed and moved to /usr/bin. bgpdump must be installed from source because it has bug fixes that are necessary. The RPKI validator (for now) must be manually installed.
+After this you are going to need a install a couple of other things to be able to use most features. bgscanner, bgpdump, and the extrapolator are all automatically installed and moved to /usr/bin. bgpdump must be installed from source because it has bug fixes that are necessary. The RPKI validator (for now) must be manually installed.
 >bgpscanner manual install link:
 >[https://gitlab.com/Isolario/bgpscanner](https://gitlab.com/Isolario/bgpscanner)
 >bgpdump manual install link:
@@ -1441,12 +1512,12 @@ After this you are going to need a install a couple of other things. bgscanner, 
 
 To run the automatic install process, make a script called install.py with:
 ```python
-from lib_bgp_data import Install, MRT_Parser
+from lib_bgp_data import Install
 Install().install()
 ```
 If you have already installed a database and config and don't need a fresh install, do:
 ```python
-from lib_bgp_data import Install, MRT_Parser
+from lib_bgp_data import Install
 Install().install(fresh_install=False)
 ```
 This will automate the installation process, and from here you should be ready to go
@@ -1476,32 +1547,27 @@ sudo systemctl status postgresql@11-main.service
 sudo systemctl status postgresql
 ```
 
-### RPKI Validator Installation
-* [lib\_bgp\_data](#lib_bgp_data)
-* [Installation Submodule](#installation-submodule)
-
-
 ### System Requirements
 * [lib\_bgp\_data](#lib_bgp_data)
 * [Installation Submodule](#installation-submodule)
 
 
-### Installation Class Details
+### Installation Submodule
 * [lib\_bgp\_data](#lib_bgp_data)
 * [Installation Submodule](#installation-submodule)
 
 
-#### Installation Class Description
+#### Installation Submodule Description
 * [lib\_bgp\_data](#lib_bgp_data)
 * [Installation Submodule](#installation-submodule)
 
 
-#### Installation Class Design Choices
+#### Installation Submodule Design Choices
 * [lib\_bgp\_data](#lib_bgp_data)
 * [Installation Submodule](#installation-submodule)
 
 
-#### Installation Class Future Extensions
+#### Installation Submodule Future Extensions
 * [lib\_bgp\_data](#lib_bgp_data)
 * [Installation Submodule](#installation-submodule)
 
