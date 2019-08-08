@@ -288,9 +288,9 @@ class Install:
                 "wget {}".format(rpki_url),
                 "tar -xvf rpki-validator-3-latest-dist.tar.gz",
                 "rm -rf rpki-validator-3-latest-dist.tar.gz",
-                "mv rpki-validator* /ext/rpki-validator",
-                "cd /ext/rpki-validator",
-                "mv rpki-validator* rpki-validator.sh",
+                "mv rpki-validator* /var/lib/rpki-validator-3",
+                "cd /var/lib/rpki-validator-3",
+#                "mv rpki-validator* rpki-validator-3.sh",
                 "cd preconfigured-tals",
                 "wget {}".format(arin_tal)]
         check_call("&& ".join(cmds), shell=True)

@@ -39,9 +39,7 @@ from multiprocessing import cpu_count
 from subprocess import check_call
 import os
 import time
-from .config import Config
 from .logger import error_catcher, Thread_Safe_Logger as Logger
-from .utils import Pool, delete_paths
 
 __author__ = "Justin Furuness"
 __credits__ = ["Justin Furuness"]
@@ -64,6 +62,11 @@ def db_connection(table,
         t._create_tables()
     yield t
     t.close()
+
+# Must be done to avoid circular imports
+from .config import Config
+from .utils import Pool, delete_paths
+
 
 
 class Database:

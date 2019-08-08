@@ -9,7 +9,7 @@ _config dictionary.
 
 import os
 from configparser import ConfigParser as SCP
-from psutils import virtual_memory
+from psutil import virtual_memory
 from .logger import error_catcher
 
 __author__ = "Justin Furuness"

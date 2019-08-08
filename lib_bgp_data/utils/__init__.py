@@ -6,7 +6,6 @@
 from .database import Database, db_connection
 from .config import Config
 from .logger import Thread_Safe_Logger, Logger, error_catcher
-from .tables import MRT_W_Roas_Table
 from . import utils
 from .install import Install
 
