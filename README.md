@@ -1,3 +1,4 @@
+
 # lib\_bgp\_data
 This package contains multiple submodules that are used to gather and manipulate real data in order to simulate snapshots of the internet. The purpose of this is to test different security policies to determine their accuracy, and hopefully find ones that will create a safer, more secure, internet as we know it.
 
@@ -544,11 +545,12 @@ The purpose of this parser is to download ROAs from rpki and insert them into a 
 * [Roas Submodule](#roas-submodule)
 #### In a Script
 Initializing the Roas Collector:
-> The default params for the Roas Collector are:
-> name = self.\_\_class\_\_.\_\_name\_\_  # The purpose of this is to make sure when we clean up paths at the end it doesn't delete files from other parsers.
-> path = "/tmp/bgp_{}".format(name)  # This is for the roa files
-> CSV directory = "/dev/shm/bgp_{}".format(name) # Path for CSV files, located in RAM
-> logging stream level = logging.INFO  # Logging level for printing
+| Parameter    | Default                             | Description                                                                                                       |
+|--------------|-------------------------------------|-------------------------------------------------------------------------------------------------------------------|
+| name         | ```self.__class__.__name__```     | The purpose of this is to make sure when we clean up paths at the end it doesn't delete files from other parsers. |
+| path         | ```"/tmp/bgp_{}".format(name)```     | Not used                                                                                         |
+| csv_dir      | ```"/dev/shm/bgp_{}".format(name)``` | Path for CSV files, located in RAM                                                                                |
+| stream_level | ```logging.INFO```                        | Logging level for printing                                                                                        |
 > Note that any one of the above attributes can be changed or all of them can be changed in any combination
 
 To initialize ROAs_Collector with default values:
@@ -572,7 +574,6 @@ ROAs_Collector().parse_roas()
 
 #### From the Command Line
 Coming Soon to a theater near you
-#### From the Command Line
 ### Roas Table Schema
 * [lib\_bgp\_data](#lib_bgp_data)
 * [Roas Submodule](#roas-submodule)
@@ -601,7 +602,6 @@ Coming Soon to a theater near you
 * [Roas Submodule](#roas-submodule)
 * Add test cases
 * Add cmd line args
-* Change parameter docs to be tables in docs
 * Update docs with cmd line args and test cases
 ## Extrapolator Submodule
    * [lib\_bgp\_data](#lib_bgp_data)
@@ -703,7 +703,7 @@ Initializing the BGPStream_Website_Parser:
 | Parameter    | Default                             | Description                                                                                                       |
 |--------------|-------------------------------------|-------------------------------------------------------------------------------------------------------------------|
 | name         | ```self.__class__.__name__```     | The purpose of this is to make sure when we clean up paths at the end it doesn't delete files from other parsers. |
-| path         | ```"/tmp/bgp_{}".format(name)```     | This is for the mrt files                                                                                         |
+| path         | ```"/tmp/bgp_{}".format(name)```     | Not used                                                                                         |
 | csv_dir      | ```"/dev/shm/bgp_{}".format(name)``` | Path for CSV files, located in RAM                                                                                |
 | stream_level | ```logging.INFO```                        | Logging level for printing                                                                                        |
 > Note that any one of the above attributes can be changed or all of them can be changed in any combination
@@ -716,7 +716,7 @@ parser = BGPStream_Website_Parser()
 To initialize BGPStream_Website_Parser with custom path, CSV directory, and logging level:
 ```python
 from logging import DEBUG
-from lib_bgp_data import MRT_Parser
+from lib_bgp_data import BGPStream_Website_Parser
 parser = BGPStream_Website_Parser({"path": "/my_custom_path",
                                    "csv_dir": "/my_custom_csv_dir",
                                    "stream_level": DEBUG})
@@ -978,34 +978,136 @@ Coming Soon to a theater near you
 ### RPKI Validator Short description
 * [lib\_bgp\_data](#lib_bgp_data)
 * [RPKI Validator Submodule](#rpki-validator-submodule)
-
+The purpose of this class is to obtain the validity data for all of the prefix origin pairs in our announcements data, and insert it into a database.
 
 ### RPKI Validator Long description
 * [lib\_bgp\_data](#lib_bgp_data)
 * [RPKI Validator Submodule](#rpki-validator-submodule)
+The purpose of this class is to obtain the validity data for all of the
+prefix origin pairs in our announcements data, and insert it into a
+database. This is done through a series of steps.
+
+1. Write the validator file.
+   * Handled in the _write_validator_file function
+   * Normally the RPKI Validator pulls all prefix origin pairs from the internet, but those will not match old datasets
+    * Instead, our own validator file is written
+    * This file contains a placeholder of 100
+        * The RPKI Validator does not observe anything seen by 5 or less
+         peers
+2. Host validator file
+    * Handled in _serve_file decorator
+    * Again, this is a file of all prefix origin pairs from our MRT announcements table
+3. Run the RPKI Validator
+    * Handled in run_validator function
+4. Wait for the RPKI Validator to load the whole file
+    * Handled in the _wait_for_validator_load function
+    * This usually takes about 10 minutes
+5. Get the json for the prefix origin pairs and their validity
+    * Handled in the _get_ripe_data function
+    * Need to query IPV6 port because that's what it runs on
+6. Convert all strings to int's
+    * Handled in the format_asn function
+    * Done to save space and time when joining with later tables
+7. Parsed information is stored in csv files, and old files are deleted
+    * CSVs are chosen over binaries even though they are slightly slower
+        * CSVs are more portable and don't rely on postgres versions
+        * Binary file insertion relies on specific postgres instance
+    * Old files are deleted to free up space
+9. CSV files are inserted into postgres using COPY, and then deleted
+    * COPY is used for speedy bulk insertions
+    * Files are deleted to save space
 
 
 ### RPKI Validator Usage
 * [lib\_bgp\_data](#lib_bgp_data)
 * [RPKI Validator Submodule](#rpki-validator-submodule)
 
+Initializing the RPKI Validator:
+> The default params for the RPKI Validator are:
+> name = self.\_\_class\_\_.\_\_name\_\_  # The purpose of this is to make sure when we clean up paths at the end it doesn't delete files from other parsers.
+> path = "/tmp/bgp_{}".format(name)  # This is for the roa files
+> CSV directory = "/dev/shm/bgp_{}".format(name) # Path for CSV files, located in RAM
+> logging stream level = logging.INFO  # Logging level for printing
+> Note that any one of the above attributes can be changed or all of them can be changed in any combination
 
-#### In a Script
+To initialize RPKI_Validator with default values:
+```python
+from lib_bgp_data import RPKI_Validator
+roas_parser = RPKI_Validator()
+```                 
+To initialize RPKI_Validator with custom path, CSV directory, and logging level:
+```python
+from logging import DEBUG
+from lib_bgp_data import RPKI_Validator
+roas_parser = RPKI_Validator({"path": "/my_custom_path",
+                              "csv_dir": "/my_custom_csv_dir",
+                              "stream_level": DEBUG})
+```
+To run the RPKI_Validator with defaults (there are no optional parameters):
+```python
+from lib_bgp_data import RPKI_Validator
+RPKI_Validator().run_validator()
+```
+
 #### From the Command Line
+Coming Soon to a theater near you
 ### RPKI Validator Table Schema
 * [lib\_bgp\_data](#lib_bgp_data)
 * [RPKI Validator Submodule](#rpki-validator-submodule)
+#### Unique_Prefix_Origins Table Schema
+* This table contains information on the Unique Prefix Origins from the MRT Announcements
+*  Unlogged tables are used for speed
+* origin: The ASN of an AS *(bigint)*
+* prefix: The prefix of an AS *(CIDR)*
+* placeholder: 100 used for RPKI Validator seen by peers (doesn't count rows with less than 5) (*bigint)*
 
+* Create Table SQL:
+    ```
+	CREATE UNLOGGED TABLE unique_prefix_origins AS
+                 SELECT DISTINCT origin, prefix, 100 as placeholder
+                 FROM mrt_w_roas ORDER BY prefix ASC;
+    ```
+#### ROV_Validity Table Schema
+* This table contains the validity of all prefix origin pairs according to ROV
+*  Unlogged tables are used for speed
+* origin: The ASN of an AS *(bigint)*
+* prefix: The prefix of an AS *(CIDR)*
+* validity: 1 for known, 0 unknown, -1 invalid_length, -2, invalid_asn (*bigint)*
 
+* Create Table SQL:
+    ```
+	CREATE UNLOGGED TABLE IF NOT EXISTS rov_validity (
+                 origin bigint,
+                 prefix cidr,
+                 validity smallint);
+    ```
 ### RPKI Validator Design Choices
 * [lib\_bgp\_data](#lib_bgp_data)
 * [RPKI Validator Submodule](#rpki-validator-submodule)
-
+    * Indexes are not created because they are not ever used
+    * We serve our own file for the RPKI Validator to be able to use old prefix origin pairs
+    * Data is bulk inserted into postgres
+        * Bulk insertion using COPY is the fastest way to insert data into postgres and is neccessary due to massive data size
+    * Parsed information is stored in CSV files
+        * Binary files require changes based on each postgres version
+        * Not as compatable as CSV files
 
 ### RPKI Validator Possible Future Improvements
 * [lib\_bgp\_data](#lib_bgp_data)
 * [RPKI Validator Submodule](#rpki-validator-submodule)
-
+    * Move the file serving functions into their own class
+        * Improves readability?
+    * Add test cases
+    * Reduce total information in the headers
+    * Change paramaters to be tables in README
+    * Allow validator to be able to take non mrt_w_roas table
+    * put underscores in front of all private variables
+    * Add command line args
+    * Reduce total amount of information in headers
+    * Move file serving functions to their own class?
+	    * Improves readability?
+	* Attempt this in sql
+	* Update docs for cmd line args, tests, etc.
 
 ## What if Analysis Submodule
    * [lib\_bgp\_data](#lib_bgp_data)
@@ -1018,35 +1120,98 @@ Coming Soon to a theater near you
 ### What if Analysis  Short description
 * [lib\_bgp\_data](#lib_bgp_data)
 * [What if Analysis Submodule](#what-if-analysis-submodule)
-
+The purpose of this class is to determine the effect that security policies would have on each AS.
 
 ### What if Analysis  Long description
 * [lib\_bgp\_data](#lib_bgp_data)
 * [What if Analysis Submodule](#what-if-analysis-submodule)
+The purpose of this class is to determine the effect that security
+policies would have on each AS. This is done through a series of steps.
+
+1. We have hijack tables and the ROV validity table. We first need to permute these tables, to get every possible combination of hijack, policy, and blocked or not blocked. This is done in the split_validitity_table sql queries.
+2. We then combine each of these permutations with the output of the prefix origin pairs from the extrapolator. Remember, the extrapolator has inverse results. In other words, normally the extrapolator contains the local RIB for each ASN. Instead, it now contains everything BUT the local RIB for each ASN (discluding all prefix origin pairs not covered by a ROA). Now, because of this, when we combine each permuation of tables from step 1, we are getting all the data from that table that the ASN did not keep. Knowing this information, we must count the total of things which we did not keep, and subtract them from the total of everything in that category. For example: when we combine the invalid_asn_blocked_hijacked tables with the extrapolation results, we are getting all invalid_asn_blocked_hijacks that the ASN did NOT keep in their local RIB. So we must count these rows, i.e. the total number of invalid_asn_blocked_hijacked that the ASN did not keep, and subtract that number from the total number of invalid_asn_blocked_hijacked to get the total number of invalid_asn_blocked_hijacked that the AS did keep. This idea can be seen in each SQL query in the all_sql_queries. Hard to wrap your head around? I feel you. There's no easy way to explain it. Inverting the extrapolator results makes this process very complex and hard to understand, and I still have trouble thinking about it even though I wrote the code.
+3. Simply run all of these sql queries to get data.
+   Again, apologies for the insufficient explanation. I simply do not know how to write about it any better, and whoever modifies this code after me will probably only be able to understand it with a thorough in person explanation. Good luck.
 
 
-### What if Analysis  Usage
+### What if Analysis Usage
 * [lib\_bgp\_data](#lib_bgp_data)
 * [What if Analysis Submodule](#what-if-analysis-submodule)
-
-
 #### In a Script
+Initializing the What_If_Analysis:
+| Parameter    | Default                             | Description                                                                                                       |
+|--------------|-------------------------------------|-------------------------------------------------------------------------------------------------------------------|
+| name         | ```self.__class__.__name__```     | The purpose of this is to make sure when we clean up paths at the end it doesn't delete files from other parsers. |
+| path         | ```"/tmp/bgp_{}".format(name)```     | Not used                                                                                         |
+| csv_dir      | ```"/dev/shm/bgp_{}".format(name)``` | Path for CSV files, located in RAM                                                                                |
+| stream_level | ```logging.INFO```                        | Logging level for printing                                                                                        |
+> Note that any one of the above attributes can be changed or all of them can be changed in any combination
+
+To initialize What_If_Analysis with default values:
+```python
+from lib_bgp_data import What_If_Analysis
+parser = What_If_Analysis()
+```                 
+To initialize What_If_Analysis with custom path, CSV directory, and logging level:
+```python
+from logging import DEBUG
+from lib_bgp_data import What_If_Analysis
+parser = What_If_Analysis({"path": "/my_custom_path",
+                           "csv_dir": "/my_custom_csv_dir",
+                           "stream_level": DEBUG})
+```
+Running the What_If_Analysis (There are no optional parameters):
+
+To run the What_If_Analysis with defaults:
+```python
+from lib_bgp_data import What_If_Analysis
+What_If_Analysis().run_rov_policy()
+```
 #### From the Command Line
-### What if Analysis  Table Schema
+Coming Soon to a theater near you
+### What if Analysis Table Schema
 * [lib\_bgp\_data](#lib_bgp_data)
 * [What if Analysis Submodule](#what-if-analysis-submodule)
+* These tables contain statistics for different policies
+* Unlogged tables are used for speed
+* Because this whole module creates these tables, the table creation sql is omitted.
+* Output Tables: invalid_asn, invalid_length, rov:
+  * parent_asn: The ASN of the parent AS (stubs not included) *(bigint)*
+  * blocked_hijacked: The total number of prefix origin pairs blocked and hijacked by that policy *(bigint)*
+  * not_blocked_hijacked: The total number of prefix origin pairs not blocked and hijacked by that policy *  (bigint)*
+  * blocked_not_hijacked: The total number of prefix origin pairs blocked and not hijacked by that policy *  (bigint)*
+  * not_blocked_not_hijacked: The total number of prefix origin pairs not blocked and not hijacked by that   policy *(bigint)*
+  * percent_blocked_hijacked_out_of_total_hijacks: self explanatory *(numeric)*
+  * percent_not_blocked_hijacked_out_of_total_hijacks: self explanatory *(numeric)*
+  * percent_blocked_not_hijacked_out_of_total_prefix_origin_pairs *(numeric)*
 
-* [What if Analysis Table Schema](#what-if-analysis-table-schema)
-### What if Analysis  Design Choices
+### What if Analysis Design Choices
 * [lib\_bgp\_data](#lib_bgp_data)
 * [What if Analysis Submodule](#what-if-analysis-submodule)
+    * We permute the hijacks with each policy and blocked or not blocked
+     to make the sql queries easier when combining with the extrapolator
+     results.
+    * We subtract the combination of any hijack table with the
+     extrapolation results from the total to get what each AS actually
+     had (explained above).
+    * We invert extrapolation results to save space and time when doing
+     what if analysis queries. This is because each AS keeps almost all
+     of the announcements sent out over the internet.
+    * If an index is not included it is because it was never used
 
-
-### What if Analysis  Possible Future Improvements
+### What if Analysis Possible Future Improvements
 * [lib\_bgp\_data](#lib_bgp_data)
 * [What if Analysis Submodule](#what-if-analysis-submodule)
-
-
+    * Aggregate what if analysis:
+        * what if analysis for treating multiple asns as a single AS
+    * Add test cases
+    * Multithreading
+    * Make the sql queries into sql files
+    * Add command line args
+    * Add docs on cmd line args and testing
+    * split data into hijacks and subprefix hijacks
+    * simple time heuristic!! (update api as well)
+    * Allow for storage of multiple days worth of announcements
 ## API Submodule
    * [lib\_bgp\_data](#lib_bgp_data)
    * [Short Description](#api-short-description)
@@ -1099,7 +1264,7 @@ Coming Soon to a theater near you
 * [lib\_bgp\_data](#lib_bgp_data)
 * [ROVPP Submodule](#rovpp-submodule)
 
-This module was created to simulate ROV++ over the topology of the internet for a hotnets paper. Due to numerous major last minute changes hardcoding was necessary to meet the deadline, and this submodule quickly turned into garbage. Hopefully we will revisit this and make it into a much better test automation script once we know how we want to run our tests. Due to this, I am not going to write documentation on this currently.
+This module was created to simulate ROV++ over the topology of the internet for a hotnets paper. Due to numerous major last minute changes hardcoding was necessary to meet the deadline, and this submodule quickly became a mess. Hopefully we will revisit this and make it into a much better test automation script once we know how we want to run our tests. Due to this, I am not going to write documentation on this currently.
 ### ROVPP Long description
 * [lib\_bgp\_data](#lib_bgp_data)
 * [ROVPP Submodule](#rovpp-submodule)
