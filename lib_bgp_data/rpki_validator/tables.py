@@ -20,6 +20,8 @@ placeholder of 100 because the RPKI Validator doesn't observe prefix
 origins that are not seen by less than 5 peers.
 
 Design choices:
+    -We serve our own file for the RPKI Validator to be able to use
+     old prefix origin pairs
     -The gzipped prefix origin file contains a placeholder of 100 because
      the RPKI Validator will not use any prefix origin pairs that are
      seen by less than 5 peers.

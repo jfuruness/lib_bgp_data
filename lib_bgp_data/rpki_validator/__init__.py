@@ -41,6 +41,8 @@ database. This is done through a series of steps.
 
 Design choices (summarizing from above):
     -Indexes are not created because they are not ever used
+    -We serve our own file for the RPKI Validator to be able to use
+     old prefix origin pairs
     -Data is bulk inserted into postgres
         -Bulk insertion using COPY is the fastest way to insert data
          into postgres and is neccessary due to massive data size

@@ -1,7 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-"""This module contains table sql queries"""
+"""This module contains sql queries.
+
+These sql queries join the hijack table permutations with the output of
+the extrapolator. See __init__.py for a more
+in depth explanation.
+"""
 
 __author__ = "Justin Furuness"
 __credits__ = ["Justin Furuness", "Luke Malinowski"]
@@ -10,20 +15,17 @@ __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
-#########3
-# This file has been checked and all indexes are used in queries
-
-
-
 # I know the lines on this file will be off, it's crazy sql man whatever
 _get_total_announcements_sql = [
     """DROP TABLE IF EXISTS total_announcements""",
     """CREATE UNLOGGED TABLE total_announcements  AS
-        (SELECT exir.asn, (SELECT count(*) FROM (SELECT DISTINCT prefix, origin FROM mrt_w_roas) a) - count(exir.asn)
+        (SELECT exir.asn, (SELECT count(*) FROM
+            (SELECT DISTINCT prefix, origin FROM mrt_w_roas)
+            a) - count(exir.asn)
         AS total FROM extrapolation_inverse_results exir
         GROUP BY exir.asn);""",
     """CREATE INDEX ON total_announcements(asn);"""]
-# invalid_asn_subtables_sql\
+# invalid_asn_subtables_sql
 _invalid_asn_drop_subtables_sql = [
     """DROP TABLE IF EXISTS invalid_asn_blocked_hijacked_stats""",
     """DROP TABLE IF EXISTS invalid_asn_blocked_not_hijacked_stats""",
@@ -70,7 +72,7 @@ _invalid_asn_subtables_index_sql = [
     """CREATE INDEX ON invalid_asn_not_blocked_hijacked_stats(asn);"""]
 _invalid_asn_subtables_sql = _invalid_asn_drop_subtables_sql
 _invalid_asn_subtables_sql += _invalid_asn_create_subtables_sql
-_invalid_asn_subtables_sql +=  _invalid_asn_subtables_index_sql
+_invalid_asn_subtables_sql += _invalid_asn_subtables_index_sql
 
 
 # invalid_length_subtables_sql
@@ -101,7 +103,8 @@ _invalid_length_create_subtables_sql = [
             GROUP BY exir.asn) missed
         ON ta.asn = missed.asn;""",
     """CREATE TABLE invalid_length_not_blocked_hijacked_stats AS
-        SELECT ta.asn, (SELECT COUNT(*) FROM invalid_length_not_blocked_hijacked)
+        SELECT ta.asn, (SELECT COUNT(*)
+                FROM invalid_length_not_blocked_hijacked)
             - COALESCE(missed.total, 0) AS total FROM total_announcements ta
         LEFT JOIN (
             SELECT exir.asn, COUNT(exir.asn) AS total
@@ -116,8 +119,8 @@ _invalid_length_subtables_index_sql = [
     """CREATE INDEX ON invalid_length_not_blocked_hijacked_stats(asn);"""]
 _invalid_length_subtables_sql = _invalid_length_drop_subtables_sql
 _invalid_length_subtables_sql += _invalid_length_create_subtables_sql
-_invalid_length_subtables_sql +=  _invalid_length_subtables_index_sql
- 
+_invalid_length_subtables_sql += _invalid_length_subtables_index_sql
+
 _invalid_asn_policy_sql = [
     "DROP TABLE IF EXISTS invalid_asn",
     """CREATE TABLE invalid_asn AS SELECT
@@ -208,18 +211,22 @@ _rov_policy_sql = [
       ((ilp.blocked_hijacked::decimal + iap.blocked_hijacked::decimal)*100
            ::decimal/
        COALESCE(NULLIF(
-       (ilp.blocked_hijacked::decimal + iap.blocked_hijacked::decimal),0),1)), 2)
+       (ilp.blocked_hijacked::decimal + iap.blocked_hijacked::decimal),0),1)),
+              2)
           AS percent_blocked_hijacked_out_of_total_hijacks,
     TRUNC(
       ((ilp.not_blocked_hijacked::decimal + ilp.blocked_hijacked::decimal
           - iap.blocked_hijacked::decimal - ilp.blocked_hijacked::decimal)
            ::decimal*100::decimal/
        COALESCE(NULLIF(
-       (ilp.blocked_hijacked::decimal + iap.blocked_hijacked::decimal),0),1)), 2)
+       (ilp.blocked_hijacked::decimal + iap.blocked_hijacked::decimal),0),1)),
+            2)
         AS percent_not_blocked_hijacked_out_of_total_hijacks,
     TRUNC(
-        ((ilp.blocked_not_hijacked::decimal + iap.blocked_not_hijacked::decimal)
-            ::decimal*100::decimal/COALESCE(NULLIF(asns.total::decimal,0),1)), 2)
+        ((ilp.blocked_not_hijacked::decimal +
+          iap.blocked_not_hijacked::decimal)
+            ::decimal*100::decimal/COALESCE(NULLIF(asns.total::decimal,0),1)),
+            2)
         AS percent_blocked_not_hijacked_out_of_total_prefix_origin_pairs
 
     FROM total_announcements asns

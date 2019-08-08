@@ -1,7 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-"""This module contains table sql queries"""
+"""This module contains sql queries.
+
+These sql queries permute the hijack table with every possible
+combination of blocked or not, and policy. See __init__.py for a more
+in depth explanation.
+"""
 
 __author__ = "Justin Furuness"
 __credits__ = ["Justin Furuness"]
@@ -11,7 +16,6 @@ __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
 
-#split_validity_table_sql
 _drop_tables = [
     "DROP TABLE IF EXISTS invalid_length_blocked_hijacked",
     "DROP TABLE IF EXISTS invalid_length_blocked_not_hijacked",
@@ -58,9 +62,5 @@ _create_tables = [
     INNER JOIN hijack_temp h
     ON h.prefix = v.prefix AND h.origin = v.origin
     WHERE v.validity >=0);"""]
-
-# NOT A SINGLE ONE OF THESE ARE EVER USED SO THEY HAVE BEEN REMOVED
-# Used to do index on prefix, and on prefix/origin
-# none where ever used anywhere even with specific asn stuff
 
 split_validity_table_sql = _drop_tables + _create_tables
