@@ -52,6 +52,8 @@ Please note: These steps are not necessarily linear, as much of this is done in 
 * [Table Schema](#forecast-table-schema)
 * [Design Choices](#forecast-design-choices)
 * [Possible Future Improvements](#forecast-possible-future-improvements)
+
+Status: Development
 ### Forecast Short description
 * [lib\_bgp\_data](#lib_bgp_data)
 * [Forecast Submodule](#forecast-submodule)
@@ -80,6 +82,8 @@ Please note: These steps are not necessarily linear, as much of this is done in 
    * [Table Schema](#mrt-announcements-table-schema)
    * [Design Choices](#mrt-announcements-design-choices)
    * [Possible Future Improvements](#mrt-announcements-possible-future-improvements)
+ 
+Status: Development
 ### MRT Announcements Short description
 * [lib\_bgp\_data](#lib_bgp_data)
 * [MRT Announcements Submodule](#mrt-announcements-submodule)
@@ -303,6 +307,8 @@ Coming Soon to a theater near you
    * [Table Schema](#relationships-table-schema)
    * [Design Choices](#relationships-design-choices)
    * [Possible Future Improvements](#relationships-possible-future-improvements)
+
+Status: Development
 ### Relationships Short description
 * [lib\_bgp\_data](#lib_bgp_data)
 * [Relationships Submodule](#relationships-submodule)
@@ -517,6 +523,8 @@ Coming Soon to a theater near you
    * [Table Schema](#roas-table-schema)
    * [Design Choices](#roas-design-choices)
    * [Possible Future Improvements](#roas-possible-future-improvements)
+
+Status: Development
 ### Roas Short description
 * [lib\_bgp\_data](#lib_bgp_data)
 * [Roas Submodule](#roas-submodule)
@@ -612,6 +620,8 @@ Coming Soon to a theater near you
    * [Long Description](#extrapolator-long-description)
    * [Usage](#extrapolator-usage)
    * [Possible Future Improvements](#extrapolator-possible-future-improvements)
+
+Status: Development
 ### Extrapolator Short description
 * [lib\_bgp\_data](#lib_bgp_data)
 * [Extrapolator Submodule](#extrapolator-submodule)
@@ -661,6 +671,8 @@ Extrapolator().run_rovpp(attacker_asn, victim_asn, more_specific_prefix)
    * [Table Schema](#bgpstream-website-table-schema)
    * [Design Choices](#bgpstream-website-design-choices)
    * [Possible Future Improvements](#bgpstream-website-possible-future-improvements)
+
+Status: Development
 ### BGPStream Website Short description
 * [lib\_bgp\_data](#lib_bgp_data)
 * [BGPStream Website Submodule](#bgpstream-website-submodule)
@@ -980,6 +992,8 @@ Coming Soon to a theater near you
    * [Table Schema](#rpki-validator-table-schema)
    * [Design Choices](#rpki-validator-design-choices)
    * [Possible Future Improvements](#rpki-validator-possible-future-improvements)
+
+Status: Development
 ### RPKI Validator Short description
 * [lib\_bgp\_data](#lib_bgp_data)
 * [RPKI Validator Submodule](#rpki-validator-submodule)
@@ -1122,6 +1136,8 @@ Coming Soon to a theater near you
    * [Table Schema](#what-if-analysis-table-schema)
    * [Design Choices](#what-if-analysis-design-choices)
    * [Possible Future Improvements](#what-if-analysis-possible-future-improvements)
+
+Status: Development
 ### What if Analysis  Short description
 * [lib\_bgp\_data](#lib_bgp_data)
 * [What if Analysis Submodule](#what-if-analysis-submodule)
@@ -1223,6 +1239,8 @@ Coming Soon to a theater near you
    * [Usage](#api-usage)
    * [Design Choices](#api-design-choices)
    * [Possible Future Improvements](#api-possible-future-improvements)
+
+Status: Development
 ### API Short Description
 * [lib\_bgp\_data](#lib_bgp_data)
 * [API Submodule](#api-submodule)
@@ -1279,6 +1297,8 @@ Coming soon to a theater near you
    * [Table Schema](#rovpp-table-schema)
    * [Design Choices](#rovpp-design-choices)
    * [Possible Future Improvements](#rovpp-possible-future-improvements)
+
+Status: Development
 ### ROVPP Short description
 * [lib\_bgp\_data](#lib_bgp_data)
 * [ROVPP Submodule](#rovpp-submodule)
@@ -1328,6 +1348,8 @@ This module was created to simulate ROV++ over the topology of the internet for 
    * [lib\_bgp\_data](#lib_bgp_data)
    * [Description](#utils-description)
    * [Possible Future Improvements](#utils-possible-future-improvements)
+
+Status: Development
 ### Utils Description
 * [lib\_bgp\_data](#lib_bgp_data)
 * [Utils](#utils)
@@ -1359,12 +1381,16 @@ Below is a quick list of functions that might be helpful. For more in depth expl
 	* Possibly move functions that are only used in one file out of the utils folder - find out what these are
 	* Refactor - shouldn't need much though
 	* Unit tests for some functions
+	* Put underscores in front of private variables
+	* Write docs on unit tests
 
 ## Config Submodule
    * [lib\_bgp\_data](#lib_bgp_data)
    * [Description](#config-submodule-description)
    * [Design Choices](#config-submodule-design-choices)
    * [Possible Future Improvements](#config-submodule-possible-future-improvements)
+
+Status: Development
 ### Config Submodule Description
 * [lib\_bgp\_data](#lib_bgp_data)
 * [Config Submodule](#config-submodule)
@@ -1376,6 +1402,7 @@ This module contains a config class that creates and parses a config file. To av
 * [Config Submodule](#config-submodule)
 
 	* Unit tests
+	* Add docs on unit tests
 
 ## Database Submodule
    * [lib\_bgp\_data](#lib_bgp_data)
@@ -1383,6 +1410,8 @@ This module contains a config class that creates and parses a config file. To av
    * [Usage](#database-usage)
    * [Design Choices](#database-design-choices)
    * [Possible Future Improvements](#database-possible-future-improvements)
+
+Status: Development
 ### Database Description
 * [lib\_bgp\_data](#lib_bgp_data)
 * [Database Submodule](#database-submodule)
@@ -1409,49 +1438,144 @@ Note that we NEVER alter the config file for the database. We only ever use the 
 
 
 #### In a Script
+Initializing the Database using db_connection (which should always be used):
+
+
+| Parameter    | Default                             | Description                                                                                                       |
+|--------------|-------------------------------------|-------------------------------------------------------------------------------------------------------------------|
+| table | Database | What gets initialized |
+| logger         | ```Thread_Safe_Logger()```     | Logger used to log information |
+| clear | ```False``` | Clear table upon initialization. Leave for normal db usage | 
+| cursor_factory         | ```RealDictCursor```     | Format for how data is returned                                                                                         |
+> Note that any one of the above attributes can be changed or all of them can be changed in any combination
+
+To initialize Database with default values using db_connection:
+```python
+from lib_bgp_data import Database, db_connection
+with db_connection(Database) as db:
+    pass
+```                 
+To initialize the Database with logger on debug using db_connection:
+```python
+from logging import DEBUG
+from lib_bgp_data import Database, db_connection, Thread_Safe_Logger as Logger
+with db_connection(Database, Logger({"stream_level": DEBUG)) as db:
+    pass
+```
+To initialize the Database with a custom cursor factory other than RealDictCursor and custom logging:
+```python
+from logging import DEBUG
+from psycopg2.extras import NamedTupleCursor
+from lib_bgp_data import Database, db_connection, Thread_Safe_Logger as Logger
+with db_connection(Database,
+                   Logger({"stream_level": DEBUG),
+                   cursor_factory=NamedTupleCursor) as db:
+    pass
+```
+To get data from a query:
+```python
+from lib_bgp_data import Database, db_connection
+with db_connection(Database) as db:
+    data = db.execute("SELECT * FROM my_table WHERE my_val=%s", [1])
+```
+To execute multiple sql queries at once:
+```python
+from lib_bgp_data import Database, db_connection
+with db_connection(Database) as db:
+	sqls = ["SELECT * FROM my_table", "SELECT * FROM my_table2"]
+    data = db.multiprocess_execute(sqls)
+```
+To unhinge/rehinge database (disable writing to disk, then reenable it):
+```python
+from lib_bgp_data import Database, db_connection
+with db_connection(Database) as db:
+	db.unhinge_db()
+	# do intensive queries
+	db.rehinge_db()
+```
 #### From the Command Line
+Coming Soon to a theater near you
 ### Database Design Choices
 * [lib\_bgp\_data](#lib_bgp_data)
 * [Database Submodule](#database-submodule)
+	* RealDictCursor is used as the default cursor factory because it is more OO and using a dictionary is very intuitive.
+	* Unlogged tables are used for speed
+	* Most safety measures for corruption and logging are disabled to get a speedup since our database is so heavily used with such massive amounts of data
 
-
-unlogged tables
 ### Database Possible Future Improvements
 * [lib\_bgp\_data](#lib_bgp_data)
 * [Database Submodule](#database-submodule)
-
+	* Move unhinge and rehinge db to different SQL files
+	* Perform unit tests
+	* Add cmd line args
+	* Add docs on unit tests and cmd line args
+	* Fix bare except on line 101
 
 ### Database Installation
 * [lib\_bgp\_data](#lib_bgp_data)
 * [Database Submodule](#database-submodule)
 
+See: [Installation Instructions](#installation-instructions)
 
-PUT LINK HERE TO DB INSTALL INSTRUCTIONS BELOW!!
 ## Logging Submodule
    * [lib\_bgp\_data](#lib_bgp_data)
    * [Description](#logging-description)
    * [Error Catcher](#error-catcher)
    * [Design Choices](#logging-design-choices)
    * [Possible Future Improvements](#logging-possible-future-improvements)
+
+Status: Development
 ### Logging Description
 * [lib\_bgp\_data](#lib_bgp_data)
 * [Logger Submodule](#logger-submodule)
+The Logger class used to be the logging class that was used. This class
+sets a logging level for printing and for writing to a file. However,
+it turns out that the logging module is insanely bad for multithreading.
+So insane, that you cannot even import the dang thing without having it
+deadlock on you. Crazy, I know. So therefore, I created another logging
+class called Thread_Safe_Logger. This class basically emulates a logger
+except that it only prints, and never writes to a file. It also never
+deadlocks.
 
+There is also a nice decorator called error_catcher. The point of this
+was supposed to be to catch any errors that occur and fail nicely with
+good debug statements, which is especially useful when multithreading.
+However with unit testing, it needs to be able fail really horribly,
+so that has become disabled as well. Still, eventually it will be
+fixed, so all functions that have self should be contained within the
+error catcher.
+
+For an explanation on how logging works:
+logging has different levels. If you are below the set logging level,
+nothing gets recorded. The levels are, in order top to bottom:
+
+        logging.CRITICAL
+        logging.ERROR
+        logging.WARNING
+        logging.INFO
+        logging.DEBUG
+        logging.NOTSET
 
 ### Error Catcher
 * [lib\_bgp\_data](#lib_bgp_data)
 * [Logger Submodule](#logger-submodule)
-
+A decorator to be used in all class functions that catches errors and fails nicely with good debug information
 
 ### Logging Design Choices
 * [lib\_bgp\_data](#lib_bgp_data)
 * [Logger Submodule](#logger-submodule)
-
+	* Logger class is not used because logging deadlocks just on import
+	* Thread_Safe_Logger is used because it does not deadlock
+	* error_catcher is used so that functions fail nicely
 
 ### Logging Possible Future Improvements
 * [lib\_bgp\_data](#lib_bgp_data)
 * [Logger Submodule](#logger-submodule)
-
+	* Fix the error catcher
+	* Possibly use the Logger class to log all things in the API?
+	* Figure out how to use this class while multithreading
+	* Figure out how to exit nicely and not ruin my unit tests
+	* Put underscores in front of private vars/funcs
 
 ## Installation
    * [lib\_bgp\_data](#lib_bgp_data)
@@ -1459,8 +1583,11 @@ PUT LINK HERE TO DB INSTALL INSTRUCTIONS BELOW!!
    * [Postgres Installation](#postgres-instructions)
    * [System Requirements](#system-requirements)
    * [Installation Submodule](#installation-submodule)
+
+Status: Development
 ### Installation instructions
 * [lib\_bgp\_data](#lib_bgp_data)
+* [Installation Instructions](#installation-instructions)
 * [Installation Submodule](#installation-submodule)
 
 
@@ -1469,7 +1596,7 @@ First you need some dependencies. Run
 sudo apt-get install python-psycopg2
 sudo apt-get install libpq-dev
 ```
-Then install postgres 11 (see [Postgres Installation](#postgres-installation)
+Then install postgres 11 (see [Postgres Installation](#postgres-installation))
 
 If you are on a machine that has SELinux, you are going to need to run this in a python environment. On Ubuntu, the steps are as follows
 ```bash
@@ -1485,7 +1612,8 @@ Once you have virtualenv installed, run
 python3 -m venv env
 source ./env/bin/activate
 ```
-You now have a python virtual environment where you do not need sudo to install packages. Then run:
+You now have a python virtual environment where you do not need sudo to install packages. 
+Then, if you are not installing for development, run:
 ```bash
 pip3 install wheel --upgrade
 pip3 install lib_bgp_data --upgrade
@@ -1502,15 +1630,18 @@ python3 setup.py sdist bdist_wheel
 python3 setup.py develop
 ```
 
-After this you are going to need a install a couple of other things to be able to use most features. bgscanner, bgpdump, and the extrapolator are all automatically installed and moved to /usr/bin. bgpdump must be installed from source because it has bug fixes that are necessary. The RPKI validator (for now) must be manually installed.
+After this you are going to need a install a couple of other things to be able to use most features. bgscanner, bgpdump, and the extrapolator are all automatically installed and moved to /usr/bin. bgpdump must be installed from source because it has bug fixes that are necessary. The RPKI validator is installed and move to /var/lib.
 >bgpscanner manual install link:
 >[https://gitlab.com/Isolario/bgpscanner](https://gitlab.com/Isolario/bgpscanner)
 >bgpdump manual install link:
 >[https://bitbucket.org/ripencc/bgpdump/wiki/Home](https://bitbucket.org/ripencc/bgpdump/wiki/Home)
 >extrapolator manual install link:
 >[https://github.com/c-morris/BGPExtrapolator](https://github.com/c-morris/BGPExtrapolator)
+>RPKI Validator manual install link:
+>[https://www.ripe.net/manage-ips-and-asns/resource-management/certification/tools-and-resources](https://www.ripe.net/manage-ips-and-asns/resource-management/certification/tools-and-resources)
 
-To run the automatic install process, make a script called install.py with:
+To run the automatic install process, make a script called install.py with the script below.
+WARNING: THIS WILL OVERWRITE ALL PREVIOUS DB AND OTHER CONFIGURATIONS:
 ```python
 from lib_bgp_data import Install
 Install().install()
@@ -1523,6 +1654,7 @@ Install().install(fresh_install=False)
 This will automate the installation process, and from here you should be ready to go
 ### Postgres Installation
 * [lib\_bgp\_data](#lib_bgp_data)
+* [Installation Instructions](#installation-instructions)
 * [Installation Submodule](#installation-submodule)
 
 
@@ -1549,28 +1681,83 @@ sudo systemctl status postgresql
 
 ### System Requirements
 * [lib\_bgp\_data](#lib_bgp_data)
+* [Installation Instructions](#installation-instructions)
 * [Installation Submodule](#installation-submodule)
+
+For storage, you are going to want at least 100 GB, probably more, for the database. If you ever want to perform an uninverted extrapolation run, you will need at least 500GB worth of space, maybe more depending on how large the MRT announcements are. My personal recommendation just to be save would be to have 1000GB worth of storage space. And that is just for one run. To do multiple runs, and just in case, I'd have double or triple that, or at some point if you try to add on future extensions, you might be hurting for space.
+
+For the database, an SSD is best. RAID 1 or RAID 10 is the fastest. We are using RAID 1 because who the heck wants to buy 10 SSDs, and data corruption doesn't matter. You might be able to get away without an SSD, but the large majority of every parser, including the extrapolator, is spent writing to the database. So while you might not need an SSD, everything will take much longer.
+
+For the number of cores, the more the merrier. The MRT parser is multithreaded, but more importantly so is the database, and there are some queries we have that are using 8+ threads on our server that take 1-3 hours (specifically when the MRT announcements are joined with the ROAs). Our machine I believe has 12 cores. We've used a VM that had 36 cores, but I don't think postgres ever used more than 8 cores at once, although I could be wrong.
+
+For the amount of RAM, I think this also largely depends on the extrapolator, which needs A LOT of RAM to run. How much, I don't know, that is not part of this package and you should refer to their github here: [https://github.com/c-morris/BGPExtrapolator](https://github.com/c-morris/BGPExtrapolator). If they don't have it written down perhaps they don't know either. This also matters a lot for the database. We have about 80GB of RAM in our machine, so many massive table joins can be done entirely in RAM, which makes the database a heck of a lot faster. You don't need RAM for the database, but without at least 50GB most joins will have to be written to disk which will slow queries down.
 
 
 ### Installation Submodule
 * [lib\_bgp\_data](#lib_bgp_data)
+* [Installation Instructions](#installation-instructions)
 * [Installation Submodule](#installation-submodule)
-
+* [Installation Submodule Description](#installation-submodule-description)
+* [Installation Submodule Design Choices](#installation-submodule-design-choices)
+* [Installation Submodule Possible Future Extensions](#installation-submodule-possible-future-extensions)
 
 #### Installation Submodule Description
 * [lib\_bgp\_data](#lib_bgp_data)
+* [Installation Instructions](#installation-instructions)
 * [Installation Submodule](#installation-submodule)
 
 
+The Install class contains the functionality to create through a script
+everything that is needed to be used for the program to run properly.
+This is done through a series of steps.
+
+1. Create the config file. This is optional in case a config was created
+	* This is handled by the config class
+    * The fresh_install arg is by default set to true for a new config
+2. Install the new database and database users. This is optional.
+    * This is handled by _create_database
+    * If a new config is created, a new database will be created
+3. Then the database is modified.
+    * This is handled by modify_database
+    * If unhinged argument is passed postgres won't write to disk
+        * All writing to disk must be forced with vaccuum
+        * If data isn't written to disk then memory will be leaked
+4. Then the extrapolator is installed
+    * Handled in the _install_forecast_extrapolator and _install_rovpp_extrapolator function
+    * The rov and forecast versions of the extrapolator are isntalled
+    * The extrapolators are copied into /usr/bin for later use
+5. Then bgpscanner is installed
+    * Handled in the _install_bgpscanner function
+    * Once it is isntalled it is copied into /usr/bin for later use
+6. Then bgpdump is installed
+    * Handled in the _install_bpdump function
+    * Must be installed from source due to bug fixes
+    * Copied to /usr/bin for later use
+7. Then the rpki validator is installed
+    * Handled in the _install_rpki_validator functions
+    * Config files are swapped out for our own
+    * Installed in /var/lib
+   
 #### Installation Submodule Design Choices
 * [lib\_bgp\_data](#lib_bgp_data)
+* [Installation Instructions](#installation-instructions)
 * [Installation Submodule](#installation-submodule)
+    * Database modifications increase speed
+        * Tradeoff is that upon crash corruption occurs
+        * These changes are made at a cluster level
+            * (Some changes affect all databases)
+    * bgpdump must be installed from source due to bug fixes
 
 
-#### Installation Submodule Future Extensions
+#### Installation Submodule Possible Future Extensions
 * [lib\_bgp\_data](#lib_bgp_data)
+* [Installation Instructions](#installation-instructions)
 * [Installation Submodule](#installation-submodule)
-
+	* Add test cases
+    * Move install scripts to different files, or SQL files, or to their respective submodules
+    * I shouldn't have to change lines in the extrapolator to get it to run
+    * Add cmd line args
+    * Add docs on cmd line args and tests
 
 ## Adding a Submodule
    * [lib\_bgp\_data](#lib_bgp_data)
@@ -1620,14 +1807,76 @@ Lets take a look at the file tables.py. This file typically contains all the dat
 There you have it. Please let me know any questions you might have. Take a look at the [Utils](#utils) section for things you may want to use in your submodule.
 ## Development/Contributing
    * [lib\_bgp\_data](#lib_bgp_data)
-   add note here about how to add a submodule and stuff
+
+1. Fork it!
+2. Create your feature branch: `git checkout -b my-new-feature`
+3. Commit your changes: `git commit -am 'Add some feature'`
+4. Push to the branch: `git push origin my-new-feature`
+5. Submit a pull request
+6. Email me at jfuruness@gmail.com because idk how to even check those messages
+
+To add your own submodule: [How to Add a Submodule](#how-to-add-a-submodule)
+
 ## History
    * [lib\_bgp\_data](#lib_bgp_data)
 ## Credits
    * [lib\_bgp\_data](#lib_bgp_data)
-    Make sure to credit everyone in the files, profs, stack overflow posts, and bgpscaner team for helping out
+
+This is a massive python package, and it obviously would not have been possible without lots of help.
+
+First of all, thanks to Comcast for funding such amazing research. It had really been a pleasure working with you guys and this research is yielding some pretty incredible results.
+
+Thanks to Dr. Amir Herzberg and Dr. Bing Wang with all the help for leading the development team and for all of their knowledge on this subject, and for employing me to work on this.
+
+Thanks to Cameron Morris for his help writing the RPKI Validator submodule, and configuring the RPKI Validator to run off of our own file. Also thanks for pointing out other bugs throughout development. And pulling numerous all nighters with me to push for getting the forecast up and running for deadlines for demonstrations. Definitely MVP.
+
+Thanks to James Breslin and Luke Malinowski for their help in debugging some SQL queries.
+
+Thanks to Reynaldo Morris for his help for showing me how to configure the API to use flasgger docs and writing the first YAML file. Thanks also for writing the first draft of the traceback function used in the ROVPP submodule.
+
+Thanks to Cameron, Reynaldo, and James for connecting the API to the website
+
+There is also all  of the tools that we use:
+Thanks to the bgpscanner team. The tool is amazing, it is much faster than bgpdump. They also helped me out to modify their script, and were very responsive to emails.
+[https://gitlab.com/Isolario/bgpscanner](https://gitlab.com/Isolario/bgpscanner)
+
+Thanks to the people behind the RPKI Validator. It is an extremely useful and fast tool.
+[https://www.ripe.net/manage-ips-and-asns/resource-management/certification/tools-and-resources](https://www.ripe.net/manage-ips-and-asns/resource-management/certification/tools-and-resources)
+
+Thanks to the people behind bgpdump. This tool was what we originally used and has had consistent updates. 
+[https://bitbucket.org/ripencc/bgpdump/wiki/Home](https://bitbucket.org/ripencc/bgpdump/wiki/Home)
+
+Thanks to Caida for their MRT and Relationship data, which is extremely useful:
+[http://www.caida.org/home/](http://www.caida.org/home/)
+
+Thanks to ISOlario for their MRT data, which we have not yet integrated but will soon:
+[https://www.isolar.io/](https://www.isolar.io/)
+
+Thanks to bgpstream.com for their information on hijackings:
+[https://bgpstream.com/](https://bgpstream.com/)
+
+Thanks to the amazing team behind the extrapolator:
+[https://github.com/c-morris/BGPExtrapolator](https://github.com/c-morris/BGPExtrapolator)
+
+Thanks to all of these blogs, stack overflow posts, etc. for their help in solving various issues:
+* https://stackoverflow.com/a/28822227
+* https://unix.stackexchange.com/questions/145402/
+* https://github.com/uqfoundation/pathos/issues/111
+* https://www.2ndquadrant.com/en/blog/
+* https://www.postgresql.org/docs/current/
+* https://dba.stackexchange.com/a/18486
+* https://severalnines.com/blog/
+* https://www.postgresql.org/docs/9.1/runtime-config-resource.html
+* https://stackoverflow.com/questions/21127360/
+* https://jichu4n.com/posts/how-to-add-custom-build-steps-and-commands-to-setuppy/
+* https://stackoverflow.com/questions/1321270/how-to-extend-distutils-with-a-simple-post-install-script/1321345#1321345
+* https://stackoverflow.com/questions/14441955/how-to-perform-custom-build-steps-in-setup-py
+
 ## License
    * [lib\_bgp\_data](#lib_bgp_data)
+
+MIT License
+
 ## TODO/Possible Future Improvements
    * [lib\_bgp\_data](#lib_bgp_data)
 command line args
