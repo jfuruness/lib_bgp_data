@@ -9,7 +9,9 @@ For the specifics on how the extrapolator is run see each function
 """
 
 from subprocess import check_call, DEVNULL
+from .tables import Extrapolator_Inverse_Results_Table
 from ..utils import error_catcher, utils
+from ..database import db_connection
 # Justin globals are bad yah you know what else is bad? the logging
 # module that deadlocks upon import
 DEBUG = 10
@@ -48,6 +50,14 @@ class Extrapolator:
             check_call(bash_args, shell=True)
         else:
             check_call(bash_args, stdout=DEVNULL, stderr=DEVNULL, shell=True)
+        self._create_index()
+
+    @error_catcher()
+    def _create_index(self):
+        self.logger.info("Creating index on the extrapolation results")
+        with db_connection(Extrapolator_Inverse_Results_Table,
+                           self.logger) as db:
+            db.create_index()
 
     @error_catcher()
     @utils.run_parser()

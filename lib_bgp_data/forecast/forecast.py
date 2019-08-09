@@ -31,33 +31,30 @@ class Forecast:
     """This class contains all the neccessary parsing functions"""
 
 #    @utils.run_parser()
-    def __init__(self,
-                 start=utils.get_default_start(),
-                 end=utils.get_default_end(),
-                 filter_by_roas=True,
-                 fresh_install=False,
-                 forecast_args={},
-                 mrt_args={},
-                 mrt_parse_args={},
-                 rel_args={},
-                 rel_parse_args={},
-                 roas_args={},
-                 web_args={},
-                 web_parse_args={},
-                 what_if_args={},
-                 what_if_parse_args={},
-                 rpki_args={},
-                 rpki_parse_args={}):
-        """Initializes vars such as log level etc
+    def __init__(self, forecast_args):
+        """Initializes paths and logger."""
 
-        kwargs dictionary includes <name_of_parser>_args"""
+        utils.set_common_init_args(self, forecast_args),
 
-        utils.set_common_init_args(self, forecast_args)
-        self.logger.info("starting Forecast")
+    def run_forecast(self,
+                     start=utils.get_default_start(),
+                     end=utils.get_default_end(),
+                     fresh_install=False,
+                     mrt_args={},
+                     mrt_parse_args={},
+                     rel_args={},
+                     rel_parse_args={},
+                     roas_args={},
+                     web_args={},
+                     web_parse_args={},
+                     what_if_args={},
+                     what_if_parse_args={},
+                     rpki_args={},
+                     rpki_parse_args={},
+                     test=False):
 
         if fresh_install:
             Install().install(fresh_install)
-            input("done")
         # First we want to parse the mrt files and create the index
         # This uses all the threads, so no need to multithread
         MRT_Parser(mrt_args).parse_files(start, end, **mrt_parse_args)
@@ -68,44 +65,28 @@ class Forecast:
         ROAs_Collector(roas_args).parse_roas()
         # Get hijack data. The first time takes a while
         BGPStream_Website_Parser(web_args).parse(start, end, **web_parse_args)
-        if filter_by_roas:
+
+        with db_connection(Database, self.logger) as db:
+            sql = """DELETE FROM mrt_announcements
+                  WHERE prefix != '1.0.0.0/24';"""
+            if test:
+                db.execute(sql)
+            db.vacuum_analyze_checkpoint()
+
             # Only keep announcements covered by a roa
             # drops old table, unhinges db, performs query, rehinges db
-            with db_connection(MRT_W_Roas_Table, self.logger) as db:
-                db.create_index()
-                self.logger.info("analyzing now")
-                db.execute("VACUUM ANALYZE;")
-        input_table = "mrt_w_roas" if filter_by_roas else None
+            with db_connection(MRT_W_Roas_Table, self.logger) as mrt_db:
+                mrt_db.create_index()
+                mrt_db.vacuum_analyze_checkpoint()
+                input_table = mrt_db.name
 
-        Extrapolator().run_forecast(input_table)
-        create_exr_index_sqls = ["""CREATE INDEX ON 
-            extrapolation_inverse_results USING GIST(prefix inet_ops);""",
-            """CREATE INDEX ON extrapolation_inverse_results
-                USING GIST(prefix inet_ops, origin);"""]
+            # Runs the extrapolator and creates the neccessary indexes
+            Extrapolator().run_forecast(input_table)
 
+            RPKI_Validator(rpki_args).run_validator(rpki_parse_args)
 
+            db.vacuum_analyze_checkpoint()
 
-        RPKI_Validator(rpki_args).run_validator(rpki_parse_args)
-        input("ABOUT TO PERFORM Multiproc exec")
-        input("PRESS ONE MORE TIME")
-        # Generates the final stubs table, and creates indexes
-        with db_connection(Database, self.logger) as db:
-            db.multiprocess_execute(create_exr_index_sqls)
-        with db_connection(Stubs_Table, self.logger) as db:
-            db.generate_stubs_table()
-            db.cursor.execute("VACUUM FULL ANALYZE;")
+            What_If_Analysis(what_if_analysis_args).run_rov_policy()
 
-
-            db.cursor.execute("CHECKPOINT;")
-
-        rpki_process.join()#############################     
-#        rpki_process.join()#######################
-        input("rpki done running")
-        wia = What_If_Analysis(what_if_analysis_args)
-        wia.run_policies()
-        with db_connection(Database, self.logger) as db:
-            # CLEAN OUT DATABASE HERE!!!!!!!!
-            db.cursor.execute("VACUUM FULL ANALYZE;")
-
-
-            db.cursor.execute("CHECKPOINT;")
+            db.vacuum_analyze_checkpoint(full=True)

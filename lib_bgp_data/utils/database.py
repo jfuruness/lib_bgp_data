@@ -150,10 +150,20 @@ class Database:
         self.cursor.close()
         self.conn.close()
 
-    def vacuum(self):
-        """Vaccums db for efficiency"""
+    def vacuum_analyze_checkpoint(self, full=False):
+        """Vaccums, analyzes, and checkpoints.
 
-        self.cursor.execute("VACUUM")
+        Vacuum saves space and improves efficiency.
+        Analyze creates statistics on tables for better query planning.
+        Checkpoint writes memory to disk.
+        A full vacuum rewrites entire db to save space.
+        """
+
+        self.logger.info("Vacuum analyzing db now")
+        self.execute("VACUUM ANALYZE;")
+        self.execute("CHECKPOINT;")
+        if full:
+            self.execute("VACUUM FULL ANALYZE;")
 
     @error_catcher()
     def unhinge_db(self):
