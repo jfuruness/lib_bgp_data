@@ -1,6 +1,9 @@
 
+
 # lib\_bgp\_data
 This package contains multiple submodules that are used to gather and manipulate real data in order to simulate snapshots of the internet. The purpose of this is to test different security policies to determine their accuracy, and hopefully find ones that will create a safer, more secure, internet as we know it.
+
+*disclaimer: If a submodule is in development, that means that it unit tests are in the process of being written, and changes need to be made before the data can be considered reliable*
 
 * [lib\_bgp\_data](#lib_bgp_data)
 * [Description](#package-description)
@@ -28,7 +31,7 @@ This package contains multiple submodules that are used to gather and manipulate
 * [FAQ](#faq)
 ## Package Description
 * [lib\_bgp\_data](#lib_bgp_data)
-This README is split up into several subsections for each of the submodules included in this package. Each subsection has it's own descriptions, usage instructions, etc. The main (LINK HERE) subsection details how all of the submodules combine to completely simulate the internet. For an overall view of how the project will work, see below:
+This README is split up into several subsections for each of the submodules included in this package. Each subsection has it's own descriptions, usage instructions, etc. The [Forecast Submodule](#forecast-submodule) subsection details how all of the submodules combine to completely simulate the internet. For an overall view of how the project will work, see below:
 
 **![](https://docs.google.com/drawings/u/0/d/sx3R9HBevCu5KN2luxDuOzw/image?w=864&h=650&rev=1621&ac=1&parent=1fh9EhU9yX9X4ylwg_K-izE2T7C7CK--X-Vfk1qqd1sc)**
 Picture link: https://docs.google.com/document/d/1fh9EhU9yX9X4ylwg_K-izE2T7C7CK--X-Vfk1qqd1sc/edit?usp=sharing
@@ -37,12 +40,13 @@ Please note: These steps are not necessarily linear, as much of this is done in 
 1. The project first starts by using the [MRT Parser](#mrt-announcements-submodule) to collect all announcements sent over the internet for a specific time interval. This usually takes around 15-20 minutes on our machine and results in approximately 40-100 GB of data.
 2. The [Roas Parser](#roas-submodule) also downloads all the ROAs for that time interval. This usually takes a couple of seconds.
 3. A new table is formed with all mrt announcements that have ROAs. This join is done by checking whether or not the prefixes of the MRT announcements are a subset of the prefixes in the ROAs table. Because this is an expensive operation, and is done on a 40GB+ table, this takes an hour or two on our machine.
-5. The relationships data [Relationships Parser](#relationships-submodule) is also gathered in order to be able to simulate the connections between different AS's on the internet. This takes a couple of seconds.
-6. Each of these data sets gets fed into the [Extrapolator](#extrapolator-submodule) which then creates a graph of the internet and propagates announcements through it. After this stage is complete, there is a graph of the internet, with each AS having all of it's announcements that was propagated to it (with the best announcement for each prefix saved based on gao rexford). The [Extrapolator](#extrapolator-submodule) itself takes around 5-6 hours on our machine, and results in a table around 10 GB large. This is also because we invert the results. This means that instead of storing the RIB for each AS, which results in a table that is 300GB+ large, we store what is not in the RIB for each AS. This allows us to save space, and it also saves time because joins we do on this table take less time.
-7. At this point we also run the [RPKI Validator](#rpki-validator-submodule), to get the validity of these announcements. With this data we can know whether an announcement that arrived at a particular AS (from the [Extrapolator](#extrapolator-submodule) and whether or not that announcement would have been blocked by standard ROV. This usually takes 10-20 minutes the first time, or about 1 minute every time thereafter, on our machine.
-8. We also download all data from bgpstream.com with the [BGPStream Website Parser](#bgpstream-website-submodule). Using this data we can know whether an announcement is actually hijacked or not. This takes about 2-3 hours the first time, and then about 1-5 minutes every time after on our machine. This takes a while because querying the website takes a while.
-9.  Using the bgpstream.com data from the [BGPStream Website Parser](#bgpstream-website-submodule) and the [RPKI Validator](#rpki-validator-submodule) data we can tell if an announcement would have been blocked or not, and whether or not that announcement would have been blocked correctly. For example, if the rpki validator says that a prefix origin pair is invalid by asn, that means it would be blocked (for the invalid by asn policy). If that announcement also occurs in bgpstream.com as a hijacking, then we know that the prefix origin pair is a hijacking, and then we add one point to the hijacked and blocked column. That is an over simplification, but this calculation is done in the last submodule, the [What if Analysis](#what-if-analysis-submodule). The output of this data is for each AS, a table of how many announcements have been blocked and were hijacks, blocked and were not hijacks, not blocked but were hijacks, and not blocked and were not hijacks. This does joins on massive tables, and takes 1-10 minutes on our server.
-10. The [What if Analysis](#what-if-analysis-submodule) data as well as the [Extrapolator](#extrapolator-submodule) data is then available to query form a web interface through the [API](#api-submodule), the last last submodule. All of these steps are done in the submodule called [Main](#main-submodule), in which many of these steps are done in parallel for efficiency. These results are then displayed on our website at [https://sidr.engr.uconn.edu/](https://sidr.engr.uconn.edu/)
+4. The relationships data [Relationships Parser](#relationships-submodule) is also gathered in order to be able to simulate the connections between different AS's on the internet. This takes a couple of seconds.
+5. Each of these data sets gets fed into the [Extrapolator](#extrapolator-submodule) which then creates a graph of the internet and propagates announcements through it. After this stage is complete, there is a graph of the internet, with each AS having all of it's announcements that was propagated to it (with the best announcement for each prefix saved based on gao rexford). The [Extrapolator](#extrapolator-submodule) itself takes around 5-6 hours on our machine, and results in a table around 10 GB large. This is also because we invert the results. This means that instead of storing the RIB for each AS, which results in a table that is 300GB+ large, we store what is not in the RIB for each AS. This allows us to save space, and it also saves time because joins we do on this table take less time.
+6. At this point we also run the [RPKI Validator](#rpki-validator-submodule), to get the validity of these announcements. With this data we can know whether an announcement that arrived at a particular AS (from the [Extrapolator](#extrapolator-submodule) and whether or not that announcement would have been blocked by standard ROV. This usually takes 10-20 minutes the first time, or about 1 minute every time thereafter, on our machine.
+7. We also download all data from bgpstream.com with the [BGPStream Website Parser](#bgpstream-website-submodule). Using this data we can know whether an announcement is actually hijacked or not. This takes about 2-3 hours the first time, and then about 1-5 minutes every time after on our machine. This takes a while because querying the website takes a while.
+8.  Using the bgpstream.com data from the [BGPStream Website Parser](#bgpstream-website-submodule) and the [RPKI Validator](#rpki-validator-submodule) data we can tell if an announcement would have been blocked or not, and whether or not that announcement would have been blocked correctly. For example, if the rpki validator says that a prefix origin pair is invalid by asn, that means it would be blocked (for the invalid by asn policy). If that announcement also occurs in bgpstream.com as a hijacking, then we know that the prefix origin pair is a hijacking, and then we add one point to the hijacked and blocked column. That is an over simplification, but this calculation is done in the last submodule, the [What if Analysis](#what-if-analysis-submodule). The output of this data is for each AS, a table of how many announcements have been blocked and were hijacks, blocked and were not hijacks, not blocked but were hijacks, and not blocked and were not hijacks. This does joins on massive tables, and takes 1-10 minutes on our server.
+9. The [What if Analysis](#what-if-analysis-submodule) data as well as the [Extrapolator](#extrapolator-submodule) data is then available to query form a web interface through the [API](#api-submodule), the last last submodule. All of these steps are done in the submodule called [Main](#main-submodule), in which many of these steps are done in parallel for efficiency. These results are then displayed on our website at [https://sidr.engr.uconn.edu/](https://sidr.engr.uconn.edu/)
+10. The purpose of this is to determine the effect that these security policies would have on the internet and blocking hijacks (attacks). Now from the API it is possible to see what attacks (hijacks) where blocked correctly and incorrectly. It's also possible to see if other announcements where treated as a hijack and were incorrectly blocked. Using this it is possible to see how different security policies would affect your specific ASN
 
 ## Forecast Submodule
 * [lib\_bgp\_data](#lib_bgp_data)
@@ -74,6 +78,11 @@ Status: Development
 ### Forecast Possible Future Improvements
 * [lib\_bgp\_data](#lib_bgp_data)
 * [Forecast Submodule](#forecast-submodule)
+* [Todo and Possible Future Improvements](#todopossible-future-improvements)
+
+
+-MULTITHREAD THE BOI
+-once in dev push to pypi
 ## MRT Announcements Submodule
    * [lib\_bgp\_data](#lib_bgp_data)
    * [Short Description](#mrt-announcements-short-description)
@@ -283,22 +292,25 @@ Coming Soon to a theater near you
 ### MRT Announcements Possible Future Improvements
 * [lib\_bgp\_data](#lib_bgp_data)
 * [MRT Announcements Submodule](#mrt-announcements-submodule)
-
-* Add functionality to download and parse updates?
-    * This would allow for a longer time interval
-    * After the first dump it is assumed this would be faster?
-    * Would need to make sure that all updates are gathered, not just the first in the time interval to the api, as is the norm
-* Test again for different thread numbers now that bgpscanner is used
-* Test different regex parsers other than sed for speed?
-* Add test cases
-* Add cmd line args
-* Log properly for different levels
-* Put underscores in front of all private variables
-* Add: [https://www.isolar.io/Isolario_MRT_data/Alderaan/2019_07/](https://www.isolar.io/Isolario_MRT_data/Alderaan/2019_07/)
-* Update all docs about bgpscanner and fix it
-* Change parameter docs to be tables
-* Update docs on cmd line args and unit tests
-* Include in docs as set percentage is ~.05%
+* [Todo and Possible Future Improvements](#todopossible-future-improvements)
+	* Add functionality to download and parse updates?
+	    * This would allow for a longer time interval
+	    * After the first dump it is assumed this would be 	faster?
+	    * Would need to make sure that all updates are gathered, not just the first in the time interval to the api, as is the norm
+	* Test again for different thread numbers now that bgpscanner is used
+	* Test different regex parsers other than sed for speed?
+	* Add test cases
+	* Add cmd line args
+	* Log properly for different levels
+	* Put underscores in front of all private variables
+	* Add: 	[https://www.isolar.io/Isolario_MRT_data/Alderaan/2019_07/](https://www.isolar.io/Isolario_MRT_data/Alderaan/2019_07/)
+	* Update all docs about bgpscanner and fix it
+	* Change parameter docs to be tables
+	* Update docs on cmd line args and unit tests
+	* Include in docs as set percentage is ~.05%
+	* Make regex faster?
+	* Potentially fixed the bug where pools could not be created twice - take this out of unit tests
+	* Once in dev push to pypi
 ## Relationships Submodule
    * [lib\_bgp\_data](#lib_bgp_data)
    * [Short Description](#relationships-short-description)
@@ -505,15 +517,18 @@ Coming Soon to a theater near you
 ### Relationships Possible Future Improvements
 * [lib\_bgp\_data](#lib_bgp_data)
 * [Relationships Submodule](#relationships-submodule)
-* Add test cases
-* Add cmd line args
-* Add docs on tests and cmd line args
-* Change parameter docs to be tables in docs
-* Possibly take out date checking for cleaner code?
-    * Saves very little time
-* Move unzip_bz2 to this file? Nothing else uses it anymore
-* Possibly change the name of the table to provider_customers
-    * That is the order the data is in, it is like that in all files
+* [Todo and Possible Future Improvements](#todopossible-future-improvements)
+	* Add test cases
+	* Add cmd line args
+	* Add docs on tests and cmd line args
+	* Change parameter docs to be tables in docs
+	* Possibly take out date checking for cleaner code?
+	    * Saves very little time
+	* Move unzip_bz2 to this file? Nothing else uses it 	anymore
+	* Possibly change the name of the table to 	provider_customers
+	    * That is the order the data is in, it is like that in all files
+	* Post connectivity table in the stack overflow and ask how to combine into a better query
+	* Once in prod push to pypi
 
 ## Roas Submodule
    * [lib\_bgp\_data](#lib_bgp_data)
@@ -611,9 +626,11 @@ Coming Soon to a theater near you
 ### Roas Possible Future Improvements
 * [lib\_bgp\_data](#lib_bgp_data)
 * [Roas Submodule](#roas-submodule)
-* Add test cases
-* Add cmd line args
-* Update docs with cmd line args and test cases
+* [Todo and Possible Future Improvements](#todopossible-future-improvements)
+	* Add test cases
+	* Add cmd line args
+	* Update docs with cmd line args and test cases
+	* Once in prod push to pypi
 ## Extrapolator Submodule
    * [lib\_bgp\_data](#lib_bgp_data)
    * [Extrapolator Short Description](#extrapolator-short-description)
@@ -661,8 +678,10 @@ Extrapolator().run_rovpp(attacker_asn, victim_asn, more_specific_prefix)
 ### Extrapolator Possible Future Improvements
 * [lib\_bgp\_data](#lib_bgp_data)
 * [Extrapolator Submodule](#extrapolator-submodule)
-* Unit tests
-* Update docs with unit tests                                                            
+* [Todo and Possible Future Improvements](#todopossible-future-improvements)
+	* Unit tests
+	* Update docs with unit tests                                                            
+	* Once in prod push to pypi
 ## BGPStream Website Submodule
    * [lib\_bgp\_data](#lib_bgp_data)
    * [Short Description](#bgpstream-website-short-description)
@@ -976,14 +995,17 @@ Coming Soon to a theater near you
 ### BGPStream Website Possible Future Improvements
 * [lib\_bgp\_data](#lib_bgp_data)
 * [BGPStream Website Submodule](#bgpstream-website-submodule)
-* Remove unnessecary indexes
-* Should not use bare except in files
-* cmd line args
-* Add test cases
-* Update docs on cmd line args, test cases, and indexes
-* Is there a paid version of an API for this?
-* Multithread the first hundred results?
-    * If we only parse new info this is the common case
+* [Todo and Possible Future Improvements](#todopossible-future-improvements)
+	* Remove unnessecary indexes
+	* Should not use bare except in files
+	* cmd line args
+	* Add test cases
+	* Update docs on cmd line args, test cases, and indexes
+	* Is there a paid version of an API for this?
+	* Multithread the first hundred results?
+	    * If we only parse new info this is the common case
+	    * Maybe this is unnessecary though and would complicate the code
+	* Once in prod push to pypi
 ## RPKI Validator Submodule
    * [lib\_bgp\_data](#lib_bgp_data)
    * [Short Description](#rpki-validator-short-description)
@@ -1114,6 +1136,7 @@ Coming Soon to a theater near you
 ### RPKI Validator Possible Future Improvements
 * [lib\_bgp\_data](#lib_bgp_data)
 * [RPKI Validator Submodule](#rpki-validator-submodule)
+* [Todo and Possible Future Improvements](#todopossible-future-improvements)
     * Move the file serving functions into their own class
         * Improves readability?
     * Add test cases
@@ -1127,6 +1150,7 @@ Coming Soon to a theater near you
 	    * Improves readability?
 	* Attempt this in sql
 	* Update docs for cmd line args, tests, etc.
+	* Once in prod push to pypi
 
 ## What if Analysis Submodule
    * [lib\_bgp\_data](#lib_bgp_data)
@@ -1223,6 +1247,7 @@ Coming Soon to a theater near you
 ### What if Analysis Possible Future Improvements
 * [lib\_bgp\_data](#lib_bgp_data)
 * [What if Analysis Submodule](#what-if-analysis-submodule)
+* [Todo and Possible Future Improvements](#todopossible-future-improvements)
     * Aggregate what if analysis:
         * what if analysis for treating multiple asns as a single AS
     * Add test cases
@@ -1233,6 +1258,8 @@ Coming Soon to a theater near you
     * split data into hijacks and subprefix hijacks
     * simple time heuristic!! (update api as well)
     * Allow for storage of multiple days worth of announcements
+    * Unhinge the database for these queries?
+	* Once in prod push to pypi
 ## API Submodule
    * [lib\_bgp\_data](#lib_bgp_data)
    * [Short Description](#api-short-description)
@@ -1245,14 +1272,16 @@ Status: Development
 * [lib\_bgp\_data](#lib_bgp_data)
 * [API Submodule](#api-submodule)
 The API includes endpoints for:
-* Every variation of hijack data
-* ROAs data
-* Relationship data for specific ASNs
-* Extrapolator data for specific ASNs
-* Policy statistics for specific ASNs and policies
-	* Includes aggregate averages for ASNs
-* Average policy statistics
-* RPKI Validity results
+	* Every variation of hijack data
+	* ROAs data
+	* Relationship data for specific ASNs
+	* Extrapolator data for specific ASNs
+	* Policy statistics for specific ASNs and policies
+		* Includes aggregate averages for ASNs
+	* Average policy statistics
+	* RPKI Validity results
+
+NOTE: These might still not yet be up on the website, in order to be compatible with the UI it takes a bit longer
 
 I could go into further details here, but it seems silly to write documentation twice, and there are flasgger docs and explanations in each file for each endpoint. To see examples of output and explanations, go to the usage examples and see the flasgger documentation.
 
@@ -1281,6 +1310,7 @@ Coming soon to a theater near you
 ### API Possible Future Improvements
 * [lib\_bgp\_data](#lib_bgp_data)
 * [API Submodule](#api-submodule)
+* [Todo and Possible Future Improvements](#todopossible-future-improvements)
 	* Have better logging - record all queries and alert all errors
 	* Convert all stubs to parent ASNs at once
 	* Add cmd line args
@@ -1288,6 +1318,7 @@ Coming soon to a theater near you
 	* Update docs about cmd line args and unit tests
 	* Move the API to the sidr website
 	* Add documentation on how to add a new API endpoint
+	* Once in prod push to pypi
 
 ## ROVPP Submodule
    * [lib\_bgp\_data](#lib_bgp_data)
@@ -1326,23 +1357,25 @@ This module was created to simulate ROV++ over the topology of the internet for 
 * [ROVPP Submodule](#rovpp-submodule)
 
 
-### ROVPP  Possible Future Improvements
+### ROVPP Possible Future Improvements
 * [lib\_bgp\_data](#lib_bgp_data)
 * [ROVPP Submodule](#rovpp-submodule)
-* Aside from rewriting the script:
-	* Making multiple tiers of ASNs and percent adoptions
-	* geographical adoption
-	* Split up results between each tier of ASes
-	* Due to new ROVPP policy, must traceback to known AS, blackhole, hijacker, or victim
-	* Deadline for paper in january
-	* Link to paper here
-	* geographical adoption
-	* Real data with bgpstream.com
-	* unit tests
-	* cmd line args
-	* take out version metadata
-	* add python metadata/headers
-	* write documentation
+* [Todo and Possible Future Improvements](#todopossible-future-improvements)
+	* Aside from rewriting the script:
+		* Making multiple tiers of ASNs and percent adoptions
+		* geographical adoption
+		* Split up results between each tier of ASes
+		* Due to new ROVPP policy, must traceback to known AS, blackhole, hijacker, or victim
+		* Deadline for paper in january
+		* Link to paper here
+		* geographical adoption
+		* Real data with bgpstream.com
+		* unit tests
+		* cmd line args
+		* take out version metadata
+		* add python metadata/headers
+		* write documentation
+	* Once in prod push to pypi
 
 ## Utils
    * [lib\_bgp\_data](#lib_bgp_data)
@@ -1378,11 +1411,13 @@ Below is a quick list of functions that might be helpful. For more in depth expl
 ### Utils Possible Future Improvements
 * [lib\_bgp\_data](#lib_bgp_data)
 * [Utils](#utils)
+* [Todo and Possible Future Improvements](#todopossible-future-improvements)
 	* Possibly move functions that are only used in one file out of the utils folder - find out what these are
 	* Refactor - shouldn't need much though
 	* Unit tests for some functions
 	* Put underscores in front of private variables
 	* Write docs on unit tests
+	* Once in prod push to pypi
 
 ## Config Submodule
    * [lib\_bgp\_data](#lib_bgp_data)
@@ -1400,9 +1435,10 @@ This module contains a config class that creates and parses a config file. To av
 ### Config Submodule Possible Future Improvements
 * [lib\_bgp\_data](#lib_bgp_data)
 * [Config Submodule](#config-submodule)
-
+* [Todo and Possible Future Improvements](#todopossible-future-improvements)
 	* Unit tests
 	* Add docs on unit tests
+	* Once in prod push to pypi
 
 ## Database Submodule
    * [lib\_bgp\_data](#lib_bgp_data)
@@ -1505,11 +1541,14 @@ Coming Soon to a theater near you
 ### Database Possible Future Improvements
 * [lib\_bgp\_data](#lib_bgp_data)
 * [Database Submodule](#database-submodule)
+* [Todo and Possible Future Improvements](#todopossible-future-improvements)
 	* Move unhinge and rehinge db to different SQL files
 	* Perform unit tests
 	* Add cmd line args
 	* Add docs on unit tests and cmd line args
 	* Fix bare except on line 101
+	* Move the _run_sql file from install.py to a utils folder and use it for unhinge and rehinge db along with the delete_files decorator
+	* Once in prod push to pypi
 
 ### Database Installation
 * [lib\_bgp\_data](#lib_bgp_data)
@@ -1571,11 +1610,14 @@ A decorator to be used in all class functions that catches errors and fails nice
 ### Logging Possible Future Improvements
 * [lib\_bgp\_data](#lib_bgp_data)
 * [Logger Submodule](#logger-submodule)
+* [Todo and Possible Future Improvements](#todopossible-future-improvements)
 	* Fix the error catcher
 	* Possibly use the Logger class to log all things in the API?
 	* Figure out how to use this class while multithreading
 	* Figure out how to exit nicely and not ruin my unit tests
 	* Put underscores in front of private vars/funcs
+	* Fix to never be printing function that runs func
+	* Once in prod push to pypi
 
 ## Installation
    * [lib\_bgp\_data](#lib_bgp_data)
@@ -1753,11 +1795,15 @@ This is done through a series of steps.
 * [lib\_bgp\_data](#lib_bgp_data)
 * [Installation Instructions](#installation-instructions)
 * [Installation Submodule](#installation-submodule)
+* [Todo and Possible Future Improvements](#todopossible-future-improvements)
 	* Add test cases
     * Move install scripts to different files, or SQL files, or to their respective submodules
     * I shouldn't have to change lines in the extrapolator to get it to run
     * Add cmd line args
     * Add docs on cmd line args and tests
+    * Make install script have less output for different tasks and have this as an option for initing in docs
+    * Add to docs how to use your own password for the install script
+	* Once in prod push to pypi
 
 ## Adding a Submodule
    * [lib\_bgp\_data](#lib_bgp_data)
@@ -1879,8 +1925,53 @@ MIT License
 
 ## TODO/Possible Future Improvements
    * [lib\_bgp\_data](#lib_bgp_data)
-command line args
-automate the database installation process
-all the other stuff in paper and throughout readme and omg is there a lot of stuff to do(if something is from a submodule, post a link to that specific possible future improvements? say that this is a summary of stuff?)
+
+Working on at the moment:
+* ROVPP project
+* Update Postgres on the website server to version 11 for speed
+* Configure database on website server to be faster
+* MRT Announcements Unit tests
+* Formulate some kind of interview process for this thing and get more people
+
+Medium Term:
+* [Forecast TODO](#forecast-possible-future-improvements)
+* [MRT Submodule TODO](#mrt-announcements-possible-future-improvements)
+* [Relationships Submodule TODO](#relationships-possible-future-improvements)
+* [ROAs Submodule TODO](#roas-possible-future-improvements)
+* [Extrapolator Submodule TODO](#extrapolator-possible-future-improvements)
+* [BGPStream Website Submodule TODO](#bgpstream-website-possible-future-improvements)
+* [RPKI Validator Submodule TODO](#rpki-validator-possible-future-improvements)
+* [What If Analysis Submodule TODO](#what-if-analysis-possible-future-improvements)
+* [API Submodule TODO](#api-possible-future-improvements)
+* [ROVPP Submodule TODO](#rovpp-possible-future-improvements)
+* [Utils TODO](#utils-possible-future-improvements)
+* [Config TODO](#config-submodule-possible-future-improvements)
+* [Database TODO](#database-possible-future-improvements)
+* [Logging TODO](#logging-possible-future-improvements)
+* [Installation Submodule TODO](#installation-submodule-possible-future-extensions)
+* Add the simple time heuristic
+* Add \_\_slots\_\_ if they do not exist in certain classes
+* Make readme an html page or something with dropdowns for easier use
+* Message limit has been reached in slack - make a tool to delete messages using api and get everyone to delete all old messages but say last couple of hundred
+
+Long term:
+* Automate a script to dump tables that the API uses to the forecast website server
+	* Add indexes on all of these tables for the API
+* Add a chron job and run this everyday
+* Add ability to have multiple days worth of data
+* Email statistics automatically?
+* For each part modify the work mem and other db confs
+* Add history generator to the massive package
+
 ## FAQ
    * [lib\_bgp\_data](#lib_bgp_data)
+
+Q: What? WHAT???
+A: Read these, and become more confused:
+* [https://www.cs.bu.edu/~goldbe/papers/survey.pdf](https://www.cs.bu.edu/~goldbe/papers/survey.pdf)
+* [https://www.nsf.gov/awardsearch/showAward?AWD_ID=1840041&HistoricalAwards=false](https://www.nsf.gov/awardsearch/showAward?AWD_ID=1840041&HistoricalAwards=false)
+	* Feel free to email Dr. Amir Herzberg for this paper
+* [https://www.cs.princeton.edu/~jrex/papers/sigmetrics00.pdf](https://www.cs.princeton.edu/~jrex/papers/sigmetrics00.pdf)
+* [https://www.ideals.illinois.edu/bitstream/handle/2142/103896/Deployable%20Internet%20Routing%20Security%20-%20Trusted%20CI%20Webinar.pdf?sequence=2&isAllowed=y](https://www.ideals.illinois.edu/bitstream/handle/2142/103896/Deployable%20Internet%20Routing%20Security%20-%20Trusted%20CI%20Webinar.pdf?sequence=2&isAllowed=y)
+* RPKI/ROV Forecast web proposal - email Dr. Amir Herzberg for this paper
+* ROVPP Hotnets paper: email Dr. Amir Herzberg for this paper
