@@ -1,7 +1,23 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-"""This module contains class Database that interacts with a database"""
+"""This module contains class MRT_W_ROAs_Table
+
+MRT_W_ROAs_Table inherits from the Database class. The Database
+class allows for the conection to a database upon initialization. Also
+upon initialization the _create_tables function is called to initialize
+any tables if they do not yet exist. Beyond that the class can clear the
+table. This class does not contain an index creation function, because
+that index is never used, and is therefore a waste of time. Each table
+follows the table name followed by a _Table since it inherits from the
+database class.
+
+Design choices:
+    -There is no index creation function since indexes are never used
+
+Possible future improvements:
+    -Add test cases
+"""
 
 import psycopg2
 from psycopg2.extras import RealDictCursor
@@ -26,11 +42,9 @@ class MRT_W_Roas_Table(Database):
         """ Creates tables if they do not exist"""
 
         self.clear_table()
-        self.execute("VACUUM ANALYZE mrt_announcements")
-        self.execute("VACUUM ANALYZE roas")
         self.unhinge_db()
-        self.execute("VACUUM ANALYZE mrt_announcements")
-        self.execute("VACUUM ANALYZE roas")
+        self.logger.info("Vacuum analyzing tables now that db is unhinged")
+        self.execute("VACUUM ANALYZE;")
         self.logger.info("Creating mrt_w_roas")
         sql = """CREATE UNLOGGED TABLE IF NOT EXISTS
               mrt_w_roas AS (
@@ -39,42 +53,13 @@ class MRT_W_Roas_Table(Database):
                   INNER JOIN roas r ON m.prefix <<= r.prefix
               );"""
         self.cursor.execute(sql)
-        self.execute("VACUUM ANALYZE mrt_announcements")
-        self.execute("VACUUM ANALYZE roas")
         self.rehinge_db()
-        self.execute("VACUUM ANALYZE mrt_announcements")
-        self.execute("VACUUM ANALYZE roas")
         self.logger.debug("mrt_w_roas created")
 
     @error_catcher()
     def clear_table(self):
         """Clears the tables. Should be called at the start of every run"""
 
-        self.logger.info("Dropping MRT_W_Roas")
+        self.logger.debug("Dropping MRT_W_Roas")
         self.cursor.execute("DROP TABLE IF EXISTS mrt_w_roas")
-        self.logger.info("MRT_W_Roas table dropped")
-
-    def create_index(self):
-        """Creates an index"""
-
-        self.logger.info("Creating index")
-        sql = """CREATE INDEX IF NOT EXISTS mrt_w_roas_index
-                 ON mrt_w_roas USING GIST (prefix inet_ops);"""
-        # THIS IS NEVER USED!! SO ITS REMOVED!!
-        #self.cursor.execute(sql)
-        self.logger.info("Index created")
-
-    @error_catcher()
-    def drop_mrt_async(self):
-        """Function that drops the mrt table to be called in multiprocess"""
-
-        with db_connection(Database, self.logger) as db:
-            self.logger.info("About to drop mrt announcements")
-            db.cursor.execute("DROP TABLE mrt_announcements;")
-            self.logger.info("Dropped mrt announcements")
-            self.logger.info("About to drop roas")
-            db.cursor.execute("DROP TABLE roas;")
-            self.logger.info("Dropped roas")
-            self.logger.info("About to vacuum")
-#            db.cursor.execute("VACUUM;")###############################
-            self.logger.info("Vacuum complete")
+        self.logger.debug("MRT_W_Roas table dropped")

@@ -58,7 +58,7 @@ import socketserver
 from multiprocess import Process
 from contextlib import contextmanager
 import os
-from subprocess import Popen, PIPE
+from subprocess import Popen, PIPE, check_call
 import time
 from ..utils import utils, error_catcher
 from .tables import Unique_Prefix_Origins_Table, ROV_Validity_Table
@@ -90,6 +90,14 @@ def _run_rpki_validator(self, file_path, rpki_path):
 
     Once finished the validator is closed correctly."""
 
+    self.logger.info("Make way for the rpki validator!!!")
+    self.logger.info("Killing all port 8080 processes, cause idc")
+    check_call("sudo kill -9 $(lsof -t -i:8080)", shell=True)
+
+    # Must remove these to ensure a clean run
+    utils.clean_paths(self.logger, self.rpki_db_paths)
+
+
     # Serves the ripe file
     with _serve_file(self, file_path):
         # Subprocess
@@ -109,7 +117,8 @@ def _run_rpki_validator(self, file_path, rpki_path):
 class RPKI_Validator:
     """This class gets validity data from ripe"""
 
-    __slots__ = ['path', 'csv_dir', 'logger', 'rpki_path', 'upo_csv_path']
+    __slots__ = ['path', 'csv_dir', 'logger', 'rpki_path', 'upo_csv_path',
+                 'rpki_db_paths']
 
     @error_catcher()
     def __init__(self, args={}):
@@ -117,7 +126,9 @@ class RPKI_Validator:
 
         # Sets common file paths and logger
         utils.set_common_init_args(self, args)
-        self.rpki_path = "/var/lib/rpki-validator-3/rpki-validator-3.sh"
+        rpki_package_path = "/var/lib/rpki-validator-3/"
+        self.rpki_path = rpki_package_path + "rpki-validator-3.sh"
+        self.rpki_db_paths = [rpki_package_path + x for x in ["db/", "rsync/"]]
         self.upo_csv_path = "/tmp/upo_csv_path.csv"
 
     @error_catcher()

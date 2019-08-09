@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-"""omg I hate docs"""
+"""See forecast.py"""
 
 
 from .forecast import Forecast

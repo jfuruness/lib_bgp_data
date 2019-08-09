@@ -169,6 +169,7 @@ class Database:
     def unhinge_db(self):
         """Enhances database, but doesn't allow for writing to disk."""
 
+        self.logger.info("unhinging db")
         ram = Config(self.logger).ram
         # This will make it so that your database never writes to
         # disk unless you tell it to. It's faster, but harder to use
@@ -202,11 +203,14 @@ class Database:
         self._restart_postgres()
         # Removes sql file to clean up
         os.remove("/tmp/db_modify.sql")
+        self.logger.debug("unhinged db")
 
     @error_catcher()
     def rehinge_db(self):
         """Restores postgres 11 defaults"""
 
+
+        self.logger.info("rehinging db")
         # This will make it so that your database never writes to
         # disk unless you tell it to. It's faster, but harder to use
         sqls = [  # https://www.2ndquadrant.com/en/blog/
@@ -235,6 +239,7 @@ class Database:
         self._restart_postgres()
         # Removes sql file to clean up
         os.remove("/tmp/db_modify.sql")
+        self.logger.debug("rehinged db")
 
     @error_catcher()
     def _restart_postgres(self):
