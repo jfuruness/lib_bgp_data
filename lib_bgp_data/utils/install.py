@@ -173,6 +173,9 @@ class Install:
             random_page_cost = float(1)
         else:
             random_page_cost = float(2)
+        ulimit = input("Enter the output of ulimit -s or press enter for 8192: ")
+        if ulimit == "":
+            ulimit = 8192
         # Extension neccessary for some postgres scripts
         sqls = ["CREATE EXTENSION btree_gist;",
                 "ALTER DATABASE bgp SET timezone TO 'UTC';",
@@ -218,7 +221,7 @@ class Install:
                 # https://www.postgresql.org/docs/9.1/runtime-config-resource.html
                 # Conversion from kb to mb then minus one
                 "ALTER SYSTEM SET max_stack_depth TO '{}MB';".format(
-                    int(int(input("What is output of ulimit -s? "))/1000)-1)]
+                    int(int(ulimit)/1000)-1)]
 
         self._run_sql_file(sqls)
 
@@ -400,6 +403,7 @@ class Install:
 ########################
 
     @error_catcher()
+    @delete_files(sql_install_file)
     def _run_sql_file(self, sqls):
         """Writes sql file"""
 

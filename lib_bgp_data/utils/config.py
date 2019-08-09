@@ -9,6 +9,7 @@ _config dictionary.
 
 import os
 from configparser import ConfigParser as SCP
+from configparser import NoSectionError
 from psutil import virtual_memory
 from .logger import error_catcher
 
@@ -80,7 +81,6 @@ class Config:
         except FileNotFoundError:
             pass
 
-    @error_catcher()
     def _read_config(self, section, tag, raw=False):
         """Reads the specified section from the configuration file."""
 
@@ -122,8 +122,9 @@ class Config:
 
         section = "bgp"
         subsection = "restart_postgres_cmd"
-        cmd = self._read_config(section, subsection)
-        if cmd == "":
+        try:
+            cmd = self._read_config(section, subsection)
+        except NoSectionError:
             prompt = "Enter the command to restart postgres\n"
             prompt += "0 or Enter: "
             prompt += "sudo systemctl restart postgresql@11-main.service\n"
@@ -131,10 +132,9 @@ class Config:
             prompt += "Custom: Enter cmd for your machine\n"
             cmd = input(prompt)
             if cmd == "" or "0":
-                cmd = "sudo systemctl restart postgresql-11@main.service"
+                cmd = "sudo systemctl restart postgresql@11-main.service"
             elif cmd == "1":
                 cmd = "sudo systemctl restart postgresql"
-            self._write_to_config(section, subsection, cmd)
         return cmd
 
     @error_catcher()

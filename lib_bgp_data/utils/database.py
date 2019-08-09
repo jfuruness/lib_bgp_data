@@ -66,7 +66,6 @@ from .config import Config
 from .utils import Pool, delete_paths
 
 
-
 class Database:
     """Interact with the database"""
 

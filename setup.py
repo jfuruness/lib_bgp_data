@@ -17,6 +17,7 @@ setup(
         'Flask',
         'multiprocess',
         'pathos',
+        'psutil',
         'psycopg2-binary',
         'Werkzeug'
     ],
