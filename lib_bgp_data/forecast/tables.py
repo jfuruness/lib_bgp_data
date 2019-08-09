@@ -22,11 +22,6 @@ class MRT_W_Roas_Table(Database):
     __slots__ = []
 
     @error_catcher()
-    def __init__(self, logger, cursor_factory=RealDictCursor):
-        """Initializes the announcement table"""
-        Database.__init__(self, logger, cursor_factory=cursor_factory)
-
-    @error_catcher()
     def _create_tables(self):
         """ Creates tables if they do not exist"""
 

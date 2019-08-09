@@ -29,7 +29,7 @@ Possible future improvements:
      provider_customers in this file and all others
 """
 
-
+from psycopg2.extras import RealDictCursor
 from ..utils import error_catcher, Database
 
 __author__ = "Justin Furuness"
@@ -46,12 +46,6 @@ class Customer_Providers_Table(Database):
     In depth explanation at the top of the file."""
 
     __slots__ = []
-
-    @error_catcher()
-    def __init__(self, logger):
-        """Initializes the Customer Provider table"""
-
-        Database.__init__(self, logger)
 
     @error_catcher()
     def _create_tables(self):
@@ -76,12 +70,6 @@ class Peers_Table(Database):
     __slots__ = []
 
     @error_catcher()
-    def __init__(self, logger):
-        """Initializes the Peers table"""
-
-        Database.__init__(self, logger)
-
-    @error_catcher()
     def _create_tables(self):
         """Creates tables if they do not exist.
 
@@ -102,12 +90,6 @@ class ROVPP_Customer_Providers_Table(Database):
     In depth explanation at the top of the file."""
 
     __slots__ = []
-
-    @error_catcher()
-    def __init__(self, logger):
-        """Initializes the ROVPP Customer Provider table"""
-
-        Database.__init__(self, logger)
 
     @error_catcher()
     def _create_tables(self):
@@ -132,12 +114,6 @@ class ROVPP_Peers_Table(Database):
     __slots__ = []
 
     @error_catcher()
-    def __init__(self, logger):
-        """Initializes the ROVPP Peers table"""
-
-        Database.__init__(self, logger)
-
-    @error_catcher()
     def _create_tables(self):
         """Creates tables if they do not exist.
 
@@ -159,12 +135,6 @@ class ROVPP_AS_Connectivity_Table(Database):
     Connectivity = # customers + # peers"""
 
     __slots__ = []
-
-    @error_catcher()
-    def __init__(self, logger):
-        """Initializes the ROVPP Peers table"""
-
-        Database.__init__(self, logger)
 
     @error_catcher()
     def _create_tables(self):

@@ -77,9 +77,9 @@ def delete_files(files=[]):
         def function_that_runs_func(self, *args, **kwargs):
             # Inside the decorator
             delete_paths(self.logger, files)
-            return func(self, *args, **kwargs)
+            stuff = func(self, *args, **kwargs)
             delete_paths(self.logger, files)
-
+            return stuff
         return function_that_runs_func
     return my_decorator
 
@@ -137,6 +137,7 @@ class Install:
 
         # SQL commands to write
         sqls = ["DROP DATABASE bgp;",
+                "DROP OWNED BY bgp_user;",
                 "DROP USER bgp_user;",
                 "CREATE DATABASE bgp;",
                 "CREATE USER bgp_user;",
@@ -167,6 +168,11 @@ class Install:
         """
 
         ram = Config(self.logger).ram
+        usr_input = input("If SSD, enter 1 or enter, else enter 2: ")
+        if str(usr_input) in ["", "1"]:
+            random_page_cost = float(1)
+        else:
+            random_page_cost = float(2)
         # Extension neccessary for some postgres scripts
         sqls = ["CREATE EXTENSION btree_gist;",
                 "ALTER DATABASE bgp SET timezone TO 'UTC';",
@@ -204,7 +210,7 @@ class Install:
                 # Set random page cost to 2 if no ssd, with ssd
                 # seek time is one for ssds
                 "ALTER SYSTEM SET random_page_cost TO {};".format(
-                    float(input("If SSD, enter 1, else enter 2: "))),
+                    random_page_cost),
                 # Yes I know I could call this, but this is just for machines
                 # that might not have it or whatever
                 # Gets the maximum safe depth of a servers execution stack
@@ -244,13 +250,14 @@ class Install:
 
         # Commands to install rovpp extrapolator
         cmds = ["git clone https://github.com/c-morris/BGPExtrapolator.git",
-                "cd BGPExtrapolator",
                 "cd BGPExtrapolator/Misc",
                 "sudo ./apt-install-deps.sh",
                 "sudo apt install libboost-test-dev",
                 "cd ..",
                 "git checkout remotes/origin/rovpp",
                 "git checkout -b rovpp"]
+
+        check_call("&& ".join(cmds), shell=True)
 
         # Change location of the conf file
         path = "BGPExtrapolator/SQLQuerier.cpp"
@@ -277,7 +284,7 @@ class Install:
         table.
         """
 
-        delete_paths(self.logger, "/var/lib/rpki-validator/")
+        delete_paths(self.logger, "/var/lib/rpki-validator-3/")
 
         rpki_url = ("https://ftp.ripe.net/tools/rpki/validator3/beta/generic/"
                     "rpki-validator-3-latest-dist.tar.gz")
@@ -290,10 +297,42 @@ class Install:
                 "rm -rf rpki-validator-3-latest-dist.tar.gz",
                 "mv rpki-validator* /var/lib/rpki-validator-3",
                 "cd /var/lib/rpki-validator-3",
-#                "mv rpki-validator* rpki-validator-3.sh",
                 "cd preconfigured-tals",
                 "wget {}".format(arin_tal)]
         check_call("&& ".join(cmds), shell=True)
+
+        # Changes where the file is hosted
+        path = "/var/lib/rpki-validator-3/conf/application-defaults.properties"
+        prepend = "rpki.validator.bgp.ris.dump.urls="
+        replace = ("https://www.ris.ripe.net/dumps/riswhoisdump.IPv4.gz,"
+                   "https://www.ris.ripe.net/dumps/riswhoisdump.IPv6.gz")
+        replace_with = "http://localhost:8000/upo_csv_path.csv.gz"
+        self._replace_line(path, prepend, replace, replace_with)
+
+        # Changes the server address
+        path = "/var/lib/rpki-validator-3/conf/application.properties"
+        prepend = "server.address="
+        replace = "localhost"
+        replace_with = "0.0.0.0"
+        self._replace_line(path, prepend, replace, replace_with)
+
+        # Since I am calling the script from elsewhere these must be
+        # absolute paths
+        prepend = "rpki.validator.data.path="
+        replace = "."
+        replace_with = "/var/lib/rpki-validator-3"
+        self._replace_line(path, prepend, replace, replace_with)
+ 
+        prepend = "rpki.validator.preconfigured.trust.anchors.directory="
+        replace = "./preconfigured-tals"
+        replace_with = "/var/lib/rpki-validator-3/preconfigured-tals"
+        self._replace_line(path, prepend, replace, replace_with)
+
+        prepend = "rpki.validator.rsync.local.storage.directory="
+        replace = "./rsync"
+        replace_with = "/var/lib/rpki-validator-3/rsync"
+        self._replace_line(path, prepend, replace, replace_with)
+
 
     @error_catcher()
     @delete_files("bgpscanner/")
@@ -324,6 +363,7 @@ class Install:
 
         # Meson refuses to be installed right so:
         cmds = ["python3 -m venv delete_me",
+                "delete_me/bin/pip3 install wheel",
                 "delete_me/bin/pip3 install meson",
                 "cd bgpscanner",
                 "mkdir build && cd build",

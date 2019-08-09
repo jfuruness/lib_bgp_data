@@ -52,7 +52,7 @@ class Config:
                           "user": "bgp_user",
                           "last_relationship_update": "0",
                           "ram": _ram,
-                          "restart_postgres_cmd": ""}
+                          "restart_postgres_cmd": self.restart_postgres_cmd}
 
         # Writes the config
         with open(self.path, "w+") as config_file:
@@ -114,7 +114,7 @@ class Config:
     def ram(self):
         """Returns the amount of ram on a system."""
 
-        return self._read_config(section="bgp", subsection="ram")
+        return self._read_config("bgp", "ram")
 
     @property
     def restart_postgres_cmd(self):
@@ -126,7 +126,7 @@ class Config:
         if cmd == "":
             prompt = "Enter the command to restart postgres\n"
             prompt += "0 or Enter: "
-            prompt += "sudo systemctl restart postgresql-11@main.service\n"
+            prompt += "sudo systemctl restart postgresql@11-main.service\n"
             prompt += "1: sudo systemctl restart postgresql: \n"
             prompt += "Custom: Enter cmd for your machine\n"
             cmd = input(prompt)

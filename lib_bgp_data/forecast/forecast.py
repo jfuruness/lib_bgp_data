@@ -57,6 +57,7 @@ class Forecast:
 
         if fresh_install:
             Install().install(fresh_install)
+            input("done")
         # First we want to parse the mrt files and create the index
         # This uses all the threads, so no need to multithread
         MRT_Parser(mrt_args).parse_files(start, end, **mrt_parse_args)
@@ -73,7 +74,7 @@ class Forecast:
             with db_connection(MRT_W_Roas_Table, self.logger) as db:
                 db.create_index()
                 self.logger.info("analyzing now")
-                db.execute("VACUUM ANALYZE")
+                db.execute("VACUUM ANALYZE;")
         input_table = "mrt_w_roas" if filter_by_roas else None
 
         Extrapolator().run_forecast(input_table)

@@ -43,12 +43,6 @@ class Hijack_Table(Database):
     __slots__ = []
 
     @error_catcher()
-    def __init__(self, logger, cursor_factory=RealDictCursor):
-        """Initializes the Hijack table"""
-
-        Database.__init__(self, logger, cursor_factory)
-
-    @error_catcher()
     def _create_tables(self):
         """Creates tables if they do not exist"""
 
@@ -178,12 +172,6 @@ class Leak_Table(Database):
     __slots__ = []
 
     @error_catcher()
-    def __init__(self, logger, cursor_factory=RealDictCursor):
-        """Initializes the leak table."""
-
-        Database.__init__(self, logger, cursor_factory)
-
-    @error_catcher()
     def _create_tables(self):
         """Creates tables if they do not exist."""
 
@@ -252,12 +240,6 @@ class Outage_Table(Database):
     """
 
     __slots__ = []
-
-    @error_catcher()
-    def __init__(self, logger, cursor_factory=RealDictCursor):
-        """Initializes the outage table"""
-
-        Database.__init__(self, logger, cursor_factory)
 
     @error_catcher()
     def _create_tables(self):

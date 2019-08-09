@@ -43,12 +43,6 @@ class MRT_Announcements_Table(Database):
     __slots__ = []
 
     @error_catcher()
-    def __init__(self, logger):
-        """Initializes the announcement table"""
-
-        Database.__init__(self, logger)
-
-    @error_catcher()
     def _create_tables(self):
         """Creates tables if they do not exist.
 

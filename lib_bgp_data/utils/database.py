@@ -54,9 +54,7 @@ def db_connection(table,
                   logger=Logger(),
                   clear=False,
                   cursor_factory=RealDictCursor):
-    if not logger:
-        logger = Logger()
-    t = table(logger, cursor_factory)
+    t = table(logger, cursor_factory=cursor_factory)
     if clear:
         t.clear_tables()
         t._create_tables()
@@ -75,7 +73,7 @@ class Database:
     __slots__ = ['logger', 'conn', 'cursor']
 
     @error_catcher()
-    def __init__(self, logger=Logger({}), cursor_factory=RealDictCursor):
+    def __init__(self, logger=Logger(), cursor_factory=RealDictCursor):
         """Create a new connection with the database"""
 
         # Initializes self.logger
@@ -185,7 +183,7 @@ class Database:
                 "ALTER SYSTEM SET maintenance_work_mem TO '{}MB';".format(
                     int(ram/5))]
 
-        delete_paths("/tmp/db_modify.sql")
+        delete_paths(self.logger, "/tmp/db_modify.sql")
         # Writes sql file
         with open("/tmp/db_modify.sql", "w+") as db_mod_file:
             for sql in sqls:
@@ -218,7 +216,7 @@ class Database:
                 # Since its manual it can be higher
                 "ALTER SYSTEM SET max_parallel_maintenance_workers TO 2;",
                 "ALTER SYSTEM SET maintenance_work_mem TO '64MB';"]
-        delete_paths("/tmp/db_modify.sql")
+        delete_paths(self.logger, "/tmp/db_modify.sql")
         # Writes sql file
         with open("/tmp/db_modify.sql", "w+") as db_mod_file:
             for sql in sqls:

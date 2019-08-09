@@ -38,12 +38,6 @@ class ROVPP_ASes_Table(Database):
     __slots__ = []
 
     @error_catcher()
-    def __init__(self, logger):
-        """Initializes the ROVPP ASes table"""
-
-        Database.__init__(self, logger)
-
-    @error_catcher()
     def _create_tables(self):
         """Creates tables if they do not exist.
 
@@ -105,12 +99,6 @@ class ROVPP_MRT_Announcements_Table(Database):
                  'victim_prefix']
 
     @error_catcher()
-    def __init__(self, logger):
-        """Initializes the ROVPP_MRT_Announcements table"""
-
-        Database.__init__(self, logger)
-
-    @error_catcher()
     def _create_tables(self):
         """Creates tables if they do not exist.
 
@@ -162,12 +150,6 @@ class Subprefix_Hijack_Temp_Table(Database):
     In depth explanation at the top of the file."""
 
     __slots__ = []
-
-    @error_catcher()
-    def __init__(self, logger):
-        """Initializes the Subprefix_Hijack_Temp_Table"""
-
-        Database.__init__(self, logger)
 
     @error_catcher()
     def _create_tables(self):
