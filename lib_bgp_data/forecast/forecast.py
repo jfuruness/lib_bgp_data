@@ -34,8 +34,6 @@ Possible Future Extensions:
 -Docs on both
 """
 
-from multiprocessing import Process
-from subprocess import Popen, PIPE
 from ..relationships_parser import Relationships_Parser
 from ..roas_collector import ROAs_Collector
 from ..bgpstream_website_parser import BGPStream_Website_Parser
@@ -52,6 +50,7 @@ __Lisence__ = "MIT"
 __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
+
 
 class Forecast:
     """This class contains all the neccessary parsing functions"""

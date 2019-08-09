@@ -19,10 +19,7 @@ Possible future improvements:
     -Add test cases
 """
 
-import psycopg2
-from psycopg2.extras import RealDictCursor
-from multiprocessing import Process, cpu_count
-from ..utils import Database, db_connection, error_catcher, Config, utils
+from ..utils import Database, error_catcher
 
 __author__ = "Justin Furuness"
 __credits__ = ["Justin Furuness"]
