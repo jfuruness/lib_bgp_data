@@ -96,6 +96,9 @@ def _run_rpki_validator(self, file_path, rpki_path):
 
     # Must remove these to ensure a clean run
     utils.clean_paths(self.logger, self.rpki_db_paths)
+    cmds = ["cd /var/lib/rpki-validator-3",
+            "chown -R root:root"]
+    check_call(" && ".join(cmds), shell=True)
 
     # Allow system to reclaim port
     time.sleep(120)
