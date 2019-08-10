@@ -1380,6 +1380,9 @@ Coming Soon to a theater near you
     * Allow for storage of multiple days worth of announcements
     * Unhinge the database for these queries?
 	* Once in prod push to pypi
+    * Must fix problem when performing statistics on inverted results
+        * Turns out that the extrapolation inverse results table has zero entries if it keeps all of it's announcements recieved. This is a problem because we do not perform statistics on these.
+        * Probably doesn't affect normally - only when running smaller subsets
 ## API Submodule
    * [lib\_bgp\_data](#lib_bgp_data)
    * [Short Description](#api-short-description)
@@ -1988,6 +1991,8 @@ To add your own submodule: [How to Add a Submodule](#how-to-add-a-submodule)
 
 ## History
    * [lib\_bgp\_data](#lib_bgp_data)
+   * 0.2.2 - Automated full run where everything is correct
+
 ## Credits
    * [lib\_bgp\_data](#lib_bgp_data)
 
