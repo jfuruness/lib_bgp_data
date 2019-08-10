@@ -97,6 +97,9 @@ def _run_rpki_validator(self, file_path, rpki_path):
     # Must remove these to ensure a clean run
     utils.clean_paths(self.logger, self.rpki_db_paths)
 
+    # Allow system to reclaim port
+    time.sleep(120)
+
 
     # Serves the ripe file
     with _serve_file(self, file_path):
@@ -241,6 +244,9 @@ class RPKI_Validator:
             self.logger.debug(total_rows)
             self.logger.debug(self._get_row_count(self._get_headers()))
             time.sleep(30)
+
+        # Added this to make sure it waits long enough
+        time.sleep(300)
 
     @error_catcher()
     def _get_headers(self):
