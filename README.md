@@ -1300,12 +1300,16 @@ policies would have on each AS. This is done through a series of steps.
 * [What if Analysis Submodule](#what-if-analysis-submodule)
 #### In a Script
 Initializing the What_If_Analysis:
+
+
 | Parameter    | Default                             | Description                                                                                                       |
 |--------------|-------------------------------------|-------------------------------------------------------------------------------------------------------------------|
 | name         | ```self.__class__.__name__```     | The purpose of this is to make sure when we clean up paths at the end it doesn't delete files from other parsers. |
 | path         | ```"/tmp/bgp_{}".format(name)```     | Not used                                                                                         |
 | csv_dir      | ```"/dev/shm/bgp_{}".format(name)``` | Path for CSV files, located in RAM                                                                                |
 | stream_level | ```logging.INFO```                        | Logging level for printing                                                                                        |
+
+
 > Note that any one of the above attributes can be changed or all of them can be changed in any combination
 
 To initialize What_If_Analysis with default values:
