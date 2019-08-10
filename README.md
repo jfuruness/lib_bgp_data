@@ -1,9 +1,8 @@
-
-
 # lib\_bgp\_data
 This package contains multiple submodules that are used to gather and manipulate real data in order to simulate snapshots of the internet. The purpose of this is to test different security policies to determine their accuracy, and hopefully find ones that will create a safer, more secure, internet as we know it.
 
 *disclaimer: If a submodule is in development, that means that it unit tests are in the process of being written, and changes need to be made before the data can be considered reliable*
+*Another disclaimer: Long story short, our system has a lot of weird permissions, so I've made a lot of commits to this repo as root. They are all me, Justin Furuness. Oops.*
 
 * [lib\_bgp\_data](#lib_bgp_data)
 * [Description](#package-description)
@@ -61,28 +60,138 @@ Status: Development
 ### Forecast Short description
 * [lib\_bgp\_data](#lib_bgp_data)
 * [Forecast Submodule](#forecast-submodule)
+
+This submodule runs all of the parsers to get a days worth of data for the ROV forecast.
 ### Forecast Long description
 * [lib\_bgp\_data](#lib_bgp_data)
 * [Forecast Submodule](#forecast-submodule)
+
+This submodule basically follows the steps in the  [Package Description](#package-description) except for a couple of minor variations.
+
+1. If fresh_install is passed in as True, then a fresh install is installed.
+2. If test is passed in as true, the MRT announcements are filtered down to just one prefix to make it easier to test the package.
+3. db.vacuum_analyze_checkpoint is called 3 times. Once before joining the mrt announcements with roas, once before running the what if analysis, and at the end of everything. The purpose of this is to save storage space, create statistics on all of the tables, and write to disk. This helps the query planner when planning table joins and massively decreases runtime.
+
+Other than that, please refer to the [Package Description](#package-description)
+
 ### Forecast Usage
 * [lib\_bgp\_data](#lib_bgp_data)
 * [Forecast Submodule](#forecast-submodule)
 #### In a Script
+Initializing the Forecast:
+
+
+| Parameter    | Default                             | Description                                                                                                       |
+|--------------|-------------------------------------|-------------------------------------------------------------------------------------------------------------------|
+| name         | ```self.__class__.__name__```     | The purpose of this is to make sure when we clean up paths at the end it doesn't delete files from other parsers. |
+| path         | ```"/tmp/bgp_{}".format(name)```     | Not used                                                                                         |
+| csv_dir      | ```"/dev/shm/bgp_{}".format(name)``` | Path for CSV files, located in RAM                                                                                |
+| stream_level | ```logging.INFO```                        | Logging level for printing                                                                                        |
+> Note that any one of the above attributes can be changed or all of them can be changed in any combination
+
+To initialize Forecast with default values:
+```python
+from lib_bgp_data import Forecast
+parser = Forecast()
+```                 
+To initialize Forecast with custom path, CSV directory, and logging level:
+```python
+from logging import DEBUG
+from lib_bgp_data import Forecast
+parser = Forecast({"path": "/my_custom_path",
+                                   "csv_dir": "/my_custom_csv_dir",
+                                   "stream_level": DEBUG})
+```
+Running the Forecast:
+
+| Parameter  | Default                    | Description                                                                                        |
+|------------|----------------------------|----------------------------------------------------------------------------------------------------|
+| start      | 7 days ago, epoch time     | epoch time, for the start of when to look for the desired event type in subtables that get created |
+| end        | 6 days ago, epoch time     | epoch time, for the end of when to look for the desired event type in subtables that get created   |
+| fresh_install  | False                       | Install everything from scratch if True                           |
+| mrt_args       | {}                       | args passed to init the mrt parser                                                                |
+| mrt_parse_args       | {}                      | args passed to run the mrt parser                                    |
+| rel_args | {} | args passed to init the relationships parser                                                 |
+| rel_parse_args    | {}                      | args passed to run the relationships parser                           |
+| rel_parse_args    | {}                      | args passed to run the relationships parser                           |
+| roas_args    | {}                      | args passed to init the roas collector                           |
+| web_args    | {}                      | args passed to run the bgpstream_website_parser                           |
+| web_parse_args    | {}                      | args passed to run the bgpstream_website_parser parser                           |
+| exr_args    | {}                      | args passed to init the extrapolator submodule                           |
+| rpki_args    | {}                      | args passed to init the RPKI Validator                           |
+| what_if_args    | {}                      | args passed to init the what if analysis                           |
+| test    | False                      | If true, limit mrt announcements to one prefix for time and space savings                           |
+> Note that any one of the above attributes can be changed or all of them can be changed in any combination
+
+To run the Forecast with defaults:
+```python
+from lib_bgp_data import Forecast
+Forecast().run_forecast()
+```
+To run the Forecast with specific time intervals:
+```python
+from lib_bgp_data import Forecast
+Forecast().run_forecast(start=1558974033, end=1558974033)
+```
+To run the run_forecast with specific time intervals and a fresh install:
+```python
+from lib_bgp_data import Forecast
+Forecast().run_forecast(start=1558974033,
+                         end=1558974033,
+                         fresh_install=True)
+```
+To run the Forecast with specific mrt parser args and a start and end time:
+```python
+from lib_bgp_data import Forecast
+mrt_parser_args = {"api_param_mods"={"collectors[]":  ["route-views2",  "rrc03"}}
+Forecast().run_forecast(start=1558974033,
+                        end=1558974033,
+                        mrt_args=mrt_parse_args)
+```
+
+To run the Forecast with a simple test, a start and end, and a fresh install:
+```python
+from lib_bgp_data import Forecast
+Forecast().run_forecast(start=1558974033,
+                         end=1558974033,
+                         fresh_install=True,
+                          test=True)
+```
 #### From the Command Line
+Coming soon to a theater near you
 ### Forecast Table Schema
 * [lib\_bgp\_data](#lib_bgp_data)
 * [Forecast Submodule](#forecast-submodule)
+
+See: [MRT Announcements Table Schema](#mrt-announcements-table-schema)
+	* Create Table SQL: 
+
+	```
+	    CREATE UNLOGGED TABLE IF NOT EXISTS
+	        mrt_announcements (
+	            prefix cidr,
+	            as_path bigint ARRAY,
+	            origin bigint,
+	            time bigint
+	        );```
+
+
 ### Forecast Design Choices
 * [lib\_bgp\_data](#lib_bgp_data)
 * [Forecast Submodule](#forecast-submodule)
+	* There are no indexes on the mrt_w_roas table because they are never used
+	* Nothing is multithreaded for simplicity, and since each parser either takes up all threads or <1 minute. 
+	* The database is vacuum analyzed and checkpointed before big joins to help the query planner choose the right query plan
+	* When testing only one prefix is used to speed up the extrapolator and reduce data size
 ### Forecast Possible Future Improvements
 * [lib\_bgp\_data](#lib_bgp_data)
 * [Forecast Submodule](#forecast-submodule)
 * [Todo and Possible Future Improvements](#todopossible-future-improvements)
-
-
--MULTITHREAD THE BOI
--once in dev push to pypi
+	* Unit tests
+	* cmd line args
+	* docs for unit tests and cmd line args
+	* Once in dev push to pypi
+	* Potentially multithread?
 ## MRT Announcements Submodule
    * [lib\_bgp\_data](#lib_bgp_data)
    * [Short Description](#mrt-announcements-short-description)
@@ -244,22 +353,22 @@ Coming Soon to a theater near you
 * [lib\_bgp\_data](#lib_bgp_data)
 * [MRT Announcements Submodule](#mrt-announcements-submodule)
 
-* This table contains information on the MRT Announcements retrieved from the https://bgpstream.caida.org/broker/data
-* Unlogged tables are used for speed
-* prefix: The prefix of an AS *(CIDR)*
-* as\_path: An array of all the AS numbers in the AS Path (*bigint ARRAY)*
-* origin: The origin AS *(bigint)*
-* time: Epoch Time that the announcement was first seen *(bigint)*
-* Create Table SQL:
-    ```
-    CREATE UNLOGGED TABLE IF NOT EXISTS
-        mrt_announcements (
-            prefix cidr,
-            as_path bigint ARRAY,
-            origin bigint,
-            time bigint
-        );
-    ```
+	* This table contains information on the MRT 	Announcements retrieved from the https://bgpstream.caida.org/broker/data
+	* Unlogged tables are used for speed
+	* prefix: The prefix of an AS *(CIDR)*
+	* as\_path: An array of all the AS numbers in the 	AS Path (*bigint ARRAY)*
+	* origin: The origin AS *(bigint)*
+	* time: Epoch Time that the announcement was first seen *(bigint)*
+	* Create Table SQL:
+	    ```
+	    CREATE UNLOGGED TABLE IF NOT EXISTS
+	        mrt_announcements (
+	            prefix cidr,
+	            as_path bigint ARRAY,
+	            origin bigint,
+	            time bigint
+	        );
+	    ```
 ### MRT Announcements Design Choices 
 * [lib\_bgp\_data](#lib_bgp_data)
 * [MRT Announcements Submodule](#mrt-announcements-submodule)
@@ -783,7 +892,7 @@ BGPStream_Website_Parser().parse(start=1558974033,
 To run the BGPStream_Website_Parser with specific time intervals and custom row_limit (parses 10 rows):
 ```python
 from lib_bgp_data import BGPStream_Website_Parser
-MRT_Parser().parse_files(start=1558974033,
+BGPStream_Website_Parser().parse_files(start=1558974033,
                          end=1558974033,
                          row_limit=10)
 ```
@@ -1139,6 +1248,9 @@ Coming Soon to a theater near you
 * [Todo and Possible Future Improvements](#todopossible-future-improvements)
     * Move the file serving functions into their own class
         * Improves readability?
+    * Attempt to unhinge the db and get these values with sql queries similar to:
+	    * ```SELECT * FROM mrt INNER JOIN ON m_prefix << roas_prefix AND MASKLEN(m_prefix) <= roas_max_length ```
+
     * Add test cases
     * Reduce total information in the headers
     * Change paramaters to be tables in README
@@ -1148,7 +1260,6 @@ Coming Soon to a theater near you
     * Reduce total amount of information in headers
     * Move file serving functions to their own class?
 	    * Improves readability?
-	* Attempt this in sql
 	* Update docs for cmd line args, tests, etc.
 	* Once in prod push to pypi
 
@@ -1648,6 +1759,9 @@ sudo pip3 install virtualenv
 
 On Redhat the steps can be found here:
 [https://developers.redhat.com/blog/2018/08/13/install-python3-rhel/](https://developers.redhat.com/blog/2018/08/13/install-python3-rhel/)
+NOTE: If you are installing it on an OS other than ubuntu, I do not think the install script will work. Good luck doing it all manually.
+
+Note: if you are using our machine ahlocal, there are some very weird permission errors. Due to SE Linux and the gateway, etc, sudo cannot access your home directory. I have tried using ```export HOME=/root``` and other solutions to no avail. No one seems to be able to figure it out. To run this I would install it in a top level directory like /ext and install it by using ```sudo su``` and continuing from there. I'm sure this is not completely secure so hopefully this will get fixed in the future but no one seems to know how to do that lol.
 
 Once you have virtualenv installed, run 
 ```bash
@@ -1917,6 +2031,7 @@ Thanks to all of these blogs, stack overflow posts, etc. for their help in solvi
 * https://jichu4n.com/posts/how-to-add-custom-build-steps-and-commands-to-setuppy/
 * https://stackoverflow.com/questions/1321270/how-to-extend-distutils-with-a-simple-post-install-script/1321345#1321345
 * https://stackoverflow.com/questions/14441955/how-to-perform-custom-build-steps-in-setup-py
+* [https://stackoverflow.com/questions/6943208/](https://stackoverflow.com/questions/6943208/)
 
 ## License
    * [lib\_bgp\_data](#lib_bgp_data)
@@ -1928,10 +2043,13 @@ MIT License
 
 Working on at the moment:
 * ROVPP project
+* Potentially add verification as a branch with a submodule in order to utilize the db wrapper? or nah?
 * Update Postgres on the website server to version 11 for speed
 * Configure database on website server to be faster
 * MRT Announcements Unit tests
 * Formulate some kind of interview process for this thing and get more people
+* After each submodule enters prod, email Tony
+	* Reach out when complete to offer assistance installing
 
 Medium Term:
 * [Forecast TODO](#forecast-possible-future-improvements)
@@ -1962,7 +2080,27 @@ Long term:
 * Email statistics automatically?
 * For each part modify the work mem and other db confs
 * Add history generator to the massive package
-
+* Have a graph viz func that would return an AS and all of it's peers, customers, and providers, and all of their peers, customers, and providers out to a certain level
+* Potentially make other submodules for relationship data for the different sources, and compare them to Cadia?
+	* Write a paper about this?
+* Check out [https://github.com/FORTH-ICS-INSPIRE/artemis](https://github.com/FORTH-ICS-INSPIRE/artemis)
+	* Possible alternate source of hiajcks?
+	* Reyanldo took a look and said it uses bgpstream.com
+* Another graphviz script for propogation visualizations for extrapolator or rovpp?
+* Fix BGP leaks problem and publish a paper on this
+	* incentivized due to more customers wanting your AS
+* Fix origin hijackings and publish a paper on this
+	* Path end validation - read herzbergs paper
+* Extend forecast project to be for all announcements
+* Deep learning with bgp leaks and eveyrthing else?
+	* Not sure if this makes sense since this would be opaque
+* Publish a paper on statistical analysis on the selection of nodes for the deployment of ROV, etc.
+	* Revisit old works and perform statistical analysis on them
+	* 75% of the nodes are transit nodes
+	* Should be selected in such a way to have little variance for less testing
+	* Determing the weightings on each kind of as (num peers, customers, providers, overall connectivity, etc)
+* Extend forecast to run on updates?
+	* incrimental updates for the mrt parser and why we decided not to do it – about 60k announcements per update vs 5 million for rib. that’s 80x speedup but cannot do in parallel – that’s now a 7x speedup – but if we consider that it must only take the thing where certain things equal other things, then it becomes negligable. However, the rest of our code must run this way.
 ## FAQ
    * [lib\_bgp\_data](#lib_bgp_data)
 
@@ -1975,3 +2113,6 @@ A: Read these, and become more confused:
 * [https://www.ideals.illinois.edu/bitstream/handle/2142/103896/Deployable%20Internet%20Routing%20Security%20-%20Trusted%20CI%20Webinar.pdf?sequence=2&isAllowed=y](https://www.ideals.illinois.edu/bitstream/handle/2142/103896/Deployable%20Internet%20Routing%20Security%20-%20Trusted%20CI%20Webinar.pdf?sequence=2&isAllowed=y)
 * RPKI/ROV Forecast web proposal - email Dr. Amir Herzberg for this paper
 * ROVPP Hotnets paper: email Dr. Amir Herzberg for this paper
+
+Q: What is the fastest way to dump these tables?
+A: ```pgdump bgp | pigz -p <numthreads> > jdump.sql.gz``` I have tested all of the different possibilities, and this is the fastest for dumping and reuploading for our tables. Note that indexes do not get dumped and must be recreated.
