@@ -1263,6 +1263,10 @@ Coming Soon to a theater near you
     * put underscores in front of all private variables
     * Add command line args
     * Reduce total amount of information in headers
+    * Take out hardcoded file paths
+    * refactor
+    * Update file comments and docs on changes
+        * Such as killing port 8080, deleting dirs, Popen vs check_call, etc
     * Move file serving functions to their own class?
 	    * Improves readability?
 	* Update docs for cmd line args, tests, etc.
@@ -1991,7 +1995,8 @@ To add your own submodule: [How to Add a Submodule](#how-to-add-a-submodule)
 
 ## History
    * [lib\_bgp\_data](#lib_bgp_data)
-   * 0.2.2 - Automated full run where everything is correct
+   * 0.2.2 - Automated full run
+   * 0.2.3 - Fixed bugs found in the RPKI Validator
 
 ## Credits
    * [lib\_bgp\_data](#lib_bgp_data)
@@ -2046,6 +2051,7 @@ Thanks to all of these blogs, stack overflow posts, etc. for their help in solvi
 * https://stackoverflow.com/questions/1321270/how-to-extend-distutils-with-a-simple-post-install-script/1321345#1321345
 * https://stackoverflow.com/questions/14441955/how-to-perform-custom-build-steps-in-setup-py
 * [https://stackoverflow.com/questions/6943208/](https://stackoverflow.com/questions/6943208/)
+* [https://stackoverflow.com/a/20691431](https://stackoverflow.com/a/20691431)
 
 ## License
    * [lib\_bgp\_data](#lib_bgp_data)
