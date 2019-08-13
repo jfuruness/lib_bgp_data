@@ -58,9 +58,12 @@ import socketserver
 from multiprocess import Process
 from contextlib import contextmanager
 import os
-from subprocess import Popen, PIPE, check_call
+from subprocess import Popen, PIPE, check_call, DEVNULL
 import time
-from ..utils import utils, error_catcher
+from psutil import process_iter
+from signal import SIGTERM
+import urllib
+from ..utils import utils, error_catcher, Install
 from .tables import Unique_Prefix_Origins_Table, ROV_Validity_Table
 from ..utils import db_connection
 
@@ -70,6 +73,21 @@ __Lisence__ = "MIT"
 __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
+
+
+def _run_check_call(logger):
+    # For whatever ungodly reason I cannot seem to get this working with Popen
+    # So now I spawn a process that just check calls
+    # I know it is hardcoded paths, but I am so done with this module
+
+    if logger.level < 20: # INFO for logging
+        check_call("cd /var/lib/rpki-validator-3 && ./rpki-validator-3.sh",
+                   shell=True)
+    else:
+        check_call("cd /var/lib/rpki-validator-3 && ./rpki-validator-3.sh",
+                   stdout=DEVNULL,
+                   stderr=DEVNULL,
+                   shell=True)
 
 
 @contextmanager
@@ -90,33 +108,29 @@ def _run_rpki_validator(self, file_path, rpki_path):
 
     Once finished the validator is closed correctly."""
 
-    self.logger.info("Make way for the rpki validator!!!")
-    self.logger.info("Killing all port 8080 processes, cause idc")
-    check_call("sudo kill -9 $(lsof -t -i:8080)", shell=True)
 
+    self.kill_8080()
     # Must remove these to ensure a clean run
     utils.clean_paths(self.logger, self.rpki_db_paths)
     cmds = ["cd /var/lib/rpki-validator-3",
-            "chown -R root:root"]
+            "chown -R root:root /var/lib/rpki-validator-3/"]
     check_call(" && ".join(cmds), shell=True)
-
-    # Allow system to reclaim port
-    time.sleep(120)
-
 
     # Serves the ripe file
     with _serve_file(self, file_path):
         # Subprocess
         self.logger.info("About to run rpki validator")
+
         # Because the output of the rpki validator is garbage we omit it
         # Unless we are in debug mode
-        if self.logger.level < 20:  # Info
-            process = Popen([rpki_path])
-        else:
-            process = Popen([rpki_path], stdout=PIPE, stderr=PIPE)
+
+        p = Process(target=_run_check_call, args=(self.logger,))
+        p.start()
         self.logger.debug("Running rpki validator")
-        yield
-        process.terminate()
+        yield 
+        p.terminate()
+        p.join()
+        self.kill_8080(wait=False)
         self.logger.debug("Closed rpki validator")
 
 
@@ -148,6 +162,7 @@ class RPKI_Validator:
         with _run_rpki_validator(self, validator_file, self.rpki_path):
             # First we wait for the validator to load the data
             self._wait_for_validator_load(total_rows)
+
             # Writes validator to database
             self.logger.debug("validator load completed")
             utils.rows_to_db(self.logger,
@@ -212,16 +227,20 @@ class RPKI_Validator:
         return [int(asn["asn"][2:]), asn["prefix"], valid.get(asn["validity"])]
 
     @error_catcher()
-    def _get_row_count(self, headers):
+    def _get_validation_status(self, headers):
         """Returns row count of json object for waiting"""
 
         try:
-            # Gets row count
-            return utils.get_json("http://[::1]:8080/api/bgp/",
-                                  headers)["metadata"]["totalCount"]
-        except Exception as e:
-            self.logger.debug("Problem with getting json: {}".format(e))
-            return 0
+            for x in utils.get_json("http://[::1]:8080/api/trust-anchors/statuses",
+                                    headers)["data"]:
+                if x["completedValidation"] == False:
+                    # If anything has not been validated return false
+                    return False
+            # All are validated. Return true
+            return True
+        except urllib.error.URLError as e:
+            self._wait(60, "Connection was refused")
+            return False
 
     @error_catcher()
     def _serve_file(self, path):
@@ -239,17 +258,20 @@ class RPKI_Validator:
     def _wait_for_validator_load(self, total_rows):
         """Waits for the rpki validator to load all of it's data"""
 
-        time.sleep(30)
+        self._wait(60, "Allowing validator to load")
         # Check if the rows of the RPKI data are equal to the rows
         # in the unique prefix origins file
-        while self._get_row_count(self._get_headers()) < total_rows:
-            self.logger.info("Waiting for validator load")
-            self.logger.debug(total_rows)
-            self.logger.debug(self._get_row_count(self._get_headers()))
-            time.sleep(30)
+        while self._get_validation_status(self._get_headers()) == False:
+            self._wait(10, "Waiting for trust anchors to load")
 
-        # Added this to make sure it waits long enough
-        time.sleep(300)
+        self._wait(30, "Waiting for upload to bgp preview")
+
+    @error_catcher()
+    def _wait(self, wait_time, msg):
+        """Wait for time and print message"""
+
+        self.logger.info("Waiting for {} seconds: {}".format(wait_time, msg))
+        time.sleep(wait_time)
 
     @error_catcher()
     def _get_headers(self):
@@ -267,3 +289,17 @@ class RPKI_Validator:
                            "application/signed-exchange;v=b3"),
                 "Accept-Encoding": "gzip, deflate, br",
                 "Accept-Language": "en-US,en;q=0.9"}
+
+    # https://stackoverflow.com/a/20691431
+    @error_catcher()
+    def kill_8080(self, wait=True):
+        self.logger.info("Make way for the rpki validator!!!")
+        self.logger.info("Killing all port 8080 processes, cause idc")
+        for proc in process_iter():
+            for conns in proc.connections(kind='inet'):
+                if conns.laddr.port == 8080:
+                    proc.send_signal(SIGTERM) # or SIGKILL
+                    if wait:
+                        self._wait(120, "Waiting for ports to be reclaimed")
+#        check_call("sudo kill -9 $(lsof -t -i:8080)", shell=True)
+

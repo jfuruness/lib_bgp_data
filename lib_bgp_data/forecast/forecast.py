@@ -79,6 +79,8 @@ class Forecast:
                      what_if_args={},
                      test=False):
 
+        self.logger.info("Running from {} to {} in UTC".format(start, end))
+
         if fresh_install:
             Install().install(fresh_install)
         # First we want to parse the mrt files and create the index
