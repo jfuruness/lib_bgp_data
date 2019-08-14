@@ -321,7 +321,7 @@ In this example we get all RIB files from a specific collector, route-views2
 from lib_bgp_data import MRT_Parser
 MRT_Parser().parse_files(start=1558974033,
                          end=1558974033,
-                         api_param_mods={"collectors[]": ["route-views2", "rrc03"})
+                         api_param_mods={"collectors[]": ["route-views2", "rrc03"]})
 ```
 To run the MRT Parser with specific time intervals and bgpdump:
 ```python
