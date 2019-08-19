@@ -250,6 +250,12 @@ class Database:
         time.sleep(30)
         self._connect(create_tables=False)
 
+    @error_catcher()
+    def get_all(self):
+        """Gets all rows from table"""
+
+        return self.execute("SELECT * FROM {}".format(self.name))
+
     @property
     def columns(self):
         """Returns the columns of the table

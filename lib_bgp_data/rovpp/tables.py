@@ -46,7 +46,8 @@ class ROVPP_ASes_Table(Database):
 
         sql = """CREATE UNLOGGED TABLE IF NOT EXISTS rovpp_ases (
                  asn bigint,
-                 as_type text
+                 as_type text,
+                 impliment BOOLEAN
                  );"""
         self.cursor.execute(sql)
 
@@ -64,31 +65,15 @@ class ROVPP_ASes_Table(Database):
     @error_catcher()
     def fill_table(self):
         self.clear_table()
+        self.logger.debug("Initializing rovpp_as_table")
         sql = """CREATE UNLOGGED TABLE IF NOT EXISTS rovpp_ases AS (
-                 SELECT customer_as AS asn, 'bgp' AS as_type FROM (
+                 SELECT customer_as AS asn, 'bgp' AS as_type, FALSE AS impliment FROM (
                      SELECT DISTINCT customer_as FROM rovpp_customer_providers
                      UNION SELECT provider_as FROM rovpp_customer_providers
                      UNION SELECT peer_as_1 FROM rovpp_peers
                      UNION SELECT peer_as_2 FROM rovpp_peers) union_temp
                  );"""
         self.cursor.execute(sql)
-
-
-    @error_catcher()
-    def change_routing_policies(self, asns, policy):
-        """Changes routing policies to policy for a list of asns"""
-
-        self._create_tables()
-        sql = "UPDATE rovpp_ases SET as_type = %s WHERE asn = %s"
-        # Should this be a bulk update? Yes. Does it matter? Do it later.
-        for asn in asns:
-            self.cursor.execute(sql, [policy, asn])
-
-    @error_catcher()
-    def get_all(self):
-        """Gets everything, for convenience only"""
-
-        return self.execute("SELECT * FROM rovpp_ases;")
 
 class ROVPP_MRT_Announcements_Table(Database):
     """Class with database functionality.
@@ -193,3 +178,101 @@ class Subprefix_Hijack_Temp_Table(Database):
                 '1.2.0.0/16',  # expected_prefix
                 victim]
         self.cursor.execute(sql, data)
+
+
+####################
+### Subtables!!! ###
+####################
+
+class ROVPP_ASes_Subtable(Database):
+    def _create_tables(self):
+        sql = """CREATE UNLOGGED TABLE IF NOT EXISTS {} (
+                 asn bigint,
+                 as_type text,
+                 impliment BOOLEAN
+                 );""".format(self.name)
+        self.cursor.execute(sql)
+
+    @error_catcher()
+    def clear_table(self):
+        """Clears the rovpp_ases table.
+        Should be called at the start of every run.
+        """
+
+        self.logger.info("Dropping {}".format(self.name))
+        self.cursor.execute("DROP TABLE IF EXISTS {}".format(self.name))
+        self.logger.info("{} dropped".format(self.name)
+
+    @error_catcher()
+    def set_implimentable_ases(self, percent, attacker):
+        """Sets ases to impliment. Due to large sample size,
+           1 (the attacker) is not subtracted from the count,
+           since we don't know which data set the attacker is from"""
+
+        sql = """UPDATE (SELECT * FROM {0} a 
+                         WHERE {0}.asn != {1}
+                         ORDER BY RANDOM LIMIT (
+                             SELECT COUNT(*) FROM {0}) * ({2}::decimal/100.0)
+                         )
+               SET impliment = TRUE;""".format(self.name, attacker, percent)
+        self.execute(sql)
+
+    @error_catcher()
+    def change_routing_policies(self, policy):
+        sql = """UPDATE {} SET as_type = {}
+                 WHERE impliment = TRUE;""".format(self.name, policy)
+        self.execute(sql)
+
+class ROVPP_Top_100_ASes_Table(ROVPP_ASes_Subtable):
+    """Class with database functionality.
+    In depth explanation at the top of the file."""
+
+    __slots__ = []
+
+    @error_catcher()
+    def fill_table(self):
+        self.clear_table()
+        sql = """CREATE UNLOGGED TABLE IF NOT EXISTS rovpp_top_100_ases AS (
+                 SELECT * FROM rovpp_ases ORDER BY asn DESC LIMIT 100
+                 );"""
+        self.cursor.execute(sql)
+
+
+class ROVPP_Edge_ASes_Table(ROVPP_ASes_Subtable):
+    """Class with database functionality.
+    In depth explanation at the top of the file."""
+
+    __slots__ = []
+
+    @error_catcher()
+    def fill_table(self):
+        self.clear_table()
+        sql = """CREATE UNLOGGED TABLE IF NOT EXISTS rovpp_edge_ases AS (
+                     SELECT r.asn, r.as_type, r.impliment FROM rovpp_ases r
+                         INNER JOIN rovpp_as_connectivity c ON c.asn = r.asn
+                     WHERE c.connectivity = 0
+                 );"""
+        self.cursor.execute(sql)
+
+class ROVPP_Etc_ASes_Table(ROVPP_ASes_Subtable):
+    """Class with database functionality.
+    In depth explanation at the top of the file."""
+
+    __slots__ = []
+
+    @error_catcher()
+    def fill_table(self, table_names):
+        self.clear_table()
+        sql = """CREATE UNLOGGED TABLE IF NOT EXISTS rovpp_etc_ases AS (
+                 SELECT ra.asn, ra.as_type, ra.impliment FROM rovpp_ases ra"""
+        for table_name in table_names:
+            sql += " INNER JOIN {0} ON {0}.asn = ra.asn,".format(table_name)
+        # Gets rid of the last comma
+        sql = sql[:-1]
+        for table_name in table_names:
+            sql += " WHERE {}.asn IS NULL,".format(table_name)
+        # Gets rid of the last comma
+        sql = sql[:-1]
+        sql += ");"
+        self.logger.info("ETC AS SQL: ", sql)
+        self.cursor.execute(sql)
