@@ -33,12 +33,6 @@ Non_BGP_Policies = Enum('Non_BGP_Policies', non_bgp_policies_dict)
 ### Statistics Enums ###
 ########################
 
-class AS_Type(Enum):
-    """Types of ASes"""
-
-    RECIEVED_HIJACK = "recived_hijack"
-    NOT_RECIEVED_HIJACK = "not_recieved_hijack"
-
 class Planes(Enum):
     """The two types of data planes"""
 
@@ -50,7 +44,6 @@ class Planes(Enum):
 
 class Conditions(Enum):
 
-    DROPPED = "dropped_not_hijacked"
-    HIJACKED = "hijacked"
-    NOT_HIJACKED = "not_hijacked"
-    NOT_HIJACKED_NOT_DROPPED = "not_hijacked_not_dropped"
+    BLACKHOLED = "blackholed"
+    NOT_BLACKHOLED_HIJACKED = "hijacked"
+    NOT_BLACKHOLED_NOT_HIJACKED = "not_hijacked"

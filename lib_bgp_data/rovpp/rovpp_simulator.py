@@ -43,7 +43,7 @@ class ROVPP_Simulator:
         # Sets path vars, logger, config, etc
         utils.set_common_init_args(self, args)
         self.set_up = ROVPP_Simulator_Set_Up_Tool(args)
-        self.statistics_calculator = ROVPP_Statistics_Calculator(args)
+        self.args = args
         self.graph_data = Graph_Data(args)
 
     @error_catcher()
@@ -56,7 +56,9 @@ class ROVPP_Simulator:
 
 
         self.set_up_tool.set_up_all_trials_and_percents()
-
+        self.statistics_calculator = Statistics_Calculator(percents,
+                                                           tables,
+                                                           self.args)
         # For each percent adoption
         for i, percent in enumerate(percents):
             # For each trial in that percent
@@ -69,6 +71,7 @@ class ROVPP_Simulator:
                                   percent)
 
         self.graph_data.graph_data(self.statistics_calculator.stats)
+        # Close all tables here!!!
 
 ########################
 ### Helper Functions ###

@@ -31,31 +31,34 @@ class ROVPP_Statistics_Calculator:
                  'subprefix_hijack']
 
     @error_catcher()
-    def __init__(self, args={}):
+    def __init__(self, percents, tables, args={}):
         """Initializes logger and path variables."""
 
         # Sets path vars, logger, config, etc
         utils.set_common_init_args(self, args)
-
+        self.tables = tables
         # I know this could be in a dict comp but ARE YOU NUTS???
         self.stats = dict()
-        for non_bgp_policy in Non_BGP_Policies.__members__.values():
-            self.stats[non_bgp_policy.value] = dict()
-            for percent in args.get("percents"):
-                self.stats[non_bgp_policy.value][percent] = dict()
-                sim = self.stats[non_bgp_policy.value][percent]
-                # For each policy
-                for policy in Policies.__members__.values():
-                    # Set that policy to have a dict which will contain data planes
-                    sim[policy.value] = dict()
-                    # For storing the total number of ases
-                    # For each kind of data plane
-                    for plane in Planes.__members__.values():
-                        sim[policy.value][plane.value] = dict()
-                        # For each kind of condition
-                        for cond in Conditions.__members__.values():
-                            # Sets rates to be a list for multiple attacks
-                            sim[policy.value][plane.value][cond.value] = []
+        for t_dict in tables:
+            self.stats[t_dict["table"].name] = dict()
+            for non_bgp_policy in Non_BGP_Policies.__members__.values():
+                self.stats[t_dict["table"].name][non_bgp_policy.value] = dict()
+                sim = self.stats[t_dict["table"].name][non_bgp_policy.value]
+                for i in range(len(percents)):
+                    sim[i] = dict()
+                    # For each policy
+                    for policy in Policies.__members__.values():
+                        pol_val = policy.value
+                        # Set that policy to have a dict which will contain data planes
+                        sim[i][pol_val] = dict()
+                        # For storing the total number of ases
+                        # For each kind of data plane
+                        for plane in Planes.__members__.values():
+                            sim[i][pol_val][plane.value] = dict()
+                            # For each kind of condition
+                            for cond in Conditions.__members__.values():
+                                # Sets rates to be a list for multiple attacks
+                                sim[i][pol_val][plane.value][cond.value] = []
 
 
 ########################
@@ -63,52 +66,48 @@ class ROVPP_Statistics_Calculator:
 ########################
 
     @error_catcher()
-    def calculate_stats(self, as_table, subprefix_hijack, percentage, policy):
+    def calculate_stats(self, subprefix_hijack, percent_i, policy):
         """Calculates success rates"""
 
-        # Appends a zero onto all stats
-        self._initialize_attack_stats(percentage, policy)
-        ases_dict = self._get_ases(as_table,
-                                   subprefix_hijack["more_specific_prefix"])
+        for table in self.tables:
+            # Needed for shorter lines
+            sim = self.stats[table][policy][percent_i]
 
-        # Needed for shorter lines
-        # It's a reference so it's cool alright? Geez chill
-        sim = self.stats[policy][percentage]
-        hijacked_ases = set(ases_dict[AS_Type.RECIEVED_HIJACK.value].keys())
+            # Appends a zero onto all stats
+            self._initialize_attack_stats(table, policy, percent_i)
+            # Gets a dict of blackholed/not blackholed, and its stats
+            ases_dict = self._get_ases(table)
 
-        self._update_ases_recieved_hijack_stats(sim, hijacked_ases, ases_dict)
+            self._update_blackholed_ases_stats(sim, ases_dict)
 
-        blackholed_asns = self._get_blackhole_asns(as_table)
+            ROVPP_Control_Plane_Stats().calculate_not_bholed(sim, ases_dict)
+    
+            ROVPP_Data_Plane_Stats().calculate_not_bholed_stats(sim, ases_dict)
 
-        ROVPP_Control_Plane_Statistics().calculate_not_received_hijack_stats(
-            as_table, sim, ases_dict, blackholed_asns)
+            self.logger.debug(sim)
 
-        ROVPP_Data_Plane_Statistics().calculate_not_recieved_hijack_stats(
-            ases_dict, subprefix_hijack["victim"], hijacked_ases, sim, blackholed_asns)
-        self.logger.debug(sim)
-
-    def _update_ases_recieved_hijack_stats(self, sim, hijacked, ases_dict):
+    def _update_blackholed_ases_stats(self, sim, ases_dict):
         """Updates stats for all ASes that recieved the hijack"""
 
         # THIS SHOULD BE OPTIMIZED - THIS SHOULD BE A COUNT QUERY TO POSTGRES
         # NOT A FOR LOOP IN PYTHON!!!
 
-        # If the AS has recieved the hijack:
-        for asn in hijacked:
-            # Increase control plane and data plane hijacked
-            for plane in Planes.__members__.values():
-                # Add one to the statistic
-                as_info = ases_dict[AS_Type.RECIEVED_HIJACK.value][asn]
-                as_type = as_info["as_type"]
-                sim[as_type][plane.value][Conditions.HIJACKED.value][-1] += 1
-                #if plane.value == Planes.DATA_PLANE.value:
-                as_info["data_plane_conditions"].add(Conditions.HIJACKED.value)
+        blackholed = Conditions.BLACKHOLED.value
+        #NOTE: Does this need to be a set? take it out?
+        blackholed_ases = set(ases_dict[Conditions.BLACKHOLED.value].keys())
+
+        # Increase control plane and data plane hijacked
+        for plane in Planes.__members__.values():
+            for policy in Policies.__members__.values()
+                num_bholed = len([x for x in blackholed_ases
+                                      if ases_dict[blackholed][x]["as_type"]
+                                      == policy.value])
+                sim[policy.value][plane.value][blackholed][-1] += num_bholed
 
     @error_catcher()
-    def _initialize_attack_stats(self, percentage, policy):
+    def _initialize_attack_stats(self, sim):
         """Defaults the next statistic to be 0 for everything"""
 
-        sim = self.stats[policy][percentage]
         #I know this could be in a dict comp but ARE YOU NUTS???
         for policy in Policies.__members__.values():
             for plane in Planes.__members__.values():
@@ -116,40 +115,61 @@ class ROVPP_Statistics_Calculator:
                     sim[policy.value][plane.value][cond.value].append(0)
 
     @error_catcher()
-    def _get_ases(self, as_table, more_specific_prefix):
+    def _get_ases(self, table):
 
-        # Gets all asns that where hijacked
+        nbh = Conditions.NOT_BLACKHOLED_HIJACKED.value
+        nbnh = Conditions.NOT_BLACKHOLED_NOT_HIJACKED.value
+        blackholed = Conditions.BLACKHOLED.value
+
+       #NOTE: Split into multiple functions!!!!!!!!!!!!!!!!!
+
+
+        # Gets all asns that where not blackholed and hijacked
         sql = """SELECT exr.asn, exr.prefix, exr.origin, exr.received_from_asn,
                  ases.as_type FROM rovpp_extrapolation_results exr
-                 INNER JOIN rovpp_ases ases
-                 ON ases.asn = exr.asn
-                 AND exr.prefix = %s;"""
-        data = [more_specific_prefix]
-        ases = {AS_Type.RECIEVED_HIJACK.value: {x["asn"]: x for x in
-                                         as_table.execute(sql, data)}}
+                 INNER JOIN {0} ases
+                     ON ases.asn = exr.asn,
+                 LEFT JOIN {0} rovpp_blackholes b
+                     ON b.asn = exr.asn
+                 WHERE b.asn IS NULL
+                     AND exr.prefix = {1};""".format(table.name,
+                                                    more_specific_prefix)
+        ases = {nbh: {x["asn"]: x for x in table.execute(sql)}}
 
-
-        # Get's all asns that do not have a corresponding entry for a hijack
+        # Gets all asns that where not blackholed and hijacked
         sql = """SELECT exr.asn, exr.prefix, exr.origin, exr.received_from_asn,
                  ases.as_type FROM rovpp_extrapolation_results exr
-                 LEFT JOIN (SELECT * FROM rovpp_extrapolation_results exr_og
-                            WHERE exr_og.prefix = %s) exr_hijacked
-                           ON exr.asn = exr_hijacked.asn
-                 INNER JOIN rovpp_ases ases ON ases.asn = exr.asn
-                 WHERE exr_hijacked.asn IS NULL"""
+                 INNER JOIN {0} ases
+                     ON ases.asn = exr.asn,
+                 LEFT JOIN {0} rovpp_blackholes b
+                     ON b.asn = exr.asn
+                 WHERE b.asn IS NULL
+                     AND exr.prefix = {1};""".format(table.name,
+                                                    less_specific_prefix)
+        ases = {nbnh: {x["asn"]: x for x in table.execute(sql)}}
 
-        ases[AS_Type.NOT_RECIEVED_HIJACK.value] = {x["asn"]: x for x in 
-                                             as_table.execute(sql, data)}
+
+
+
+        # Gets all asns that ARE blackholed
+        sql = """SELECT DISTINCT exr.asn,
+                 ases.as_type FROM rovpp_extrapolation_results exr
+                 INNER JOIN {0} ases
+                     ON ases.asn = exr.asn,
+                 INNER JOIN {0} rovpp_blackholes b
+                     ON b.asn = exr.asn;""".format(table.name)
+        ases[blackholed] = {x["asn"]: x for x in table.execute(sql)}
 
         # Inits data plane onditions to be none
-        for recieved_or_not in ases.keys():
-            for asn in ases[recieved_or_not].keys():
-                ases[recieved_or_not][asn]["data_plane_conditions"] = set()
+        for as_type in [nbh, nbnh]:
+            for asn in ases[as_type].keys():
+                ases[as_type][asn]["data_plane_conditions"] = set()
+
+
+
+        # Inits data plane conditions to contain blackholed
+        for asn in ases[blackholed].keys():
+            ases[blackholed][asn]["data_plane_conditions"] = set(
+                Conditions.BLACKHOLED.value)
 
         return ases
-
-    def _get_blackhole_asns(self, as_table):
-        """Gets all blackhole asns"""
-
-        return set([x["asn"]
-                for x in as_table.execute("SELECT * FROM rovpp_blackholes;")])

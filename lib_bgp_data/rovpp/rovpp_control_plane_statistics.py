@@ -19,7 +19,7 @@ from pprint import pprint
 from .enums import Policies, Non_BGP_Policies, AS_Type, Planes, Conditions
 from ..utils import error_catcher, utils
 
-class ROVPP_Control_Plane_Statistics:
+class ROVPP_Control_Plane_Stats:
     """This class simulates ROVPP.
 
     In depth explanation at the top of the file
@@ -40,32 +40,21 @@ class ROVPP_Control_Plane_Statistics:
 ########################
 
     @error_catcher()
-    def calculate_not_received_hijack_stats(self, as_table, sim, ases_dict,
-                                            blackholed_asns):
+    def calculate_not_bholed_stats(self, sim, ases_dict):
         """Calculates success rates"""
 
-        if len(ases_dict[AS_Type.NOT_RECIEVED_HIJACK.value]) == 0 and len(ases_dict[AS_Type.RECIEVED_HIJACK.value]) == 0:
-            input("noooooooooooo")
+        #### NOTE: THIS SHOULD BE SQL AGAIN!!! OPTIMIZE SO THAT FOR ECAH
+        # SUBTABLE YOU CAN ONLY HAVE ONE POLICY, bgp or non bgp, then do
+        # this all in sql!!!!!
 
-        # If the AS didn't recieve the hijack:
-        for asn in ases_dict[AS_Type.NOT_RECIEVED_HIJACK.value]:
-            # First increase the control plane not hijacked
-
-            _as = ases_dict[AS_Type.NOT_RECIEVED_HIJACK.value][asn]
-
-            self._add_stat(sim, _as, self.plane, Conditions.NOT_HIJACKED.value)
-
-            # Then increase the control plane not hijacked not droped
-            if asn in blackholed_asns and _as["as_type"] in [Policies.ROVPP.value]:
-                self._add_stat(sim, _as, self.plane, Conditions.DROPPED.value)
-            else:
-                self._add_stat(sim,
-                               _as,
-                               self.plane,
-                               Conditions.NOT_HIJACKED_NOT_DROPPED.value)
-
-    @error_catcher()
-    def _add_stat(self, sim, _as, plane, condition):
-        """One liner for cleaner code, increments stat"""
-
-        sim[_as["as_type"]][plane][condition][-1] += 1
+        for _cond in Conditions.__members__.values():
+            cond = _cond.value
+            if cond == Conditions.BLACKHOLED.value:
+                continue  # We did these already
+            #NOTE: does this need to be a set? take this out!
+            cond_ases = set(ases_dict[cond].keys())
+            for policy in Policies.__members__.values()
+                # Total number of ases for that cond with that policy
+                num = len([x for x in cond_ases
+                           if ases_dict[cond][x]["as_type"] == policy.value])
+                sim[policy.value][plane.value][cond][-1] += num
