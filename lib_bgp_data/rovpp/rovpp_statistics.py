@@ -74,7 +74,8 @@ class ROVPP_Statistics_Calculator:
             sim = self.stats[table][policy][percent_i]
 
             # Appends a zero onto all stats
-            self._initialize_attack_stats(table, policy, percent_i)
+            self._initialize_attack_stats(sim)
+
             # Gets a dict of blackholed/not blackholed, and its stats
             ases_dict = self._get_ases(table)
 
