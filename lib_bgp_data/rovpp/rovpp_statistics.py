@@ -18,8 +18,8 @@ __status__ = "Development"
 from pprint import pprint
 from .enums import Policies, Non_BGP_Policies, Planes, Conditions
 from ..utils import error_catcher, utils
-from .rovpp_data_plane_statistics import ROVPP_Data_Plane_Statistics
-from .rovpp_control_plane_statistics import ROVPP_Control_Plane_Statistics
+from .rovpp_data_plane_statistics import ROVPP_Data_Plane_Stats
+from .rovpp_control_plane_statistics import ROVPP_Control_Plane_Stats
 
 class ROVPP_Statistics_Calculator:
     """This class simulates ROVPP.
@@ -122,13 +122,13 @@ class ROVPP_Statistics_Calculator:
         nbnh = Conditions.NOT_BLACKHOLED_NOT_HIJACKED.value
         blackholed = Conditions.BLACKHOLED.value
 
-       #NOTE: Split into multiple functions!!!!!!!!!!!!!!!!!
-       sql = """CREATE TABLE rovpp_extrapolation_results_filtered exrf AS(
-             SELECT DISTINCT ON (exr.asn) * FROM rovpp_extrapolation_results exr
-             INNER JOIN rovpp_extrapolation_results exrh
-                 ON exrh.asn = exr.asn AND exrh.prefix = more_specific
-             INNER JOIN rovpp_extrapolation_results exrnh
-                 ON exrnh.asn = exr.asn AND exrnh.prefix = less_specific AND exr.prefix IS NULL;"""          
+        #NOTE: Split into multiple functions!!!!!!!!!!!!!!!!!
+        sql = """CREATE TABLE rovpp_extrapolation_results_filtered exrf AS(
+              SELECT DISTINCT ON (exr.asn) * FROM rovpp_extrapolation_results exr
+              INNER JOIN rovpp_extrapolation_results exrh
+                  ON exrh.asn = exr.asn AND exrh.prefix = more_specific
+              INNER JOIN rovpp_extrapolation_results exrnh
+                  ON exrnh.asn = exr.asn AND exrnh.prefix = less_specific AND exr.prefix IS NULL;"""          
              
         table.execute(sql)
         1/0 # Make sure that table is correct
@@ -146,7 +146,7 @@ class ROVPP_Statistics_Calculator:
 
         ases = {nbh: {x["asn"]: x for x in table.execute(sql, [hijacked_p])}}
 
-        ases[nbnh] = {x["asn"]: x for x in table.execute(sql, [victim_p])}}
+        ases[nbnh] = {x["asn"]: x for x in table.execute(sql, [victim_p])}
 
 
         # Gets all asns that ARE blackholed

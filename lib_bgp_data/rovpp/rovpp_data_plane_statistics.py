@@ -20,10 +20,10 @@ __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
 from pprint import pprint
-from .enums import Policies, Non_BGP_Policies, AS_Type, Planes, Conditions
+from .enums import Policies, Non_BGP_Policies, Planes, Conditions
 from ..utils import error_catcher, utils
 
-class ROVPP_Data_Plane_Statistics:
+class ROVPP_Data_Plane_Stats:
     """This class simulates ROVPP.
 
     In depth explanation at the top of the file

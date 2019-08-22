@@ -16,7 +16,7 @@ __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
 from pprint import pprint
-from .enums import Policies, Non_BGP_Policies, AS_Type, Planes, Conditions
+from .enums import Policies, Non_BGP_Policies, Planes, Conditions
 from ..utils import error_catcher, utils
 
 class ROVPP_Control_Plane_Stats:
@@ -53,7 +53,7 @@ class ROVPP_Control_Plane_Stats:
                 continue  # We did these already
             #NOTE: does this need to be a set? take this out!
             cond_ases = set(ases_dict[cond].keys())
-            for policy in Policies.__members__.values()
+            for policy in Policies.__members__.values():
                 # Total number of ases for that cond with that policy
                 num = len([x for x in cond_ases
                            if ases_dict[cond][x]["as_type"] == policy.value])
