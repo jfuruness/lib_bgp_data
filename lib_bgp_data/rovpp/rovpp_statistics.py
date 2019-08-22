@@ -16,7 +16,7 @@ __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
 from pprint import pprint
-from .enums import Policies, Non_BGP_Policies, AS_Type, Planes, Conditions
+from .enums import Policies, Non_BGP_Policies, Planes, Conditions
 from ..utils import error_catcher, utils
 from .rovpp_data_plane_statistics import ROVPP_Data_Plane_Statistics
 from .rovpp_control_plane_statistics import ROVPP_Control_Plane_Statistics
@@ -99,7 +99,7 @@ class ROVPP_Statistics_Calculator:
 
         # Increase control plane and data plane hijacked
         for plane in Planes.__members__.values():
-            for policy in Policies.__members__.values()
+            for policy in Policies.__members__.values():
                 num_bholed = len([x for x in blackholed_ases
                                       if ases_dict[blackholed][x]["as_type"]
                                       == policy.value])
@@ -116,40 +116,37 @@ class ROVPP_Statistics_Calculator:
                     sim[policy.value][plane.value][cond.value].append(0)
 
     @error_catcher()
-    def _get_ases(self, table):
+    def _get_ases(self, table, hijack_p, victim_p):
 
         nbh = Conditions.NOT_BLACKHOLED_HIJACKED.value
         nbnh = Conditions.NOT_BLACKHOLED_NOT_HIJACKED.value
         blackholed = Conditions.BLACKHOLED.value
 
        #NOTE: Split into multiple functions!!!!!!!!!!!!!!!!!
-
-
-        # Gets all asns that where not blackholed and hijacked
-        sql = """SELECT exr.asn, exr.prefix, exr.origin, exr.received_from_asn,
-                 ases.as_type FROM rovpp_extrapolation_results exr
-                 INNER JOIN {0} ases
-                     ON ases.asn = exr.asn,
-                 LEFT JOIN {0} rovpp_blackholes b
-                     ON b.asn = exr.asn
-                 WHERE b.asn IS NULL
-                     AND exr.prefix = {1};""".format(table.name,
-                                                    more_specific_prefix)
-        ases = {nbh: {x["asn"]: x for x in table.execute(sql)}}
+       sql = """CREATE TABLE rovpp_extrapolation_results_filtered exrf AS(
+             SELECT DISTINCT ON (exr.asn) * FROM rovpp_extrapolation_results exr
+             INNER JOIN rovpp_extrapolation_results exrh
+                 ON exrh.asn = exr.asn AND exrh.prefix = more_specific
+             INNER JOIN rovpp_extrapolation_results exrnh
+                 ON exrnh.asn = exr.asn AND exrnh.prefix = less_specific AND exr.prefix IS NULL;"""          
+             
+        table.execute(sql)
+        1/0 # Make sure that table is correct
 
         # Gets all asns that where not blackholed and hijacked
         sql = """SELECT exr.asn, exr.prefix, exr.origin, exr.received_from_asn,
-                 ases.as_type FROM rovpp_extrapolation_results exr
+                 ases.as_type FROM rovpp_extrapolation_results_filtered exrf
                  INNER JOIN {0} ases
-                     ON ases.asn = exr.asn,
+                     ON ases.asn = exrf.asn,
                  LEFT JOIN {0} rovpp_blackholes b
-                     ON b.asn = exr.asn
+                     ON b.asn = exrf.asn
                  WHERE b.asn IS NULL
-                     AND exr.prefix = {1};""".format(table.name,
-                                                    less_specific_prefix)
-        ases = {nbnh: {x["asn"]: x for x in table.execute(sql)}}
+                     AND exrf.prefix = """.format(table.name)
+        sql += "%s;"
 
+        ases = {nbh: {x["asn"]: x for x in table.execute(sql, [hijacked_p])}}
 
+        ases[nbnh] = {x["asn"]: x for x in table.execute(sql, [victim_p])}}
 
 
         # Gets all asns that ARE blackholed

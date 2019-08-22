@@ -201,7 +201,7 @@ class ROVPP_ASes_Subtable(Database):
 
         self.logger.info("Dropping {}".format(self.name))
         self.cursor.execute("DROP TABLE IF EXISTS {}".format(self.name))
-        self.logger.info("{} dropped".format(self.name)
+        self.logger.info("{} dropped".format(self.name))
 
     @error_catcher()
     def set_implimentable_ases(self, percent, attacker):
