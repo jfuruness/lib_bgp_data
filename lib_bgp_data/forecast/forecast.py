@@ -124,3 +124,5 @@ class Forecast:
 
             # Rewrites the whole database for storage
             _db.vacuum_analyze_checkpoint(full=True)
+
+        self.logger.info("Ran from {} to {} in UTC".format(start, end))
