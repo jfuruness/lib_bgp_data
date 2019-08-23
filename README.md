@@ -1,7 +1,7 @@
 # lib\_bgp\_data
 This package contains multiple submodules that are used to gather and manipulate real data in order to simulate snapshots of the internet. The purpose of this is to test different security policies to determine their accuracy, and hopefully find ones that will create a safer, more secure, internet as we know it.
 
-*disclaimer: If a submodule is in development, that means that it unit tests are in the process of being written, and changes need to be made before the data can be considered reliable*
+*disclaimer: If a submodule is in development, that means that it unit tests are in the process of being written*
 
 *Another disclaimer: Long story short, our system has a lot of weird permissions, so I've made a lot of commits to this repo as root. They are all me, Justin Furuness. Oops.*
 
@@ -2010,7 +2010,9 @@ Thanks to Dr. Amir Herzberg and Dr. Bing Wang with all the help for leading the 
 
 Thanks to Cameron Morris for his help writing the RPKI Validator submodule, and configuring the RPKI Validator to run off of our own file. Also thanks for pointing out other bugs throughout development. And pulling numerous all nighters with me to push for getting the forecast up and running for deadlines for demonstrations. Definitely MVP.
 
-Thanks to James Breslin and Luke Malinowski for their help in debugging some SQL queries.
+Thanks to James for looking into the mrt_w_roas join duplication bug and the numerous bugs that were discovered in Caida's API, and communicating with them and debugging some SQL queries
+
+Thanks to Luke Malinowski for help in debugging some SQL queries.
 
 Thanks to Reynaldo Morris for his help for showing me how to configure the API to use flasgger docs and writing the first YAML file. Thanks also for writing the first draft of the traceback function used in the ROVPP submodule.
 
@@ -2126,6 +2128,7 @@ Long term:
    * [lib\_bgp\_data](#lib_bgp_data)
 
 Q: What? WHAT???
+
 A: Read these, and become more confused:
 * [https://www.cs.bu.edu/~goldbe/papers/survey.pdf](https://www.cs.bu.edu/~goldbe/papers/survey.pdf)
 * [https://www.nsf.gov/awardsearch/showAward?AWD_ID=1840041&HistoricalAwards=false](https://www.nsf.gov/awardsearch/showAward?AWD_ID=1840041&HistoricalAwards=false)
@@ -2136,4 +2139,5 @@ A: Read these, and become more confused:
 * ROVPP Hotnets paper: email Dr. Amir Herzberg for this paper
 
 Q: What is the fastest way to dump these tables?
+
 A: ```pgdump bgp | pigz -p <numthreads> > jdump.sql.gz``` I have tested all of the different possibilities, and this is the fastest for dumping and reuploading for our tables. Note that indexes do not get dumped and must be recreated.
