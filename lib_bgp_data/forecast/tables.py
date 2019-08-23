@@ -45,11 +45,14 @@ class MRT_W_Roas_Table(Database):
         self.logger.info("Creating mrt_w_roas")
         sql = """CREATE UNLOGGED TABLE IF NOT EXISTS
               mrt_w_roas AS (
-              SELECT m.time, m.prefix, m.as_path, m.origin
+              SELECT DISTINCT ON (m.prefix, m.as_path, m.origin)
+                  m.time, m.prefix, m.as_path, m.origin
               FROM mrt_announcements m
                   INNER JOIN roas r ON m.prefix <<= r.prefix
               );"""
         self.cursor.execute(sql)
+        # used in the extrapolator
+        self.cursor.execute("CREATE INDEX ON mrt_w_roas USING btree(prefix)")
         self.rehinge_db()
         self.logger.debug("mrt_w_roas created")
 

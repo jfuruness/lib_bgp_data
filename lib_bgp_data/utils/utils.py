@@ -87,13 +87,13 @@ def now():
 def get_default_start():
     """Gets default start time, used in multiple places."""
 
-    return (now()-timedelta(days=7)).timestamp()
+    return (now()-timedelta(days=2)).timestamp()
 
 
 def get_default_end():
     """Gets default end time, used in multiple places."""
 
-    return (now()-timedelta(days=6)).timestamp()
+    return (now()-timedelta(days=1)).timestamp()
 
 
 def set_common_init_args(self, args):
