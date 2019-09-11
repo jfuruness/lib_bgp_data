@@ -38,66 +38,66 @@ class Graph_Data:
 ########################
 
 #    @error_catcher()
-    def graph_data(self, stats):
+    def graph_data(self, stats, tables):
         """Formats stats for graph production"""
 
-        self._graph(self._format_stats(stats))
+        self._graph(self._format_stats(stats, tables))
 
-    def _format_stats(self, stats):
-        """Formats stats for graph creation"""
+    def _format_stats(self, tstats, tables):
 
-        tstats = deepcopy(stats)
-        stats = tstats
-        pprint(stats)
-        print("shut the front door")
-        for non_bgp_policy in stats:
-            if non_bgp_policy == 'bgp':
-                continue ########WHY IS THIS? ERROR!!!
-            for percent in stats[non_bgp_policy]:
-                sim = stats[non_bgp_policy][percent]
-                percent_hijacked_list = []
-                hijacked_for_sim = []
-                not_hijacked_for_sim = []
-                temp_sim = dict()
-                for policy in sim:                   
-                    policy_stats = sim[policy][Planes.DATA_PLANE.value]
-                    hijacked_for_sim.append(
-                        policy_stats[Conditions.HIJACKED.value])
-                    not_hijacked_for_sim.append(
-                        policy_stats[Conditions.NOT_HIJACKED.value])
-                    policy_percent_hijacked = []
-                    policy_info = zip(policy_stats[Conditions.HIJACKED.value],
-                                      policy_stats[
-                                          Conditions.NOT_HIJACKED.value])
-                    include_policy=True
-                    for hijacked, not_hijacked in policy_info:
-                        total = hijacked + not_hijacked
-                        if total == 0:
-#                            include_policy=False
-                            policy_percent_hijacked.append(0)
-                        else:
-                            policy_percent_hijacked.append(hijacked * 100 / total)
-                    if include_policy:
-                        temp_sim["percent_hijacked_{}".format(policy)] = mean(policy_percent_hijacked)
-                # https://stackoverflow.com/a/28822227
-                # Adds all policies together into a list of trials
-                hijacked_for_sim_totals = list(map(sum, zip(*hijacked_for_sim)))
-                not_hijacked_for_sim_totals = list(map(sum, zip(*not_hijacked_for_sim)))
-                for hijacked, not_hijacked in zip(hijacked_for_sim_totals,
-                                                  not_hijacked_for_sim_totals):
-                    total = hijacked + not_hijacked
-                    percent_hijacked_list.append(hijacked * 100 / total)
-                sim["percent_hijacked_overall"] = mean(percent_hijacked_list)
-                sim.update(temp_sim)
-        for non_bgp_policy in stats:
-            if non_bgp_policy == 'bgp':
-                continue
-            print("Policy: {}".format(non_bgp_policy))
-            for percent in sorted(stats[non_bgp_policy]):
-                print("\tpercent adoption: {}".format(percent))
-                for percent_hijacked in sorted(stats[non_bgp_policy][percent]):
-                    if "percent" in percent_hijacked:
-                        print("\t\t{}: {}\n".format(percent_hijacked, stats[non_bgp_policy][percent][percent_hijacked]))
+        stats = deepcopy(tstats)
+        for t_obj in stats:
+            print(stats[t_obj].keys())
+            print(t_obj.policy_to_impliment)
+            input("!!!")
+            for adopt_pol in stats[t_obj]:
+                for i in stats[t_obj][adopt_pol]:
+                    
+                    for pol in stats[t_obj][adopt_pol][i]:
+                        sim = stats[t_obj][adopt_pol][i][pol]
+                        total_list = self.calculate_total_num_ases(sim)
+                        if sum(total_list) > 0:
+                            for plane in sim:
+                                sim[plane]["percents"] = {
+                                    cond: self.calc_avg(cond, data, total_list)
+                                    for cond, data in sim[plane].items()}
+        return stats
+    
+    def calc_avg(self, condition, data, totals):
+        """Returns a dict with cond name followed by avg"""
 
-    def _graph(self, formatted_stats):
-        pass
+        # Gets rid of trails where noone recieves the hijack
+        data_w_totals = [(x, y) for x, y in zip(data, totals) if y != 0]
+        return sum(x / y for x, y in data_w_totals) / len(data_w_totals) * 100
+
+    def calculate_total_num_ases(self, sim):
+        
+        # Could this be a list comp? Sure. Are you CrAZy????
+        total_list = []
+        plane = Planes.CONTROL_PLANE.value
+        cond = Conditions.BLACKHOLED.value
+        for trial in range(len(sim[plane][cond])):
+            total_list.append(sum([sim[plane][x.value][trial]
+                              for x in Conditions.__members__.values()]))
+        return total_list
+
+    def _graph(self, fstats):
+        data = ""
+        for t_obj in fstats:
+            data += t_obj.table.name + ":\n"
+            for adopt_pol in fstats[t_obj]:
+                data += "\tFor adoption policy: {}:\n".format(adopt_pol)
+                for i in fstats[t_obj][adopt_pol]:
+                    data += "\t\tFor {}\n".format(t_obj.percents[i])
+                    for pol in fstats[t_obj][adopt_pol][i]:
+                        sim = fstats[t_obj][adopt_pol][i][pol]
+                        total_list = self.calculate_total_num_ases(sim)
+                        if total_list[0] != 0:
+                            data += "\t\t\tFor {} Policy:\n".format(pol)
+                            for plane in sim:
+                                data += "\t\t\t\tFor {} Plane\n".format(plane)
+                                for cond in sim[plane]["percents"]:
+                                    data += "\t\t\t\t\t{}: {}\n".format(
+                                        cond, sim[plane]["percents"][cond])
+
+        print(data)

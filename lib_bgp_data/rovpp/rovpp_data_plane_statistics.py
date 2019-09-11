@@ -44,44 +44,42 @@ class ROVPP_Data_Plane_Stats:
 ### Helper Functions ###
 ########################
 
-    def calculate_not_blackholed_stats(self, ases_dict, victim_asn, attacker_asn, sim):
+    def calculate_not_bholed_stats(self, ases_dict, attacker_asn, victim_asn, sim):
         """Calculates statistics for data plane ASes that did not recieve hijack"""
 
         nbh = Conditions.NOT_BLACKHOLED_HIJACKED.value
         nbnh = Conditions.NOT_BLACKHOLED_NOT_HIJACKED.value
         # LAter on just make this one sql query
-        new_dict = {}
-        new_dict.update(ases_dict[nbh])
-        new_dict.update(ases_dict[nbnh])
+        new_dict = ases_dict[nbh].union(ases_dict[nbnh])
 
         # If the AS didn't recieve the hijack:
-        for asn, og_info in new_dict.items():
+        for asn in new_dict:
+            og_info = ases_dict["all"][asn]
             # SAVES THE ASES AS TRACEBACK HAPPENS
             # When it hits the end, updates all ases with those results
             traceback_as_infos = [og_info]
             # Conditions reached at the end of the traceback
             self.conds_reached = []
-    
             while(len(self.conds_reached) == 0):
-                if len(new_dict[asn]["data_plane_conditions"]) > 0:
-                    for cond in new_dict[asn]["data_plane_conditions"]:
-                        self._add_stat(sim, og_info, self.plane, cond)
+                if len(ases_dict["all"][asn]["data_plane_conditions"]) > 0:
+                    for cond in ases_dict["all"][asn]["data_plane_conditions"]:
+                        self._add_stat(sim, og_info, cond)
                 # If it reaches the attackers AS or a hijacked one
                 elif asn == attacker_asn:
-                    self._add_stat(sim, og_info, Conditions.HIJACKED.value)
+                    self._add_stat(sim, og_info, nbh)
                 # If it traces back to the victims AS
                 elif asn == victim_asn:
-                    self._add_stat(sim, og_info, Conditions.NOT_HIJACKED.value)
+                    self._add_stat(sim, og_info, nbnh)
                 # Else we go back another node
                 else:
                     # GO BACK ANOTHER NODE!!!!
-                    asn = new_dict[asn]["received_from_asn"]
-                    traceback_as_infos.append(new_dict[asn])
-    
+                    asn = ases_dict["all"][asn]["received_from_asn"]
+                    traceback_as_infos.append(ases_dict["all"][asn])
+   
             # Update the conditions reached
-            self._update_ases_reached(traceback_as_infos, new_dict)
+            self._update_ases_reached(traceback_as_infos)
 
-    def _update_ases_reached(self, traceback_ases, ases_dict):
+    def _update_ases_reached(self, traceback_ases):
         """Updates all ases at the end of the traceback"""
 
         # Update the condition reached

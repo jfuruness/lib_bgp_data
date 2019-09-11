@@ -119,7 +119,7 @@ def error_catcher(msg=None):
                     # hahaha so professional
                     print('\a')
                 # Exit program and also kills all parents/ancestors
-                # sys.exit(1) turning this on breaks pytest - figure it out
+                sys.exit(1)  # Turning this on breaks pytest - figure it out
                 raise e
         return function_that_runs_func
     return my_decorator

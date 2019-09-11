@@ -40,7 +40,7 @@ class ROVPP_Control_Plane_Stats:
 ########################
 
     @error_catcher()
-    def calculate_not_bholed_stats(self, sim, ases_dict):
+    def calculate_not_bholed(self, sim, ases_dict):
         """Calculates success rates"""
 
         #### NOTE: THIS SHOULD BE SQL AGAIN!!! OPTIMIZE SO THAT FOR ECAH
@@ -51,10 +51,8 @@ class ROVPP_Control_Plane_Stats:
             cond = _cond.value
             if cond == Conditions.BLACKHOLED.value:
                 continue  # We did these already
-            #NOTE: does this need to be a set? take this out!
-            cond_ases = set(ases_dict[cond].keys())
             for policy in Policies.__members__.values():
                 # Total number of ases for that cond with that policy
-                num = len([x for x in cond_ases
-                           if ases_dict[cond][x]["as_type"] == policy.value])
-                sim[policy.value][plane.value][cond][-1] += num
+                num = len([x for x in ases_dict[cond]
+                           if ases_dict["all"][x]["as_type"] == policy.value])
+                sim[policy.value][self.plane][cond][-1] += num

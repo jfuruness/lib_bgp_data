@@ -107,7 +107,7 @@ class ROVPP_MRT_Announcements_Table(Database):
         """
 
         self.logger.info("Dropping ROVPP_MRT_Announcements")
-        self.cursor.execute("DELETE FROM rovpp_mrt_announcements")
+        self.cursor.execute("DROP TABLE IF EXISTS rovpp_mrt_announcements")
         self.logger.info("ROVPP_MRT_Announcements Table dropped")
 
     @error_catcher()
@@ -209,17 +209,19 @@ class ROVPP_ASes_Subtable(Database):
            1 (the attacker) is not subtracted from the count,
            since we don't know which data set the attacker is from"""
 
-        sql = """UPDATE (SELECT * FROM {0} a 
+        sql = """UPDATE {0} SET impliment = TRUE
+                FROM (SELECT * FROM {0}
                          WHERE {0}.asn != {1}
-                         ORDER BY RANDOM LIMIT (
+                         ORDER BY RANDOM() LIMIT (
                              SELECT COUNT(*) FROM {0}) * ({2}::decimal/100.0)
-                         )
-               SET impliment = TRUE;""".format(self.name, attacker, percent)
+                         ) b
+               WHERE b.asn = {0}.asn;""".format(self.name, attacker, percent)
+        print(sql)
         self.execute(sql)
 
     @error_catcher()
     def change_routing_policies(self, policy):
-        sql = """UPDATE {} SET as_type = {}
+        sql = """UPDATE {} SET as_type = '{}'
                  WHERE impliment = TRUE;""".format(self.name, policy)
         self.execute(sql)
 
@@ -233,7 +235,8 @@ class ROVPP_Top_100_ASes_Table(ROVPP_ASes_Subtable):
     def fill_table(self):
         self.clear_table()
         sql = """CREATE UNLOGGED TABLE IF NOT EXISTS rovpp_top_100_ases AS (
-                 SELECT * FROM rovpp_ases ORDER BY asn DESC LIMIT 100
+                 SELECT a.asn, 'bgp' AS as_type, FALSE as impliment
+                     FROM rovpp_ases a ORDER BY asn DESC LIMIT 100
                  );"""
         self.cursor.execute(sql)
 
@@ -248,7 +251,8 @@ class ROVPP_Edge_ASes_Table(ROVPP_ASes_Subtable):
     def fill_table(self):
         self.clear_table()
         sql = """CREATE UNLOGGED TABLE IF NOT EXISTS rovpp_edge_ases AS (
-                     SELECT r.asn, r.as_type, r.impliment FROM rovpp_ases r
+                     SELECT r.asn, 'bgp' AS as_type, FALSE as impliment
+                         FROM rovpp_ases r
                          INNER JOIN rovpp_as_connectivity c ON c.asn = r.asn
                      WHERE c.connectivity = 0
                  );"""
@@ -264,15 +268,17 @@ class ROVPP_Etc_ASes_Table(ROVPP_ASes_Subtable):
     def fill_table(self, table_names):
         self.clear_table()
         sql = """CREATE UNLOGGED TABLE IF NOT EXISTS rovpp_etc_ases AS (
-                 SELECT ra.asn, ra.as_type, ra.impliment FROM rovpp_ases ra"""
-        for table_name in table_names:
-            sql += " INNER JOIN {0} ON {0}.asn = ra.asn,".format(table_name)
-        # Gets rid of the last comma
-        sql = sql[:-1]
-        for table_name in table_names:
-            sql += " WHERE {}.asn IS NULL,".format(table_name)
-        # Gets rid of the last comma
-        sql = sql[:-1]
+                 SELECT ra.asn, 'bgp' AS as_type, FALSE as impliment
+                     FROM rovpp_ases ra"""
+        if len(table_names) > 0:
+            for table_name in table_names:
+                sql += " LEFT JOIN {0} ON {0}.asn = ra.asn".format(table_name)
+            # Gets rid of the last comma
+            sql += " WHERE"
+            for table_name in table_names:
+                sql += " {}.asn IS NULL AND".format(table_name)
+            # Gets rid of the last \sAND
+            sql = sql[:-4]
         sql += ");"
-        self.logger.info("ETC AS SQL: ", sql)
+        self.logger.info("ETC AS SQL:\n\n{}\n".format(sql))
         self.cursor.execute(sql)

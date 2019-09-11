@@ -256,6 +256,13 @@ class Database:
 
         return self.execute("SELECT * FROM {}".format(self.name))
 
+    @error_catcher()
+    def get_count(self):
+        """Gets count from table"""
+
+        sql = "SELECT COUNT(*) FROM {}".format(self.name)
+        return self.execute(sql)[0]["count"]
+
     @property
     def columns(self):
         """Returns the columns of the table

@@ -10,7 +10,8 @@ from copy import deepcopy
 from pprint import pprint
 from .enums import Policies, Non_BGP_Policies
 from .tables import ROVPP_ASes_Table, Subprefix_Hijack_Temp_Table
-from .tables import ROVPP_MRT_Announcements_Table
+from .tables import ROVPP_MRT_Announcements_Table, ROVPP_Top_100_ASes_Table
+from .tables import ROVPP_Edge_ASes_Table, ROVPP_Etc_ASes_Table
 from .rovpp_statistics import ROVPP_Statistics_Calculator
 from .graph_data import Graph_Data
 from ..relationships_parser import Relationships_Parser
@@ -44,7 +45,7 @@ class ROVPP_Simulator_Set_Up_Tool:
     @error_catcher()
     def set_up_all_trials_and_percents(self):
         self._get_relationship_data()
-        self._create_and_fill_as_connectivity_table()
+        self._create_and_fill_as_and_connectivity_tables()
 
     @error_catcher()
     def _get_relationship_data(self):
@@ -61,7 +62,7 @@ class ROVPP_Simulator_Set_Up_Tool:
 
 
     @error_catcher()
-    def _create_and_fill_as_and_connectivity_tables(self)
+    def _create_and_fill_as_and_connectivity_tables(self):
         with db_connection(ROVPP_ASes_Table, self.logger) as as_table:
             as_table.fill_table()
         with db_connection(ROVPP_AS_Connectivity_Table,
@@ -83,6 +84,9 @@ class ROVPP_Simulator_Set_Up_Tool:
 
         self._populate_rovpp_mrt_announcements(subprefix_hijack)
 
+        return self.tables, subprefix_hijack
+
+
     @error_catcher()
     def _create_subtables(self, default_percents):
         # Add docs on how to add a table to these sims
@@ -92,7 +96,7 @@ class ROVPP_Simulator_Set_Up_Tool:
                                 self.logger,
                                 [25]*len(default_percents),
                                 possible_hijacker=False,
-                                policy_to_impliment=None),
+                                policy_to_impliment=Policies.ROV.value),
                        Subtable(ROVPP_Edge_ASes_Table,
                                 self.logger,
                                 default_percents)]
@@ -100,7 +104,7 @@ class ROVPP_Simulator_Set_Up_Tool:
             sub_table.table.fill_table()
 
         etc = Subtable(ROVPP_Etc_ASes_Table, self.logger, default_percents)
-        etc.table.fill_table([x["table"].name for x in self.tables])
+        etc.table.fill_table([x.table.name for x in self.tables])
         self.tables.append(etc)
 
     @error_catcher()
@@ -110,7 +114,7 @@ class ROVPP_Simulator_Set_Up_Tool:
         self.logger.info("Creating fake data for subprefix hijacks")
         # Initializes the fake table
         with db_connection(Subprefix_Hijack_Temp_Table, self.logger) as db:
-            db.populate(self_get_possible_hijacker_ases())
+            db.populate(self._get_possible_hijacker_ases())
             # Returns all the subprefix hijacks - should only be one
             return db.get_all()[0]
 
@@ -119,9 +123,9 @@ class ROVPP_Simulator_Set_Up_Tool:
         """Returns all possible hijacker ases"""
 
         possible_hijacker_ases = []
-        for table_dict in self.tables:
-            if table_dict["possible_hijacker"]:
-                results = table_dict["table"].get_all()
+        for _table in self.tables:
+            if _table.possible_hijacker:
+                results = _table.table.get_all()
                 possible_hijacker_ases.extend([x["asn"] for x in results])
         return possible_hijacker_ases
 
@@ -129,7 +133,7 @@ class ROVPP_Simulator_Set_Up_Tool:
     def _set_implimentable_ases(self, percent_iteration_num, attacker):
 
         for sub_table in self.tables:
-            subtable.set_implimentable_ases(percent_iteration_num, attacker)
+            sub_table.set_implimentable_ases(percent_iteration_num, attacker)
 
     @error_catcher()
     def _populate_rovpp_mrt_announcements(self, subprefix_hijack):
@@ -152,7 +156,8 @@ class Subtable:
                  percents,
                  possible_hijacker=True,
                  policy_to_impliment=None):
-        self.table = table(self.logger)
+        self.logger = logger
+        self.table = table(logger)
         self.count = self.table.get_count()
         self.percents = percents
         self.possible_hijacker = possible_hijacker
@@ -163,6 +168,6 @@ class Subtable:
         self.table.set_implimentable_ases(self.percents[iteration_num],
                                           attacker)
     def change_routing_policies(self, policy):
-        if policy_to_impliment is None:
-            policy_to_impliment = policy
-        self.table.change_routing_policies(policy_to_impliment)
+        if self.policy_to_impliment is not None:
+            policy = self.policy_to_impliment
+        self.table.change_routing_policies(policy)
