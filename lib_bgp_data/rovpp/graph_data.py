@@ -47,9 +47,6 @@ class Graph_Data:
 
         stats = deepcopy(tstats)
         for t_obj in stats:
-            print(stats[t_obj].keys())
-            print(t_obj.policy_to_impliment)
-            input("!!!")
             for adopt_pol in stats[t_obj]:
                 for i in stats[t_obj][adopt_pol]:
                     

@@ -69,60 +69,43 @@ class ROVPP_Statistics_Calculator:
         self._filter_exr(self.tables[0].table,
                          subp_hijack["more_specific_prefix"],
                          subp_hijack["expected_prefix"])
-        tases_dict = self._get_all_ases()
+        ases_dict = self._get_ases(subp_hijack["more_specific_prefix"],
+                                   subp_hijack["expected_prefix"])
         for t_obj in self.tables:
             # Needed for shorter lines
             sim = self.stats[t_obj][adopt_policy][percent_i]
             # Appends a zero onto all stats
             self._initialize_attack_stats(sim)
 
-            # Gets a dict of blackholed/not blackholed, and its stats
-            ases_dict = self._get_ases(t_obj.table,
-                                       subp_hijack["more_specific_prefix"],
-                                       subp_hijack["expected_prefix"],
-                                       tases_dict)
-
             self._update_blackholed_ases_stats(sim, ases_dict)
 
-            ROVPP_Control_Plane_Stats().calculate_not_bholed(sim, ases_dict)
+            ROVPP_Control_Plane_Stats().calculate_not_bholed(self.stats,
+                                                             adopt_policy,
+                                                             percent_i,
+                                                             t_obj,
+                                                             ases_dict)
 
             ROVPP_Data_Plane_Stats().calculate_not_bholed_stats(ases_dict,
+                                                                t_obj
                                                                 subp_hijack["attacker"],
                                                                 subp_hijack["victim"],
                                                                 sim)
             self.logger.debug(sim)
 
-    def _get_all_ases(self):
-        sql = """SELECT exrf.asn, exrf.prefix, exrf.origin, exrf.received_from_asn,
-                  COALESCE("""
-        for t_obj in self.tables:
-            sql += "{}.as_type, ".format(t_obj.table.name)
-        sql = sql[:-2]
-        sql += ") AS as_type FROM rovpp_extrapolation_results_filtered exrf "
-        for t_obj in self.tables:
-            sql += "LEFT JOIN {0} ON {0}.asn = exrf.asn ".format(t_obj.table.name)
-        sql += ";"
-        print(sql)
-        return {"all": {x["asn"]: {**x, **{"data_plane_conditions": set()}}
-                       for x in self.tables[0].table.execute(sql)}}
-
-
-    def _update_blackholed_ases_stats(self, sim, ases_dict):
+    def _update_blackholed_ases_stats(self, adopt_pol, percent_i, ases_dict):
         """Updates stats for all ASes that recieved the hijack"""
 
         # THIS SHOULD BE OPTIMIZED - THIS SHOULD BE A COUNT QUERY TO POSTGRES
         # NOT A FOR LOOP IN PYTHON!!!
 
         blackholed = Conditions.BLACKHOLED.value
-        #NOTE: Does this need to be a set? take it out?
-        blackholed_ases = ases_dict[Conditions.BLACKHOLED.value]
 
         # Increase control plane and data plane hijacked
-        for plane in Planes.__members__.values():
-            for policy in Policies.__members__.values():
-                num_bholed = len([x for x in blackholed_ases
-                                  if ases_dict["all"][x]["as_type"]
-                                  == policy.value])
+        for t_obj in self.tables:
+            for plane in Planes.__members__.values():
+                for policy in Policies.__members__.values():
+                sim = self.stats[t_obj][adopt_pol][percent_i]
+                num_bholed = len(ases_dict[t_obj][policy.value][blackholed])
                 sim[policy.value][plane.value][blackholed][-1] += num_bholed
 
     @error_catcher()
@@ -154,39 +137,91 @@ class ROVPP_Statistics_Calculator:
 
 
     @error_catcher()
-    def _get_ases(self, table, hijack_p, victim_p, ases):
+    def _get_ases(self, hijack_p, victim_p):
 
         nbh = Conditions.NOT_BLACKHOLED_HIJACKED.value
         nbnh = Conditions.NOT_BLACKHOLED_NOT_HIJACKED.value
         blackholed = Conditions.BLACKHOLED.value
 
+        ases_dict = dict()
+        tables = self.tables
+        # Get blackholed ases
+        # for all blackholed ases, group by subtable
+        sql = """WITH bholed AS (
+                        SELECT exrf.asn FROM
+                            rovpp_extrapolation_results_filtered exrf
+                        LEFT JOIN rovpp_blackholes b
+                            ON b.asn = exrf.asn),"""
+        for t_obj in tables:
+            sql += """ {0}_dropped AS (DROP TABLE IF EXISTS {0}_bholed), 
+                   {0}_bholed AS (CREATE TABLE {0}_bholed AS (
+                   SELECT b.asn, a.as_type FROM bholed b
+                       INNER JOIN {0} a
+                       ON {0}.asn = b.asn),""".format(t_obj.table.name)
+        tables[0].table.execute(sql[:-1] + " NULL;")
 
-        # Gets all asns that where not blackholed and hijacked
-        sql = """SELECT exrf.asn, exrf.prefix, exrf.origin, exrf.received_from_asn,
-                 ases.as_type FROM rovpp_extrapolation_results_filtered exrf
-                 INNER JOIN {0} ases
-                     ON ases.asn = exrf.asn
-                 LEFT JOIN rovpp_blackholes b
-                     ON b.asn = exrf.asn
-                 WHERE b.asn IS NULL
-                     AND exrf.prefix = """.format(table.name)
-        sql += "%s;"
+        for t_obj in tables:
+            sql = """SELECT b.asn FROM {}_bholed b
+                  WHERE as_type = """.format(t_obj.table.name)
+            ases_dict[t_obj] = dict()
+            for pol in Policies.__members__.values():
+                ases_dict[t_obj][pol.value] = dict()
+                ases_dict[t_obj][pol.value][blackholed] = \
+                    {x["asn"]: {**x + **{"data_plane_conditions":
+                                         {blackholed})}}
+                     for x in tables[0].table.execute(sql + pol.value)}
 
-        ases[nbh] = {x["asn"] for x in table.execute(sql, [hijack_p])}
 
-        ases[nbnh] = {x["asn"] for x in table.execute(sql, [victim_p])}
+        # CHANGE THIS TO GET ALL THE SPECIFIC DICTS FOR CTRL AND DATA PLANE FOR EACH POL!!!!!
+        # can add all later for iterations
+        # NOTE: NOW HAVE SUBTABLES DICT AND AN ALL DICT!!!i
+        sql = """WITH not_bholed AS (
+                    SELECT exrf.asn, exrf.recieved_from_asn,
+                            exrf.prefix, ases.as_type
+                        FROM rovpp_extrapolation_results_filtered exrf
+                    LEFT JOIN rovpp_blackholes b
+                        ON b.asn = exrf.asn
+                    WHERE b.asn IS NULL),
+                nbh AS (
+                    SELECT nb.asn, nb.recieved_from_asn, nb.as_type
+                        FROM not_bholed nb
+                    WHERE nb.prefix = %s),
+                nbnh AS (
+                    SELECT nb.asn, nb.recieved_from_asn, nb.as_type
+                        FROM not_bholed nb
+                    WHERE nb.prefix = %s),"""
+        for t_obj in tables:
+            for cond in ['nbh', 'nbnh']:
+                sql += """{1}_{0}_dropped AS (
+                           DROP TABLE IF EXISTS {1}_{0}_dropped),
+                       {1}_{0} AS (
+                       CREATE TABLE {1}_{0} AS (
+                           SELECT {1}.asn, {1}.recieved_from_asn, {1}.as_type
+                               FROM {1}
+                           INNER JOIN {0}
+                               ON {0}.asn = {1}.asn)
+                                   ),""".format(t_obj.table.name)
+            sql = sql[:-1] + " NULL;"
+            tables[0].table.execute(sql)
 
-        # Gets all asns that ARE blackholed
-        sql = """SELECT DISTINCT exr.asn,
-                 ases.as_type FROM rovpp_extrapolation_results exr
-                 INNER JOIN {0} ases
-                     ON ases.asn = exr.asn
-                 INNER JOIN rovpp_blackholes b
-                     ON b.asn = exr.asn;""".format(table.name)
-        ases[blackholed] = {x["asn"] for x in table.execute(sql)}
 
-        # Inits data plane conditions to contain blackholeid
-        for asn in ases[blackholed]:
-            ases["all"][asn]["data_plane_conditions"].add(blackholed)
+        for t_obj in tables:
+            for cond in ['nbh', 'nbnh']:
+                for pol in Policies.__members__.values:
+                    sql = """SELECT * FROM {1}_{0}
+                          WHERE {1}_{0}.as_type
+                          = {2}""".format(t_obj.table.name, cond, pol.value)
+                    if cond == 'nbh':
+                        tcond = nbh
+                    elif cond == 'nbnh':
+                        tcond = nbnh
+                    ases_dict[t_obj][pol.value][tcond] = \
+                        {x["asn"]: {**x + **{"data_plane_conditions": set()}}
+                         for x in tables[0].table.execute(sql)}
 
+    ases_dict["all"] = dict()
+    for t_obj in tables:
+        for cond in [nbh, nbnh, blackholed]:
+            for pol in Policies.__members__.values:
+                ases_dict["all"].update(ases_dict[t_obj][pol.value][cond])
         return ases

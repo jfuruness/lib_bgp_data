@@ -40,19 +40,12 @@ class ROVPP_Control_Plane_Stats:
 ########################
 
     @error_catcher()
-    def calculate_not_bholed(self, sim, ases_dict):
+    def calculate_not_bholed(self, stats, adopt_pol, p_i, t_obj, ases_dict):
         """Calculates success rates"""
 
-        #### NOTE: THIS SHOULD BE SQL AGAIN!!! OPTIMIZE SO THAT FOR ECAH
-        # SUBTABLE YOU CAN ONLY HAVE ONE POLICY, bgp or non bgp, then do
-        # this all in sql!!!!!
-
-        for _cond in Conditions.__members__.values():
-            cond = _cond.value
-            if cond == Conditions.BLACKHOLED.value:
-                continue  # We did these already
+        for plane in Planes.__members__.values():
             for policy in Policies.__members__.values():
-                # Total number of ases for that cond with that policy
-                num = len([x for x in ases_dict[cond]
-                           if ases_dict["all"][x]["as_type"] == policy.value])
-                sim[policy.value][self.plane][cond][-1] += num
+                for cond in Conditions.__members__.values():
+                    sim = stats[t_obj][adopt_pol][percent_i][policy.value]
+                    num_cond = len(ases_dict[t_obj][policy.value][cond.value])
+                    sim[plane.value][cond.value][-1] += num_cond
