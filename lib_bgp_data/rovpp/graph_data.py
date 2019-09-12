@@ -24,14 +24,14 @@ class Graph_Data:
     In depth explanation at the top of the file
     """
 
-    __slots__ = ['path', 'csv_dir', 'logger', 'start_time', 'stats']
+    __slots__ = ['logger', 'start_time', 'stats']
 
 #    @error_catcher()
-    def __init__(self, args={}):
+    def __init__(self, logger):
         """Initializes logger and path variables."""
 
         # Sets path vars, logger, config, etc
-        utils.set_common_init_args(self, args)
+        self.logger = logger
 
 ########################
 ### Helper Functions ###

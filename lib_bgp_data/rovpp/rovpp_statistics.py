@@ -28,11 +28,11 @@ class ROVPP_Statistics_Calculator:
     """
 
     @error_catcher()
-    def __init__(self, percents, tables, args={}):
+    def __init__(self, logger, percents, tables):
         """Initializes logger and path variables."""
 
         # Sets path vars, logger, config, etc
-        utils.set_common_init_args(self, args)
+        self.logger = logger
         self.tables = tables
         # I know this could be in a dict comp but ARE YOU NUTS???
         self.stats = dict()
@@ -63,7 +63,7 @@ class ROVPP_Statistics_Calculator:
 ########################
 
     @error_catcher()
-    def calculate_stats(self, subp_hijack, percent_i, adopt_policy):
+    def calculate_stats(self, subp_hijack, percent_i, adopt_pol):
         """Calculates success rates"""
 
         self._filter_exr(self.tables[0].table,
@@ -73,40 +73,41 @@ class ROVPP_Statistics_Calculator:
                                    subp_hijack["expected_prefix"])
         for t_obj in self.tables:
             # Needed for shorter lines
-            sim = self.stats[t_obj][adopt_policy][percent_i]
+            sim = self.stats[t_obj][adopt_pol][percent_i]
             # Appends a zero onto all stats
             self._initialize_attack_stats(sim)
 
-            self._update_blackholed_ases_stats(sim, ases_dict)
+            self._update_blackholed_ases_stats(t_obj, adopt_pol, percent_i, ases_dict)
 
-            ROVPP_Control_Plane_Stats().calculate_not_bholed(self.stats,
-                                                             adopt_policy,
-                                                             percent_i,
-                                                             t_obj,
-                                                             ases_dict)
+            ROVPP_Control_Plane_Stats(
+                self.logger).calculate_not_bholed(self.stats,
+                                                  adopt_pol,
+                                                  percent_i,
+                                                  t_obj,
+                                                  ases_dict)
 
-            ROVPP_Data_Plane_Stats().calculate_not_bholed_stats(ases_dict,
-                                                                t_obj
-                                                                subp_hijack["attacker"],
-                                                                subp_hijack["victim"],
-                                                                sim)
+            ROVPP_Data_Plane_Stats(
+                self.logger).calculate_not_bholed_stats(ases_dict,
+                                                        t_obj,
+                                                        subp_hijack["attacker"],
+                                                        subp_hijack["victim"],
+                                                        sim)
             self.logger.debug(sim)
 
-    def _update_blackholed_ases_stats(self, adopt_pol, percent_i, ases_dict):
+    def _update_blackholed_ases_stats(self, t_obj, adopt_pol, percent_i, ases_dict):
         """Updates stats for all ASes that recieved the hijack"""
 
         # THIS SHOULD BE OPTIMIZED - THIS SHOULD BE A COUNT QUERY TO POSTGRES
         # NOT A FOR LOOP IN PYTHON!!!
 
-        blackholed = Conditions.BLACKHOLED.value
+        bholed = Conditions.BLACKHOLED.value
 
         # Increase control plane and data plane hijacked
-        for t_obj in self.tables:
-            for plane in Planes.__members__.values():
-                for policy in Policies.__members__.values():
+        for plane in Planes.__members__.values():
+            for policy in Policies.__members__.values():
                 sim = self.stats[t_obj][adopt_pol][percent_i]
-                num_bholed = len(ases_dict[t_obj][policy.value][blackholed])
-                sim[policy.value][plane.value][blackholed][-1] += num_bholed
+                num_bholed = len(ases_dict[t_obj][policy.value][bholed])
+                sim[policy.value][plane.value][bholed][-1] += num_bholed
 
     @error_catcher()
     def _initialize_attack_stats(self, sim):
@@ -147,81 +148,87 @@ class ROVPP_Statistics_Calculator:
         tables = self.tables
         # Get blackholed ases
         # for all blackholed ases, group by subtable
-        sql = """WITH bholed AS (
-                        SELECT exrf.asn FROM
-                            rovpp_extrapolation_results_filtered exrf
-                        LEFT JOIN rovpp_blackholes b
-                            ON b.asn = exrf.asn),"""
+        sqls = ["""DROP TABLE IF EXISTS bholed""",
+                """CREATE TABLE bholed AS (
+                SELECT exrf.asn FROM
+                    rovpp_extrapolation_results_filtered exrf
+                INNER JOIN rovpp_blackholes b
+                    ON b.asn = exrf.asn);"""]
+
         for t_obj in tables:
-            sql += """ {0}_dropped AS (DROP TABLE IF EXISTS {0}_bholed), 
-                   {0}_bholed AS (CREATE TABLE {0}_bholed AS (
-                   SELECT b.asn, a.as_type FROM bholed b
-                       INNER JOIN {0} a
-                       ON {0}.asn = b.asn),""".format(t_obj.table.name)
-        tables[0].table.execute(sql[:-1] + " NULL;")
+            sqls.extend([
+                "DROP TABLE IF EXISTS {0}_bholed;".format(t_obj.table.name),
+                 """CREATE TABLE {0}_bholed AS (
+                 SELECT b.asn, a.as_type FROM bholed b
+                    INNER JOIN {0} a
+                 ON a.asn = b.asn);""".format(t_obj.table.name)])
+        for sql in sqls:
+            print(sql)
+            t_obj.table.execute(sql)
 
         for t_obj in tables:
             sql = """SELECT b.asn FROM {}_bholed b
                   WHERE as_type = """.format(t_obj.table.name)
             ases_dict[t_obj] = dict()
             for pol in Policies.__members__.values():
+                tsql = "{} '{}'".format(sql, pol.value)
                 ases_dict[t_obj][pol.value] = dict()
                 ases_dict[t_obj][pol.value][blackholed] = \
-                    {x["asn"]: {**x + **{"data_plane_conditions":
-                                         {blackholed})}}
-                     for x in tables[0].table.execute(sql + pol.value)}
+                    {x["asn"]: {**x, **{"data_plane_conditions": {blackholed}}}
+                     for x in t_obj.table.execute(tsql)}
 
 
         # CHANGE THIS TO GET ALL THE SPECIFIC DICTS FOR CTRL AND DATA PLANE FOR EACH POL!!!!!
         # can add all later for iterations
-        # NOTE: NOW HAVE SUBTABLES DICT AND AN ALL DICT!!!i
-        sql = """WITH not_bholed AS (
-                    SELECT exrf.asn, exrf.recieved_from_asn,
-                            exrf.prefix, ases.as_type
+        # NOTE: NOW HAVE SUBTABLES DICT AND AN ALL DICT!!!
+        sqls = ["""DROP TABLE IF EXISTS not_bholed""",
+                """CREATE TABLE not_bholed AS (
+                    SELECT exrf.asn, exrf.received_from_asn,
+                            exrf.prefix
                         FROM rovpp_extrapolation_results_filtered exrf
                     LEFT JOIN rovpp_blackholes b
                         ON b.asn = exrf.asn
-                    WHERE b.asn IS NULL),
-                nbh AS (
-                    SELECT nb.asn, nb.recieved_from_asn, nb.as_type
+                    WHERE b.asn IS NULL);"""]
+        for cond, pref in zip(['nbh', 'nbnh'], [hijack_p, victim_p]):
+            sqls.extend([
+                """DROP TABLE IF EXISTS {};""".format(cond),
+                """CREATE TABLE {} AS (
+                    SELECT nb.asn, nb.received_from_asn
                         FROM not_bholed nb
-                    WHERE nb.prefix = %s),
-                nbnh AS (
-                    SELECT nb.asn, nb.recieved_from_asn, nb.as_type
-                        FROM not_bholed nb
-                    WHERE nb.prefix = %s),"""
+                    WHERE nb.prefix = '{}');""".format(cond, pref)])
+
         for t_obj in tables:
             for cond in ['nbh', 'nbnh']:
-                sql += """{1}_{0}_dropped AS (
-                           DROP TABLE IF EXISTS {1}_{0}_dropped),
-                       {1}_{0} AS (
-                       CREATE TABLE {1}_{0} AS (
-                           SELECT {1}.asn, {1}.recieved_from_asn, {1}.as_type
+                sqls.extend([
+                    """DROP TABLE IF EXISTS {1}_{0};""".format(t_obj.table.name, cond),
+                    """CREATE TABLE {1}_{0} AS (
+                           SELECT {1}.asn, {1}.received_from_asn, {0}.as_type
                                FROM {1}
                            INNER JOIN {0}
-                               ON {0}.asn = {1}.asn)
-                                   ),""".format(t_obj.table.name)
-            sql = sql[:-1] + " NULL;"
-            tables[0].table.execute(sql)
+                               ON {0}.asn = {1}.asn)""".format(t_obj.table.name, cond)])
+
+        for sql in sqls:
+            print(sql)
+            t_obj.table.execute(sql)
 
 
         for t_obj in tables:
             for cond in ['nbh', 'nbnh']:
-                for pol in Policies.__members__.values:
+                for pol in Policies.__members__.values():
                     sql = """SELECT * FROM {1}_{0}
                           WHERE {1}_{0}.as_type
-                          = {2}""".format(t_obj.table.name, cond, pol.value)
+                          = '{2}'""".format(t_obj.table.name, cond, pol.value)
                     if cond == 'nbh':
                         tcond = nbh
                     elif cond == 'nbnh':
                         tcond = nbnh
                     ases_dict[t_obj][pol.value][tcond] = \
-                        {x["asn"]: {**x + **{"data_plane_conditions": set()}}
+                        {x["asn"]: {**x, **{"data_plane_conditions": set()}}
                          for x in tables[0].table.execute(sql)}
 
-    ases_dict["all"] = dict()
-    for t_obj in tables:
-        for cond in [nbh, nbnh, blackholed]:
-            for pol in Policies.__members__.values:
-                ases_dict["all"].update(ases_dict[t_obj][pol.value][cond])
-        return ases
+        ases_dict["all"] = dict()
+        for t_obj in tables:
+            for cond in [nbh, nbnh, blackholed]:
+                for pol in Policies.__members__.values():
+                    ases_dict["all"].update(ases_dict[t_obj][pol.value][cond])
+        return ases_dict

@@ -23,22 +23,22 @@ from pprint import pprint
 from .enums import Policies, Non_BGP_Policies, Planes, Conditions
 from ..utils import error_catcher, utils
 
+
 class ROVPP_Data_Plane_Stats:
     """This class simulates ROVPP.
 
     In depth explanation at the top of the file
     """
 
-    __slots__ = ['path', 'csv_dir', 'logger', 'start_time', 'stats', 'plane',
-                 'conds_reached']
+    __slots__ = ['logger', 'start_time', 'stats', 'plane', 'conds_reached']
 
     @error_catcher()
-    def __init__(self, args={}):
+    def __init__(self, logger):
         """Initializes logger and path variables."""
 
         # Sets path vars, logger, config, etc
-        utils.set_common_init_args(self, args)
         self.plane = Planes.DATA_PLANE.value
+        self.logger = logger
 
 ########################
 ### Helper Functions ###
@@ -50,27 +50,25 @@ class ROVPP_Data_Plane_Stats:
         nbh = Conditions.NOT_BLACKHOLED_HIJACKED.value
         nbnh = Conditions.NOT_BLACKHOLED_NOT_HIJACKED.value
         blackholed = Conditions.BLACKHOLED.value
-        # LAter on just make this one sql query
-        new_dict = ases_dict[nbh].union(ases_dict[nbnh])
 
         # If the AS didn't recieve the hijack:
         for pol in Policies.__members__.values():
             for cond in [x for x in Conditions.__members__.values()
-                         if x != blackholed]:
+                         if x.value != blackholed]:
                 self._calculate_specific(ases[t_obj][pol.value][cond.value],
-                                         ases["all"], atk_n, vic_n, sim)
+                                         ases["all"], atk_n, vic_n, sim[pol.value])
 
 
-    def _calculate_specific(self, ases, all_ases, atk_n, vic_n, sim)
+    def _calculate_specific(self, ases, all_ases, atk_n, vic_n, sim):
 
         nbh = Conditions.NOT_BLACKHOLED_HIJACKED.value
         nbnh = Conditions.NOT_BLACKHOLED_NOT_HIJACKED.value
         blackholed = Conditions.BLACKHOLED.value
 
-        for asn, og_info in ases
+        for asn, og_info in ases.items():
             # SAVES THE ASES AS TRACEBACK HAPPENS
             # When it hits the end, updates all ases with those results
-            traceback_as_infos = [og_info]
+            traceback_as_infos = []#og_info]
             # Conditions reached at the end of the traceback
             self.conds_reached = []
             while(len(self.conds_reached) == 0):
@@ -78,10 +76,10 @@ class ROVPP_Data_Plane_Stats:
                     for cond in all_ases[asn]["data_plane_conditions"]:
                         self._add_stat(sim, og_info, cond)
                 # If it reaches the attackers AS or a hijacked one
-                elif asn == attacker_asn:
+                elif asn == atk_n:
                     self._add_stat(sim, og_info, nbh)
                 # If it traces back to the victims AS
-                elif asn == victim_asn:
+                elif asn == vic_n:
                     self._add_stat(sim, og_info, nbnh)
                 # Else we go back another node
                 else:
@@ -104,6 +102,6 @@ class ROVPP_Data_Plane_Stats:
     def _add_stat(self, sim, _as, condition):
         """One liner for cleaner code, increments stat"""
 
-        sim[_as["as_type"]][self.plane][condition][-1] += 1
+        sim[self.plane][condition][-1] += 1
         _as["data_plane_conditions"].add(condition)
         self.conds_reached.append(condition)

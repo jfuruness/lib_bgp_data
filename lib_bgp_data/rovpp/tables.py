@@ -216,7 +216,6 @@ class ROVPP_ASes_Subtable(Database):
                              SELECT COUNT(*) FROM {0}) * ({2}::decimal/100.0)
                          ) b
                WHERE b.asn = {0}.asn;""".format(self.name, attacker, percent)
-        print(sql)
         self.execute(sql)
 
     @error_catcher()

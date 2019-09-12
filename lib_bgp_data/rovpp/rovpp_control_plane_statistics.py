@@ -25,14 +25,14 @@ class ROVPP_Control_Plane_Stats:
     In depth explanation at the top of the file
     """
 
-    __slots__ = ['path', 'csv_dir', 'logger', 'start_time', 'plane']
+    __slots__ = ['logger', 'start_time', 'plane']
 
     @error_catcher()
-    def __init__(self, args={}):
+    def __init__(self, logger):
         """Initializes logger and path variables."""
 
         # Sets path vars, logger, config, etc
-        utils.set_common_init_args(self, args)
+        self.logger = logger
         self.plane = Planes.CONTROL_PLANE.value
 
 ########################
@@ -43,9 +43,10 @@ class ROVPP_Control_Plane_Stats:
     def calculate_not_bholed(self, stats, adopt_pol, p_i, t_obj, ases_dict):
         """Calculates success rates"""
 
-        for plane in Planes.__members__.values():
-            for policy in Policies.__members__.values():
-                for cond in Conditions.__members__.values():
-                    sim = stats[t_obj][adopt_pol][percent_i][policy.value]
-                    num_cond = len(ases_dict[t_obj][policy.value][cond.value])
-                    sim[plane.value][cond.value][-1] += num_cond
+        for policy in Policies.__members__.values():
+            for cond in Conditions.__members__.values():
+                if cond.value == Conditions.BLACKHOLED.value:
+                    continue
+                sim = stats[t_obj][adopt_pol][p_i][policy.value]
+                num_cond = len(ases_dict[t_obj][policy.value][cond.value])
+                sim[self.plane][cond.value][-1] += num_cond

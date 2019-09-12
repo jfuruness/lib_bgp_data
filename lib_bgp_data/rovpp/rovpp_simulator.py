@@ -41,9 +41,9 @@ class ROVPP_Simulator:
 
         # Sets path vars, logger, config, etc
         utils.set_common_init_args(self, args)
-        self.set_up_tool = ROVPP_Simulator_Set_Up_Tool(args)
+        self.set_up_tool = ROVPP_Simulator_Set_Up_Tool(self.logger)
+        self.graph_data = Graph_Data(self.logger)
         self.args = args
-        self.graph_data = Graph_Data(args)
 
     @error_catcher()
     @utils.run_parser()
@@ -63,11 +63,10 @@ class ROVPP_Simulator:
                 tables, sub_hijacks = self.set_up_tool.set_up_trial(percents,
                                                                     i)
                 if self.statistics_calculator is None:
-                    self.statistics_calculator = Stats_Calculator(percents,
-                                                                  tables,
-                                                                  self.args)
-
-                
+                    self.statistics_calculator = Stats_Calculator(self.logger,
+                                                                  percents,
+                                                                  tables)
+               
                 for policy in Non_BGP_Policies.__members__.values():
                     # Run that specific simulation
                     self._run_sim(policy.value, tables, i, sub_hijacks, t_num,
@@ -89,7 +88,8 @@ class ROVPP_Simulator:
 
         self._change_routing_policy(tables, policy)
 
-        Extrapolator().run_rovpp(subprefix_hijack["attacker"],
+        Extrapolator(self.args).run_rovpp(
+                                subprefix_hijack["attacker"],
                                  subprefix_hijack["victim"],
                                  subprefix_hijack["more_specific_prefix"])
 

@@ -35,8 +35,8 @@ __status__ = "Development"
 class ROVPP_Simulator_Set_Up_Tool:
 
     @error_catcher()
-    def __init__(self, args={}):
-        utils.set_common_init_args(self, args)
+    def __init__(self, logger):
+        self.logger = logger
 
 ##########################
 ### Sets up all trials ###
