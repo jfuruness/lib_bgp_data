@@ -63,7 +63,7 @@ from .config import Config
 from .utils import delete_paths
 
 __author__ = "Justin Furuness"
-__credits__ = ["Justin Furuness"]
+__credits__ = ["Justin Furuness", "Cameron Morris"]
 __Lisence__ = "MIT"
 __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
@@ -336,6 +336,21 @@ class Install:
         replace_with = "/var/lib/rpki-validator-3/rsync"
         self._replace_line(path, prepend, replace, replace_with)
 
+    @error_catcher()
+    @delete_files("lzma-dev/")
+    def _install_lzma(self):
+        """Installs the lzma-dev library which you need for bgpscanner"""
+
+        cmds = ["mkdir lzma-dev",
+                "cd lzma-dev/",
+                "wget https://tukaani.org/xz/xz-5.2.4.tar.gz",
+                "tar -xvf xz-5.2.4.tar.gz",
+                "cd xz-5.2.4/",
+                "./configure ",
+                "make",
+                "sudo make install"]
+
+        check_call("&& ".join(cmds), shell=True)
 
     @error_catcher()
     @delete_files("bgpscanner/")
