@@ -43,9 +43,9 @@ class Graph_Data:
 
         self._graph(self._format_stats(stats, tables))
 
-    def _format_stats(self, tstats, tables):
+    def _format_stats(self, stats, tables):
 
-        stats = deepcopy(tstats)
+        #stats = deepcopy(tstats)
         for t_obj in stats:
             for adopt_pol in stats[t_obj]:
                 for i in stats[t_obj][adopt_pol]:
