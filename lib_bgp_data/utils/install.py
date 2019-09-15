@@ -237,7 +237,7 @@ class Install:
         cmds = ["git clone https://github.com/c-morris/BGPExtrapolator.git",
                 "cd BGPExtrapolator/Misc",
                 "sudo ./apt-install-deps.sh",
-                "sudo apt install libboost-test-dev",
+                "sudo apt -y install libboost-test-dev",
                 "cd ..",
                 "make -j{}".format(cpu_count()),
                 "sudo cp bgp-extrapolator /usr/bin/forecast-extrapolator"]
@@ -255,7 +255,7 @@ class Install:
         cmds = ["git clone https://github.com/c-morris/BGPExtrapolator.git",
                 "cd BGPExtrapolator/Misc",
                 "sudo ./apt-install-deps.sh",
-                "sudo apt install libboost-test-dev",
+                "sudo apt -y install libboost-test-dev",
                 "cd ..",
                 "git checkout remotes/origin/rovpp",
                 "git checkout -b rovpp"]
@@ -294,7 +294,7 @@ class Install:
         arin_tal = ("https://www.arin.net/resources/manage/rpki/"
                     "arin-ripevalidator.tal")
         # This is the java version they use so we will use it
-        cmds = ["sudo apt-get install openjdk-8-jre",
+        cmds = ["sudo apt-get -y install openjdk-8-jre",
                 "wget {}".format(rpki_url),
                 "tar -xvf rpki-validator-3-latest-dist.tar.gz",
                 "rm -rf rpki-validator-3-latest-dist.tar.gz",
@@ -357,13 +357,13 @@ class Install:
     def _install_bgpscanner(self):
         """Installs bgpscanner and moves to /usr/bin/bgpscanner"""
 
-        cmds = ["sudo apt install meson",
-                "sudo apt install zlib1g",
-                "sudo apt install zlib1g-dev",
-                "sudo apt-get install libbz2-dev",
-                "sudo apt-get install liblzma-dev",
-                "sudo apt-get install liblz4-dev",
-                "sudo apt-get install ninja-build",
+        cmds = ["sudo apt -y install meson",
+                "sudo apt -y install zlib1g",
+                "sudo apt -y install zlib1g-dev",
+                "sudo apt-get -y install libbz2-dev",
+                "sudo apt-get -y install liblzma-dev",
+                "sudo apt-get -y install liblz4-dev",
+                "sudo apt-get -y install ninja-build",
                 "pip3 install --user meson",
                 "sudo apt-get -y install cmake",
                 "git clone https://gitlab.com/Isolario/bgpscanner.git"]
@@ -403,7 +403,7 @@ class Install:
         """
 
         # Commands to install from source
-        cmds = ["sudo apt install mercurial",
+        cmds = ["sudo apt -y install mercurial",
                 "hg clone https://bitbucket.org/ripencc/bgpdump",
                 "cd bgpdump",
                 "sudo apt install automake",
