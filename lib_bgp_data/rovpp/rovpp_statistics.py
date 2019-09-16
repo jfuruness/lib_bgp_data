@@ -62,9 +62,11 @@ class ROVPP_Statistics_Calculator:
 ### Helper Functions ###
 ########################
 
+    @utils.run_parser(paths=False)
     def calculate_stats(self, subp_hijack, percent_i, adopt_pol):
         """Calculates success rates"""
 
+        start = utils.now()
         self._filter_exr(self.tables[0].table,
                          subp_hijack["more_specific_prefix"],
                          subp_hijack["expected_prefix"])
@@ -92,6 +94,7 @@ class ROVPP_Statistics_Calculator:
                                                       subp_hijack["victim"],
                                                       sim)
             self.logger.debug(sim)
+        return (utils.now() - start).total_seconds()
 
     def _update_blackholed_ases_stats(self, t_obj, adopt_pol, percent_i, ases_dict):
         """Updates stats for all ASes that recieved the hijack"""
@@ -170,8 +173,7 @@ class ROVPP_Statistics_Calculator:
                 tsql = "{} '{}'".format(sql, pol.value)
                 ases_dict[t_obj][pol.value] = dict()
                 ases_dict[t_obj][pol.value][blackholed] = \
-                    {x["asn"]: {**x, **{"data_plane_conditions": {blackholed}}}
-                     for x in t_obj.table.execute(tsql)}
+                    {x["asn"]: x for x in t_obj.table.execute(tsql)}
 
 
         # CHANGE THIS TO GET ALL THE SPECIFIC DICTS FOR CTRL AND DATA PLANE FOR EACH POL!!!!!
@@ -219,12 +221,14 @@ class ROVPP_Statistics_Calculator:
                     elif cond == 'nbnh':
                         tcond = nbnh
                     ases_dict[t_obj][pol.value][tcond] = \
-                        {x["asn"]: {**x, **{"data_plane_conditions": set()}}
-                         for x in tables[0].table.execute(sql)}
+                        {x["asn"]: x for x in tables[0].table.execute(sql)}
 
         ases_dict["all"] = dict()
+        ases_dict["blackholed"] = dict()
         for t_obj in tables:
             for cond in [nbh, nbnh, blackholed]:
                 for pol in Policies.__members__.values():
+                    if cond == blackholed:
+                        ases_dict["blackholed"].update(ases_dict[t_obj][pol.value][cond])
                     ases_dict["all"].update(ases_dict[t_obj][pol.value][cond])
         return ases_dict

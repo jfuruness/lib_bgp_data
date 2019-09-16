@@ -47,6 +47,7 @@ class ROVPP_Simulator:
 
         self.set_up_tool = ROVPP_Simulator_Set_Up_Tool(self.args)
         self.graph_data = Graph_Data(self.args)
+        self.stats_time_arr = []
 
     @utils.run_parser(paths=False)
     def simulate(self, percents=range(5, 31, 5), trials=100, real_data=False):
@@ -75,6 +76,7 @@ class ROVPP_Simulator:
                                   percent)
 
         self.graph_data.graph_data(self.statistics_calculator.stats, tables)
+        print(sum(self.stats_time_arr)/len(self.stats_time_arr))
         # Close all tables here!!!
 
 ########################
@@ -94,7 +96,7 @@ class ROVPP_Simulator:
                                  subprefix_hijack["victim"],
                                  subprefix_hijack["more_specific_prefix"])
 
-        self.statistics_calculator.calculate_stats(subprefix_hijack, i, policy)
+        self.stats_time_arr.append(self.statistics_calculator.calculate_stats(subprefix_hijack, i, policy))
 
     def _change_routing_policy(self, tables, policy):
         """Changes the routing policy for that percentage of ASes"""
