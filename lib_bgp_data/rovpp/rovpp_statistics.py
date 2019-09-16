@@ -27,12 +27,12 @@ class ROVPP_Statistics_Calculator:
     In depth explanation at the top of the file
     """
 
-    @error_catcher()
-    def __init__(self, logger, percents, tables):
+    def __init__(self, args, percents, tables):
         """Initializes logger and path variables."""
 
         # Sets path vars, logger, config, etc
-        self.logger = logger
+        utils.set_common_init_args(self, args, paths=False)
+        self.args = args
         self.tables = tables
         # I know this could be in a dict comp but ARE YOU NUTS???
         self.stats = dict()
@@ -62,7 +62,6 @@ class ROVPP_Statistics_Calculator:
 ### Helper Functions ###
 ########################
 
-    @error_catcher()
     def calculate_stats(self, subp_hijack, percent_i, adopt_pol):
         """Calculates success rates"""
 
@@ -80,18 +79,18 @@ class ROVPP_Statistics_Calculator:
             self._update_blackholed_ases_stats(t_obj, adopt_pol, percent_i, ases_dict)
 
             ROVPP_Control_Plane_Stats(
-                self.logger).calculate_not_bholed(self.stats,
-                                                  adopt_pol,
-                                                  percent_i,
-                                                  t_obj,
-                                                  ases_dict)
+                self.args).calculate_not_bholed(self.stats,
+                                                adopt_pol,
+                                                percent_i,
+                                                t_obj,
+                                                ases_dict)
 
             ROVPP_Data_Plane_Stats(
-                self.logger).calculate_not_bholed_stats(ases_dict,
-                                                        t_obj,
-                                                        subp_hijack["attacker"],
-                                                        subp_hijack["victim"],
-                                                        sim)
+                self.args).calculate_not_bholed_stats(ases_dict,
+                                                      t_obj,
+                                                      subp_hijack["attacker"],
+                                                      subp_hijack["victim"],
+                                                      sim)
             self.logger.debug(sim)
 
     def _update_blackholed_ases_stats(self, t_obj, adopt_pol, percent_i, ases_dict):
@@ -109,7 +108,6 @@ class ROVPP_Statistics_Calculator:
                 num_bholed = len(ases_dict[t_obj][policy.value][bholed])
                 sim[policy.value][plane.value][bholed][-1] += num_bholed
 
-    @error_catcher()
     def _initialize_attack_stats(self, sim):
         """Defaults the next statistic to be 0 for everything"""
 
@@ -119,7 +117,6 @@ class ROVPP_Statistics_Calculator:
                 for cond in Conditions.__members__.values():
                     sim[policy.value][plane.value][cond.value].append(0)
 
-    @error_catcher()
     def _filter_exr(self, table, hijack_p, victim_p):
         table.execute("DROP TABLE IF EXISTS rovpp_extrapolation_results_filtered")
 
@@ -137,7 +134,6 @@ class ROVPP_Statistics_Calculator:
         table.execute(sql, [hijack_p, victim_p])
 
 
-    @error_catcher()
     def _get_ases(self, hijack_p, victim_p):
 
         nbh = Conditions.NOT_BLACKHOLED_HIJACKED.value
@@ -163,7 +159,7 @@ class ROVPP_Statistics_Calculator:
                     INNER JOIN {0} a
                  ON a.asn = b.asn);""".format(t_obj.table.name)])
         for sql in sqls:
-            print(sql)
+            self.logger.debug(sql)
             t_obj.table.execute(sql)
 
         for t_obj in tables:
@@ -208,7 +204,7 @@ class ROVPP_Statistics_Calculator:
                                ON {0}.asn = {1}.asn)""".format(t_obj.table.name, cond)])
 
         for sql in sqls:
-            print(sql)
+            self.logger.debug(sql)
             t_obj.table.execute(sql)
 
 

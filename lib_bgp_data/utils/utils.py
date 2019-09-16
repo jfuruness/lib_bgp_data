@@ -53,7 +53,7 @@ def Pool(logger, threads, multiplier, name):
 # This decorator wraps any run parser function
 # This starts the parser, cleans all paths, ends the parser, and records time
 # The point of this decorator is to make sure the parser runs smoothly
-def run_parser():
+def run_parser(paths=True):
     def my_decorator(run_parser_func):
         @functools.wraps(run_parser_func)
         def function_that_runs_func(self, *args, **kwargs):
@@ -61,8 +61,9 @@ def run_parser():
 
             # Gets the start time
             start_time = now()
-            # Deletes everything from and creates paths
-            clean_paths(self.logger, [self.path, self.csv_dir])
+            if paths:
+                # Deletes everything from and creates paths
+                clean_paths(self.logger, [self.path, self.csv_dir])
             try:
                 # Runs the parser
                 return run_parser_func(self, *args, **kwargs)
@@ -73,7 +74,8 @@ def run_parser():
             # End the parser to delete all files and directories always
             finally:
                 # Clean up don't be messy yo
-                end_parser(self, [self.path, self.csv_dir], start_time)
+                end_parser(self, start_time, paths)
+                    
         return function_that_runs_func
     return my_decorator
 
@@ -96,25 +98,27 @@ def get_default_end():
     return (now()-timedelta(days=1)).timestamp()
 
 
-def set_common_init_args(self, args):
+def set_common_init_args(self, args, paths=True):
     """Sets self attributes for arguments common across many classes"""
 
     # The class name. This because when parsers are done,
     # they aggressively clean up. We do not want parser to clean up in
     # the same directories and delete files that others are using
     name = self.__class__.__name__
-    # Path to where all files willi go. It does not have to exist
-    self.path = args.get("path") if args.get("path") else\
-        "/tmp/bgp_{}".format(name)
-    self.csv_dir = args.get("csv_dir") if args.get("csv_dir") else\
-        "/dev/shm/bgp_{}".format(name)
 
     self.logger = args.get("logger") if args.get("logger") else\
         Logger(args)
 
+    if paths:
+        # Path to where all files willi go. It does not have to exist
+        self.path = args.get("path") if args.get("path") else\
+            "/tmp/bgp_{}".format(name)
+        self.csv_dir = args.get("csv_dir") if args.get("csv_dir") else\
+            "/dev/shm/bgp_{}".format(name)
+        clean_paths(self.logger, [self.path, self.csv_dir])
+
     # Deletes and creates dirs from fresh
-    clean_paths(self.logger, [self.path, self.csv_dir])
-    self.logger.info("Initialized {} at {}".format(name, now()))
+    self.logger.debug("Initialized {} at {}".format(name, now()))
 
 
 def download_file(logger, url, path, file_num=1, total_files=1, sleep_time=0):
@@ -193,13 +197,16 @@ def clean_paths(logger, paths):
         os.makedirs(path, mode=0o777, exist_ok=False)
 
 
-def end_parser(self, paths, start_time):
+def end_parser(self, start_time, has_paths=True):
     """To be run at the end of every parser, deletes paths and prints time"""
 
-    delete_paths(self.logger, paths)
+    if has_paths:
+        delete_paths(self.logger, [self.path, self.csv_dir])
     name = self.__class__.__name__
-    self.logger.info("{} started at {}".format(name, start_time))
-    self.logger.info("{} completed at {}".format(name, now()))
+    current = now()
+    # https://www.geeksforgeeks.org/python-difference-between-two-dates-in-minutes-using-datetime-timedelta-method/
+    minutes, seconds = divmod((current - start_time).total_seconds(), 60)
+    self.logger.info("{} ran for {} minutes {} seconds".format(name, minutes, seconds))
 
 
 def unzip_bz2(logger, old_path):

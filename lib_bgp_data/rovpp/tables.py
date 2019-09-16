@@ -37,7 +37,6 @@ class ROVPP_ASes_Table(Database):
 
     __slots__ = []
 
-    @error_catcher()
     def _create_tables(self):
         """Creates tables if they do not exist.
 
@@ -51,18 +50,16 @@ class ROVPP_ASes_Table(Database):
                  );"""
         self.cursor.execute(sql)
 
-    @error_catcher()
     def clear_table(self):
         """Clears the rovpp_ases table.
 
         Should be called at the start of every run.
         """
 
-        self.logger.info("Dropping ROVPP_ASes")
+        self.logger.debug("Dropping ROVPP_ASes")
         self.cursor.execute("DROP TABLE IF EXISTS rovpp_ases")
-        self.logger.info("ROVPP_ASes Table dropped")
+        self.logger.debug("ROVPP_ASes Table dropped")
 
-    @error_catcher()
     def fill_table(self):
         self.clear_table()
         self.logger.debug("Initializing rovpp_as_table")
@@ -83,7 +80,6 @@ class ROVPP_MRT_Announcements_Table(Database):
     __slots__ = ['attacker_asn', 'attacker_prefix', 'victim_asn',
                  'victim_prefix']
 
-    @error_catcher()
     def _create_tables(self):
         """Creates tables if they do not exist.
 
@@ -99,18 +95,16 @@ class ROVPP_MRT_Announcements_Table(Database):
                  );"""
         self.cursor.execute(sql)
 
-    @error_catcher()
     def clear_table(self):
         """Clears the rovpp_ases table.
 
         Should be called at the start of every run.
         """
 
-        self.logger.info("Dropping ROVPP_MRT_Announcements")
+        self.logger.debug("Dropping ROVPP_MRT_Announcements")
         self.cursor.execute("DROP TABLE IF EXISTS rovpp_mrt_announcements")
-        self.logger.info("ROVPP_MRT_Announcements Table dropped")
+        self.logger.debug("ROVPP_MRT_Announcements Table dropped")
 
-    @error_catcher()
     def populate_mrt_announcements(self, subprefix_hijack):
         """Populates the mrt announcements table"""
 
@@ -136,7 +130,6 @@ class Subprefix_Hijack_Temp_Table(Database):
 
     __slots__ = []
 
-    @error_catcher()
     def _create_tables(self):
         """Creates tables if they do not exist.
 
@@ -153,18 +146,16 @@ class Subprefix_Hijack_Temp_Table(Database):
                  );"""
         self.cursor.execute(sql)
 
-    @error_catcher()
     def clear_table(self):
         """Clears the rovpp_ases table.
 
         Should be called at the start of every run.
         """
 
-        self.logger.info("Dropping Subprefix Hijacks")
+        self.logger.debug("Dropping Subprefix Hijacks")
         self.cursor.execute("DROP TABLE IF EXISTS subprefix_hijack_temp;")
-        self.logger.info("Subprefix Hijacks Table dropped")
+        self.logger.debug("Subprefix Hijacks Table dropped")
 
-    @error_catcher()
     def populate(self, ases):
         """Populates table with fake data"""
 
@@ -193,17 +184,15 @@ class ROVPP_ASes_Subtable(Database):
                  );""".format(self.name)
         self.cursor.execute(sql)
 
-    @error_catcher()
     def clear_table(self):
         """Clears the rovpp_ases table.
         Should be called at the start of every run.
         """
 
-        self.logger.info("Dropping {}".format(self.name))
+        self.logger.debug("Dropping {}".format(self.name))
         self.cursor.execute("DROP TABLE IF EXISTS {}".format(self.name))
-        self.logger.info("{} dropped".format(self.name))
+        self.logger.debug("{} dropped".format(self.name))
 
-    @error_catcher()
     def set_implimentable_ases(self, percent, attacker):
         """Sets ases to impliment. Due to large sample size,
            1 (the attacker) is not subtracted from the count,
@@ -218,7 +207,6 @@ class ROVPP_ASes_Subtable(Database):
                WHERE b.asn = {0}.asn;""".format(self.name, attacker, percent)
         self.execute(sql)
 
-    @error_catcher()
     def change_routing_policies(self, policy):
         sql = """UPDATE {} SET as_type = '{}'
                  WHERE impliment = TRUE;""".format(self.name, policy)
@@ -230,7 +218,6 @@ class ROVPP_Top_100_ASes_Table(ROVPP_ASes_Subtable):
 
     __slots__ = []
 
-    @error_catcher()
     def fill_table(self):
         self.clear_table()
         sql = """CREATE UNLOGGED TABLE IF NOT EXISTS rovpp_top_100_ases AS (
@@ -246,7 +233,6 @@ class ROVPP_Edge_ASes_Table(ROVPP_ASes_Subtable):
 
     __slots__ = []
 
-    @error_catcher()
     def fill_table(self):
         self.clear_table()
         sql = """CREATE UNLOGGED TABLE IF NOT EXISTS rovpp_edge_ases AS (
@@ -263,7 +249,6 @@ class ROVPP_Etc_ASes_Table(ROVPP_ASes_Subtable):
 
     __slots__ = []
 
-    @error_catcher()
     def fill_table(self, table_names):
         self.clear_table()
         sql = """CREATE UNLOGGED TABLE IF NOT EXISTS rovpp_etc_ases AS (
@@ -279,5 +264,5 @@ class ROVPP_Etc_ASes_Table(ROVPP_ASes_Subtable):
             # Gets rid of the last \sAND
             sql = sql[:-4]
         sql += ");"
-        self.logger.info("ETC AS SQL:\n\n{}\n".format(sql))
+        self.logger.debug("ETC AS SQL:\n\n{}\n".format(sql))
         self.cursor.execute(sql)

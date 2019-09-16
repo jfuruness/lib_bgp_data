@@ -15,7 +15,6 @@ __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
-from pprint import pprint
 from .enums import Policies, Non_BGP_Policies, Planes, Conditions
 from ..utils import error_catcher, utils
 
@@ -27,19 +26,17 @@ class ROVPP_Control_Plane_Stats:
 
     __slots__ = ['logger', 'start_time', 'plane']
 
-    @error_catcher()
-    def __init__(self, logger):
+    def __init__(self, args):
         """Initializes logger and path variables."""
 
         # Sets path vars, logger, config, etc
-        self.logger = logger
+        utils.set_common_init_args(self, args, paths=False)
         self.plane = Planes.CONTROL_PLANE.value
 
 ########################
 ### Helper Functions ###
 ########################
 
-    @error_catcher()
     def calculate_not_bholed(self, stats, adopt_pol, p_i, t_obj, ases_dict):
         """Calculates success rates"""
 

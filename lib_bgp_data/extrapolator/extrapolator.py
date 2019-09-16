@@ -63,7 +63,7 @@ class Extrapolator:
     def run_rovpp(self, attacker_asn, victim_asn, expected_prefix):
         """Runs extrapolator with a subprefix hijack."""
 
-        self.logger.info("About to run the rovpp extrapolator")
+        self.logger.debug("About to run the rovpp extrapolator")
         # Run the extrapolator
         bash_args = "rovpp-extrapolator "
         # Don't invert the results so that we have the last hop
@@ -74,7 +74,7 @@ class Extrapolator:
         bash_args += "--victim_asn={} ".format(victim_asn)
         # Gives the more specific prefix that the attacker sent out
         bash_args += "--victim_prefix={}".format(expected_prefix)
-        self.logger.info("Caling extrapolator with:\n{}".format(bash_args))
+        self.logger.debug("Caling extrapolator with:\n{}".format(bash_args))
         if self.logger.level == DEBUG:
             check_call(bash_args, shell=True)
         else:

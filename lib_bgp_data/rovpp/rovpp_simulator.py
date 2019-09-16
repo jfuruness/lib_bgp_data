@@ -35,18 +35,20 @@ class ROVPP_Simulator:
     """
 
 
-    @error_catcher()
     def __init__(self, args={}):
         """Initializes logger and path variables."""
 
         # Sets path vars, logger, config, etc
-        utils.set_common_init_args(self, args)
-        self.set_up_tool = ROVPP_Simulator_Set_Up_Tool(self.logger)
-        self.graph_data = Graph_Data(self.logger)
+        utils.set_common_init_args(self, args, paths=False)
         self.args = args
+        if not self.args.get("stream_level"):
+            INFO = 20   # Can't import logging causes multithreading errors
+            self.args["stream_level"] = INFO
 
-    @error_catcher()
-    @utils.run_parser()
+        self.set_up_tool = ROVPP_Simulator_Set_Up_Tool(self.args)
+        self.graph_data = Graph_Data(self.args)
+
+    @utils.run_parser(paths=False)
     def simulate(self, percents=range(5, 31, 5), trials=100, real_data=False):
         """Runs ROVPP simulation.
 
@@ -63,7 +65,7 @@ class ROVPP_Simulator:
                 tables, sub_hijacks = self.set_up_tool.set_up_trial(percents,
                                                                     i)
                 if self.statistics_calculator is None:
-                    self.statistics_calculator = Stats_Calculator(self.logger,
+                    self.statistics_calculator = Stats_Calculator(self.args,
                                                                   percents,
                                                                   tables)
                
@@ -79,7 +81,6 @@ class ROVPP_Simulator:
 ### Helper Functions ###
 ########################
 
-    @error_catcher()
     def _run_sim(self, policy, tables, i, subprefix_hijack, t_num, percent):
         """Runs one single simulation with the extrapolator"""
 
@@ -95,14 +96,13 @@ class ROVPP_Simulator:
 
         self.statistics_calculator.calculate_stats(subprefix_hijack, i, policy)
 
-    @error_catcher()
     def _change_routing_policy(self, tables, policy):
         """Changes the routing policy for that percentage of ASes"""
 
         # NOTE: maybe make this a new table func with a rename for better speed?
         # TEST IT OUT!!!
         # Also, test index vs no index
-        self.logger.info("About to change the routing policies")
+        self.logger.debug("About to change the routing policies")
         for sub_table in tables:
             sub_table.change_routing_policies(policy)
 

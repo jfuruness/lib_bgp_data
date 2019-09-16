@@ -24,20 +24,16 @@ class Graph_Data:
     In depth explanation at the top of the file
     """
 
-    __slots__ = ['logger', 'start_time', 'stats']
-
-#    @error_catcher()
-    def __init__(self, logger):
+    def __init__(self, args):
         """Initializes logger and path variables."""
 
         # Sets path vars, logger, config, etc
-        self.logger = logger
+        utils.set_common_init_args(self, args, paths=False)
 
 ########################
 ### Helper Functions ###
 ########################
 
-#    @error_catcher()
     def graph_data(self, stats, tables):
         """Formats stats for graph production"""
 
@@ -97,4 +93,4 @@ class Graph_Data:
                                     data += "\t\t\t\t\t{}: {}\n".format(
                                         cond, sim[plane]["percents"][cond])
 
-        print(data)
+        self.logger.warning(data)

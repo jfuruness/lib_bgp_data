@@ -19,7 +19,6 @@ __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
-from pprint import pprint
 from .enums import Policies, Non_BGP_Policies, Planes, Conditions
 from ..utils import error_catcher, utils
 
@@ -32,13 +31,12 @@ class ROVPP_Data_Plane_Stats:
 
     __slots__ = ['logger', 'start_time', 'stats', 'plane', 'conds_reached']
 
-    @error_catcher()
-    def __init__(self, logger):
+    def __init__(self, args):
         """Initializes logger and path variables."""
 
         # Sets path vars, logger, config, etc
         self.plane = Planes.DATA_PLANE.value
-        self.logger = logger
+        utils.set_common_init_args(self, args, paths=False)
 
 ########################
 ### Helper Functions ###
@@ -71,7 +69,15 @@ class ROVPP_Data_Plane_Stats:
             traceback_as_infos = []#og_info]
             # Conditions reached at the end of the traceback
             self.conds_reached = []
+            debug_i = 0
             while(len(self.conds_reached) == 0):
+                debug_i += 1
+                if debug_i > 100:
+                    self.logger.warning(asn)
+                    self.logger.warning(all_ases[asn])
+                    self.logger.warning(og_info)
+                    self.logger.warning(atk_n)
+                    self.logger.warning(vic_n)
                 if len(all_ases[asn]["data_plane_conditions"]) > 0:
                     for cond in all_ases[asn]["data_plane_conditions"]:
                         self._add_stat(sim, og_info, cond)
@@ -98,7 +104,6 @@ class ROVPP_Data_Plane_Stats:
             for cond in self.conds_reached:
                 as_info["data_plane_conditions"].add(cond)
 
-    @error_catcher()
     def _add_stat(self, sim, _as, condition):
         """One liner for cleaner code, increments stat"""
 

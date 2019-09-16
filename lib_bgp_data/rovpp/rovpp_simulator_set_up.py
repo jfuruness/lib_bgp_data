@@ -34,34 +34,39 @@ __status__ = "Development"
 
 class ROVPP_Simulator_Set_Up_Tool:
 
-    @error_catcher()
-    def __init__(self, logger):
-        self.logger = logger
+    def __init__(self, args):
+        utils.set_common_init_args(self, args, paths=False)
+        self.args = args
 
 ##########################
 ### Sets up all trials ###
 ##########################
 
-    @error_catcher()
+    @utils.run_parser(paths=False)
     def set_up_all_trials_and_percents(self):
         self._get_relationship_data()
         self._create_and_fill_as_and_connectivity_tables()
 
-    @error_catcher()
     def _get_relationship_data(self):
         """Gets relationship data, small func ik but makes code cleaner"""
 
-        self.logger.info("Getting relationship data for rovpp simulator")
+        self.logger.debug("Getting relationship data for rovpp simulator")
 
         # Runs relationships parser
         caida_url = "http://data.caida.org/datasets/as-relationships/serial-2/"
         may_data_url = caida_url + "20190501.as-rel2.txt.bz2"
-        Relationships_Parser().parse_files(rovpp=True, url=may_data_url)
+        DEBUG = 10  # cannot import logger because not threadsafe
+        WARNING = 30
+        args = deepcopy(self.args)
+        if self.args["stream_level"] == DEBUG:
+            args["sream_level"] = DEBUG
+        else:
+            args["stream_level"] = WARNING
+        Relationships_Parser(args).parse_files(rovpp=True, url=may_data_url)
 
         self.logger.debug("Done getting relationship data for rovpp simulator")
 
 
-    @error_catcher()
     def _create_and_fill_as_and_connectivity_tables(self):
         with db_connection(ROVPP_ASes_Table, self.logger) as as_table:
             as_table.fill_table()
@@ -73,7 +78,6 @@ class ROVPP_Simulator_Set_Up_Tool:
 ### Sets Up Current Trial ###
 #############################
 
-    @error_catcher()
     def set_up_trial(self, percents, iter_num):
         # Creates fresh subtables, faster than reverting back to bgp
         self._create_subtables(percents)
@@ -87,7 +91,6 @@ class ROVPP_Simulator_Set_Up_Tool:
         return self.tables, subprefix_hijack
 
 
-    @error_catcher()
     def _create_subtables(self, default_percents):
         # Add docs on how to add a table to these sims
         # Create these tables and then 
@@ -107,18 +110,16 @@ class ROVPP_Simulator_Set_Up_Tool:
         etc.table.fill_table([x.table.name for x in self.tables])
         self.tables.append(etc)
 
-    @error_catcher()
     def _get_hijack_data(self):
         """Gets bgpstream data, small fun ik but makes code cleaner"""
 
-        self.logger.info("Creating fake data for subprefix hijacks")
+        self.logger.debug("Creating fake data for subprefix hijacks")
         # Initializes the fake table
         with db_connection(Subprefix_Hijack_Temp_Table, self.logger) as db:
             db.populate(self._get_possible_hijacker_ases())
             # Returns all the subprefix hijacks - should only be one
             return db.get_all()[0]
 
-    @error_catcher()
     def _get_possible_hijacker_ases(self):
         """Returns all possible hijacker ases"""
 
@@ -129,17 +130,15 @@ class ROVPP_Simulator_Set_Up_Tool:
                 possible_hijacker_ases.extend([x["asn"] for x in results])
         return possible_hijacker_ases
 
-    @error_catcher()
     def _set_implimentable_ases(self, percent_iteration_num, attacker):
 
         for sub_table in self.tables:
             sub_table.set_implimentable_ases(percent_iteration_num, attacker)
 
-    @error_catcher()
     def _populate_rovpp_mrt_announcements(self, subprefix_hijack):
         """Fill the rovpp mrt announcements table"""
 
-        self.logger.info("Populating rovpp announcements table")
+        self.logger.debug("Populating rovpp announcements table")
         # I know this is a short function but it's for readability
         with db_connection(ROVPP_MRT_Announcements_Table,
                            self.logger) as mrt_table:
