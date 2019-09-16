@@ -18,11 +18,11 @@ __status__ = "Development"
 class Policies(Enum):
     """The three types of routing policies"""
 
-    BGP = "bgp"
-    ROV = "rov"
-    ROVPP = "rovpp"
-    ROVPPFP = "rovppb"
-    ROVPPF = "rovppbp"
+    BGP = 0
+    ROV = 1
+    ROVPP = 2
+    ROVPPB = 3
+    ROVPPBP = 4
 # This creates an enum that is for non bgp policies
 non_bgp_policies_dict = {x[0]: x[1].value
                          for x in Policies.__members__.items()
@@ -44,6 +44,7 @@ class Planes(Enum):
 
 class Conditions(Enum):
 
-    BLACKHOLED = "blackholed"
-    NOT_BLACKHOLED_HIJACKED = "hijacked"
-    NOT_BLACKHOLED_NOT_HIJACKED = "not_hijacked"
+    BHOLED = 1  # blackholed
+    HIJACKED = 2  # not blackholed hijacked
+    NOTHIJACKED = 3  # "not_hijacked"
+    DISCONNECTED = 4  # disconnected

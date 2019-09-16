@@ -68,7 +68,7 @@ class Graph_Data:
         # Could this be a list comp? Sure. Are you CrAZy????
         total_list = []
         plane = Planes.CONTROL_PLANE.value
-        cond = Conditions.BLACKHOLED.value
+        cond = Conditions.BHOLED.value
         for trial in range(len(sim[plane][cond])):
             total_list.append(sum([sim[plane][x.value][trial]
                               for x in Conditions.__members__.values()]))

@@ -16,7 +16,7 @@ __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
 from pprint import pprint
-from .enums import Policies, Non_BGP_Policies, Planes, Conditions
+from .enums import Policies, Non_BGP_Policies, Planes, Conditions as Conds
 from ..utils import error_catcher, utils
 from .rovpp_data_plane_statistics import ROVPP_Data_Plane_Stats
 from .rovpp_control_plane_statistics import ROVPP_Control_Plane_Stats
@@ -53,7 +53,7 @@ class ROVPP_Statistics_Calculator:
                         for plane in Planes.__members__.values():
                             sim[i][pol_val][plane.value] = dict()
                             # For each kind of condition
-                            for cond in Conditions.__members__.values():
+                            for cond in Conds.__members__.values():
                                 # Sets rates to be a list for multiple attacks
                                 sim[i][pol_val][plane.value][cond.value] = []
 
@@ -78,7 +78,7 @@ class ROVPP_Statistics_Calculator:
             # Appends a zero onto all stats
             self._initialize_attack_stats(sim)
 
-            self._update_blackholed_ases_stats(t_obj, adopt_pol, percent_i, ases_dict)
+            self._update_blackholed_disconnected_stats(t_obj, adopt_pol, percent_i, ases_dict)
 
             ROVPP_Control_Plane_Stats(
                 self.args).calculate_not_bholed(self.stats,
@@ -96,20 +96,15 @@ class ROVPP_Statistics_Calculator:
             self.logger.debug(sim)
         return (utils.now() - start).total_seconds()
 
-    def _update_blackholed_ases_stats(self, t_obj, adopt_pol, percent_i, ases_dict):
+    def _update_blackholed_disconnected_stats(self, t_obj, adopt_pol, percent_i, ases_dict):
         """Updates stats for all ASes that recieved the hijack"""
-
-        # THIS SHOULD BE OPTIMIZED - THIS SHOULD BE A COUNT QUERY TO POSTGRES
-        # NOT A FOR LOOP IN PYTHON!!!
-
-        bholed = Conditions.BLACKHOLED.value
 
         # Increase control plane and data plane hijacked
         for plane in Planes.__members__.values():
             for policy in Policies.__members__.values():
-                sim = self.stats[t_obj][adopt_pol][percent_i]
-                num_bholed = len(ases_dict[t_obj][policy.value][bholed])
-                sim[policy.value][plane.value][bholed][-1] += num_bholed
+                for cond in [Conds.BHOLED.value, Conds.DISCONNECTED.value]:
+                    sim = self.stats[t_obj][adopt_pol][percent_i]
+                    sim[policy.value][plane.value][cond][-1] += ases_dict[t_obj][policy.value][cond]
 
     def _initialize_attack_stats(self, sim):
         """Defaults the next statistic to be 0 for everything"""
@@ -117,7 +112,7 @@ class ROVPP_Statistics_Calculator:
         #I know this could be in a dict comp but ARE YOU NUTS???
         for policy in Policies.__members__.values():
             for plane in Planes.__members__.values():
-                for cond in Conditions.__members__.values():
+                for cond in Conds.__members__.values():
                     sim[policy.value][plane.value][cond.value].append(0)
 
     def _filter_exr(self, table, hijack_p, victim_p):
@@ -138,10 +133,6 @@ class ROVPP_Statistics_Calculator:
 
 
     def _get_ases(self, hijack_p, victim_p):
-
-        nbh = Conditions.NOT_BLACKHOLED_HIJACKED.value
-        nbnh = Conditions.NOT_BLACKHOLED_NOT_HIJACKED.value
-        blackholed = Conditions.BLACKHOLED.value
 
         ases_dict = dict()
         tables = self.tables
@@ -166,14 +157,14 @@ class ROVPP_Statistics_Calculator:
             t_obj.table.execute(sql)
 
         for t_obj in tables:
-            sql = """SELECT b.asn FROM {}_bholed b
+            sql = """SELECT COUNT(*) FROM {}_bholed b
                   WHERE as_type = """.format(t_obj.table.name)
             ases_dict[t_obj] = dict()
             for pol in Policies.__members__.values():
                 tsql = "{} '{}'".format(sql, pol.value)
                 ases_dict[t_obj][pol.value] = dict()
-                ases_dict[t_obj][pol.value][blackholed] = \
-                    {x["asn"]: x for x in t_obj.table.execute(tsql)}
+                ases_dict[t_obj][pol.value][Conds.BHOLED.value] = \
+                    t_obj.table.execute(tsql)[0]["count"]
 
 
         # CHANGE THIS TO GET ALL THE SPECIFIC DICTS FOR CTRL AND DATA PLANE FOR EACH POL!!!!!
@@ -211,24 +202,25 @@ class ROVPP_Statistics_Calculator:
 
 
         for t_obj in tables:
-            for cond in ['nbh', 'nbnh']:
-                for pol in Policies.__members__.values():
+            for pol in Policies.__members__.values():
+                for cond, tcond in zip(['nbh', 'nbnh'], [Conds.HIJACKED.value, Conds.NOTHIJACKED.value]):
                     sql = """SELECT * FROM {1}_{0}
                           WHERE {1}_{0}.as_type
                           = '{2}'""".format(t_obj.table.name, cond, pol.value)
-                    if cond == 'nbh':
-                        tcond = nbh
-                    elif cond == 'nbnh':
-                        tcond = nbnh
                     ases_dict[t_obj][pol.value][tcond] = \
-                        {x["asn"]: x for x in tables[0].table.execute(sql)}
+                        {x["asn"]: x for x in t_obj.table.execute(sql)}
+                sql = """SELECT COUNT(*) FROM ases_with_empty_ribs a
+                      INNER JOIN {0} ON {0}.asn = a.asn
+                      WHERE {0}.as_type = '{1}'""".format(t_obj.table.name, pol.value)
+                ases_dict[t_obj][pol.value][Conds.DISCONNECTED.value] = t_obj.table.execute(sql)[0]["count"]
 
-        ases_dict["all"] = dict()
-        ases_dict["blackholed"] = dict()
+        ases_dict["nb"] = dict()
+        ases_dict[Conds.BHOLED] = dict()
         for t_obj in tables:
-            for cond in [nbh, nbnh, blackholed]:
+            for tcond in Conds.__members__.values():
                 for pol in Policies.__members__.values():
-                    if cond == blackholed:
-                        ases_dict["blackholed"].update(ases_dict[t_obj][pol.value][cond])
-                    ases_dict["all"].update(ases_dict[t_obj][pol.value][cond])
+                    if tcond.value in [Conds.DISCONNECTED.value, Conds.BHOLED.value]:
+                        pass
+                    else:
+                        ases_dict["nb"].update(ases_dict[t_obj][pol.value][tcond.value])
         return ases_dict

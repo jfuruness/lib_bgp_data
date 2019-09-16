@@ -15,7 +15,7 @@ __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
-from .enums import Policies, Non_BGP_Policies, Planes, Conditions
+from .enums import Policies, Non_BGP_Policies, Planes, Conditions as Conds
 from ..utils import error_catcher, utils
 
 class ROVPP_Control_Plane_Stats:
@@ -41,8 +41,8 @@ class ROVPP_Control_Plane_Stats:
         """Calculates success rates"""
 
         for policy in Policies.__members__.values():
-            for cond in Conditions.__members__.values():
-                if cond.value == Conditions.BLACKHOLED.value:
+            for cond in Conds.__members__.values():
+                if cond.value in [Conds.BHOLED.value, Conds.DISCONNECTED.value]:
                     continue
                 sim = stats[t_obj][adopt_pol][p_i][policy.value]
                 num_cond = len(ases_dict[t_obj][policy.value][cond.value])
