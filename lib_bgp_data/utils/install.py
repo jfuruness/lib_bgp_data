@@ -240,7 +240,8 @@ class Install:
                 "sudo apt -y install libboost-test-dev",
                 "cd ..",
                 "make -j{}".format(cpu_count()),
-                "sudo cp bgp-extrapolator /usr/bin/forecast-extrapolator"]
+                "sudo cp bgp-extrapolator /usr/bin/forecast-extrapolator",
+                "sudo cp bgp-extrapolator /usr/local/bin/forecast-extrapolator"]
         check_call("&& ".join(cmds), shell=True)
 
     @error_catcher()
@@ -273,7 +274,8 @@ class Install:
         # Install extrapolator
         cmds = ["cd BGPExtrapolator",
                 "make -j{}".format(cpu_count()),
-                "sudo cp bgp-extrapolator /usr/bin/rovpp-extrapolator"]
+                "sudo cp bgp-extrapolator /usr/bin/rovpp-extrapolator",
+                "sudo cp bgp-extrapolator /usr/local/bin/rovpp-extrapolator"]
 
         check_call("&& ".join(cmds), shell=True)
 
@@ -391,6 +393,8 @@ class Install:
                 "sudo ninja install",
                 "sudo ldconfig",
                 "cd ../../",
+                "cp bgpscanner/build/bgpscanner /usr/bin/bgpscanner",
+                "cp bgpscanner/build/bgpscanner /usr/local/bin/bgpscanner",
                 "rm -rf delete_me"]
         check_call("&& ".join(cmds), shell=True)
 
@@ -410,7 +414,8 @@ class Install:
                 "./bootstrap.sh",
                 "make",
                 "./bgpdump -T",
-                "sudo cp bgpdump /usr/bin/bgpdump"]
+                "sudo cp bgpdump /usr/bin/bgpdump",
+                "sudo cp bgpdump /usr/local/bin/bgpdump"]
         check_call("&& ".join(cmds), shell=True)
 
 ########################

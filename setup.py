@@ -11,6 +11,7 @@ setup(
     keywords=['Furuness', 'furuness', 'pypi', 'package'],  # arbitrary keywords
     install_requires=[
         'setuptools',
+	'jsonschema==2.6.0',
         'requests',
         'beautifulsoup4',
         'flasgger',
