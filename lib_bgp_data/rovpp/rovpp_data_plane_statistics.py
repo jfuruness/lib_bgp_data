@@ -62,11 +62,11 @@ class ROVPP_Data_Plane_Stats:
             while asn not in [atk_n, vic_n, -1]:
                 debug_i += 1
                 if debug_i > 100:
-                    self.logger.warning(asn)
-                    self.logger.warning(og_info)
-                    self.logger.warning(all_ases[asn])
-                    self.logger.warning(atk_n)
-                    self.logger.warning(vic_n)
+                    self.logger.warning("current_asn" + str(asn))
+                    self.logger.warning("starting_as_info" + str(og_info))
+                    self.logger.warning("current as info" + str(all_ases[asn]))
+                    self.logger.warning("attacker" + str(atk_n))
+                    self.logger.warning("victim" + str(vic_n))
                 try:
                     asn = all_ases[asn]["received_from_asn"]
                 except KeyError:
