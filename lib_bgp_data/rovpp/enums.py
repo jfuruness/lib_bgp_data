@@ -16,6 +16,7 @@ class Hijack_Types(Enum):
 
     SUBPREFIX_HIJACK = 0
     PREFIX_HIJACK = 1
+    NO_COMPETING_ANNOUNCEMENT_HIJACK = 2
 
 # enum because strings shouldn't just be being passed around
 # This is for all the policies

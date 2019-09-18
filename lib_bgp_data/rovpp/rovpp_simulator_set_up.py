@@ -86,7 +86,7 @@ class ROVPP_Simulator_Set_Up_Tool:
         
         self._set_implimentable_ases(iter_num, hijack["attacker"])
 
-        self._populate_rovpp_mrt_announcements(hijack)
+        self._populate_rovpp_mrt_announcements(hijack, hijack_type)
 
         return self.tables, hijack
 
@@ -135,14 +135,14 @@ class ROVPP_Simulator_Set_Up_Tool:
         for sub_table in self.tables:
             sub_table.set_implimentable_ases(percent_iteration_num, attacker)
 
-    def _populate_rovpp_mrt_announcements(self, subprefix_hijack):
+    def _populate_rovpp_mrt_announcements(self, subprefix_hijack, hijack_type):
         """Fill the rovpp mrt announcements table"""
 
         self.logger.debug("Populating rovpp announcements table")
         # I know this is a short function but it's for readability
         with db_connection(ROVPP_MRT_Announcements_Table,
                            self.logger) as mrt_table:
-            mrt_table.populate_mrt_announcements(subprefix_hijack)
+            mrt_table.populate_mrt_announcements(subprefix_hijack, hijack_type)
         self.logger.debug("Done populating rovpp announcements table")
 
 

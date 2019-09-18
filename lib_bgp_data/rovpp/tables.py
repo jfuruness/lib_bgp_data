@@ -106,7 +106,7 @@ class ROVPP_MRT_Announcements_Table(Database):
         self.cursor.execute("DROP TABLE IF EXISTS rovpp_mrt_announcements")
         self.logger.debug("ROVPP_MRT_Announcements Table dropped")
 
-    def populate_mrt_announcements(self, subprefix_hijack):
+    def populate_mrt_announcements(self, subprefix_hijack, hijack_type):
         """Populates the mrt announcements table"""
 
         sql = """INSERT INTO rovpp_mrt_announcements(
@@ -118,7 +118,10 @@ class ROVPP_MRT_Announcements_Table(Database):
         victim_data = [subprefix_hijack["victim"],
                        [subprefix_hijack["victim"]],
                        subprefix_hijack["expected_prefix"]]
-        for data in [attacker_data, victim_data]:
+        data_list = [attacker_data]
+        if hijack_type != Hijack_Types.NO_COMPETING_ANNOUNCEMENT_HIJACK.value:
+            data_list.append(victim_data)
+        for data in data_list:
             self.cursor.execute(sql, data)
 
 class Subprefix_Hijack_Temp_Table(Database):
