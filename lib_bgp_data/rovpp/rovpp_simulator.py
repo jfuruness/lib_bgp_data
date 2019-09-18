@@ -8,7 +8,7 @@ from random import sample
 from subprocess import check_call
 from copy import deepcopy
 from pprint import pprint
-from .enums import Policies, Non_BGP_Policies
+from .enums import Policies, Non_BGP_Policies, Top_Node_Policies, Hijack_Types
 from .tables import ROVPP_ASes_Table, Subprefix_Hijack_Temp_Table
 from .tables import ROVPP_MRT_Announcements_Table
 from .rovpp_statistics import ROVPP_Statistics_Calculator as Stats_Calculator
@@ -57,23 +57,32 @@ class ROVPP_Simulator:
         """
 
 
-        self.set_up_tool.set_up_all_trials_and_percents()
         self.statistics_calculator = None
-        # For each percent adoption
-        for i, percent in enumerate(percents):
-            # For each trial in that percent
-            for t_num in range(trials):
-                tables, sub_hijacks = self.set_up_tool.set_up_trial(percents,
-                                                                    i)
-                if self.statistics_calculator is None:
-                    self.statistics_calculator = Stats_Calculator(self.args,
-                                                                  percents,
-                                                                  tables)
+
+        self.set_up_tool.set_up_all_trials_and_percents()
+
+        for hijack_type in Hijack_Types.__members__.values():
+            for top_nodes_pol in Top_Node_Policies.__members__.values():
+                # For each percent adoption
+                for i, percent in enumerate(percents):
+                    # For each trial in that percent
+                    for t_num in range(trials):
+                        tables, sub_hijacks = self.set_up_tool.set_up_trial(percents,
+                                                                            i,
+                                                                            top_nodes_pol.value,
+                                                                            hijack_type.value)
+                        if self.statistics_calculator is None:
+                            self.statistics_calculator = Stats_Calculator(self.args,
+                                                                          percents,
+                                                                          tables)
                
-                for policy in Non_BGP_Policies.__members__.values():
-                    # Run that specific simulation
-                    self._run_sim(policy.value, tables, i, sub_hijacks, t_num,
-                                  percent)
+                        for policy in Non_BGP_Policies.__members__.values():
+                            # Run that specific simulation
+                            self._run_sim(policy.value, tables, i, sub_hijacks, t_num,
+                                          percent, top_nodes_pol.value, hijack_type.value)
+
+        for t_obj in tables:
+            t_obj.table.close()
 
         self.graph_data.graph_data(self.statistics_calculator.stats, tables)
         print(sum(self.stats_time_arr)/len(self.stats_time_arr))
@@ -83,20 +92,21 @@ class ROVPP_Simulator:
 ### Helper Functions ###
 ########################
 
-    def _run_sim(self, policy, tables, i, subprefix_hijack, t_num, percent):
+    def _run_sim(self, policy, tables, i, subprefix_hijack, t_num, percent, top_nodes_pol, hijack_type):
         """Runs one single simulation with the extrapolator"""
 
-        self.logger.info("Running policy: {} default \%: {} trial: {}".format(
-            policy, percent, t_num))
+        self.logger.info("Running Hijack type: {} top_node_pol: {} policy: {} default \%: {} trial: {}".format(
+            hijack_type, top_nodes_pol, policy, percent, t_num))
 
         self._change_routing_policy(tables, policy)
 
         Extrapolator(self.args).run_rovpp(
                                 subprefix_hijack["attacker"],
                                  subprefix_hijack["victim"],
-                                 subprefix_hijack["more_specific_prefix"])
+                                 subprefix_hijack["more_specific_prefix"],
+                                [x.table.name for x in tables])
 
-        self.stats_time_arr.append(self.statistics_calculator.calculate_stats(subprefix_hijack, i, policy))
+        self.stats_time_arr.append(self.statistics_calculator.calculate_stats(subprefix_hijack, i, policy, top_nodes_pol, hijack_type))
 
     def _change_routing_policy(self, tables, policy):
         """Changes the routing policy for that percentage of ASes"""
@@ -107,13 +117,3 @@ class ROVPP_Simulator:
         self.logger.debug("About to change the routing policies")
         for sub_table in tables:
             sub_table.change_routing_policies(policy)
-
-        # TAKE OUT LATER - extrapolator should just accept multiple tables
-        union_sql = """CREATE TABLE rovpp_ases AS (
-                    SELECT * FROM {}""".format(tables[0].table.name)
-        for t_obj in tables[1:]:
-            union_sql += " UNION (SELECT * FROM {})".format(t_obj.table.name)
-        union_sql += ");"
-        sqls = ["DROP TABLE IF EXISTS rovpp_ases", union_sql]
-        for sql in sqls:
-            tables[0].table.execute(sql)

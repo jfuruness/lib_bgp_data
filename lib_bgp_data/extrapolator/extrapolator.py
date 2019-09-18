@@ -60,7 +60,7 @@ class Extrapolator:
 
     @error_catcher()
     @utils.run_parser()
-    def run_rovpp(self, attacker_asn, victim_asn, expected_prefix):
+    def run_rovpp(self, attacker_asn, victim_asn, expected_prefix, table_names):
         """Runs extrapolator with a subprefix hijack."""
 
         self.logger.debug("About to run the rovpp extrapolator")
@@ -73,7 +73,8 @@ class Extrapolator:
         # Gives the victim asn
         bash_args += "--victim_asn={} ".format(victim_asn)
         # Gives the more specific prefix that the attacker sent out
-        bash_args += "--victim_prefix={}".format(expected_prefix)
+        bash_args += "--victim_prefix={} ".format(expected_prefix)
+        bash_args += "--rovpp_ases_tables {}".format(" ".join(table_names))
         self.logger.debug("Caling extrapolator with:\n{}".format(bash_args))
         if self.logger.level == DEBUG:
             check_call(bash_args, shell=True)

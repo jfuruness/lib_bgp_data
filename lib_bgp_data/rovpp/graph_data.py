@@ -13,7 +13,7 @@ __status__ = "Development"
 from pprint import pprint
 from statistics import mean
 from copy import deepcopy
-from .enums import Policies, Non_BGP_Policies, Planes, Conditions
+from .enums import Policies, Non_BGP_Policies, Planes, Conditions, Top_Node_Policies, Hijack_Types
 from ..utils import error_catcher, utils
 from .rovpp_data_plane_statistics import ROVPP_Data_Plane_Stats
 from .rovpp_control_plane_statistics import ROVPP_Control_Plane_Stats
@@ -42,18 +42,20 @@ class Graph_Data:
     def _format_stats(self, stats, tables):
 
         #stats = deepcopy(tstats)
-        for t_obj in stats:
-            for adopt_pol in stats[t_obj]:
-                for i in stats[t_obj][adopt_pol]:
-                    
-                    for pol in stats[t_obj][adopt_pol][i]:
-                        sim = stats[t_obj][adopt_pol][i][pol]
-                        total_list = self.calculate_total_num_ases(sim)
-                        if sum(total_list) > 0:
-                            for plane in sim:
-                                sim[plane]["percents"] = {
-                                    cond: self.calc_avg(cond, data, total_list)
-                                    for cond, data in sim[plane].items()}
+        for htype in stats:
+            for top_node_pol in stats[htype]:
+                for t_obj in stats[htype][top_node_pol]:
+                    for adopt_pol in stats[htype][top_node_pol][t_obj]:
+                        for i in stats[htype][top_node_pol][t_obj][adopt_pol]:
+                            
+                            for pol in stats[htype][top_node_pol][t_obj][adopt_pol][i]:
+                                sim = stats[htype][top_node_pol][t_obj][adopt_pol][i][pol]
+                                total_list = self.calculate_total_num_ases(sim)
+                                if sum(total_list) > 0:
+                                    for plane in sim:
+                                        sim[plane]["percents"] = {
+                                            cond: self.calc_avg(cond, data, total_list)
+                                            for cond, data in sim[plane].items()}
         return stats
     
     def calc_avg(self, condition, data, totals):
@@ -75,22 +77,33 @@ class Graph_Data:
         return total_list
 
     def _graph(self, fstats):
-        data = ""
-        for t_obj in fstats:
-            data += t_obj.table.name + ":\n"
-            for adopt_pol in fstats[t_obj]:
-                data += "\tFor adoption policy: {}:\n".format(adopt_pol)
-                for i in fstats[t_obj][adopt_pol]:
-                    data += "\t\tFor {}\n".format(t_obj.percents[i])
-                    for pol in fstats[t_obj][adopt_pol][i]:
-                        sim = fstats[t_obj][adopt_pol][i][pol]
-                        total_list = self.calculate_total_num_ases(sim)
-                        if total_list[0] != 0:
-                            data += "\t\t\tFor {} Policy:\n".format(pol)
-                            for plane in sim:
-                                data += "\t\t\t\tFor {} Plane\n".format(plane)
-                                for cond in sim[plane]["percents"]:
-                                    data += "\t\t\t\t\t{}: {}\n".format(
-                                        cond, sim[plane]["percents"][cond])
+        pol_dict = {v.value: k for k, v in Policies.__members__.items()}
+        conds_dict = {v.value: k for k, v in Conditions.__members__.items()}
+        top_nodes_pol_dict = {v.value: k for k, v in Top_Node_Policies.__members__.items()}
+        planes_dict = {v.value: k for k, v in Planes.__members__.items()}
+        htype_dict = {v.value: k for k, v in Hijack_Types.__members__.items()}
 
+        data = ""
+        for htype in fstats:
+            data += "For {}\n".format(htype_dict[htype])
+            for top_nodes_pol in fstats[htype]:
+                data += "\t25/100 top nodes impliment: " + top_nodes_pol_dict[top_nodes_pol] + ":\n"
+                for t_obj in fstats[htype][top_nodes_pol]:
+                    data += "\t\t" + "For group of ases:" + t_obj.table.name + ":\n"
+                    for adopt_pol in fstats[htype][top_nodes_pol][t_obj]:
+                        data += "\t\t\tFor adoption policy: {}:\n".format(pol_dict[adopt_pol])
+                        for i in fstats[htype][top_nodes_pol][t_obj][adopt_pol]:
+                            data += "\t\t\t\tFor {}".format(t_obj.percents[i]) + "% adoption\n"
+                            for pol in fstats[htype][top_nodes_pol][t_obj][adopt_pol][i]:
+                                sim = fstats[htype][top_nodes_pol][t_obj][adopt_pol][i][pol]
+                                total_list = self.calculate_total_num_ases(sim)
+                                if total_list[0] != 0:
+                                    data += "\t\t\t\t\tFor {} Policy:\n".format(pol_dict[pol])
+                                    for plane in sim:
+                                        data += "\t\t\t\t\t\tFor {}\n".format(planes_dict[plane])
+                                        for cond in sim[plane]["percents"]:
+                                            data += "\t\t\t\t\t\t\t{}: {}".format(
+                                                conds_dict[cond], sim[plane]["percents"][cond])
+                                            data += "%\n"
+    
         self.logger.warning(data)

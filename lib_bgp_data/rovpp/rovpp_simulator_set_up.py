@@ -8,7 +8,7 @@ from random import sample
 from subprocess import check_call
 from copy import deepcopy
 from pprint import pprint
-from .enums import Policies, Non_BGP_Policies
+from .enums import Policies, Non_BGP_Policies, Top_Node_Policies, Hijack_Types
 from .tables import ROVPP_ASes_Table, Subprefix_Hijack_Temp_Table
 from .tables import ROVPP_MRT_Announcements_Table, ROVPP_Top_100_ASes_Table
 from .tables import ROVPP_Edge_ASes_Table, ROVPP_Etc_ASes_Table
@@ -78,20 +78,20 @@ class ROVPP_Simulator_Set_Up_Tool:
 ### Sets Up Current Trial ###
 #############################
 
-    def set_up_trial(self, percents, iter_num):
+    def set_up_trial(self, percents, iter_num, top_nodes_pol, hijack_type):
         # Creates fresh subtables, faster than reverting back to bgp
-        self._create_subtables(percents)
+        self._create_subtables(percents, top_nodes_pol)
 
-        subprefix_hijack = self._get_hijack_data()
+        hijack = self._get_hijack_data(hijack_type)
         
-        self._set_implimentable_ases(iter_num, subprefix_hijack["attacker"])
+        self._set_implimentable_ases(iter_num, hijack["attacker"])
 
-        self._populate_rovpp_mrt_announcements(subprefix_hijack)
+        self._populate_rovpp_mrt_announcements(hijack)
 
-        return self.tables, subprefix_hijack
+        return self.tables, hijack
 
 
-    def _create_subtables(self, default_percents):
+    def _create_subtables(self, default_percents, top_nodes_pol):
         # Add docs on how to add a table to these sims
         # Create these tables and then 
         # Create an everything else table
@@ -99,7 +99,7 @@ class ROVPP_Simulator_Set_Up_Tool:
                                 self.logger,
                                 [25]*len(default_percents),
                                 possible_hijacker=False,
-                                policy_to_impliment=Policies.ROV.value),
+                                policy_to_impliment=top_nodes_pol),
                        Subtable(ROVPP_Edge_ASes_Table,
                                 self.logger,
                                 default_percents)]
@@ -110,13 +110,13 @@ class ROVPP_Simulator_Set_Up_Tool:
         etc.table.fill_table([x.table.name for x in self.tables])
         self.tables.append(etc)
 
-    def _get_hijack_data(self):
+    def _get_hijack_data(self, hijack_type):
         """Gets bgpstream data, small fun ik but makes code cleaner"""
 
         self.logger.debug("Creating fake data for subprefix hijacks")
         # Initializes the fake table
         with db_connection(Subprefix_Hijack_Temp_Table, self.logger) as db:
-            db.populate(self._get_possible_hijacker_ases())
+            db.populate(self._get_possible_hijacker_ases(), hijack_type)
             # Returns all the subprefix hijacks - should only be one
             return db.get_all()[0]
 

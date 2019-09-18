@@ -37,13 +37,12 @@ class ROVPP_Control_Plane_Stats:
 ### Helper Functions ###
 ########################
 
-    def calculate_not_bholed(self, stats, adopt_pol, p_i, t_obj, ases_dict):
+    def calculate_not_bholed(self, stats, sim, ases_dict, t_obj):
         """Calculates success rates"""
 
         for policy in Policies.__members__.values():
             for cond in Conds.__members__.values():
                 if cond.value in [Conds.BHOLED.value, Conds.DISCONNECTED.value]:
                     continue
-                sim = stats[t_obj][adopt_pol][p_i][policy.value]
                 num_cond = len(ases_dict[t_obj][policy.value][cond.value])
-                sim[self.plane][cond.value][-1] += num_cond
+                sim[policy.value][self.plane][cond.value][-1] += num_cond

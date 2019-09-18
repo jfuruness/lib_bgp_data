@@ -64,6 +64,7 @@ class ROVPP_Data_Plane_Stats:
                 if debug_i > 100:
                     self.logger.warning(asn)
                     self.logger.warning(og_info)
+                    self.logger.warning(all_ases[asn])
                     self.logger.warning(atk_n)
                     self.logger.warning(vic_n)
                 try:

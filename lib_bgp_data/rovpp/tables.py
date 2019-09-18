@@ -20,6 +20,7 @@ Possible future improvements:
 """
 
 from random import sample
+from .enums import Policies, Hijack_Types
 from ..utils import Database, error_catcher
 
 __author__ = "Justin Furuness"
@@ -45,7 +46,7 @@ class ROVPP_ASes_Table(Database):
 
         sql = """CREATE UNLOGGED TABLE IF NOT EXISTS rovpp_ases (
                  asn bigint,
-                 as_type text,
+                 as_type smallint,
                  impliment BOOLEAN
                  );"""
         self.cursor.execute(sql)
@@ -156,7 +157,7 @@ class Subprefix_Hijack_Temp_Table(Database):
         self.cursor.execute("DROP TABLE IF EXISTS subprefix_hijack_temp;")
         self.logger.debug("Subprefix Hijacks Table dropped")
 
-    def populate(self, ases):
+    def populate(self, ases, hijack_type):
         """Populates table with fake data"""
 
         # Gets two random ases without duplicates
@@ -168,6 +169,8 @@ class Subprefix_Hijack_Temp_Table(Database):
                 attacker,  # Random attacker
                 '1.2.0.0/16',  # expected_prefix
                 victim]
+        if hijack_type == Hijack_Types.PREFIX_HIJACK.value:
+            data[0] = data[2]
         self.cursor.execute(sql, data)
 
 
@@ -208,7 +211,7 @@ class ROVPP_ASes_Subtable(Database):
         self.execute(sql)
 
     def change_routing_policies(self, policy):
-        sql = """UPDATE {} SET as_type = '{}'
+        sql = """UPDATE {} SET as_type = {}
                  WHERE impliment = TRUE;""".format(self.name, policy)
         self.execute(sql)
 
@@ -221,9 +224,9 @@ class ROVPP_Top_100_ASes_Table(ROVPP_ASes_Subtable):
     def fill_table(self):
         self.clear_table()
         sql = """CREATE UNLOGGED TABLE IF NOT EXISTS rovpp_top_100_ases AS (
-                 SELECT a.asn, 'bgp' AS as_type, FALSE as impliment
+                 SELECT a.asn, {} AS as_type, FALSE as impliment
                      FROM rovpp_ases a ORDER BY asn DESC LIMIT 100
-                 );"""
+                 );""".format(Policies.BGP.value)
         self.cursor.execute(sql)
 
 
@@ -236,11 +239,11 @@ class ROVPP_Edge_ASes_Table(ROVPP_ASes_Subtable):
     def fill_table(self):
         self.clear_table()
         sql = """CREATE UNLOGGED TABLE IF NOT EXISTS rovpp_edge_ases AS (
-                     SELECT r.asn, 'bgp' AS as_type, FALSE as impliment
+                     SELECT r.asn, {} AS as_type, FALSE as impliment
                          FROM rovpp_ases r
                          INNER JOIN rovpp_as_connectivity c ON c.asn = r.asn
                      WHERE c.connectivity = 0
-                 );"""
+                 );""".format(Policies.BGP.value)
         self.cursor.execute(sql)
 
 class ROVPP_Etc_ASes_Table(ROVPP_ASes_Subtable):
@@ -252,8 +255,8 @@ class ROVPP_Etc_ASes_Table(ROVPP_ASes_Subtable):
     def fill_table(self, table_names):
         self.clear_table()
         sql = """CREATE UNLOGGED TABLE IF NOT EXISTS rovpp_etc_ases AS (
-                 SELECT ra.asn, 'bgp' AS as_type, FALSE as impliment
-                     FROM rovpp_ases ra"""
+                 SELECT ra.asn, {} AS as_type, FALSE as impliment
+                     FROM rovpp_ases ra""".format(Policies.BGP.value)
         if len(table_names) > 0:
             for table_name in table_names:
                 sql += " LEFT JOIN {0} ON {0}.asn = ra.asn".format(table_name)

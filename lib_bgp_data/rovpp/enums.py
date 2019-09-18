@@ -12,6 +12,10 @@ __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
+class Hijack_Types(Enum):
+
+    SUBPREFIX_HIJACK = 0
+    PREFIX_HIJACK = 1
 
 # enum because strings shouldn't just be being passed around
 # This is for all the policies
@@ -29,6 +33,10 @@ non_bgp_policies_dict = {x[0]: x[1].value
                          if x[1].value != Policies.BGP.value}
 Non_BGP_Policies = Enum('Non_BGP_Policies', non_bgp_policies_dict)
 
+class Top_Node_Policies(Enum):
+    ROV = Policies.ROV.value
+    ROVPP = Policies.ROVPP.value
+
 ########################
 ### Statistics Enums ###
 ########################
@@ -38,13 +46,13 @@ class Planes(Enum):
 
 
     # This uses the last hop and checks if recieved hijack
-    DATA_PLANE = "data_plane"
+    DATA_PLANE = 0
     # This checks if recieved hijack
-    CONTROL_PLANE = "control_plane"
+    CONTROL_PLANE = 1
 
 class Conditions(Enum):
 
-    BHOLED = 1  # blackholed
-    HIJACKED = 2  # not blackholed hijacked
-    NOTHIJACKED = 3  # "not_hijacked"
-    DISCONNECTED = 4  # disconnected
+    BHOLED = 0  # blackholed
+    HIJACKED = 1  # not blackholed hijacked
+    NOTHIJACKED = 2  # "not_hijacked"
+    DISCONNECTED = 3  # disconnected
