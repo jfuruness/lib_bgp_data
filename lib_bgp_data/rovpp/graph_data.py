@@ -119,5 +119,4 @@ class Graph_Data:
                                             data += "%\n"
     
         self.logger.warning(data)
-        parsed = json.loads(json_dict)
-        print(json.dumps(parsed, indent=4, sort_keys=True))
+        print(json.dumps(json_dict, indent=4, sort_keys=True))
