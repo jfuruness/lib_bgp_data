@@ -10,6 +10,7 @@ __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
+import json
 from pprint import pprint
 from statistics import mean
 from copy import deepcopy
@@ -118,4 +119,5 @@ class Graph_Data:
                                             data += "%\n"
     
         self.logger.warning(data)
-        self.logger.warning(json_dict)
+        parsed = json.loads(json_dict)
+        print(json.dumps(parsed, indent=4, sort_keys=True))
