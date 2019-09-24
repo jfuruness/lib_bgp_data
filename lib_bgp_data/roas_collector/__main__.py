@@ -17,5 +17,5 @@ __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
-def __main__():
+def main():
     ROAs_Collector().parse_roas()

@@ -59,7 +59,7 @@ def _roas_collector_permutations():
     """Gets every possible combination of arg for useability"""
 
     possible_permutations = []
-    for i in ["-", "--"]:
+    for i in [" ", "-", "--"]:
         for j in ["ROA", "roa"]:
             for k in ["S", "s"]:
                 # I know l is bad but this function sucks anways

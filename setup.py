@@ -1,5 +1,31 @@
 from setuptools import setup, find_packages
 
+def _get_console_scripts():
+
+    console_scripts = []
+    console_scripts.extend(_get_roas_console_scripts())
+    return console_scripts
+
+def _get_roas_console_scripts():
+    console_scripts = []
+    for permutation in _roas_collector_permutations():
+        script = permutation + '= lib_bgp_data.roas_collector.__main__:main'
+        console_scripts.append(script)
+    return console_scripts
+
+def _roas_collector_permutations():
+    """Gets every possible combination of arg for useability"""
+
+    possible_permutations = []
+    for j in ["ROA", "roa"]:
+        for k in ["S", "s"]:
+            # I know l is bad but this function sucks anways
+            for l in ["-", "_", " "]:
+                for m in ["Collector", "COLLECTOR", "collector",
+                          "Parser", "parser", "PARSER"]:
+                    possible_permutations.append(j + k + l + m)
+    return possible_permutations
+
 
 
 setup(
@@ -31,9 +57,7 @@ setup(
         'License :: OSI Approved :: MIT License',
         'Programming Language :: Python :: 3'],
     entry_points={
-        'console_scripts': [
-            'roas_collector = lib_bgp_data.__main__:main',
-#            'parse_bgpstream.com = lib_bgpstream_parser.__main__:main'
+        'console_scripts': [*_get_console_scripts()
         ]},
 )
 ####https://jichu4n.com/posts/how-to-add-custom-build-steps-and-commands-to-setuppy/!!!
