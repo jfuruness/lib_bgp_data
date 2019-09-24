@@ -50,11 +50,14 @@ __status__ = "Development"
 
 
 @contextmanager
-def db_connection(table,
+def db_connection(table=None,
                   logger=Logger(),
                   clear=False,
                   cursor_factory=RealDictCursor):
-    t = table(logger, cursor_factory=cursor_factory)
+    if table:
+        t = table(logger, cursor_factory=cursor_factory)
+    else:
+        t = Database(logger, cursor_factory=cursor_factory)
     if clear:
         t.clear_tables()
         t._create_tables()
@@ -109,7 +112,6 @@ class Database:
 
         pass
 
-    @error_catcher()
     def execute(self, sql, data=None):
         """Executes a query. Returns [] if no results."""
 
