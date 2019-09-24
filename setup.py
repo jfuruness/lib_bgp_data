@@ -1,5 +1,7 @@
 from setuptools import setup, find_packages
 
+
+
 setup(
     name='lib_bgp_data',
     packages=find_packages(),
@@ -20,6 +22,7 @@ setup(
         'pathos',
         'psutil',
         'psycopg2-binary',
+        'pytest',
         'Werkzeug'
     ],
     classifiers=[
@@ -29,7 +32,8 @@ setup(
         'Programming Language :: Python :: 3'],
     entry_points={
         'console_scripts': [
-            'parse_bgpstream.com = lib_bgpstream_parser.__main__:main'
+            'roas_collector = lib_bgp_data.__main__:main',
+#            'parse_bgpstream.com = lib_bgpstream_parser.__main__:main'
         ]},
 )
 ####https://jichu4n.com/posts/how-to-add-custom-build-steps-and-commands-to-setuppy/!!!
