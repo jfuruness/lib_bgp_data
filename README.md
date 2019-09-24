@@ -1,3 +1,4 @@
+
 # lib\_bgp\_data
 This package contains multiple submodules that are used to gather and manipulate real data in order to simulate snapshots of the internet. The purpose of this is to test different security policies to determine their accuracy, and hopefully find ones that will create a safer, more secure, internet as we know it.
 
@@ -193,6 +194,7 @@ See: [MRT Announcements Table Schema](#mrt-announcements-table-schema)
 	* docs for unit tests and cmd line args
 	* Once in dev push to pypi
 	* Potentially multithread?
+	* Restart at the end of the full run
 ## MRT Announcements Submodule
    * [lib\_bgp\_data](#lib_bgp_data)
    * [Short Description](#mrt-announcements-short-description)
@@ -412,6 +414,7 @@ Coming Soon to a theater near you
 	* Add test cases
 	* Add cmd line args
 	* Log properly for different levels
+	* Fix caida api calls
 	* Put underscores in front of all private variables
 	* Add: 	[https://www.isolar.io/Isolario_MRT_data/Alderaan/2019_07/](https://www.isolar.io/Isolario_MRT_data/Alderaan/2019_07/)
 	* Update all docs about bgpscanner and fix it
@@ -421,6 +424,7 @@ Coming Soon to a theater near you
 	* Make regex faster?
 	* Potentially fixed the bug where pools could not be created twice - take this out of unit tests
 	* Once in dev push to pypi
+	* Potentially partition table for speedup??
 ## Relationships Submodule
    * [lib\_bgp\_data](#lib_bgp_data)
    * [Short Description](#relationships-short-description)
@@ -629,6 +633,17 @@ Coming Soon to a theater near you
 * [Relationships Submodule](#relationships-submodule)
 * [Todo and Possible Future Improvements](#todopossible-future-improvements)
 	* Add test cases
+	* Reach out to Caida say to use RIPE and isolario data
+	* Ask if you can see the code they use to generate the graphs
+	* Missing asn and multihomed preferences improvements
+	* Instead of filling stuff in - use SQL and caida path to replicate and make it better!
+	* get ixps and s to s???
+	* Check if disconnected like rovpp
+	* Optimize for shortest path always?
+	* Use this metric to check for poor graphs
+	* use deep learning to recreate for ourselves
+	* use caida as ground truth???
+		* Then apply to larger sets?
 	* Add cmd line args
 	* Add docs on tests and cmd line args
 	* Change parameter docs to be tables in docs
@@ -1113,6 +1128,9 @@ Coming Soon to a theater near you
 * [Todo and Possible Future Improvements](#todopossible-future-improvements)
 	* Remove unnessecary indexes
 	* Should not use bare except in files
+	* Filter bgpstream.com data using hurricane api
+	* Email all asns and ISPs about bgpstream.com data and ask other questions (how long do they last and how often, how important are blocking hijackings to you, use our tool?)
+	* Once we have ground truth use deep learning with historical data to improve upon hijacking dataset
 	* cmd line args
 	* Add test cases
 	* Update docs on cmd line args, test cases, and indexes
@@ -1256,6 +1274,9 @@ Coming Soon to a theater near you
         * Improves readability?
     * Attempt to unhinge the db and get these values with sql queries similar to:
 	    * ```SELECT * FROM mrt INNER JOIN ON m_prefix << roas_prefix AND MASKLEN(m_prefix) <= roas_max_length ```
+	    * ```SELECT * FROM unique_prefix_origins u INNER JOIN roas r ON u.prefix <<= r.prefix AND MASKLEN(u.prefix) > r.max_length;```
+	    * ```SELECT * FROM unique_prefix_origins u INNER JOIN roas r ON u.prefix <<= r.prefix AND u.origin != r.asn;```
+	    * Update rpki docs and stuff
 
     * Add test cases
     * Reduce total information in the headers
@@ -1272,6 +1293,9 @@ Coming Soon to a theater near you
 	    * Improves readability?
 	* Update docs for cmd line args, tests, etc.
 	* Once in prod push to pypi
+	* Have this just output roas since we have our own db??
+		* Eventually do this ourselves? simply sign and validate roas?
+    * 
 
 ## What if Analysis Submodule
    * [lib\_bgp\_data](#lib_bgp_data)
@@ -1378,6 +1402,7 @@ Coming Soon to a theater near you
     * Add test cases
     * Multithreading
     * Make the sql queries into sql files
+    * unhinge db for this, test speedup
     * Add command line args
     * Add docs on cmd line args and testing
     * split data into hijacks and subprefix hijacks
@@ -1446,6 +1471,9 @@ Coming soon to a theater near you
 	* Update docs about cmd line args and unit tests
 	* Move the API to the sidr website
 	* Add documentation on how to add a new API endpoint
+	* Add api endpoints for not hijacked but blocked
+	* Create indexes for api stuff and record and have a list of them
+	* Add historical data
 	* Once in prod push to pypi
 
 ## ROVPP Submodule
@@ -1676,6 +1704,7 @@ Coming Soon to a theater near you
 	* Add docs on unit tests and cmd line args
 	* Fix bare except on line 101
 	* Move the _run_sql file from install.py to a utils folder and use it for unhinge and rehinge db along with the delete_files decorator
+	* Take away the unhinging thing for db
 	* Once in prod push to pypi
 
 ### Database Installation
@@ -2055,6 +2084,8 @@ Thanks to all of these blogs, stack overflow posts, etc. for their help in solvi
 * https://stackoverflow.com/questions/14441955/how-to-perform-custom-build-steps-in-setup-py
 * [https://stackoverflow.com/questions/6943208/](https://stackoverflow.com/questions/6943208/)
 * [https://stackoverflow.com/a/20691431](https://stackoverflow.com/a/20691431)
+* https://www.geeksforgeeks.org/python-difference-between-two-dates-in-minutes-using-datetime-timedelta-method/
+* 
 
 ## License
    * [lib\_bgp\_data](#lib_bgp_data)
@@ -2066,13 +2097,16 @@ MIT License
 
 Working on at the moment:
 * ROVPP project
-* Potentially add verification as a branch with a submodule in order to utilize the db wrapper? or nah?
-* Update Postgres on the website server to version 11 for speed
+* Game theory economics paper
+* Time heuristic
+* Caida relationship improvements
+* Verification if necessary
+* Unit tests
+* Email Tony when big submodules are stable
+	* Offer assistance when installing
+
+
 * Configure database on website server to be faster
-* MRT Announcements Unit tests
-* Formulate some kind of interview process for this thing and get more people
-* After each submodule enters prod, email Tony
-	* Reach out when complete to offer assistance installing
 
 Medium Term:
 * [Forecast TODO](#forecast-possible-future-improvements)
@@ -2092,8 +2126,23 @@ Medium Term:
 * [Installation Submodule TODO](#installation-submodule-possible-future-extensions)
 * Add the simple time heuristic
 * Add \_\_slots\_\_ if they do not exist in certain classes
+* Change all SQL queries to use string formatting to be more dynamic
+* Format all SQL queries properly
 * Make readme an html page or something with dropdowns for easier use
+* time heuristic
+* optimizations
+	* Only include prefixes that are hijacked or invalid
+	* Use this to run bgp forecaster
+	* create extra columns (covered and not covered by roas)
+	* Non roas: successful hijacks and 
 * Message limit has been reached in slack - make a tool to delete messages using api and get everyone to delete all old messages but say last couple of hundred
+* Change everything that has ```__eq__(self, other)``` to have: ```return isinstance(other, self.__class__) and self.a == other.a and self.b == other.b```
+* See if can utilize mydict.get(1) to mydict.get(1, something else)
+* Look into parser class that has an init to replace inits
+	* Move some stuff from utils into this?
+* include in docs legacy funcs such as rpki val and bgpdump (user for test cases)
+* Update docs to pull ripe data closer to current time
+* New source of MRT Announcements (inherit from mrt parser)
 
 Long term:
 * Automate a script to dump tables that the API uses to the forecast website server
@@ -2108,14 +2157,14 @@ Long term:
 	* Write a paper about this?
 * Check out [https://github.com/FORTH-ICS-INSPIRE/artemis](https://github.com/FORTH-ICS-INSPIRE/artemis)
 	* Possible alternate source of hiajcks?
-	* Reyanldo took a look and said it uses bgpstream.com
+	* Reynaldo took a look and said it uses bgpstream.com
 * Another graphviz script for propogation visualizations for extrapolator or rovpp?
 * Fix BGP leaks problem and publish a paper on this
 	* incentivized due to more customers wanting your AS
 * Fix origin hijackings and publish a paper on this
-	* Path end validation - read herzbergs paper
+	* Path end validation - read Dr. Herzbergs paper
 * Extend forecast project to be for all announcements
-* Deep learning with bgp leaks and eveyrthing else?
+* Deep learning with bgp leaks and everything else?
 	* Not sure if this makes sense since this would be opaque
 * Publish a paper on statistical analysis on the selection of nodes for the deployment of ROV, etc.
 	* Revisit old works and perform statistical analysis on them
