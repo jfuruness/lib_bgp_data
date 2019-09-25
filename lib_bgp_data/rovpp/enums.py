@@ -35,8 +35,11 @@ non_bgp_policies_dict = {x[0]: x[1].value
 Non_BGP_Policies = Enum('Non_BGP_Policies', non_bgp_policies_dict)
 
 class Top_Node_Policies(Enum):
+    BGP = Policies.BGP.value
     ROV = Policies.ROV.value
     ROVPP = Policies.ROVPP.value
+    ROVPPB = Policies.ROVPPB.value
+    ROVPPBP = Policies.ROVPPBP.value
 
 ########################
 ### Statistics Enums ###
