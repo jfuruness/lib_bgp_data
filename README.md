@@ -415,7 +415,6 @@ Coming Soon to a theater near you
 	* Add test cases
 	* Add cmd line args
 	* Log properly for different levels
-	* Fix caida api calls
 	* Put underscores in front of all private variables
 	* Add: 	[https://www.isolar.io/Isolario_MRT_data/Alderaan/2019_07/](https://www.isolar.io/Isolario_MRT_data/Alderaan/2019_07/)
 	* Update all docs about bgpscanner and fix it
@@ -2070,7 +2069,7 @@ Thanks to Dr. Amir Herzberg and Dr. Bing Wang with all the help for leading the 
 
 Thanks to Cameron Morris for his help writing the RPKI Validator submodule, and configuring the RPKI Validator to run off of our own file. Also thanks for pointing out other bugs throughout development. And pulling numerous all nighters with me to push for getting the forecast up and running for deadlines for demonstrations. Definitely MVP.
 
-Thanks to James for looking into the mrt_w_roas join unessecary duplication and the numerous bugs that were discovered in Caida's API, and communicating with them and debugging some SQL queries
+Thanks to James for looking into the mrt_w_roas join duplication bug and the numerous bugs that were discovered in Caida's API, and communicating with them and debugging some SQL queries
 
 Thanks to Luke Malinowski for help in debugging some SQL queries.
 
