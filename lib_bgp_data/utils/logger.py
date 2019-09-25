@@ -51,6 +51,7 @@ import functools
 import traceback
 from enum import Enum
 from functools import total_ordering
+import pytest
 
 __author__ = "Justin Furuness"
 __credits__ = ["Justin Furuness"]
@@ -119,8 +120,11 @@ def error_catcher(msg=None):
                     # hahaha so professional
                     print('\a')
                 # Exit program and also kills all parents/ancestors
-                sys.exit(1)  # Turning this on breaks pytest - figure it out
-                raise e
+                if (hasattr(pytest, 'global_running_test')
+                    and pytest.global_running_test):
+                    raise e
+                else:
+                    sys.exit(1)  # Turning this on breaks pytest - figure it out
         return function_that_runs_func
     return my_decorator
 
