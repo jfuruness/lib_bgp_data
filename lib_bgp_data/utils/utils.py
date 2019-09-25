@@ -102,10 +102,10 @@ def get_default_end():
     # the Caida API is actually broken. We've contacted them but
     # they have not fixed it even though they admitted it was incorrect
 
-    return (now()-timedelta(days=1)).replace(hour=0,
-                                             minute=0,
-                                             second=0,
-                                             microsecond=0).timestamp()
+    return (now()-timedelta(days=2)).replace(hour=23,
+                                             minute=59,
+                                             second=59,
+                                             microsecond=59).timestamp()
 
 def set_common_init_args(self, args, paths=True):
     """Sets self attributes for arguments common across many classes"""
