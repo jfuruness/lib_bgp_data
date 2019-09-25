@@ -8,7 +8,7 @@ For specifics on each test, see the docstrings under each function.
 
 from psycopg2.errors import UndefinedTable
 from ..tables import ROAs_Table
-from ...utils import Database, error_catcher, db_connection
+from ...utils import db_connection
 
 __author__ = "Justin Furuness"
 __credits__ = ["Justin Furuness"]
@@ -28,9 +28,9 @@ class Test_ROAs_Table:
         """
 
         # Initializes the table if it doesn't exist
-        with db_connection(ROAs_Table) as db:
+        with db_connection(ROAs_Table):
             # Initialized correctly
-            assert True 
+            assert True
 
     def test_ROAs_table_drop(self):
         """Tests the clear_table function of the table.
@@ -84,4 +84,4 @@ class Test_ROAs_Table:
             sql = "SELECT * FROM pg_indexes WHERE tablename = 'roas'"
             indexes = db.execute(sql)
             # Makes sure that there is an index
-            assert len(indexes) > 0 
+            assert len(indexes) > 0
