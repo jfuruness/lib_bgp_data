@@ -36,10 +36,11 @@ setup(
     author_email='jfuruness@gmail.com',
     url='https://github.com/jfuruness/lib_bgp_data.git',
     download_url='https://github.com/jfuruness/lib_bgp_data.git',
-    keywords=['Furuness', 'furuness', 'pypi', 'package'],  # arbitrary keywords
+    keywords=['Furuness', 'BGP', 'ROAs', 'MRTs', 'RPKI', 'ROV', 'ROV++'],  # arbitrary keywords
     install_requires=[
+        'wheel',
         'setuptools',
-	'jsonschema==2.6.0',
+	'jsonschema',
         'requests',
         'beautifulsoup4',
         'flasgger',
@@ -57,8 +58,9 @@ setup(
         'License :: OSI Approved :: MIT License',
         'Programming Language :: Python :: 3'],
     entry_points={
-        'console_scripts': [*_get_console_scripts()
-        ]},
+        'console_scripts': [*_get_console_scripts()]},
+    setup_requires=['pytest-runner'],
+    tests_require=['pytest'],
 )
 ####https://jichu4n.com/posts/how-to-add-custom-build-steps-and-commands-to-setuppy/!!!
 #https://stackoverflow.com/questions/1321270/how-to-extend-distutils-with-a-simple-post-install-script/1321345#1321345
