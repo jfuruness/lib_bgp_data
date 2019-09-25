@@ -10,8 +10,7 @@ essentially a database operation and is checked in another file
 
 import pytest
 from ..roas_collector import ROAs_Collector
-from ..tables import ROAs_Table
-from ...utils import Database, db_connection
+from ...utils import db_connection
 
 __author__ = "Justin Furuness"
 __credits__ = ["Justin Furuness"]
@@ -40,7 +39,7 @@ class Test_ROAs_Collector:
         # Checks that all formatted roas were entered into the db
         with db_connection() as db:
             roas = db.execute("SELECT * FROM roas")
-        json_roas =  self.parser._get_json_roas()
+        json_roas = self.parser._get_json_roas()
         # Zip checks for same length
         for roa, json_roa in zip(roas, json_roas):
             # Checks if they have the same amount of keys
@@ -57,8 +56,7 @@ class Test_ROAs_Collector:
             sql = "SELECT * FROM pg_indexes WHERE tablename = 'roas'"
             indexes = db.execute(sql)
             # Makes sure that there is an index
-            assert len(indexes) > 0 
-
+            assert len(indexes) > 0
 
     def test_get_json_roas(self):
         """Tests the _get_json_roas function of the roas collector.
@@ -71,11 +69,11 @@ class Test_ROAs_Collector:
         # Make sure the returned value is a list
         assert isinstance(roas, list)
         # For each item in the list of dicts:
-        for roas_dict in roas:
+        for roa_dict in roas:
             # Make sure the item is a dictionary
-            assert isinstance(roas_dict, dict)
-            # Make sure it has the set of keys that we think it does and no more
-            assert set(roas_dict.keys()) == {"asn", "prefix", "maxLength", "ta"}
+            assert isinstance(roa_dict, dict)
+            # Make sure it has the set of keys that we think it does
+            assert set(roa_dict.keys()) == {"asn", "prefix", "maxLength", "ta"}
         # Make sure there are more than 10k ROAs
         assert len(roas) > 10000
 
