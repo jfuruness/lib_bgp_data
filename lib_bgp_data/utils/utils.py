@@ -89,13 +89,20 @@ def now():
 def get_default_start():
     """Gets default start time, used in multiple places."""
 
-    return (now()-timedelta(days=2)).timestamp()
+    return (get_default_end()-timedelta(days=1)).timestamp()
 
 
 def get_default_end():
     """Gets default end time, used in multiple places."""
 
-    return (now()-timedelta(days=1)).timestamp()
+    # Note: This replaces time to be at beginning of day because
+    # the Caida API is actually broken. We've contacted them but
+    # they have not fixed it even though they admitted it was incorrect
+
+    return (now()-timedelta(days=1)).timestamp().replace(hour=0,
+                                                         minute=0,
+                                                         second=0,
+                                                         microsecond=0)
 
 
 def set_common_init_args(self, args, paths=True):
