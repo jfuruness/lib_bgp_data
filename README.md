@@ -1,4 +1,3 @@
-
 # lib\_bgp\_data
 This package contains multiple submodules that are used to gather and manipulate real data in order to simulate snapshots of the internet. The purpose of this is to test different security policies to determine their accuracy, and hopefully find ones that will create a safer, more secure, internet as we know it.
 
@@ -8,21 +7,23 @@ This package contains multiple submodules that are used to gather and manipulate
 
 * [lib\_bgp\_data](#lib_bgp_data)
 * [Description](#package-description)
-* [Forecast Submodule](#forecast-submodule)
-* [MRT Announcements Submodule](#mrt-announcements-submodule)
-* [Relationships Submodule](#relationships-submodule)
-* [Roas Submodule](#roas-submodule)
-* [Extrapolator Submodule](#extrapolator-submodule)
-* [BGPStream Website Submodule](#bgpstream-website-submodule)
-* [RPKI Validator Submodule](#rpki-validator-submodule)
-* [What if Analysis Submodule](#what-if-analysis-submodule)
-* [API Submodule](#api-submodule)
-* [ROVPP Submodule](#rovpp-submodule)
-* [Utils](#utils)
-* [Config](#config-submodule)
-* [Database](#database-submodule)
-* [Logging](#logging-submodule)
+* Submodules:
+	* [Forecast Submodule](#forecast-submodule)
+	* [MRT Announcements Submodule](#mrt-announcements-submodule)
+	* [Relationships Submodule](#relationships-submodule)
+	* [Roas Submodule](#roas-submodule)
+	* [Extrapolator Submodule](#extrapolator-submodule)
+	* [BGPStream Website Submodule](#bgpstream-website-submodule)
+	* [RPKI Validator Submodule](#rpki-validator-submodule)
+	* [What if Analysis Submodule](#what-if-analysis-submodule)
+	* [API Submodule](#api-submodule)
+	* [ROVPP Submodule](#rovpp-submodule)
+	* [Utils](#utils)
+	* [Config](#config-submodule)
+	* [Database](#database-submodule)
+	* [Logging](#logging-submodule)
 * [Installation](#installation)
+* [Testing](#testing)
 * [Adding a Submodule](#adding-a-submodule)
 * [Development/Contributing](#developmentcontributing)
 * [History](#history)
@@ -664,7 +665,8 @@ Coming Soon to a theater near you
    * [Design Choices](#roas-design-choices)
    * [Possible Future Improvements](#roas-possible-future-improvements)
 
-Status: Development
+Status: Production
+
 ### Roas Short description
 * [lib\_bgp\_data](#lib_bgp_data)
 * [Roas Submodule](#roas-submodule)
@@ -724,7 +726,15 @@ ROAs_Collector().parse_roas()
 ```
 
 #### From the Command Line
-Coming Soon to a theater near you
+Depending on the permissions of your system, and whether or not you pip installed the package with sudo, you might be able to run the ROAs Parser with:
+
+```roas_collector```
+
+or a variety of other possible commands, I've tried to make it fairly idiot proof with the capitalization and such.
+
+The other way you can run it is with:
+```python3 -m lib_bgp_data --roas_collector```
+
 ### Roas Table Schema
 * [lib\_bgp\_data](#lib_bgp_data)
 * [Roas Submodule](#roas-submodule)
@@ -752,10 +762,8 @@ Coming Soon to a theater near you
 * [lib\_bgp\_data](#lib_bgp_data)
 * [Roas Submodule](#roas-submodule)
 * [Todo and Possible Future Improvements](#todopossible-future-improvements)
-	* Add test cases
-	* Add cmd line args
-	* Update docs with cmd line args and test cases
-	* Once in prod push to pypi
+	* None as of yet, production code
+
 ## Extrapolator Submodule
    * [lib\_bgp\_data](#lib_bgp_data)
    * [Extrapolator Short Description](#extrapolator-short-description)
@@ -1784,6 +1792,7 @@ A decorator to be used in all class functions that catches errors and fails nice
    * [Installation Submodule](#installation-submodule)
 
 Status: Development
+
 ### Installation instructions
 * [lib\_bgp\_data](#lib_bgp_data)
 * [Installation Instructions](#installation-instructions)
@@ -1807,7 +1816,7 @@ On Redhat the steps can be found here:
 [https://developers.redhat.com/blog/2018/08/13/install-python3-rhel/](https://developers.redhat.com/blog/2018/08/13/install-python3-rhel/)
 NOTE: If you are installing it on an OS other than ubuntu, I do not think the install script will work. Good luck doing it all manually.
 
-Note: if you are using our machine ahlocal, there are some very weird permission errors. Due to SE Linux and the gateway, etc, sudo cannot access your home directory. I have tried using ```export HOME=/root``` and other solutions to no avail. No one seems to be able to figure it out. To run this I would install it in a top level directory like /ext and install it by using ```sudo su``` and continuing from there. I'm sure this is not completely secure so hopefully this will get fixed in the future but no one seems to know how to do that lol.
+Note: if you are using our machine ahlocal, there are some very weird permission errors. Due to SE Linux and the gateway, etc, sudo cannot access your home directory. I have tried using ```export HOME=/root``` and other solutions to no avail. No one seems to be able to figure it out. No one seems to care either, and I have told the higher ups and coding is the priority. To run this I would install it in a top level directory like /ext and install it by using ```sudo su``` and continuing from there. I'm sure this is not completely secure so hopefully this will get fixed in the future but no one seems to know how to do that lol.
 
 Once you have virtualenv installed, run 
 ```bash
@@ -1818,9 +1827,9 @@ You now have a python virtual environment where you do not need sudo to install 
 Then, if you are not installing for development, run:
 ```bash
 pip3 install wheel --upgrade
-pip3 install lib_bgp_data --upgrade
+pip3 install lib_bgp_data --upgrade --force
 ```
-This will install the package and all of it's python dependencies. 
+This will install the package and all of it's python dependencies.
 
 If you want to install the project for development:
 ```bash
@@ -1829,7 +1838,7 @@ cd lib_bgp_data
 pip3 install wheel --upgrade
 pip3 install -r requirements.txt --upgrade
 python3 setup.py sdist bdist_wheel
-python3 setup.py develop
+python3 setup.py develop --force
 ```
 
 After this you are going to need a install a couple of other things to be able to use most features. bgscanner, bgpdump, and the extrapolator are all automatically installed and moved to /usr/bin. bgpdump must be installed from source because it has bug fixes that are necessary. The RPKI validator is installed and move to /var/lib.
@@ -1853,7 +1862,15 @@ If you have already installed a database and config and don't need a fresh insta
 from lib_bgp_data import Install
 Install().install(fresh_install=False)
 ```
-This will automate the installation process, and from here you should be ready to go
+This will automate the installation process, and from here you should be ready to go.
+
+Note that now that you have installed every part of lib_bgp_data, you can test it if you'd like. You can run:
+
+```pip3 install lib_bgp_data --upgrade --force --install-option test```
+
+to test the install. To test the development package, cd into the root directory and run:
+
+```python3 setup.py develop test```
 ### Postgres Installation
 * [lib\_bgp\_data](#lib_bgp_data)
 * [Installation Instructions](#installation-instructions)
@@ -1964,6 +1981,20 @@ This is done through a series of steps.
     * Make install script have less output for different tasks and have this as an option for initing in docs
     * Add to docs how to use your own password for the install script
 	* Once in prod push to pypi
+## Testing
+   * [lib\_bgp\_data](#lib_bgp_data)
+
+Run tests on install by doing:
+```pip3 install lib_bgp_data --force --install-option test```
+This will install the package, force the command line arguments to be installed, and run the tests
+NOTE: You might need sudo to install command line arguments when doing this
+
+You can test the package if in development by moving/cd into the directory where setup.py is located and running:
+```python3 setup.py test```
+
+To test a specific submodule, cd into that submodule and run:
+```pytest```
+
 
 ## Adding a Submodule
    * [lib\_bgp\_data](#lib_bgp_data)
@@ -2026,7 +2057,7 @@ To add your own submodule: [How to Add a Submodule](#how-to-add-a-submodule)
 ## History
    * [lib\_bgp\_data](#lib_bgp_data)
    * 0.2.2 - Automated full run
-   * 0.2.3 - Fixed bugs found in the RPKI Validator
+   * 0.2.3 - Fixed bugs found in the RPKI Validator, MRT Parser. Various other bug fixes. Added pytest for roas_collector.
 
 ## Credits
    * [lib\_bgp\_data](#lib_bgp_data)
@@ -2039,7 +2070,7 @@ Thanks to Dr. Amir Herzberg and Dr. Bing Wang with all the help for leading the 
 
 Thanks to Cameron Morris for his help writing the RPKI Validator submodule, and configuring the RPKI Validator to run off of our own file. Also thanks for pointing out other bugs throughout development. And pulling numerous all nighters with me to push for getting the forecast up and running for deadlines for demonstrations. Definitely MVP.
 
-Thanks to James for looking into the mrt_w_roas join duplication bug and the numerous bugs that were discovered in Caida's API, and communicating with them and debugging some SQL queries
+Thanks to James for looking into the mrt_w_roas join unessecary duplication and the numerous bugs that were discovered in Caida's API, and communicating with them and debugging some SQL queries
 
 Thanks to Luke Malinowski for help in debugging some SQL queries.
 
