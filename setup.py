@@ -31,7 +31,7 @@ def _roas_collector_permutations():
 setup(
     name='lib_bgp_data',
     packages=find_packages(),
-    version='0.2.3',
+    version='0.2.4',
     author='Justin Furuness',
     author_email='jfuruness@gmail.com',
     url='https://github.com/jfuruness/lib_bgp_data.git',
@@ -40,7 +40,6 @@ setup(
     install_requires=[
         'wheel',
         'setuptools',
-	'jsonschema',
         'requests',
         'beautifulsoup4',
         'flasgger',
