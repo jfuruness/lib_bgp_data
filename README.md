@@ -1837,7 +1837,7 @@ cd lib_bgp_data
 pip3 install wheel --upgrade
 pip3 install -r requirements.txt --upgrade
 python3 setup.py sdist bdist_wheel
-python3 setup.py develop --force
+python3 setup.py develop
 ```
 
 After this you are going to need a install a couple of other things to be able to use most features. bgscanner, bgpdump, and the extrapolator are all automatically installed and moved to /usr/bin. bgpdump must be installed from source because it has bug fixes that are necessary. The RPKI validator is installed and move to /var/lib.
@@ -1854,12 +1854,14 @@ To run the automatic install process, make a script called install.py with the s
 WARNING: THIS WILL OVERWRITE ALL PREVIOUS DB AND OTHER CONFIGURATIONS:
 ```python
 from lib_bgp_data import Install
-Install().install()
+installer = Install()
+installer.install()
 ```
 If you have already installed a database and config and don't need a fresh install, do:
 ```python
 from lib_bgp_data import Install
-Install().install(fresh_install=False)
+installer = Install()
+installer.install(fresh_install=False)
 ```
 This will automate the installation process, and from here you should be ready to go.
 
