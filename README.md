@@ -1854,14 +1854,12 @@ To run the automatic install process, make a script called install.py with the s
 WARNING: THIS WILL OVERWRITE ALL PREVIOUS DB AND OTHER CONFIGURATIONS:
 ```python
 from lib_bgp_data import Install
-installer = Install()
-installer.install()
+Install().install()
 ```
 If you have already installed a database and config and don't need a fresh install, do:
 ```python
 from lib_bgp_data import Install
-installer = Install()
-installer.install(fresh_install=False)
+Install().install(fresh_install=False)
 ```
 This will automate the installation process, and from here you should be ready to go.
 
