@@ -1837,7 +1837,7 @@ cd lib_bgp_data
 pip3 install wheel --upgrade
 pip3 install -r requirements.txt --upgrade
 python3 setup.py sdist bdist_wheel
-python3 setup.py develop --force
+python3 setup.py develop
 ```
 
 After this you are going to need a install a couple of other things to be able to use most features. bgscanner, bgpdump, and the extrapolator are all automatically installed and moved to /usr/bin. bgpdump must be installed from source because it has bug fixes that are necessary. The RPKI validator is installed and move to /var/lib.
