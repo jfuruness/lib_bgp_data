@@ -12,7 +12,8 @@ __status__ = "Development"
 
 import json
 from pprint import pprint
-from statistics import mean
+from statistics import mean, variance
+from math import sqrt
 from copy import deepcopy
 from .enums import Policies, Non_BGP_Policies, Planes, Conditions, Top_Node_Policies, Hijack_Types
 from ..utils import error_catcher, utils
@@ -42,7 +43,6 @@ class Graph_Data:
 
     def _format_stats(self, stats, tables):
 
-        #stats = deepcopy(tstats)
         for htype in stats:
             for top_node_pol in stats[htype]:
                 for t_obj in stats[htype][top_node_pol]:
@@ -63,8 +63,20 @@ class Graph_Data:
         """Returns a dict with cond name followed by avg"""
 
         # Gets rid of trails where noone recieves the hijack
-        data_w_totals = [(x, y) for x, y in zip(data, totals) if y != 0]
-        return sum(x / y for x, y in data_w_totals) / len(data_w_totals) * 100
+        data_w_totals = [x*100/y for x, y in zip(data, totals) if y != 0]
+        _mean = mean(data_w_totals)  # Convert to percent
+        _variance = variance(data_w_totals)
+        # Z for 90% conf
+        _upper_conf = _mean + 1.645 * sqrt(_variance)/sqrt(len(data_w_totals))
+        _lower_conf = _mean - 1.645 * sqrt(_variance)/sqrt(len(data_w_totals))
+
+        data = {"avg_percent": _mean,
+                "variance": _variance,
+                "upper confidence interval": _upper_conf,
+                "lower confidence interval": _lower_conf,
+                "raw": data_w_totals}
+        return data
+        
 
     def calculate_total_num_ases(self, sim):
         
