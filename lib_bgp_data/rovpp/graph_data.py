@@ -35,10 +35,10 @@ class Graph_Data:
 ### Helper Functions ###
 ########################
 
-    def graph_data(self, stats, tables):
+    def graph_data(self, stats, tables, default_percents):
         """Formats stats for graph production"""
 
-        self._graph(self._format_stats(stats, tables))
+        self._graph(self._format_stats(stats, tables), default_percents)
 
     def _format_stats(self, stats, tables):
 
@@ -77,7 +77,7 @@ class Graph_Data:
                               for x in Conditions.__members__.values()]))
         return total_list
 
-    def _graph(self, fstats):
+    def _graph(self, fstats, default_percents):
         pol_dict = {v.value: k for k, v in Policies.__members__.items()}
         conds_dict = {v.value: k for k, v in Conditions.__members__.items()}
         top_nodes_pol_dict = {v.value: k for k, v in Top_Node_Policies.__members__.items()}
@@ -102,20 +102,20 @@ class Graph_Data:
 
                         for i in fstats[htype][top_nodes_pol][t_obj][adopt_pol]:
                             data += "\t\t\t\tFor {}".format(t_obj.percents[i]) + "% adoption\n"
-                            json_dict[htype_dict[htype]][top_nodes_pol_dict[top_nodes_pol]][t_obj.table.name][pol_dict[adopt_pol]][t_obj.percents[i]] = dict()
+                            json_dict[htype_dict[htype]][top_nodes_pol_dict[top_nodes_pol]][t_obj.table.name][pol_dict[adopt_pol]][str(default_percents[i]) + ":" + str(t_obj.percents[i])] = dict()
                             for pol in fstats[htype][top_nodes_pol][t_obj][adopt_pol][i]:
                                 sim = fstats[htype][top_nodes_pol][t_obj][adopt_pol][i][pol]
                                 total_list = self.calculate_total_num_ases(sim)
                                 if total_list[0] != 0:
                                     data += "\t\t\t\t\tFor {} Policy:\n".format(pol_dict[pol])
-                                    json_dict[htype_dict[htype]][top_nodes_pol_dict[top_nodes_pol]][t_obj.table.name][pol_dict[adopt_pol]][t_obj.percents[i]][pol_dict[pol]] = dict()
+                                    json_dict[htype_dict[htype]][top_nodes_pol_dict[top_nodes_pol]][t_obj.table.name][pol_dict[adopt_pol]][str(default_percents[i]) + ":" + str(t_obj.percents[i])][pol_dict[pol]] = dict()
                                     for plane in sim:
                                         data += "\t\t\t\t\t\tFor {}\n".format(planes_dict[plane])
-                                        json_dict[htype_dict[htype]][top_nodes_pol_dict[top_nodes_pol]][t_obj.table.name][pol_dict[adopt_pol]][t_obj.percents[i]][pol_dict[pol]][planes_dict[plane]] = dict()
+                                        json_dict[htype_dict[htype]][top_nodes_pol_dict[top_nodes_pol]][t_obj.table.name][pol_dict[adopt_pol]][str(default_percents[i]) + ":" + str(t_obj.percents[i])][pol_dict[pol]][planes_dict[plane]] = dict()
                                         for cond in sim[plane]["percents"]:
                                             data += "\t\t\t\t\t\t\t{}: {}".format(
                                                 conds_dict[cond], sim[plane]["percents"][cond])
-                                            json_dict[htype_dict[htype]][top_nodes_pol_dict[top_nodes_pol]][t_obj.table.name][pol_dict[adopt_pol]][t_obj.percents[i]][pol_dict[pol]][planes_dict[plane]][conds_dict[cond]] = sim[plane]["percents"][cond]
+                                            json_dict[htype_dict[htype]][top_nodes_pol_dict[top_nodes_pol]][t_obj.table.name][pol_dict[adopt_pol]][str(default_percents[i]) + ":" + str(t_obj.percents[i])][pol_dict[pol]][planes_dict[plane]][conds_dict[cond]] = sim[plane]["percents"][cond]
                                             data += "%\n"
     
         self.logger.warning(data)

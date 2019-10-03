@@ -84,7 +84,7 @@ class ROVPP_Simulator:
         for t_obj in tables:
             t_obj.table.close()
 
-        self.graph_data.graph_data(self.statistics_calculator.stats, tables)
+        self.graph_data.graph_data(self.statistics_calculator.stats, tables, percents)
         print(sum(self.stats_time_arr)/len(self.stats_time_arr))
         # Close all tables here!!!
 
