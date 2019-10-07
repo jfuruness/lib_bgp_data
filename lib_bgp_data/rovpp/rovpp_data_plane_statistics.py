@@ -55,13 +55,15 @@ class ROVPP_Data_Plane_Stats:
 
         conds_dict = {atk_n: Conds.HIJACKED.value,
                       vic_n: Conds.NOTHIJACKED.value,
-                      -1: Conds.BHOLED.value}
+                      0: Conds.BHOLED.value}
 
         for asn, og_info in ases.items():
             debug_i = 0
-            while asn not in [atk_n, vic_n, -1]:
+            while asn not in [atk_n, vic_n, 0]:
                 debug_i += 1
                 if debug_i > 100:
+                    # Infinite loop!!!
+                    self.logger.warning("Prob infinite looping")
                     self.logger.warning("current_asn" + str(asn))
                     self.logger.warning("starting_as_info" + str(og_info))
                     self.logger.warning("current as info" + str(all_ases[asn]))
@@ -71,5 +73,5 @@ class ROVPP_Data_Plane_Stats:
                     asn = all_ases[asn]["received_from_asn"]
                 except KeyError:
                     # Blachkholed
-                    asn = -1
+                    asn = 0
             sim[self.plane][conds_dict[asn]][-1] += 1
