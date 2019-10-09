@@ -97,16 +97,16 @@ class ROVPP_Simulator_Set_Up_Tool:
         # Create an everything else table
         self.tables = [Subtable(ROVPP_Top_100_ASes_Table,
                                 self.logger,
-                                default_percents,
+                                [25]*len(default_percents),
                                 possible_hijacker=False,
                                 policy_to_impliment=top_nodes_pol),
                        Subtable(ROVPP_Edge_ASes_Table,
                                 self.logger,
-                                [0]*len(default_percents),policy_to_impliment=Policies.BGP.value)]
+                                default_percents)]
         for sub_table in self.tables:
             sub_table.table.fill_table()
 
-        etc = Subtable(ROVPP_Etc_ASes_Table, self.logger, [0]*len(default_percents), policy_to_impliment=Policies.BGP.value)
+        etc = Subtable(ROVPP_Etc_ASes_Table, self.logger, default_percents)
         etc.table.fill_table([x.table.name for x in self.tables])
         self.tables.append(etc)
 
