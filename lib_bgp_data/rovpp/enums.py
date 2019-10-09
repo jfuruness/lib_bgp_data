@@ -29,17 +29,10 @@ class Policies(Enum):
     ROVPPB = 3
     ROVPPBP = 4
 # This creates an enum that is for non bgp policies
-non_bgp_policies_dict = {x[0]: x[1].value
+_non_bgp_policies_dict = {x[0]: x[1].value
                          for x in Policies.__members__.items()
                          if x[1].value != Policies.BGP.value}
-Non_BGP_Policies = Enum('Non_BGP_Policies', non_bgp_policies_dict)
-
-class Top_Node_Policies(Enum):
-    BGP = Policies.BGP.value
-    ROV = Policies.ROV.value
-    ROVPP = Policies.ROVPP.value
-    ROVPPB = Policies.ROVPPB.value
-    ROVPPBP = Policies.ROVPPBP.value
+Non_BGP_Policies = Enum('Non_BGP_Policies', _non_bgp_policies_dict)
 
 ########################
 ### Statistics Enums ###

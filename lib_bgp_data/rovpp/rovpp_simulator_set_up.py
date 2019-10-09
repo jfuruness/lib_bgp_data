@@ -8,7 +8,7 @@ from random import sample
 from subprocess import check_call
 from copy import deepcopy
 from pprint import pprint
-from .enums import Policies, Non_BGP_Policies, Top_Node_Policies, Hijack_Types
+from .enums import Policies, Non_BGP_Policies, Hijack_Types
 from .tables import ROVPP_ASes_Table, Subprefix_Hijack_Temp_Table
 from .tables import ROVPP_MRT_Announcements_Table, ROVPP_Top_100_ASes_Table
 from .tables import ROVPP_Edge_ASes_Table, ROVPP_Etc_ASes_Table
@@ -78,9 +78,10 @@ class ROVPP_Simulator_Set_Up_Tool:
 ### Sets Up Current Trial ###
 #############################
 
-    def set_up_trial(self, percents, iter_num, top_nodes_pol, hijack_type):
+    def set_up_trial(self, percents, iter_num, hijack_type):
+
         # Creates fresh subtables, faster than reverting back to bgp
-        self._create_subtables(percents, top_nodes_pol)
+        self._create_subtables(percents)
 
         hijack = self._get_hijack_data(hijack_type)
         
@@ -91,15 +92,14 @@ class ROVPP_Simulator_Set_Up_Tool:
         return self.tables, hijack
 
 
-    def _create_subtables(self, default_percents, top_nodes_pol):
+    def _create_subtables(self, default_percents):
         # Add docs on how to add a table to these sims
         # Create these tables and then 
         # Create an everything else table
         self.tables = [Subtable(ROVPP_Top_100_ASes_Table,
                                 self.logger,
                                 [25]*len(default_percents),
-                                possible_hijacker=False,
-                                policy_to_impliment=top_nodes_pol),
+                                possible_hijacker=False),
                        Subtable(ROVPP_Edge_ASes_Table,
                                 self.logger,
                                 default_percents)]

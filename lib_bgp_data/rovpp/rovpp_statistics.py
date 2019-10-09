@@ -16,7 +16,7 @@ __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
 from pprint import pprint
-from .enums import Policies, Non_BGP_Policies, Planes, Top_Node_Policies, Hijack_Types, Conditions as Conds
+from .enums import Policies, Non_BGP_Policies, Planes, Hijack_Types, Conditions as Conds
 from ..utils import error_catcher, utils
 from .rovpp_data_plane_statistics import ROVPP_Data_Plane_Stats
 from .rovpp_control_plane_statistics import ROVPP_Control_Plane_Stats
@@ -38,36 +38,33 @@ class ROVPP_Statistics_Calculator:
         self.stats = dict()
         for htype in [x.value for x in Hijack_Types.__members__.values()]:
             self.stats[htype] = dict()
-            for pol in [x.value for x in Top_Node_Policies.__members__.values()]:
-                self.stats[htype][pol] = dict()
-                for t_obj in tables:
-                    self.stats[htype][pol][t_obj] = dict()
-                    for non_bgp_policy in Non_BGP_Policies.__members__.values():
-                        self.stats[htype][pol][t_obj][non_bgp_policy.value] = dict()
-                        sim = self.stats[htype][pol][t_obj][non_bgp_policy.value]
-                        for i in range(len(percents)):
-                            sim[i] = dict()
-                            # For each policy
-                            for policy in Policies.__members__.values():
-                                pol_val = policy.value
-                                # Set that policy to have a dict which will contain data planes
-                                sim[i][pol_val] = dict()
-                                # For storing the total number of ases
-                                # For each kind of data plane
-                                for plane in Planes.__members__.values():
-                                    sim[i][pol_val][plane.value] = dict()
-                                    # For each kind of condition
-                                    for cond in Conds.__members__.values():
-                                        # Sets rates to be a list for multiple attacks
-                                        sim[i][pol_val][plane.value][cond.value] = []
-
+            for t_obj in tables:
+                self.stats[htype][t_obj] = dict()
+                for adopt_policy in Non_BGP_Policies.__members__.values():
+                    self.stats[htype][t_obj][adopt_policy.value] = dict()
+                    sim = self.stats[htype][t_obj][adopt_policy.value]
+                    for i in range(len(percents)):
+                        sim[i] = dict()
+                        # For each policy
+                        for policy in Policies.__members__.values():
+                            pol_val = policy.value
+                            # Set that policy to have a dict which will contain data planes
+                            sim[i][pol_val] = dict()
+                            # For storing the total number of ases
+                            # For each kind of data plane
+                            for plane in Planes.__members__.values():
+                                sim[i][pol_val][plane.value] = dict()
+                                # For each kind of condition
+                                for cond in Conds.__members__.values():
+                                    # Sets rates to be a list for multiple attacks
+                                    sim[i][pol_val][plane.value][cond.value] = []
 
 ########################
 ### Helper Functions ###
 ########################
 
     @utils.run_parser(paths=False)
-    def calculate_stats(self, subp_hijack, percent_i, adopt_pol, top_nodes_pol, hijack_type):
+    def calculate_stats(self, subp_hijack, percent_i, adopt_pol, hijack_type):
         """Calculates success rates"""
 
         start = utils.now()
@@ -78,7 +75,7 @@ class ROVPP_Statistics_Calculator:
                                    subp_hijack["expected_prefix"])
         for t_obj in self.tables:
             # Needed for shorter lines
-            sim = self.stats[hijack_type][top_nodes_pol][t_obj][adopt_pol][percent_i]
+            sim = self.stats[hijack_type][t_obj][adopt_pol][percent_i]
             # Appends a zero onto all stats
             self._initialize_attack_stats(sim)
 
