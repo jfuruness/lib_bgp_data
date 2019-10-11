@@ -42,7 +42,7 @@ from ..extrapolator import Extrapolator
 from ..rpki_validator import RPKI_Validator
 from ..what_if_analysis import What_If_Analysis
 from ..utils import utils, Database, db_connection, Install, error_catcher
-from .tables import MRT_W_Roas_Table
+from .tables import MRT_W_Roas_Table, MRT_W_Hijack_Invalid_Prefixes_Table, MRT_W_Hijack_Invalid_Extraprefixes_Table
 
 __author__ = "Justin Furuness"
 __credits__ = ["Justin Furuness"]
@@ -78,7 +78,7 @@ class Forecast:
                      rpki_args={},
                      what_if_args={},
                      test=False,
-                     mrt_w_roas=True):
+                     mrt_w_roas=False):
 
         self.logger.info("Running from {} to {} in UTC".format(start, end))
 
@@ -86,7 +86,7 @@ class Forecast:
             Install().install(fresh_install)
         # First we want to parse the mrt files and create the index
         # This uses all the threads, so no need to multithread
-        MRT_Parser(mrt_args).parse_files(start, end, **mrt_parse_args)
+#        MRT_Parser(mrt_args).parse_files(start, end, **mrt_parse_args)
         # Then we get the relationships data. We aren't going to run this
         # multithreaded because it is so fast, there is no point
         Relationships_Parser(rel_args).parse_files(**rel_parse_args)
@@ -106,14 +106,15 @@ class Forecast:
             # Cleans up the database
             _db.vacuum_analyze_checkpoint()
 
-            # Runs the rpki validator and stores data in db
-            RPKI_Validator(rpki_args).run_validator()
-            input("Did the rpki validator work??? if yes hit enter")
-
         if mrt_w_roas:
             Filter_Table = MRT_W_Roas_Table
         else:
             Filter_Table = MRT_W_Hijack_Invalid_Prefixes_Table
+
+        # Runs the rpki validator and stores data in db
+        RPKI_Validator(rpki_args).run_validator()
+        input("Did the rpki validator work??? if yes hit enter")
+
 
         # Only keep announcements covered by a roa
         # drops old table, unhinges db, performs query, rehinges db

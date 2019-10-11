@@ -17,8 +17,6 @@ from math import sqrt
 from copy import deepcopy
 from .enums import Policies, Non_BGP_Policies, Planes, Conditions, Hijack_Types
 from ..utils import error_catcher, utils
-from .rovpp_data_plane_statistics import ROVPP_Data_Plane_Stats
-from .rovpp_control_plane_statistics import ROVPP_Control_Plane_Stats
 
 class Graph_Data:
     """This class graphs the data recieved from the rovpp simulation.

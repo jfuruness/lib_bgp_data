@@ -84,7 +84,7 @@ class MRT_W_Hijack_Invalid_Prefixes_Table(Database):
                   m.time, m.prefix, m.as_path, m.origin
               FROM mrt_announcements m
                   INNER JOIN hijack_temp h ON h.prefix = m.prefix and h.origin = m.origin
-                  INNER JOIN rov_validity r ON r.prefix = m.prefix and r.asn = m.origin
+                  INNER JOIN rov_validity r ON r.prefix = m.prefix and r.asn = m.origin AND validity < 0
               );"""
         self.cursor.execute(sql)
         # used in the extrapolator
@@ -100,7 +100,7 @@ class MRT_W_Hijack_Invalid_Prefixes_Table(Database):
         self.cursor.execute("DROP TABLE IF EXISTS mrt_w_hijack_invalid_prefixes")
         self.logger.debug("MRT_W_Hijack_Invalid_Prefixes table dropped")
 
-class MRT_W_Hijack_Invalid_extraprefixes_Table(Database):
+class MRT_W_Hijack_Invalid_Extraprefixes_Table(Database):
     __slots__ = []
 
     @error_catcher()
@@ -120,7 +120,7 @@ class MRT_W_Hijack_Invalid_extraprefixes_Table(Database):
                   m.time, m.prefix, m.as_path, m.origin
               FROM mrt_announcements m
                   INNER JOIN hijack_temp h ON h.prefix << m.prefix OR (h.prefix = m.prefix AND h.origin != m.origin)
-                  INNER JOIN rov_validity r ON r.prefix << m.prefix OR (r.prefix = m.prefix AND r.origin != m.origin)
+                  INNER JOIN rov_validity r ON r.prefix << m.prefix OR (r.prefix = m.prefix AND r.origin != m.origin) AND validity > 0
               );"""
         self.cursor.execute(sql)
         # used in the extrapolator

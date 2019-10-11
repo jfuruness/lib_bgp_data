@@ -10,10 +10,8 @@ from copy import deepcopy
 from pprint import pprint
 import json
 from .enums import Policies, Non_BGP_Policies, Hijack_Types
-from .tables import ROVPP_ASes_Table, Subprefix_Hijack_Temp_Table
+from .tables import Subprefix_Hijack_Temp_Table
 from .tables import ROVPP_MRT_Announcements_Table
-from .rovpp_statistics import ROVPP_Statistics_Calculator as Stats_Calculator
-from .rovpp_simulator_set_up import ROVPP_Simulator_Set_Up_Tool
 from .graph_data import Graph_Data
 from ..relationships_parser import Relationships_Parser
 from ..relationships_parser.tables import ROVPP_AS_Connectivity_Table
@@ -148,6 +146,7 @@ class Test:
             # Average the list and calculate statistics
             # Must compare all raw data to the ROV variant
             # Save all of this to the data thing
+            pass
 
     def toJSON(self):
         return json.dumps(self, default=lambda o: o.__dict__, 
