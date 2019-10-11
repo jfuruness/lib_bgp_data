@@ -77,7 +77,8 @@ class Forecast:
                      exr_args={},
                      rpki_args={},
                      what_if_args={},
-                     test=False):
+                     test=False,
+                     mrt_w_roas=True):
 
         self.logger.info("Running from {} to {} in UTC".format(start, end))
 
@@ -105,19 +106,32 @@ class Forecast:
             # Cleans up the database
             _db.vacuum_analyze_checkpoint()
 
+            # Runs the rpki validator and stores data in db
+            RPKI_Validator(rpki_args).run_validator()
+            input("Did the rpki validator work??? if yes hit enter")
+
+        if mrt_w_roas:
+            Filter_Table = MRT_W_Roas_Table
+        else:
+            Filter_Table = MRT_W_Hijack_Invalid_Prefixes_Table
+
         # Only keep announcements covered by a roa
         # drops old table, unhinges db, performs query, rehinges db
-        with db_connection(MRT_W_Roas_Table, self.logger) as _db:
+        with db_connection(Filter_Table, self.logger) as _db:
             _db.vacuum_analyze_checkpoint()
 
             # Runs the extrapolator and creates the neccessary indexes
             Extrapolator(exr_args).run_forecast(_db.name)
 
-            # Runs the rpki validator and stores data in db
-            RPKI_Validator(rpki_args).run_validator()
+            with db_connection(MRT_W_Hijack_Invalid_Extraprefixes_Table,
+                               self.logger) as extraprefix_db:
+                Extrapolator(exr_args).run_forecast(extraprefix_db.name,
+                                                    extraprefix=True)
 
             # Cleans up db and performs statistics for what if joins
             _db.vacuum_analyze_checkpoint()
+
+            input("Run what if analysis")
 
             # Runs the what if analysis
             What_If_Analysis(what_if_args).run_rov_policy()

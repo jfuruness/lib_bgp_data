@@ -126,7 +126,7 @@ _invalid_asn_policy_sql = [
     """CREATE TABLE invalid_asn AS SELECT
     asns.asn AS parent_asn,
     iabhs.total AS blocked_hijacked,
-    ianbhs.total AS not_blocked_hijacked,
+    ianbhs.total AS prefixes_in_transition,
     iabnhs.total AS blocked_not_hijacked,
     asns.total - iabhs.total - ianbhs.total - iabnhs.total
         AS not_blocked_not_hijacked,
@@ -160,7 +160,7 @@ _invalid_length_policy_sql = [
     """CREATE TABLE invalid_length AS SELECT
     asns.asn AS parent_asn,
     iabhs.total AS blocked_hijacked,
-    ianbhs.total AS not_blocked_hijacked,
+    ianbhs.total AS prefixes_in_transition,
     iabnhs.total AS blocked_not_hijacked,
     asns.total - iabhs.total - ianbhs.total - iabnhs.total
         AS not_blocked_not_hijacked,
@@ -197,15 +197,15 @@ _rov_policy_sql = [
     """CREATE TABLE rov AS SELECT
     asns.asn AS parent_asn,
     ilp.blocked_hijacked + iap.blocked_hijacked AS blocked_hijacked,
-    ilp.not_blocked_hijacked + ilp.blocked_hijacked - iap.blocked_hijacked
+    ilp.prefixes_in_transition, + ilp.blocked_hijacked - iap.blocked_hijacked
         - ilp.blocked_hijacked
-        AS not_blocked_hijacked,
+        AS prefixes_in_transition,
     ilp.blocked_not_hijacked + iap.blocked_not_hijacked
         AS blocked_not_hijacked,
-    asns.total - ilp.blocked_hijacked - ilp.not_blocked_hijacked
+    asns.total - ilp.blocked_hijacked - ilp.prefixes_in_transition,
         - ilp.blocked_not_hijacked - iap.blocked_hijacked
-        - iap.not_blocked_hijacked - iap.blocked_not_hijacked
-            AS not_blocked_not_hijacked,
+        - iap.prefixes_in_transition, - iap.blocked_not_hijacked
+            AS prefixes_in_transition,
 
     TRUNC(
       ((ilp.blocked_hijacked::decimal + iap.blocked_hijacked::decimal)*100
