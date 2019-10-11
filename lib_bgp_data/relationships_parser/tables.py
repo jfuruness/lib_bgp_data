@@ -192,3 +192,45 @@ class ROVPP_AS_Connectivity_Table(Database):
         sql = """SELECT * FROM rovpp_as_connectivity
               ORDER BY connectivity DESC OFFSET 100;"""
         return [x["asn"] for x in self.execute(sql)]
+
+class ROVPP_ASes_Table(Database):
+    """Class with database functionality.
+
+    In depth explanation at the top of the file."""
+
+    __slots__ = []
+
+    def _create_tables(self):
+        """Creates tables if they do not exist.
+
+        Called during initialization of the database class.
+        """
+
+        sql = """CREATE UNLOGGED TABLE IF NOT EXISTS rovpp_ases (
+                 asn bigint,
+                 as_type smallint,
+                 impliment BOOLEAN
+                 );"""
+        self.cursor.execute(sql)
+
+    def clear_table(self):
+        """Clears the rovpp_ases table.
+
+        Should be called at the start of every run.
+        """
+
+        self.logger.debug("Dropping ROVPP_ASes")
+        self.cursor.execute("DROP TABLE IF EXISTS rovpp_ases")
+        self.logger.debug("ROVPP_ASes Table dropped")
+
+    def fill_table(self):
+        self.clear_table()
+        self.logger.debug("Initializing rovpp_as_table")
+        sql = """CREATE UNLOGGED TABLE IF NOT EXISTS rovpp_ases AS (
+                 SELECT customer_as AS asn, 'bgp' AS as_type, FALSE AS impliment FROM (
+                     SELECT DISTINCT customer_as FROM rovpp_customer_providers
+                     UNION SELECT provider_as FROM rovpp_customer_providers
+                     UNION SELECT peer_as_1 FROM rovpp_peers
+                     UNION SELECT peer_as_2 FROM rovpp_peers) union_temp
+                 );"""
+        self.cursor.execute(sql)

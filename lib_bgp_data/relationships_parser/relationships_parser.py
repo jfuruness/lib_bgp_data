@@ -87,11 +87,20 @@ class Relationships_Parser:
 
         # For the rovpp simulation, pass in rovpp and a url to use
         if rovpp:
+            if not url:
+                url = ("http://data.caida.org/datasets/"
+                       "as-relationships/serial-2/"
+                       "20190501.as-rel2.txt.bz2")
+
             Rel_File(self.path,
                      self.csv_dir,
                      url,
                      self.logger).parse_file(rovpp)
-            return
+            with db_connection(ROVPP_ASes_Table, self.logger) as as_table:
+                as_table.fill_table()
+                with db_connection(ROVPP_AS_Connectivity_Table,
+                           self.logger) as connectivity_table:
+                    return
 
         # Gets the url and the integer date for the latest file
         url, int_date = self._get_url()
