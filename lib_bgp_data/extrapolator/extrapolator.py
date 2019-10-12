@@ -45,7 +45,7 @@ class Extrapolator:
         bash_args = "forecast-extrapolator"
         if input_table:
             bash_args += " -a {}".format(input_table)
-        if superprefix:
+        if extraprefix:
             o_table = "extrapolation_inverse_results_extraprefixes"
             bash_args += " -o {}".format(o_table)
         if self.logger.level == DEBUG:

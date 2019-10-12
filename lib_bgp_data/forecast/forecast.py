@@ -89,11 +89,11 @@ class Forecast:
 #        MRT_Parser(mrt_args).parse_files(start, end, **mrt_parse_args)
         # Then we get the relationships data. We aren't going to run this
         # multithreaded because it is so fast, there is no point
-        Relationships_Parser(rel_args).parse_files(**rel_parse_args)
+#        Relationships_Parser(rel_args).parse_files(**rel_parse_args)
         # Now lets get roas, its fast so no multiprocessing
-        ROAs_Collector(roas_args).parse_roas()
+#        ROAs_Collector(roas_args).parse_roas()
         # Get hijack data. The first time takes a while
-        BGPStream_Website_Parser(web_args).parse(start, end, **web_parse_args)
+#        BGPStream_Website_Parser(web_args).parse(start, end, **web_parse_args)
 
         with db_connection(Database, self.logger) as _db:
 
@@ -112,8 +112,8 @@ class Forecast:
             Filter_Table = MRT_W_Hijack_Invalid_Prefixes_Table
 
         # Runs the rpki validator and stores data in db
-        RPKI_Validator(rpki_args).run_validator()
-        input("Did the rpki validator work??? if yes hit enter")
+#        RPKI_Validator(rpki_args).run_validator()
+#        input("Did the rpki validator work??? if yes hit enter")
 
 
         # Only keep announcements covered by a roa
