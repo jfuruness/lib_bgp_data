@@ -121,6 +121,8 @@ class Forecast:
         with db_connection(Filter_Table, self.logger) as _db:
             _db.vacuum_analyze_checkpoint()
 
+            print(_db.name)
+
             # Runs the extrapolator and creates the neccessary indexes
             Extrapolator(exr_args).run_forecast(_db.name)
 
