@@ -86,14 +86,14 @@ class Forecast:
             Install().install(fresh_install)
         # First we want to parse the mrt files and create the index
         # This uses all the threads, so no need to multithread
-#        MRT_Parser(mrt_args).parse_files(start, end, **mrt_parse_args)
+        MRT_Parser(mrt_args).parse_files(start, end, **mrt_parse_args)
         # Then we get the relationships data. We aren't going to run this
         # multithreaded because it is so fast, there is no point
-#        Relationships_Parser(rel_args).parse_files(**rel_parse_args)
+        Relationships_Parser(rel_args).parse_files(**rel_parse_args)
         # Now lets get roas, its fast so no multiprocessing
-#        ROAs_Collector(roas_args).parse_roas()
+        ROAs_Collector(roas_args).parse_roas()
         # Get hijack data. The first time takes a while
-#        BGPStream_Website_Parser(web_args).parse(start, end, **web_parse_args)
+        BGPStream_Website_Parser(web_args).parse(start, end, **web_parse_args)
 
         with db_connection(Database, self.logger) as _db:
 
@@ -106,30 +106,19 @@ class Forecast:
             # Cleans up the database
             _db.vacuum_analyze_checkpoint()
 
-        if mrt_w_roas:
-            Filter_Table = MRT_W_Roas_Table
-        else:
-            Filter_Table = MRT_W_Hijack_Invalid_Prefixes_Table
-
         # Runs the rpki validator and stores data in db
-#        RPKI_Validator(rpki_args).run_validator()
-#        input("Did the rpki validator work??? if yes hit enter")
+        RPKI_Validator(rpki_args).run_validator()
 
+        what_if = What_If_Analysis(what_if_args)
 
-        # Only keep announcements covered by a roa
+        # Only keep announcements invalid or hijacked
         # drops old table, unhinges db, performs query, rehinges db
-        with db_connection(Filter_Table, self.logger) as _db:
+        with db_connection(Database, self.logger) as _db:
             _db.vacuum_analyze_checkpoint()
 
-            print(_db.name)
-
+            what_if.run_pre_exr()
             # Runs the extrapolator and creates the neccessary indexes
-            Extrapolator(exr_args).run_forecast(_db.name)
-
-            with db_connection(MRT_W_Hijack_Invalid_Extraprefixes_Table,
-                               self.logger) as extraprefix_db:
-                Extrapolator(exr_args).run_forecast(extraprefix_db.name,
-                                                    extraprefix=True)
+            Extrapolator(exr_args).run_forecast("interesting_ann")
 
             # Cleans up db and performs statistics for what if joins
             _db.vacuum_analyze_checkpoint()
@@ -137,7 +126,7 @@ class Forecast:
             input("Run what if analysis")
 
             # Runs the what if analysis
-            What_If_Analysis(what_if_args).run_rov_policy()
+            what_if.run_post_exr()
 
             # Rewrites the whole database for storage
             _db.vacuum_analyze_checkpoint(full=True)

@@ -129,7 +129,7 @@ class MRT_W_Hijack_Invalid_Extraprefixes_Table(Database):
              SELECT DISTINCT ON (m.prefix, m.as_path, m.origin)
                   m.time, m.prefix, m.as_path, m.origin
               FROM mrt_announcements m
-                  INNER JOIN rov_validity r ON r.prefix << m.prefix OR (r.prefix = m.prefix AND r.origin != m.origin) AND r.validity >= 0
+                  INNER JOIN rov_validity r ON r.prefix << m.prefix OR (r.prefix = m.prefix AND r.origin != m.origin AND r.validity >= 0)
               );"""
         self.cursor.execute(sql)
         # used in the extrapolator
@@ -144,3 +144,12 @@ class MRT_W_Hijack_Invalid_Extraprefixes_Table(Database):
         self.logger.debug("Dropping MRT_W_Hijack_Invalid_extraPrefixes")
         self.cursor.execute("DROP TABLE IF EXISTS mrt_w_hijack_invalid_extraprefixes")
         self.logger.debug("MRT_W_Hijack_Invalid_extraPrefixes table dropped")
+
+
+CREATE UNLOGGED TABLE IF NOT EXISTS
+              mrt_rov_superprefixes AS (
+              SELECT DISTINCT ON (m.prefix, m.as_path, m.origin)
+                  m.time, m.prefix, m.as_path, m.origin
+              FROM mrt_announcements m
+                  INNER JOIN rov_validity r ON r.prefix << m.prefix AND r.validity < 0
+              );
