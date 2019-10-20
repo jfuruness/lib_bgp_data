@@ -125,14 +125,17 @@ class Config:
         try:
             cmd = self._read_config(section, subsection)
         except NoSectionError:
+
+            typical_cmd = "sudo systemctl restart postgresql@12-main.service"
+
             prompt = "Enter the command to restart postgres\n"
             prompt += "0 or Enter: "
-            prompt += "sudo systemctl restart postgresql@11-main.service\n"
+            prompt += typical_cmd + "\n"
             prompt += "1: sudo systemctl restart postgresql: \n"
             prompt += "Custom: Enter cmd for your machine\n"
             cmd = input(prompt)
             if cmd == "" or "0":
-                cmd = "sudo systemctl restart postgresql@11-main.service"
+                cmd = typical_cmd
             elif cmd == "1":
                 cmd = "sudo systemctl restart postgresql"
         return cmd
