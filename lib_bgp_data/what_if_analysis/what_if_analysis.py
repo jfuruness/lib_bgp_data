@@ -8,7 +8,6 @@ see __init__.py for a deeper explanation
 
 from .pre_exr_sql import get_pre_exr_sql
 from .post_exr_sql import get_post_exr_sql
-from .sql_queries import all_sql_queries
 from ..utils import utils, error_catcher, Database, db_connection
 
 __author__ = "Justin Furuness"

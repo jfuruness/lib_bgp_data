@@ -18,7 +18,7 @@ class Policies(Enum):
     LENGTH = "length"
     ROV = "rov"
 
-class Valdidity(Enum):
+class Validity(Enum):
     VALID = "valid"
     INVALID = "invalid"
 

@@ -83,16 +83,6 @@ def get_pre_exr_sql(valid_before_time):
                 """.format(v_dict[Validity.invalid.value]),
                 extra=True))
 
-        prefix_origin_sql.extend(
-            create_table_w_gist(
-                "valid_{}_hijacked_prefix_origins".format(policy),
-                """SELECT DISTINCT u.prefix, u.origin FROM unique_prefix_origins u
-                    INNER JOIN rov_validity r ON r.prefix = u.prefix AND r.origin = u.origin
-                    INNER JOIN hijack_temp h ON h.prefix = r.prefix AND h.origin = r.origin
-                WHERE r.validity {}
-                """.format(v_dict[Validity.invalid.value])))
-
-
     all_sql.extend(prefix_origin_sql)
 
     interesting_sql = []
@@ -103,9 +93,7 @@ def get_pre_exr_sql(valid_before_time):
             UNION
             SELECT prefix, origin FROM invalid_rov_not_hijacked_prefix_origins
             UNION
-            SELECT extra_prefix, extra_origin FROM invalid_rov_extra_prefix_origins
-            UNION
-            SELECT prefix, origin FROM valid_rov_prefix_origins"""))
+            SELECT extra_prefix, extra_origin FROM invalid_rov_extra_prefix_origins"""))
 
     interesting_sql.extend("VACUUM ANALYZE;")
 
@@ -139,7 +127,7 @@ def get_pre_exr_sql(valid_before_time):
             "invalid_{}_not_hijacked_ann_indexes",
             """SELECT m.mrt_index FROM interesting_ann m
                 INNER JOIN invalid_{}_not_hijacked_prefix_origins i
-                    ON i.prefix = m.prefix AND i.origin = m.origin""")
+                    ON i.prefix = m.prefix AND i.origin = m.origin"""),
         create_table_w_btree(
             "invalid_{}_extra_ann_indexes",
             """SELECT m.mrt_index, m2.mrt_index AS extra_mrt_index
@@ -148,12 +136,7 @@ def get_pre_exr_sql(valid_before_time):
                     ON i.prefix = m.prefix AND i.origin = m.origin
                 INNER JOIN interesting_ann m2
                     ON i.extra_prefix = m2.prefix AND i.extra_origin = m2.origin""",
-            extra=True)
-        create_table_w_btree(
-            "valid_{}_hijacked_ann_indexes",
-            """SELECT m.mrt_index FROM interesting_announcements m
-                    INNER JOIN valid_{}_hijacked_prefix_origins i
-                        ON i.prefix = m.prefix AND i.origin = m.origin""")]
+            extra=True)]
 
     for policy in [x.value for x in Policies.__members__.values()]:
         for table_sql in ann_indexes_sql:

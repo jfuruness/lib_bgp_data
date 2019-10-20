@@ -393,10 +393,14 @@ class Install:
                 "sudo ninja install",
                 "sudo ldconfig",
                 "cd ../../",
-                "cp bgpscanner/build/bgpscanner /usr/bin/bgpscanner",
-                "cp bgpscanner/build/bgpscanner /usr/local/bin/bgpscanner",
-                "rm -rf delete_me"]
+                "cp bgpscanner/build/bgpscanner /usr/bin/bgpscanner"]
         check_call("&& ".join(cmds), shell=True)
+        try:
+             check_call("cp bgpscanner/build/bgpscanner /usr/local/bin/bgpscanner", shell=True)
+        except:
+            pass
+
+        check_call("rm -rf delete_me", shell=True)
 
     @error_catcher()
     @delete_files("bgpdump/")

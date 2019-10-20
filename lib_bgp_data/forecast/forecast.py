@@ -42,7 +42,6 @@ from ..extrapolator import Extrapolator
 from ..rpki_validator import RPKI_Validator
 from ..what_if_analysis import What_If_Analysis
 from ..utils import utils, Database, db_connection, Install, error_catcher
-from .tables import MRT_W_Roas_Table, MRT_W_Hijack_Invalid_Prefixes_Table, MRT_W_Hijack_Invalid_Extraprefixes_Table
 
 __author__ = "Justin Furuness"
 __credits__ = ["Justin Furuness"]
