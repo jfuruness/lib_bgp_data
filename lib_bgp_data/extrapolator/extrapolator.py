@@ -40,26 +40,19 @@ class Extrapolator:
 
     @error_catcher()
     @utils.run_parser()
-    def run_forecast(self, input_table=None, extraprefix=False):
+    def run_forecast(self, input_table):
         self.logger.info("About to run the forecast extrapolator")
+
         bash_args = "forecast-extrapolator"
-        if input_table:
-            bash_args += " -a {}".format(input_table)
-        if extraprefix:
-            o_table = "extrapolation_inverse_results_extraprefixes"
-            bash_args += " -o {}".format(o_table)
+        bash_args += " -a {}".format(input_table)
+
+        bash_args += " -r exr_results -d exr_results_depref"
+
         if self.logger.level == DEBUG:
             check_call(bash_args, shell=True)
         else:
             check_call(bash_args, stdout=DEVNULL, stderr=DEVNULL, shell=True)
-        self._create_index()
 
-    @error_catcher()
-    def _create_index(self):
-        self.logger.info("Creating index on the extrapolation results")
-        with db_connection(Extrapolator_Inverse_Results_Table,
-                           self.logger) as db:
-            db.create_index()
 
     @error_catcher()
     @utils.run_parser()

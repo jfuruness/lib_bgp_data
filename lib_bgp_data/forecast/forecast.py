@@ -116,6 +116,7 @@ class Forecast:
             _db.vacuum_analyze_checkpoint()
 
             what_if.run_pre_exr()
+
             # Runs the extrapolator and creates the neccessary indexes
             Extrapolator(exr_args).run_forecast("interesting_ann")
 
