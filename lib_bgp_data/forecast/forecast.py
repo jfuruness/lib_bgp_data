@@ -34,6 +34,7 @@ Possible Future Extensions:
 -Docs on both
 """
 
+from datetime import timedelta
 from ..relationships_parser import Relationships_Parser
 from ..roas_collector import ROAs_Collector
 from ..bgpstream_website_parser import BGPStream_Website_Parser
@@ -115,7 +116,7 @@ class Forecast:
         with db_connection(Database, self.logger) as _db:
             _db.vacuum_analyze_checkpoint()
 
-            what_if.run_pre_exr()
+            what_if.run_pre_exr((start-timedelta(days=7)).timestamp())
 
             # Runs the extrapolator and creates the neccessary indexes
             Extrapolator(exr_args).run_forecast("interesting_ann")
