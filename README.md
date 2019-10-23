@@ -2206,9 +2206,9 @@ Long term:
 ## FAQ
    * [lib\_bgp\_data](#lib_bgp_data)
 
-Q: What? WHAT???
+Q: More links to some research
 
-A: Read these, and become more confused:
+A: Read these:
 * [https://www.cs.bu.edu/~goldbe/papers/survey.pdf](https://www.cs.bu.edu/~goldbe/papers/survey.pdf)
 * [https://www.nsf.gov/awardsearch/showAward?AWD_ID=1840041&HistoricalAwards=false](https://www.nsf.gov/awardsearch/showAward?AWD_ID=1840041&HistoricalAwards=false)
 	* Feel free to email Dr. Amir Herzberg for this paper
