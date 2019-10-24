@@ -51,6 +51,7 @@ Possible Future Extensions:
 import re
 from .relationships_file import Rel_File
 from ..utils import utils, Config, error_catcher
+from datetime import date, datetime
 
 __author__ = "Justin Furuness"
 __credits__ = ["Justin Furuness"]
@@ -94,22 +95,21 @@ class Relationships_Parser:
             return
 
         # Gets the url and the integer date for the latest file
-        url, int_date = self._get_url()
+        url, date = self._get_url()
         # If this is a new file, the config date will be less than the
         # websites file date, and so we renew our data
         config = Config(self.logger)
-        if config.last_date < int_date:
+        if config.last_date < date:
             # Init Relationships_File class and parse file
             Rel_File(self.path, self.csv_dir, url, self.logger).parse_file()
             # Update the last date of the config
-            config.update_last_date(int_date)
+            config.update_last_date(date)
         else:
             self.logger.info("old file, not parsing")
 
 ########################
 ### Helper Functions ###
 ########################
-
     @error_catcher()
     def _get_url(self):
         """Gets urls to download relationship files and the dates
@@ -123,5 +123,14 @@ class Relationships_Parser:
         _elements = [x for x in utils.get_tags(url, 'a')[0]]
         # Gets the last file of all bz2 files
         file_url = [x["href"] for x in _elements if "bz2" in x["href"]][-1]
+        # Get html of file list 
+        _pre = [x for x in utils.get_tags(url, 'pre')[0]][0]
+        # Get the 'Last Modified' date for all files listed
+        _last_modified_dates = [x for x in str(_pre).split()\
+                                if re.match('\d{2}-\w{3}-\d{4}', x)]
+        # Get the 'Last Modified' date for the last bz2 file as a numerical string
+        file_last_modified = \
+         datetime.strptime(_last_modified_dates[-3], "%d-%b-%Y").date()
         # Returns the url plus the max number (the date) in the url
-        return url + file_url, max(map(int, re.findall(r'\d+', file_url)))
+        return url + file_url, file_last_modified
+

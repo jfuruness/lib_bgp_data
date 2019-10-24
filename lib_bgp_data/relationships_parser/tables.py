@@ -15,9 +15,13 @@ table name followed by a _Table since it inherits from the Database
 class. In addition, since this data is used for the rovpp simulation,
 there are also rovpp tables
 
-There is also the rovpp_as_connectivity_table. This table is generated
-from the rovpp relationship tables, and contains info on the
-connectivity of all ASes.
+There is also the rovpp_as_connectivity_table and the rovpp_asses_table. 
+The rovpp_as_connectivity_table is generated from the rovpp relationship
+tables, and contains info on the connectivity of all ASes. The class
+rovpp_ases_table can clear the table it creates at initialization, 
+fill itself with data from the rovpp_peers and rovpp_customer_providers
+table, and has the name and column properties that are used in the 
+utils function to insert CSVs into the database.
 
 Design choices:
     -There is no index creation function since indexes are never used
@@ -54,11 +58,11 @@ class Customer_Providers_Table(Database):
         Called during initialization of the database class."""
 
         # Drops the table if it exists
-        self.cursor.execute("DROP TABLE IF EXISTS customer_providers;")
-        sql = """CREATE UNLOGGED TABLE IF NOT EXISTS customer_providers (
+        self.cursor.execute("DROP TABLE IF EXISTS {};".format(self.name))
+        sql = """CREATE UNLOGGED TABLE IF NOT EXISTS {} (
               provider_as bigint,
               customer_as bigint
-              );"""
+              );""".format(self.name)
         self.cursor.execute(sql)
 
 
@@ -76,57 +80,80 @@ class Peers_Table(Database):
         Called during initialization of the database class."""
 
         # Drops the table if it exists
-        self.cursor.execute("DROP TABLE IF EXISTS peers;")
-        sql = """CREATE UNLOGGED TABLE IF NOT EXISTS peers (
+        self.cursor.execute("DROP TABLE IF EXISTS {};".format(self.name))
+        sql = """CREATE UNLOGGED TABLE IF NOT EXISTS {} (
               peer_as_1 bigint,
               peer_as_2 bigint
-              );"""
+              );""".format(self.name)
         self.cursor.execute(sql)
 
 
-class ROVPP_Customer_Providers_Table(Database):
-    """Class with database functionality.
+class ROVPP_Customer_Providers_Table(Customer_Providers_Table):
+    """Class with database functionality. self.name overridden
 
     In depth explanation at the top of the file."""
 
     __slots__ = []
 
-    @error_catcher()
-    def _create_tables(self):
-        """Creates tables if they do not exist.
-
-        Called during initialization of the database class."""
-
-        # Drops the table if it exists
-        self.cursor.execute("DROP TABLE IF EXISTS rovpp_customer_providers;")
-        sql = """CREATE UNLOGGED TABLE IF NOT EXISTS rovpp_customer_providers (
-              provider_as bigint,
-              customer_as bigint
-              );"""
-        self.cursor.execute(sql)
+    pass
 
 
-class ROVPP_Peers_Table(Database):
-    """Class with database functionality.
+class ROVPP_Peers_Table(Peers_Table):
+    """Class with database functionality. self.name overridden
 
     In depth explanation at the top of the file."""
 
     __slots__ = []
 
+    pass
+
+
+class ROVPP_ASes_Table(Database):
+    """Class with database functionality.
+
+    In depth explanation at the top of the file."""
+    
+    __slots__ = []
+
     @error_catcher()
     def _create_tables(self):
-        """Creates tables if they do not exist.
-
-        Called during initialization of the database class."""
-
-        # Drops the table if it exists
-        self.cursor.execute("DROP TABLE IF EXISTS rovpp_peers;")
-        sql = """CREATE UNLOGGED TABLE IF NOT EXISTS rovpp_peers (
-              peer_as_1 bigint,
-              peer_as_2 bigint
-              );"""
+        """Creates tables if they do not exists.
+    
+        Called during intialization of the database class.
+        """
+    
+        sql = """CREATE UNLOGGED TABLE IF NOT EXISTS rovpp_ases (
+                 asn bigint,
+                 as_type smallint,
+                 impliment BOOLEAN
+                 );"""
         self.cursor.execute(sql)
 
+    def clear_table(self):
+        """Clears the rovpp_ases table.
+
+        Should be called at the start of every run.
+        """
+
+        self.logger.debug("Dropping ROVPP_ASes")
+        self.cursor.execute("DROP TABLE IF EXISTS rovpp_ases")
+        self.logger.debug("ROVPP_ASes Table dropped")
+
+    def fill_table(self):
+        """Populates the rovpp_ases table with data from the tables
+        rovpp_peers and rovpp_customer_providers.
+        """
+        self.clear_table()
+        self.logger.debug("Initializing rovpp_as_table")
+        sql = """CREATE UNLOGGED TABLE IF NOT EXISTS rovpp_ases AS (
+                 SELECT customer_as AS asn, 'bgp' AS as_type, FALSE AS impliment FROM (
+                     SELECT DISTINCT customer_as FROM rovpp_customer_providers
+                     UNION SELECT provider_as FROM rovpp_customer_providers
+                     UNION SELECT peer_as_1 FROM rovpp_peers
+                     UNION SELECT peer_as_2 FROM rovpp_peers) union_temp
+                 );"""
+        self.cursor.execute(sql)
+    
 
 class ROVPP_AS_Connectivity_Table(Database):
     """Class with database functionality.
