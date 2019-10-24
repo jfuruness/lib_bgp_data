@@ -8,6 +8,7 @@ _config dictionary.
 """
 
 import os
+from datetime import datetime
 from configparser import ConfigParser as SCP
 from configparser import NoSectionError
 from psutil import virtual_memory
@@ -108,7 +109,9 @@ class Config:
 
         section = "bgp"
         subsection = "last_relationship_update"
-        return int(self._read_config(section, subsection))
+        _date = self._read_config(section, subsection)
+        _datetime = datetime.strptime(_date, "%Y-%m-%d")
+        return _datetime.date()
 
     @property
     def ram(self):
@@ -140,8 +143,8 @@ class Config:
     @error_catcher()
     def update_last_date(self, date):
         """Edits the last date parsed in the config file."""
-
-        self._write_to_config("bgp", "last_relationship_update", date)
+        # Converted date to string
+        self._write_to_config("bgp", "last_relationship_update", str(date))
 
     def _write_to_config(self, section, subsection, string):
         """Writes to a config file."""
