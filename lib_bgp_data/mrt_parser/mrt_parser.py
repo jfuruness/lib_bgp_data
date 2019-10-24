@@ -99,7 +99,7 @@ Possible Future Extensions:
 
 
 import requests
-from datetime import timedelta
+from datetime import timedelta, date
 from .mrt_file import MRT_File
 from ..utils import error_catcher, utils, db_connection
 from .tables import MRT_Announcements_Table
@@ -128,7 +128,7 @@ class MRT_Parser:
         utils.set_common_init_args(self, args)
         with db_connection(MRT_Announcements_Table, self.logger) as ann_table:
             # Clears the table for insertion
-            ann_table.clear_table()
+            ann_table.clear_tables()
             # Tables can't be created in multithreading so it's done now
             ann_table._create_tables()
 
@@ -193,6 +193,29 @@ class MRT_Parser:
         return [x.get('url') for x in data.get('data').get('dumpFiles')]
 
     @error_catcher()
+    def _get_mrt_urls_iso(self):
+        """Gets URLs to download MRT files from Isolario.it"""
+
+        # API URL
+        url = "http://isolario.it/Isolario_MRT_data/"
+        # Get the folder name  needed at this time ("YYYY_MM/")
+        folder = date.today().strftime("%Y_%m/")
+        # Make a list for the most recent RIB from each subdirectory
+        mrt_urls = []
+        # Get the most recent RIB from each subdirectory below
+        for sub in ["Alderaan/", "Dagobah/", "Korriban/", "Naboo/", "Taris/"]:
+            # Find all html taks with links
+            _elements = [x for x in utils.get_tags(url + sub + folder,
+                                                   'a')[0]]
+            # Get the last RIB file in the list
+            _most_recent = [x["href"] for x in _elements if "rib" in 
+                            x["href"] and "bz2" in x["href"]][-1]
+            # Add it to the list
+            mrt_urls.append(_most_recent)
+        # Return the list of MRT URLs from all 5 subdirectories
+        return mrt_urls
+
+    @error_catcher()
     def _multiprocess_download(self, dl_threads, urls):
         """Downloads MRT files in parallel.
 
@@ -249,3 +272,4 @@ class MRT_Parser:
             ann_table.cursor.execute("VACUUM ANALYZE;")
             # A checkpoint is run here so that RAM isn't lost
             ann_table.cursor.execute("CHECKPOINT;")
+

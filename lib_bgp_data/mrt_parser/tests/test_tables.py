@@ -30,7 +30,7 @@ class Test_MRT_Announcements_Table:
         # Initializes the table if it doesn't exist
         with db_connection(MRT_Announcements_Table) as db:
             # Initialized correctly
-            assert True 
+            assert True
 
     def test_mrt_announcements_table_drop(self):
         """Tests the clear_table function of the table.
@@ -42,7 +42,7 @@ class Test_MRT_Announcements_Table:
         # Initializes the table if it doesn't exist
         with db_connection(MRT_Announcements_Table) as db:
             # Makes sure that the mrt table is deleted
-            db.clear_table()
+            db.clear_tables()
             try:
                 # This should fail
                 db.execute("SELECT * FROM mrt_announcements")
@@ -64,7 +64,7 @@ class Test_MRT_Announcements_Table:
         # Initializes the table if it doesn't exist
         with db_connection(MRT_Announcements_Table) as db:
             # Makes sure that the mrt table is deleted
-            db.clear_table()
+            db.clear_tables()
             # Inits the table when it does not exist
             db._create_tables()
             # Table should exist and have no resuts
@@ -83,7 +83,7 @@ class Test_MRT_Announcements_Table:
         # Initializes the table if it doesn't exist
         with db_connection(MRT_Announcements_Table) as db:
             # Makes sure that the mrt table is deleted
-            db.clear_table()
+            db.clear_tables()
             # Creates the tables from scratch
             db._create_tables()
             # Insert one IPV4 and one IPV6 prefix
@@ -103,7 +103,7 @@ class Test_MRT_Announcements_Table:
             assert prefixes[0]["prefix"] == "1.2.3.0/24"
 
             # Reset with new fake data
-            db.clear_table()
+            db.clear_tables()
             db._create_tables()
             self._insert_fake_data(db)
 
@@ -115,14 +115,14 @@ class Test_MRT_Announcements_Table:
             assert prefixes[0]["prefix"] == "2001:db8::/32"
 
             # Gets ride of test table
-            db.clear_table()
- 
+            db.clear_tables()
+
     def _insert_fake_data(self, db):
         """Inserts one IPV4 and one IPV6 prefix into the MRT table"""
 
         sqls = ["""INSERT INTO mrt_announcements(prefix)
-                    VALUES ('1.2.3.0/24')""",
-                    """INSERT INTO mrt_announcements(prefix)
-                    VALUES ('2001:db8::/32')"""]
+                   VALUES ('1.2.3.0/24')""",
+                """INSERT INTO mrt_announcements(prefix)
+                   VALUES ('2001:db8::/32')"""]
         for sql in sqls:
             db.execute(sql)
