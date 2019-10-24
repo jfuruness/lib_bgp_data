@@ -4,14 +4,14 @@ def _get_console_scripts():
     """Returns all console scripts, needs docs"""
 
     console_scripts = []
-    permutation_funcs = [_roas_collector_permuations,
-                         _relationships_parser_permutations]
+    permutations_funcs = [_roas_collector_permutations,
+                          _relationships_parser_permutations,
+                          _mrt_parser_permutations]
     for func in permutations_funcs:
         permutations, module_name = func()
-        for permuation in permutations:
+        for permutation in permutations:
             append_str = '= lib_bgp_data.{}.__main__:main'.format(module_name)
             console_scripts.append(permutation + append_str)
-
     return console_scripts
 
 def _roas_collector_permutations():
@@ -38,7 +38,7 @@ def _relationships_parser_permutations():
             for k in ["_", " ", "-"]:
                 for l in ["Parser", "parser", "PARSER", "Par", "par", "PAR"]:
                     possible_permutations.append(i + j + k + l)
-    return possible_permutations
+    return possible_permutations, "relationships_parser"
 
 def _mrt_parser_permutations():
     """Gets every possible combination pf arg for usability"""
@@ -50,7 +50,7 @@ def _mrt_parser_permutations():
                 for m in ["Parser", "parser", "PARSER",
                           "PAR", "par", "par"]:
                     possible_permutations.append(j + k + l + m)
-    return possible_permutations
+    return possible_permutations, "mrt_parser"
 
 
 setup(
