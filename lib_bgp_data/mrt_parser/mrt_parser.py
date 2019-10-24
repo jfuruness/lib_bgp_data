@@ -208,7 +208,7 @@ class MRT_Parser:
             _elements = [x for x in utils.get_tags(url + sub + folder,
                                                    'a')[0]]
             # Get the last RIB file in the list
-            _most_recent = [x["href"] for x in _elements if "rib" in 
+            _most_recent = [x["href"] for x in _elements if "rib." in 
                             x["href"] and "bz2" in x["href"]][-1]
             # Add it to the list
             mrt_urls.append(_most_recent)
