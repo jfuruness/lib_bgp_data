@@ -32,12 +32,12 @@ def create_gist(table_name, extra=False):
     origin = "extra_origin" if extra else "origin"
 
     return """CREATE INDEX ON {}
-           USING GIST({} inet_ops, {});""".format(table, prefix, origin)
+           USING GIST({} inet_ops, {});""".format(table_name, prefix, origin)
 
 def create_index(table_name, indexed_column):
     return "CREATE INDEX ON {}({});".format(table_name, indexed_column)
 
-def create_btree(table_name, indexed_column, extra=False, asn=False):
+def create_btree(table_name, extra=False, asn=False):
     indexed_column = "extra_mrt_index" if extra else "mrt_index"
     indexed_column = "asn" if asn else indexed_column
     return create_index(table_name, indexed_column)
@@ -56,9 +56,9 @@ def create_table_w_index(table_name, select_sql, index_func, extra=False):
 def create_table_w_gist(t_name, select_sql, extra=False):
     return create_table_w_index(t_name, select_sql, create_gist, extra)
 
-def create_table_w_btree(table_name, select_sql, extra=False):
+def create_table_w_btree(t_name, select_sql, extra=False):
     return create_table_w_index(t_name, select_sql, create_btree, extra)
 
-def create_table_w_btree_asn(table_name, select_sql, extra=False):
+def create_table_w_btree_asn(t_name, select_sql, extra=False):
     return create_table_w_index(t_name, select_sql, create_btree, extra, asn=True)
 

@@ -86,14 +86,14 @@ class Forecast:
             Install().install(fresh_install)
         # First we want to parse the mrt files and create the index
         # This uses all the threads, so no need to multithread
-        MRT_Parser(mrt_args).parse_files(start, end, **mrt_parse_args)
+#        MRT_Parser(mrt_args).parse_files(start, end, **mrt_parse_args)
         # Then we get the relationships data. We aren't going to run this
         # multithreaded because it is so fast, there is no point
-        Relationships_Parser(rel_args).parse_files(**rel_parse_args)
+#        Relationships_Parser(rel_args).parse_files(**rel_parse_args)
         # Now lets get roas, its fast so no multiprocessing
-        ROAs_Collector(roas_args).parse_roas()
+#        ROAs_Collector(roas_args).parse_roas()
         # Get hijack data. The first time takes a while
-        BGPStream_Website_Parser(web_args).parse(start, end, **web_parse_args)
+#        BGPStream_Website_Parser(web_args).parse(start, end, **web_parse_args)
 
         with db_connection(Database, self.logger) as _db:
 
@@ -107,7 +107,7 @@ class Forecast:
             _db.vacuum_analyze_checkpoint()
 
         # Runs the rpki validator and stores data in db
-        RPKI_Validator(rpki_args).run_validator()
+#        RPKI_Validator(rpki_args).run_validator()
 
         what_if = What_If_Analysis(what_if_args)
 
@@ -116,7 +116,8 @@ class Forecast:
         with db_connection(Database, self.logger) as _db:
             _db.vacuum_analyze_checkpoint()
 
-            what_if.run_pre_exr((start-timedelta(days=7)).timestamp())
+            seconds_in_a_week = 604800
+            what_if.run_pre_exr(start-seconds_in_a_week)
 
             # Runs the extrapolator and creates the neccessary indexes
             Extrapolator(exr_args).run_forecast("interesting_ann")
