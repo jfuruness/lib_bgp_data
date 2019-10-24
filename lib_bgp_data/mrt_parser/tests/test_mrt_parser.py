@@ -10,6 +10,7 @@ updating to be more recent. Possibly same with the api_param_mods.
 
 import requests
 import os
+import sys    #NOTE: remove later
 from multiprocessing import cpu_count
 from subprocess import check_call
 #import validators
@@ -100,6 +101,23 @@ class Test_MRT_Parser:
         """
 
         self.test_get_mrt_urls(param_mods=False)
+
+    def test_get_mrt_urls_iso(self):
+        """Tests the get_mrt_urls_iso function which should return a list 
+        of URLs from the Isolario.it page under each of its different
+        subdirectories."""
+
+        # Initialize a parser object
+        parser = MRT_Parser()
+        # Get MRT Files
+        mrt_file_urls = parser._get_mrt_urls_iso() 
+        # Each of the 5 subdirectories contain a folder for the current month
+        # and from each folder we only want one (the most recent) rib
+        assert len(mrt_file_urls) == 5
+        # Make sure each element of the list returned is a valid URL
+#       for url in mrt_file_urls:
+#            assert validators.url(url)
+        return mrt_file_urls
 
     def test_multiprocess_download(self, parser=None,
                                    clean=False,
@@ -361,10 +379,14 @@ class Test_MRT_Parser:
         Used as a baseline for multiprocess parsing.
         """
 
+        # Get MRT files from download test
         mrt_files = \
          self.test_multiprocess_download(MRT_Parser(), param_mods) 
+        # Establish a connection with the database
         with db_connection(MRT_Announcements_Table, clear=True) as db:
+            # Parse each file individually
             for f in mrt_files:
                 f.parse_file(bgpscanner)
+            # Query the table for all entries
             select_all = db.execute("SELECT * FROM mrt_announcements")
         return select_all

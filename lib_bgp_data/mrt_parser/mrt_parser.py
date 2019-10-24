@@ -160,6 +160,7 @@ class MRT_Parser:
 
         # Gets urls of all mrt files needed
         urls = self._get_mrt_urls(start, end, api_param_mods)
+#        urls += self._get_mrt_urls_iso()
         self.logger.debug("Total files {}".format(len(urls)))
         # Get downloaded instances of mrt files using multithreading
         mrt_files = self._multiprocess_download(download_threads, urls)
