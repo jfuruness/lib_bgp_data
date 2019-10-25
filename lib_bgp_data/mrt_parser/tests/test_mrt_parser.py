@@ -10,7 +10,6 @@ updating to be more recent. Possibly same with the api_param_mods.
 
 import requests
 import os
-import sys    #NOTE: remove later
 from multiprocessing import cpu_count
 from subprocess import check_call
 #import validators
@@ -176,8 +175,10 @@ class Test_MRT_Parser:
         singular_mods = self._single_process_download(urls_param_mods)
         # Download using multiprocessing
         multi_mods = self.test_multiprocess_download(param_mods=True)
-        # Make sure both give the same output
+        # Make sure both give the same output and have elements
         assert len(singular_mods) == len(multi_mods)
+        assert len(multi_mods) > 0
+        # Make sure the file URLs match in the subsets
         singular_mods.sort(key=lambda f: f.url)
         multi_mods.sort(key=lambda f: f.url)
         i = 0
@@ -266,7 +267,6 @@ class Test_MRT_Parser:
         assert multi_params == singular_params
 
     def OFFtest_single_vs_multiprocess_parse_dls_no_param_mods(self):
-        
         """Test single vs. multiprocess parsing without api parameters"""
 
         # Repeat last test, but without using api parameters
@@ -303,9 +303,9 @@ class Test_MRT_Parser:
 
         For a better explanation, see the test_parse_files function.
         """
-        
+
         self.test_parse_files(param_mods=False)
-            
+
 ########################
 ### Helper Functions ###
 ########################
@@ -380,8 +380,9 @@ class Test_MRT_Parser:
         """
 
         # Get MRT files from download test
-        mrt_files = \
-         self.test_multiprocess_download(MRT_Parser(), param_mods) 
+        mrt_urls = self.test_get_mrt_urls()
+        # Using the single process download since test failed with multi
+        mrt_files = self._single_process_download(mrt_urls)
         # Establish a connection with the database
         with db_connection(MRT_Announcements_Table, clear=True) as db:
             # Parse each file individually
