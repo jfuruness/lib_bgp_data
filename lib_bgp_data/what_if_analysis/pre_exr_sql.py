@@ -26,7 +26,6 @@ def get_pre_exr_sql(valid_before_time):
                   "unique_prefix_origins",
                   "hijack_temp"]:
         create_index_sql.append(create_gist(table))
-    create_index_sql.append(create_index("mrt_announcements", "mrt_index"))
     create_index_sql.append(create_index("rov_validity", "validity"))
 
     all_sql.extend(create_index_sql)
