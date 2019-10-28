@@ -30,7 +30,7 @@ def get_pre_exr_sql(valid_before_time):
 
     all_sql.extend(create_index_sql)
 
-    all_sql += "VACUUM ANALYZE;"
+    all_sql.append("VACUUM ANALYZE;")
 
     all_policies = {Policies.ASN.value: {Validity.INVALID.value: "= -2",
                                          Validity.VALID.value: "!= -2"},

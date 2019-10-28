@@ -43,10 +43,11 @@ def create_btree(table_name, extra=False, asn=False):
     return create_index(table_name, indexed_column)
 
 def create_table_w_index(table_name, select_sql, index_func, extra=False):
-    create_table_sql = "CREATE UNLOGGED TABLE IF NOT EXISTS {} AS ("
+    create_table_sql = "CREATE UNLOGGED TABLE IF NOT EXISTS {} AS (".format(
+        table_name)
     create_table_sql += select_sql + ");"
 
-    sql = ["DROP TABLE IF EXISTS table_name",
+    sql = ["DROP TABLE IF EXISTS {}".format(table_name),
             create_table_sql,
             index_func(table_name)]
     if extra:
