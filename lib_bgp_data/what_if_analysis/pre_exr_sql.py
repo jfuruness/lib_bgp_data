@@ -94,7 +94,7 @@ def get_pre_exr_sql(valid_before_time):
             UNION
             SELECT extra_prefix, extra_origin FROM invalid_rov_extra_prefix_origins"""))
 
-    interesting_sql.extend("VACUUM ANALYZE;")
+    interesting_sql.append("VACUUM ANALYZE;")
 
     interesting_sql.extend(
         create_table_w_gist(
@@ -113,7 +113,7 @@ def get_pre_exr_sql(valid_before_time):
     for col in ["time", "mrt_index"]:
         interesting_sql.append(create_index("interesting_ann", col))
 
-    interesting_sql.extend("VACUUM ANALYZE;")
+    interesting_sql.append("VACUUM ANALYZE;")
     all_sql.extend(interesting_sql)
 
     for policy in [x.value for x in Policies.__members__.values()]:
