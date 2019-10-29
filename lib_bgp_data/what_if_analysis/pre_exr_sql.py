@@ -178,7 +178,7 @@ def get_pre_exr_sql(valid_before_time):
                         FROM interesting_ann m
                    INNER JOIN invalid_{0}_time_ann_indexes i
                         ON i.mrt_index = m.mrt_index
-                   INNER JOIN interest_ann m2
+                   INNER JOIN interesting_ann m2
                         ON i.mrt_index != m2.mrt_index AND
                             (m.prefix << m2.prefix
                             OR (m.prefix = m2.prefix AND m.origin != m2.origin))""".format(policy, valid_before_time),
