@@ -108,7 +108,7 @@ def get_pre_exr_sql(valid_before_time):
             INNER JOIN interesting_prefix_origins i
                 ON i.prefix = m.prefix AND i.origin = m.origin"""))
 
-    interesting_sql.extend("ALTER TABLE interesting_ann ADD COLUMN mrt_index SERIAL PRIMARY KEY;")
+    interesting_sql.append("ALTER TABLE interesting_ann ADD COLUMN mrt_index SERIAL PRIMARY KEY;")
 
     for col in ["time", "mrt_index"]:
         interesting_sql.append(create_index("interesting_ann", col))

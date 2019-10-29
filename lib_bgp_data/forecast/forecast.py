@@ -117,7 +117,9 @@ class Forecast:
             _db.vacuum_analyze_checkpoint()
 
             seconds_in_a_week = 604800
-            what_if.run_pre_exr(start-seconds_in_a_week)
+            what_if.run_pre_exr(start - seconds_in_a_week)
+
+            input("run depref")
 
             # Runs the extrapolator and creates the neccessary indexes
             Extrapolator(exr_args).run_forecast("interesting_ann")
