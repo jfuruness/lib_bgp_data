@@ -189,6 +189,9 @@ class MRT_Parser:
         # Request for data and conversion to json
         self.logger.debug(requests.get(url=URL, params=PARAMS).url)
         data = requests.get(url=URL, params=PARAMS).json()
+
+        self.logger.debug(requests.get(url=URL, params=PARAMS).url)
+
         # Returns the urls from the json
         return [x.get('url') for x in data.get('data').get('dumpFiles')]
 
