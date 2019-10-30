@@ -19,6 +19,7 @@ import functools
 from datetime import datetime, timedelta
 import csv
 import json
+import pytz
 from bz2 import BZ2Decompressor
 from bs4 import BeautifulSoup as Soup
 from pathos.multiprocessing import ProcessingPool
