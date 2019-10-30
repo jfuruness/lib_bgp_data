@@ -49,6 +49,7 @@ setup(
         'psutil',
         'psycopg2-binary',
         'pytest',
+        'pytz',
         'Werkzeug'
     ],
     classifiers=[
