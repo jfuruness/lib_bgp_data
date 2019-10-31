@@ -50,7 +50,7 @@ def _mrt_parser_permutations():
     for j in ["MRT", "mrt"]:
         for k in ["S", "s", ""]:
             for l in ["-", " ", "_"]:
-                for m in ["Parser", "parser", "par", "par"]:
+                for m in ["Parser", "parser", "par", "Par"]:
                     possible_permutations.append(j + k + l + m)
     return possible_permutations, "mrt_parser"
 

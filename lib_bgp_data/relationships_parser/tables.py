@@ -85,7 +85,6 @@ class Peers_Table(Database):
         Called during initialization of the database class."""
 
         # Drops the table if it exists
-        self.cursor.execute("DROP TABLE IF EXISTS {};".format(self.name))
         sql = """CREATE UNLOGGED TABLE IF NOT EXISTS {} (
               peer_as_1 bigint,
               peer_as_2 bigint

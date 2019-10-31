@@ -31,12 +31,12 @@ class Test_Relationships_File:
         """
 
         # Initialize a Relationships Parser object
-        rel_par = Relationships_Parser()
+        self.rel_par = Relationships_Parser()
         # Initialize Relationships File object
-        self.rel_file = Rel_File(rel_par.path,
-                                 rel_par.csv_dir,
-                                 rel_par._get_urls()[0],  # Gets URL
-                                 rel_par.logger)
+        self.rel_file = Rel_File(self.rel_par.path,
+                                 self.rel_par.csv_dir,
+                                 self.rel_par._get_urls()[0],  # Gets URL
+                                 self.rel_par.logger)
 
     def test__db_insert(self):
         """Tests the _db_insert function"""

@@ -174,7 +174,7 @@ class MRT_Parser:
     @error_catcher()
     def _get_mrt_urls(self, start, end, PARAMS_modification={}):
         caida_urls = self._get_caida_mrt_urls(start, end, PARAMS_modification)
-        isolario_urls = self._get_mrt_urls_iso(start, end)
+        isolario_urls = self._get_iso_mrt_urls(start, end)
 
         # If you ever want RIPE without the caida api, look at the commit
         # Where the relationship_parser_tests where merged in
@@ -206,7 +206,7 @@ class MRT_Parser:
         return [x.get('url') for x in data.get('data').get('dumpFiles')]
 
     @error_catcher()
-    def _get_ios_mrt_urls(self, start, end):
+    def _get_iso_mrt_urls(self, start, end):
         """Gets URLs to download MRT files from Isolario.it"""
 
         # API URL
