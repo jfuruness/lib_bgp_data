@@ -26,9 +26,8 @@ __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
 
-# TODO: 
+# TODO:
 #       fix 'validators' import error for good
-#       fix single vs multi parser test
 
 
 class Test_MRT_Parser:
@@ -44,7 +43,7 @@ class Test_MRT_Parser:
         # Two are used to test for multiprocessing
         # Two are also used to limit the number of files and reduce runtime
         self._api_param_mods = {"collectors[]": ["route-views.telxatl",
-                                              "route-views2"]}
+                                                 "route-views2"]}
         # This errors due to the amount of times the mrt parser is initialized
         # https://github.com/uqfoundation/pathos/issues/111
         # I tried the fixes suggested but it did not fix the problem
@@ -88,6 +87,8 @@ class Test_MRT_Parser:
                                              api_param_mods)
         # Checks that the number of urls is the same as the num_files
         assert len(mrt_file_urls) == num_files
+        print(mrt_file_urls[0])
+        assert False
         # Makes sure that all of them are actually urls
 #        for url in mrt_file_urls:
 #            assert validators.url(url)
@@ -102,17 +103,18 @@ class Test_MRT_Parser:
         self.test_get_mrt_urls(param_mods=False)
 
     def test_get_mrt_urls_iso(self):
-        """Tests the get_mrt_urls_iso function which should return a list 
+        """Tests the get_mrt_urls_iso function which should return a list
         of URLs from the Isolario.it page under each of its different
         subdirectories."""
 
         # Initialize a parser object
         parser = MRT_Parser()
         # Get MRT Files
-        mrt_file_urls = parser._get_mrt_urls_iso() 
-        # Each of the 5 subdirectories contain a folder for the current month
-        # and from each folder we only want one (the most recent) rib
-        assert len(mrt_file_urls) == 5
+        mrt_file_urls = parser._get_mrt_urls_iso(self._start, self._end)
+        # Each of the 5 subdirectories contain a folder for the each month
+        # and from each folder we only want one rib closest to the start
+        # of the time interval but not if it is after the end
+        assert 0 < len(mrt_file_urls) <= 5
         # Make sure each element of the list returned is a valid URL
 #       for url in mrt_file_urls:
 #            assert validators.url(url)
@@ -163,7 +165,7 @@ class Test_MRT_Parser:
         """Compares the outputs of single process vs. multiprocess
         downloading of MRT files.
 
-        This test will take a long time as it checks both with and 
+        This test will take a long time as it checks both with and
         without api parameters.
         """
 
@@ -207,7 +209,7 @@ class Test_MRT_Parser:
 
         # Initialize the parser
         parser = MRT_Parser()
-        # Use earlier test to get MRT files 
+        # Use earlier test to get MRT files
         mrt_files = self.test_multiprocess_download(parser=parser,
                                                     clean=False,
                                                     param_mods=param_mods)
@@ -215,7 +217,7 @@ class Test_MRT_Parser:
         total_lines = self._get_total_number_of_lines(mrt_files)
         # Clear True calls clear_tables and then _create_tables
         with db_connection(MRT_Announcements_Table, clear=True) as db:
-            # This errors due to the amount of times the mrt parser is initialized
+            # This errors from the amount of times the parser initialization
             # https://github.com/uqfoundation/pathos/issues/111
             # I tried the fixes suggested but it did not fix the problem
             # So now I just changed the number of threads every time
@@ -261,8 +263,8 @@ class Test_MRT_Parser:
         multi_params = len(self.test_multiprocess_parse_dls())
         # Parse again with a single process and store table entry count
         singular_params = \
-         len(self._single_process_parse_dls(param_mods=True,
-                                            bgpscanner=True))
+            len(self._single_process_parse_dls(param_mods=True,
+                                               bgpscanner=True))
         # Make sure these counts are the same
         assert multi_params == singular_params
 
@@ -272,14 +274,14 @@ class Test_MRT_Parser:
         # Repeat last test, but without using api parameters
         # Store the count of entries after multiprocess parsing
         multi_no_params = \
-         len(self.test_muliprocess_parse_dls_no_param_mods())
+            len(self.test_muliprocess_parse_dls_no_param_mods())
         # Store count of entries after single process parsing
         singular_no_params = \
-         len(self._single_process_parse_dls(param_mods=False,
-                                            bgpscanner=True))
+            len(self._single_process_parse_dls(param_mods=False,
+                                               bgpscanner=True))
         # Make sure both entry counts are the same
         assert multi_no_params == singular_no_params
-       
+
     def test_parse_files(self, param_mods=True):
         """Tests the parse_files function with IPV4=True, IPV6=True.
 

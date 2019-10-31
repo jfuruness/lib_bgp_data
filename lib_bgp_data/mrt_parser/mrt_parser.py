@@ -100,6 +100,7 @@ Possible Future Extensions:
 
 import requests
 from datetime import timedelta, date
+import time
 from .mrt_file import MRT_File
 from ..utils import error_catcher, utils, db_connection
 from .tables import MRT_Announcements_Table
@@ -194,26 +195,119 @@ class MRT_Parser:
         return [x.get('url') for x in data.get('data').get('dumpFiles')]
 
     @error_catcher()
-    def _get_mrt_urls_iso(self):
+    def _get_mrt_urls_iso(self, start, end):
         """Gets URLs to download MRT files from Isolario.it"""
 
         # API URL
         url = "http://isolario.it/Isolario_MRT_data/"
-        # Get the folder name  needed at this time ("YYYY_MM/")
-        folder = date.today().strftime("%Y_%m/")
+        # Get the folder names based on start and end UNIX times
+        start_folder = time.strftime("%Y_%m/", time.localtime(start))
+        end_folder = time.strftime("%Y_%m/", time.localtime(end))
+        # Get RIB file names based on start and end UNIX times
+        # The file name format is 'rib.YYYYMMDD.HH00.bz2'
+        start_filename = "rib." + \
+                         time.strftime("%Y%m%d.%H00",
+                                       time.localtime(start)) + \
+                         ".bz2"
+        end_filename = "rib." + \
+                       time.strftime("%Y%m%d.%H00",
+                                     time.localtime(end)) + \
+                       ".bz2"
         # Make a list for the most recent RIB from each subdirectory
         mrt_urls = []
-        # Get the most recent RIB from each subdirectory below
+        # Get the oldest RIB in the time interval from each subdirectory below
         for sub in ["Alderaan/", "Dagobah/", "Korriban/", "Naboo/", "Taris/"]:
-            # Find all html taks with links
+            # Get the folder name needed for interval
+            # Check for '_' since all folders are named 'YYYY_MM/'
+            _folder_links = [x["href"] for
+                             x in utils.get_tags(url + sub, 'a')[0]
+                             if "_" in x["href"]]
+            # Start from the beginning since ascending order
+            # Start at index 1 to skip parent directory
+            i = 1
+            while(_folder_links[i] < start_folder and
+                  i < len(_folder_links)):
+                # Work down towards newer folders to find oldest in interval
+                # If at the end, take the most recent RIB?
+                i += 1
+            # If the folder date is outside of the interval
+            # like, if the oldest folder is still outside of our timeframe
+            # then we don't want it
+            if _folder_links[i] > end_folder:
+                continue
+            folder = _folder_links[i]
+            # Find all html tags with links
             _elements = [x for x in utils.get_tags(url + sub + folder,
                                                    'a')[0]]
-            # Get the last RIB file in the list
-            _most_recent = [x["href"] for x in _elements if "rib." in 
-                            x["href"] and "bz2" in x["href"]][-1]
+            # Find all RIB file URLs from those tags
+            _files = [x["href"] for x in utils.get_tags(url + sub + folder,
+                                                        'a')[0]
+                      if "rib." in x["href"] and "bz2" in x["href"]]
+            # Start from beginning since ascending order
+            i = 0
+            while(_files[i] < "/Isolario_MRT_data/" +
+                              sub +
+                              folder +
+                              start_filename and
+                  i < len(_files)):
+                # Work down towards newer files to find oldest in interval
+                i += 1
+            # Get the oldest RIB in the interval
+            _rib = _files[i]
+            # If this RIB is outside of our interval, we don't want it
+            if _rib > "/Isolario_MRT_data/" + sub + folder + end_filename:
+                continue
+            # Add it to the list
+            mrt_urls.append("http://isolario.it" + _rib)
+        # Return the list of MRT URLs from all 5 subdirectories
+        return mrt_urls
+
+    @error_catcher()
+    def _get_mrt_urls_ripe(self, start=None, end=None):
+        """Gets URLs to download MRT files from Ripe.net"""
+
+        # ONLY FOR THE MOST RECENT RIB FILES AT THE MOMENT
+        # API URL
+        url = "https://www.ripe.net/analyse/internet-measurements/" \
+              "routing-information-service-ris/ris-raw-data"
+        # Get the subdirectories needed
+        _elements = [x for x in utils.get_tags(url, 'a')[0]]
+        dirs = []
+        for x in _elements:
+            try:
+                if "ripe.net/rrc" in x["href"]:
+                    dirs.append(x["href"])
+            except KeyError:
+                continue
+        # Get the folder name needed at this time ("YYYY.MM/")
+        folder = date.today().strftime("%Y.%m/")
+        # Make a list for the MRT URLs
+        mrt_urls = []
+        # Iterate over all found directories
+        for sub in dirs:
+            if start and end:
+                # Get the folder name needed for interval
+                _folder_links = [x for x in utils.get_tags(url + sub, 'a')[0]]
+                # Start at the end since descending order
+                i = len(_folder_links) - 1
+                while(_folder_links[i] > start_folder and
+                      i > 0):
+                    # Work up towards newer folders to find oldest in interval
+                    i -= 1
+                folder = _folder_links[i]
+            # Find all tags with links (some do not exist)
+            try:
+                # All elements in dirs contain 'http://data.ris.ripe.net/'
+                _elements = [x for x in utils.get_tags(sub + folder,
+                                                       'a')[0]]
+            except:
+                continue
+            # Get the most recent RIB file (sorted in descending order)
+            _most_recent = [x["href"] for x in _elements if "bview" in
+                            x["href"] and "gz" in x["href"]][0]
             # Add it to the list
             mrt_urls.append(_most_recent)
-        # Return the list of MRT URLs from all 5 subdirectories
+        # Return the list of MRT URLs from all applicable directories
         return mrt_urls
 
     @error_catcher()
@@ -273,4 +367,3 @@ class MRT_Parser:
             ann_table.cursor.execute("VACUUM ANALYZE;")
             # A checkpoint is run here so that RAM isn't lost
             ann_table.cursor.execute("CHECKPOINT;")
-
