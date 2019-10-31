@@ -1837,7 +1837,7 @@ cd lib_bgp_data
 pip3 install wheel --upgrade
 pip3 install -r requirements.txt --upgrade
 python3 setup.py sdist bdist_wheel
-python3 setup.py develop
+python3 setup.py develop --force
 ```
 
 After this you are going to need a install a couple of other things to be able to use most features. bgscanner, bgpdump, and the extrapolator are all automatically installed and moved to /usr/bin. bgpdump must be installed from source because it has bug fixes that are necessary. The RPKI validator is installed and move to /var/lib.
@@ -2066,6 +2066,8 @@ This is a massive python package, and it obviously would not have been possible 
 First of all, thanks to Comcast for funding such amazing research. It had really been a pleasure working with you guys and this research is yielding some pretty incredible results.
 
 Thanks to Dr. Amir Herzberg and Dr. Bing Wang with all the help for leading the development team and for all of their knowledge on this subject, and for employing me to work on this.
+
+Thanks to Matt Jaccino for adding many useful features and unit tests, great work lots of contributions
 
 Thanks to Cameron Morris for his help writing the RPKI Validator submodule, and configuring the RPKI Validator to run off of our own file. Also thanks for pointing out other bugs throughout development. And pulling numerous all nighters with me to push for getting the forecast up and running for deadlines for demonstrations. Definitely MVP.
 

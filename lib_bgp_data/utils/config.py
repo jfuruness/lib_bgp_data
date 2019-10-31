@@ -8,6 +8,7 @@ _config dictionary.
 """
 
 import os
+from datetime import datetime
 from configparser import ConfigParser as SCP
 from configparser import NoSectionError
 from psutil import virtual_memory
@@ -36,6 +37,9 @@ class Config:
     def create_config(self, _password):
         """Creates the default config file."""
 
+        # Do this here so that ram is set correctly
+        restart = self.restart_postgres_cmd
+
         # Creates the /etc/bgp directory
         self._create_config_dir()
         # Removes old conf
@@ -51,9 +55,8 @@ class Config:
                           "database": "bgp",
                           "password": _password,
                           "user": "bgp_user",
-                          "last_relationship_update": "0",
                           "ram": _ram,
-                          "restart_postgres_cmd": self.restart_postgres_cmd}
+                          "restart_postgres_cmd": restart}
 
         # Writes the config
         with open(self.path, "w+") as config_file:
@@ -103,14 +106,6 @@ class Config:
         return args
 
     @property
-    def last_date(self):
-        """Returns the last date relationship files where parsed."""
-
-        section = "bgp"
-        subsection = "last_relationship_update"
-        return int(self._read_config(section, subsection))
-
-    @property
     def ram(self):
         """Returns the amount of ram on a system."""
 
@@ -139,12 +134,6 @@ class Config:
             elif cmd == "1":
                 cmd = "sudo systemctl restart postgresql"
         return cmd
-
-    @error_catcher()
-    def update_last_date(self, date):
-        """Edits the last date parsed in the config file."""
-
-        self._write_to_config("bgp", "last_relationship_update", date)
 
     def _write_to_config(self, section, subsection, string):
         """Writes to a config file."""

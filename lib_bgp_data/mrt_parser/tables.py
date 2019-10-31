@@ -58,7 +58,7 @@ class MRT_Announcements_Table(Database):
         self.cursor.execute(sql)
 
     @error_catcher()
-    def clear_table(self):
+    def clear_tables(self):
         """Clears the mrt_announcements table.
 
         Should be called at the start of every run.

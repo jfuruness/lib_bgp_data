@@ -285,7 +285,6 @@ def get_tags(url, tag):
     return [x for x in Soup(response.text, 'html.parser').select(tag)],\
         response.close()
 
-
 def get_json(url, headers={}):
     """Gets the json from a url"""
 

@@ -110,8 +110,8 @@ Possible Future Extensions:
 
 from .mrt_parser import MRT_Parser
 
-__author__ = "Justin Furuness"
-__credits__ = ["Justin Furuness"]
+__author__ = "Justin Furuness", "Matt Jaccino"
+__credits__ = ["Justin Furuness", "Matt Jaccino"]
 __Lisence__ = "MIT"
 __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"

@@ -1,42 +1,69 @@
 from setuptools import setup, find_packages
 
+
 def _get_console_scripts():
+    """Returns all console scripts, needs docs"""
 
     console_scripts = []
-    console_scripts.extend(_get_roas_console_scripts())
+    permutations_funcs = [_roas_collector_permutations,
+                          _relationships_parser_permutations,
+                          _mrt_parser_permutations]
+    for func in permutations_funcs:
+        permutations, module_name = func()
+        for permutation in permutations:
+            append_str = '= lib_bgp_data.{}.__main__:main'.format(module_name)
+            console_scripts.append(permutation + append_str)
     return console_scripts
 
-def _get_roas_console_scripts():
-    console_scripts = []
-    for permutation in _roas_collector_permutations():
-        script = permutation + '= lib_bgp_data.roas_collector.__main__:main'
-        console_scripts.append(script)
-    return console_scripts
 
 def _roas_collector_permutations():
     """Gets every possible combination of arg for useability"""
 
     possible_permutations = []
     for j in ["ROA", "roa"]:
-        for k in ["S", "s"]:
+        for k in ["S", "s", ""]:
             # I know l is bad but this function sucks anways
             for l in ["-", "_", " "]:
                 for m in ["Collector", "COLLECTOR", "collector",
                           "Parser", "parser", "PARSER"]:
                     possible_permutations.append(j + k + l + m)
-    return possible_permutations
+    # Returns the permutations and the package name
+    return possible_permutations, "roas_collector"
 
+
+def _relationships_parser_permutations():
+    """Gets every possible combination of arg for usability"""
+
+    possible_permutations = []
+    for i in ["Relationship", "relationship", "Rel", "rel"]:
+        for j in ["S", "s", ""]:
+            for k in ["_", " ", "-"]:
+                for l in ["Parser", "parser", "Par", "par"]:
+                    possible_permutations.append(i + j + k + l)
+    return possible_permutations, "relationships_parser"
+
+
+def _mrt_parser_permutations():
+    """Gets every possible combination pf arg for usability"""
+
+    possible_permutations = []
+    for j in ["MRT", "mrt"]:
+        for k in ["S", "s", ""]:
+            for l in ["-", " ", "_"]:
+                for m in ["Parser", "parser", "par", "par"]:
+                    possible_permutations.append(j + k + l + m)
+    return possible_permutations, "mrt_parser"
 
 
 setup(
     name='lib_bgp_data',
     packages=find_packages(),
     version='0.2.4',
-    author='Justin Furuness',
+    author='Justin Furuness and Matt Jaccino',
     author_email='jfuruness@gmail.com',
     url='https://github.com/jfuruness/lib_bgp_data.git',
     download_url='https://github.com/jfuruness/lib_bgp_data.git',
-    keywords=['Furuness', 'BGP', 'ROAs', 'MRTs', 'RPKI', 'ROV', 'ROV++'],  # arbitrary keywords
+    keywords=['Furuness', 'BGP', 'ROA', 'MRT', 'RPKI', 'ROV', 'ROV++'],
     install_requires=[
         'wheel',
         'setuptools',
@@ -58,7 +85,7 @@ setup(
         'License :: OSI Approved :: MIT License',
         'Programming Language :: Python :: 3'],
     entry_points={
-        'console_scripts': [*_get_console_scripts()]},
+        'console_scripts': _get_console_scripts()},
     setup_requires=['pytest-runner'],
     tests_require=['pytest'],
 )

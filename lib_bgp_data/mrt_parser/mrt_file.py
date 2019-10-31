@@ -55,8 +55,8 @@ from subprocess import call
 from ..utils import utils, error_catcher
 from .tables import MRT_Announcements_Table
 
-__author__ = "Justin Furuness"
-__credits__ = ["Justin Furuness", "Cameron Morris"]
+__author__ = "Justin Furuness", "Matt Jaccino"
+__credits__ = ["Justin Furuness", "Matt Jaccino", "Cameron Morris"]
 __Lisence__ = "MIT"
 __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
@@ -236,7 +236,7 @@ class MRT_File:
 
     @error_catcher()
     def _bgpdump_args(self):
-        """Parses MRT file into a CSV using bgpscanner
+        """Parses MRT file into a CSV using bgpdump
 
         For a more in depth explanation see _convert_dump_to_csv. For
         explanation on specifics of the parsing, see below. Also note,
@@ -244,7 +244,7 @@ class MRT_File:
         """
 
         # performs bgpdump on the file
-        bash_args = 'bgpdump -q -M -t change '
+        bash_args = 'bgpdump -q -m -t change '
         bash_args += self.path
         # Cuts out columns we don't need
         bash_args += ' | cut -d "|" -f2,6,7 '
@@ -253,8 +253,11 @@ class MRT_File:
         # Performs regex matching with sed and adds brackets to as_path
         bash_args += '-e "s/\(.*|.*|\)\(.*$\)/\\1{\\2}/g" '
         # Replaces pipes and spaces with commas for csv insertion
-        # leaves out first one
-        bash_args += '-e "s/ /, /g" -e "s/, / /" -e "s/|/\t/g" '
+        # leaves out first one: -e "s/, / /"
+        bash_args += '-e "s/ /, /g" -e "s/|/\t/g" '
         # Adds a column for the origin
         bash_args += '-e "s/\([[:digit:]]\+\)}/\\1}\t\\1/g"'
+        # Rearrange columns to match for csv_to_db
+        bash_args += '| awk \'BEGIN {FS="\t"};{OFS="\t"};{ print '
+        bash_args += '$2, $3, $4, $1}\''
         return bash_args
