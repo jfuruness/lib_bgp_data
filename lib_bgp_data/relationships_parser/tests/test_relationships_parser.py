@@ -54,3 +54,22 @@ class Test_Relationships_Parser:
         api_elements = [x for x in utils.get_tags(api_url, 'a')[0]]
         files = [x["href"] for x in api_elements if "bz2" in x["href"]]
         assert url == api_url + files[-1]
+
+    def test__get_urls_agg(self):
+        """Tests the _get_urls_agg helper function"""
+
+        # Test for default case (0 months back)
+        assert self.parser._get_url()[0] == self.parser._get_urls_agg()[0]
+        # Test for arbitrary number of months back
+        urls = self.parser._get_urls_agg(5)
+        # Make sure there are elements in the list
+        assert len(urls) > 0
+        # Get start month for files
+        curr_year = datetime.datetime.now().year
+        cur_month = datetime.datetime.now().month
+        start_month = datetime.datetime(curr_year, curr_month, 1)
+        # Make sure the URLs are all valid relationships file URLs
+        i = 0
+        for url in urls:
+            assert "bz2" in url
+            assert "as-rel" in url

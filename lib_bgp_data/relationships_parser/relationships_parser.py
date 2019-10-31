@@ -107,12 +107,25 @@ class Relationships_Parser:
         else:
             self.logger.info("old file, not parsing")
 
+    def parse_files_agg(self, months_back=0, rovpp=False):
+        """Downloads and parses multiple relationship files to aggregate
+        relationship data across multiple timeframes with respect to the
+        number of months back passed in as a parameter.
+        """
+
+        # Get list of URLs for multiple datasets
+        urls = self._get_urls_agg(months_back)
+        # Iterate over all URLs
+        for url in urls:
+            # Initialize Relationship File object and parse file
+            Rel_File(self.path, self.csv_dir, url, self.logger).parse_file()
+
 ########################
 ### Helper Functions ###
 ########################
     @error_catcher()
     def _get_url(self):
-        """Gets urls to download relationship files and the dates
+        """Gets urls to download relationship files and the dates.
 
         For more in depth explanation see the top of the file
         """
@@ -134,3 +147,18 @@ class Relationships_Parser:
         # Returns the url plus the max number (the date) in the url
         return url + file_url, file_last_modified
 
+    @error_catcher()
+    def _get_urls_agg(self, months_back=0):
+        """Gets URLs to download relationship files for aggregating
+        relationship datasets based on the number of months
+        """
+
+        # API URL
+        url = 'http://data.caida.org/datasets/as-relationships/serial-2/'
+        # Get all file URLs from the API
+        _files = [x["href"] for x in utils.get_tags(url, 'a')[0]
+                  if "bz2" in x["href"]]
+        # Make a list for the URLs
+        urls = [url + x for x in _files[-1 - months_back:]]
+        # Return the file URLs
+        return urls
