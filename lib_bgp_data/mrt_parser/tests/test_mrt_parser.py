@@ -12,7 +12,7 @@ import requests
 import os
 from multiprocessing import cpu_count
 from subprocess import check_call
-#import validators
+import validators
 from ..mrt_parser import MRT_Parser
 from ..mrt_file import MRT_File
 from ..tables import MRT_Announcements_Table
@@ -25,9 +25,6 @@ __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
-
-# TODO:
-#       fix 'validators' import error for good
 
 
 class Test_MRT_Parser:
@@ -87,11 +84,9 @@ class Test_MRT_Parser:
                                              api_param_mods)
         # Checks that the number of urls is the same as the num_files
         assert len(mrt_file_urls) == num_files
-        print(mrt_file_urls[0])
-        assert False
         # Makes sure that all of them are actually urls
-#        for url in mrt_file_urls:
-#            assert validators.url(url)
+        for url in mrt_file_urls:
+            assert validators.url(url)
         return mrt_file_urls
 
     def test_get_mrt_urls_no_param_mods(self):
@@ -114,10 +109,10 @@ class Test_MRT_Parser:
         # Each of the 5 subdirectories contain a folder for the each month
         # and from each folder we only want one rib closest to the start
         # of the time interval but not if it is after the end
-        assert 0 < len(mrt_file_urls) <= 5
+        assert len(mrt_file_urls) > 0
         # Make sure each element of the list returned is a valid URL
-#       for url in mrt_file_urls:
-#            assert validators.url(url)
+        for url in mrt_file_urls:
+            assert validators.url(url)
         return mrt_file_urls
 
     def test_multiprocess_download(self, parser=None,
