@@ -48,7 +48,7 @@ def _mrt_parser_permutations():
         for k in ["S", "s", ""]:
             for l in ["-", " ", "_"]:
                 for m in ["Parser", "parser", "PARSER",
-                          "PAR", "par", "par"]:
+                          "PAR", "par"]:
                     possible_permutations.append(j + k + l + m)
     return possible_permutations, "mrt_parser"
 
@@ -74,6 +74,7 @@ setup(
         'psutil',
         'psycopg2-binary',
         'pytest',
+        'validators',
         'Werkzeug'
     ],
     classifiers=[
