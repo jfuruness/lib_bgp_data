@@ -136,12 +136,13 @@ class Relationships_Parser:
         _elements = [x for x in utils.get_tags(url, 'a')[0]]
         # Gets the last file of all bz2 files
         file_url = [x["href"] for x in _elements if "bz2" in x["href"]][-1]
-        # Get html of file list 
+        # Get html of file list
         _pre = [x for x in utils.get_tags(url, 'pre')[0]][0]
         # Get the 'Last Modified' date for all files listed
-        _last_modified_dates = [x for x in str(_pre).split()\
+        _last_modified_dates = [x for x in str(_pre).split()
                                 if re.match('\d{2}-\w{3}-\d{4}', x)]
-        # Get the 'Last Modified' date for the last bz2 file as a numerical string
+        # Get the 'Last Modified' date for the last bz2 
+        # file as a numerical string
         file_last_modified = \
          datetime.strptime(_last_modified_dates[-3], "%d-%b-%Y").date()
         # Returns the url plus the max number (the date) in the url

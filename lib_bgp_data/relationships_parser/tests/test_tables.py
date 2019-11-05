@@ -76,7 +76,7 @@ class Test_ROVPP_ASes_Table(Create_Tables):
         # empty before testing by parsing files with rovpp == True
         parser = Relationships_Parser()
         url = parser._get_url()[0]
-        parser.parse_files(rovpp=True,url=url)
+        parser.parse_files(rovpp=True, url=url)
         with db_connection() as db:
             # Get the count of rovpp_ases before filling
             pre = db.execute("SELECT COUNT(*) FROM rovpp_ases;")[0]['count']
