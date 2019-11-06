@@ -99,14 +99,13 @@ Possible Future Extensions:
 
 
 import requests
-from datetime import timedelta, date
 import time
 from .mrt_file import MRT_File
 from ..utils import error_catcher, utils, db_connection
 from .tables import MRT_Announcements_Table
 
-__author__ = "Justin Furuness"
-__credits__ = ["Justin Furuness"]
+__author__ = "Justin Furuness", "Matt Jaccino"
+__credits__ = ["Justin Furuness", "Matt Jaccino"]
 __Lisence__ = "MIT"
 __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
@@ -161,7 +160,6 @@ class MRT_Parser:
 
         # Gets urls of all mrt files needed
         urls = self._get_mrt_urls(start, end, api_param_mods)
-#        urls += self._get_mrt_urls_iso()
         self.logger.debug("Total files {}".format(len(urls)))
         # Get downloaded instances of mrt files using multithreading
         mrt_files = self._multiprocess_download(download_threads, urls)
@@ -175,6 +173,16 @@ class MRT_Parser:
 
     @error_catcher()
     def _get_mrt_urls(self, start, end, PARAMS_modification={}):
+        caida_urls = self._get_caida_mrt_urls(start, end, PARAMS_modification)
+        isolario_urls = [] # self._get_iso_mrt_urls(start, end)
+
+        # If you ever want RIPE without the caida api, look at the commit
+        # Where the relationship_parser_tests where merged in
+
+        return caida_urls + isolario_urls
+
+    @error_catcher()
+    def _get_caida_mrt_urls(self, start, end, PARAMS_modification={}):
         """Gets urls to download MRT files. Start and end should be epoch."""
 
         # Parameters for the get request, look at caida for more in depth info
@@ -191,113 +199,75 @@ class MRT_Parser:
         # Request for data and conversion to json
         self.logger.debug(requests.get(url=URL, params=PARAMS).url)
         data = requests.get(url=URL, params=PARAMS).json()
+
+        self.logger.debug(requests.get(url=URL, params=PARAMS).url)
+
         # Returns the urls from the json
         return [x.get('url') for x in data.get('data').get('dumpFiles')]
 
     @error_catcher()
-    def _get_mrt_urls_iso(self, start, end):
+    def _get_iso_mrt_urls(self, start, end):
         """Gets URLs to download MRT files from Isolario.it"""
 
         # API URL
         url = "http://isolario.it/Isolario_MRT_data/"
-        # Get the collectors from the page
-        # Slice out the parent directory link and sorting links
-        _collectors = [x["href"] for x in utils.get_tags(url, 'a')[0]][5:]
-        # Get the folder name according to the start parameter
-        folder = time.strftime("%Y_%m/", time.localtime(start))
-        # The file name for the RIB wanted according to the start parameter...
+        # Get the folder names based on start and end UNIX times
+        start_folder = time.strftime("%Y_%m/", time.localtime(start))
+        end_folder = time.strftime("%Y_%m/", time.localtime(end))
+        # Get RIB file names based on start and end UNIX times
+        # The file name format is 'rib.YYYYMMDD.HH00.bz2'
         start_filename = "rib." + \
                          time.strftime("%Y%m%d.%H00",
                                        time.localtime(start)) + \
                          ".bz2"
-        # but Isolario files are added every 2 hours, so if the start time
-        # is an odd numbered hour, add an hour
-        if int(start_filename[-8:-6]) % 2:
-            start_filename = "rib." + \
-                             time.strftime("%Y%m%d.%H00",
-                                           time.localtime(start + 3600)) + \
-                             ".bz2"
-        # Make a list of all possible file URLs
-        possible_mrt_urls = [url +
-                             coll +
-                             folder +
-                             start_filename for coll in _collectors]
-        # Make sure all file URLs exist on the server then add them to list
+        end_filename = "rib." + \
+                       time.strftime("%Y%m%d.%H00",
+                                     time.localtime(end)) + \
+                       ".bz2"
+        # Make a list for the most recent RIB from each subdirectory
         mrt_urls = []
-        for url in possible_mrt_urls:
-            # Make a request to each url
-            try:
-                resp = requests.get(url, timeout=10)
-            # If this raises a timeout exception, try again 9 more times
-            except Exception as e:
-                fails = 0
-                while resp.status_code != 200 and fails < 10:
-                    fails += 1
-                    self.logger.debug("GET fail {} for {}".format(fails, url))
-                    resp = requests.get(url, timeout=10)
-                # If it failed all 10 times, error out
-                if fails == 10:
-                    self.logger.error(
-                     "Failed to get {} after 10 attempts".format(url))
-                    if self._check_for_update_time():
-                        self.logger.error("This is most likely because the "
-                                          "data is currently being updated.")
-                    raise e
-                # Otherwise, the URL works
-            # If the URL gets a 404 response, or anything besides 200, it
-            # most likely doesn't exist
-            if not resp:
+        # Get the oldest RIB in the time interval from each subdirectory below
+        for sub in ["Alderaan/", "Dagobah/", "Korriban/", "Naboo/", "Taris/"]:
+            # Get the folder name needed for interval
+            # Check for '_' since all folders are named 'YYYY_MM/'
+            _folder_links = [x["href"] for
+                             x in utils.get_tags(url + sub, 'a')[0]
+                             if "_" in x["href"]]
+            # Start from the beginning since ascending order
+            # Start at index 1 to skip parent directory
+            i = 1
+            while(_folder_links[i] < start_folder and
+                  i < len(_folder_links)):
+                # Work down towards newer folders to find oldest in interval
+                # If at the end, take the most recent RIB?
+                i += 1
+            # If the folder date is outside of the interval
+            # like, if the oldest folder is still outside of our timeframe
+            # then we don't want it
+            if _folder_links[i] > end_folder:
                 continue
-            # Add to list if there's no issue
-            mrt_urls.append(url)
-        return mrt_urls
-
-    @error_catcher()
-    def _get_mrt_urls_ripe(self, start=None, end=None):
-        """Gets URLs to download MRT files from Ripe.net"""
-
-        # ONLY FOR THE MOST RECENT RIB FILES AT THE MOMENT
-        # API URL
-        url = "https://www.ripe.net/analyse/internet-measurements/" \
-              "routing-information-service-ris/ris-raw-data"
-        # Get the subdirectories needed
-        _elements = [x for x in utils.get_tags(url, 'a')[0]]
-        dirs = []
-        for x in _elements:
-            try:
-                if "ripe.net/rrc" in x["href"]:
-                    dirs.append(x["href"])
-            except KeyError:
+            folder = _folder_links[i]
+            # Find all RIB file URLs from those tags
+            _files = [x["href"] for x in utils.get_tags(url + sub + folder,
+                                                        'a')[0]
+                      if "rib." in x["href"] and "bz2" in x["href"]]
+            # Start from beginning since ascending order
+            i = 0
+            while(_files[i] < "/Isolario_MRT_data/" +
+                              sub +
+                              folder +
+                              start_filename and
+                  i < len(_files)):
+                # Work down towards newer files to find oldest in interval
+                i += 1
+            # Get the oldest RIB in the interval
+            _rib = _files[i]
+            # If this RIB is outside of our interval, we don't want it
+            if _rib > "/Isolario_MRT_data/" + sub + folder + end_filename:
                 continue
-        # Get the folder name needed at this time ("YYYY.MM/")
-        folder = date.today().strftime("%Y.%m/")
-        # Make a list for the MRT URLs
-        mrt_urls = []
-        # Iterate over all found directories
-        for sub in dirs:
-            if start and end:
-                # Get the folder name needed for interval
-                _folder_links = [x for x in utils.get_tags(url + sub, 'a')[0]]
-                # Start at the end since descending order
-                i = len(_folder_links) - 1
-                while(_folder_links[i] > start_folder and
-                      i > 0):
-                    # Work up towards newer folders to find oldest in interval
-                    i -= 1
-                folder = _folder_links[i]
-            # Find all tags with links (some do not exist)
-            try:
-                # All elements in dirs contain 'http://data.ris.ripe.net/'
-                _elements = [x for x in utils.get_tags(sub + folder,
-                                                       'a')[0]]
-            except:
-                continue
-            # Get the most recent RIB file (sorted in descending order)
-            _most_recent = [x["href"] for x in _elements if "bview" in
-                            x["href"] and "gz" in x["href"]][0]
             # Add it to the list
-            mrt_urls.append(_most_recent)
-        # Return the list of MRT URLs from all applicable directories
+            mrt_urls.append("http://isolario.it" + _rib)
+        # Return the list of MRT URLs from all 5 subdirectories
         return mrt_urls
 
     @error_catcher()
@@ -357,16 +327,3 @@ class MRT_Parser:
             ann_table.cursor.execute("VACUUM ANALYZE;")
             # A checkpoint is run here so that RAM isn't lost
             ann_table.cursor.execute("CHECKPOINT;")
-
-    def _check_for_update_time(self):
-        """Short helper to determine if the reason for Isolario URLs function
-        failing is it the collectors are updating there file at the time.
-        """
-
-        # Get the current time of call
-        curr_time = time.asctime()
-        # Convert these string values to integers
-        hour, minute = int(curr_time[11:13]), int(curr_time[14:16])
-        # If it is within 20 minutes of an even numbered hour,
-        # the servers are probably updating.
-        return hour % 2 == 0 and minute < 20

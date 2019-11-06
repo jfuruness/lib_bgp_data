@@ -13,6 +13,14 @@ from ...utils import utils, db_connection, Config
 import datetime
 
 
+__author__ = "Matt Jaccino", "Justin Furuness"
+__credits__ = ["Matt Jaccino", "Justin Furuness"]
+__Lisence__ = "MIT"
+__maintainer__ = "Justin Furuness"
+__email__ = "jfuruness@gmail.com"
+__status__ = "Development"
+
+
 class Test_Relationships_Parser:
     """Tests all functions within the Relationships Parser class."""
 
@@ -29,9 +37,6 @@ class Test_Relationships_Parser:
         with db_connection() as db:
             db.execute("DROP TABLE IF EXISTS peers")
             db.execute("DROP TABLE IF EXISTS customer_providers")
-        # Reset download date to assure new tables are downloaded
-        config = Config(self.parser.logger)
-        config.update_last_date(datetime.date(1, 1, 1))
         # Parses latest file
         self.parser.parse_files()
         with db_connection() as db:
@@ -45,10 +50,9 @@ class Test_Relationships_Parser:
     def test__get_url(self):
         """Tests the _get_url helper function"""
 
-        url, date = self.parser._get_url()
-        # Make sure the returned values are a URL string and a datetime date
+        url = self.parser._get_urls()[0]
+        # Make sure the returned values are a URL string
         assert type(url) == str
-        assert type(date) == datetime.date
         # Make sure the correct URL is used and the correct file is downloaded
         api_url = 'http://data.caida.org/datasets/as-relationships/serial-2/'
         api_elements = [x for x in utils.get_tags(api_url, 'a')[0]]
@@ -58,18 +62,17 @@ class Test_Relationships_Parser:
     def test__get_urls_agg(self):
         """Tests the _get_urls_agg helper function"""
 
+        agg_months = 5
+
+        print(self.parser._get_urls())
+        print(self.parser._get_urls(agg_months)[0])
+
         # Test for default case (0 months back)
-        assert self.parser._get_url()[0] == self.parser._get_urls_agg()[0]
+        assert self.parser._get_urls()[0] == self.parser._get_urls(agg_months)[-1]
         # Test for arbitrary number of months back
-        urls = self.parser._get_urls_agg(5)
-        # Make sure there are elements in the list
-        assert len(urls) > 0
-        # Get start month for files
-        curr_year = datetime.datetime.now().year
-        cur_month = datetime.datetime.now().month
-        start_month = datetime.datetime(curr_year, curr_month, 1)
+        urls = self.parser._get_urls(agg_months)
+        # Make sure there are the right amount of urls in the list
+        assert len(set(urls)) == agg_months + 1
         # Make sure the URLs are all valid relationships file URLs
-        i = 0
         for url in urls:
-            assert "bz2" in url
-            assert "as-rel" in url
+            assert "bz2" in url and "as-rel" in url

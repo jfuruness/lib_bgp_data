@@ -60,7 +60,7 @@ class Unique_Prefix_Origins_Table(Database):
         self.logger.info("Creating unique prefix origins table")
         sql = """CREATE UNLOGGED TABLE unique_prefix_origins AS
                  SELECT DISTINCT origin, prefix, 100 as placeholder
-                 FROM mrt_w_roas ORDER BY prefix ASC;"""
+                 FROM mrt_announcements ORDER BY prefix ASC;"""
         self.cursor.execute(sql)
         self.logger.debug("Created unique prefix origins table")
 

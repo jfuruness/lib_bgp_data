@@ -1,17 +1,24 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 
 """This file contains tests for the relationships_file.py file.
 
 For specifics on each test, see docstrings under each function.
 """
 
-import pytest
-from datetime import date
 from ..relationships_file import Rel_File, Rel_Types
 from ..relationships_parser import Relationships_Parser
 from ..tables import Customer_Providers_Table, Peers_Table
 from ..tables import ROVPP_Customer_Providers_Table, ROVPP_Peers_Table
-from ...utils import utils, Config
+from ...utils import utils, db_connection
+
+
+__author__ = "Matt Jaccino", "Justin Furuness"
+__credits__ = ["Matt Jaccino", "Justin Furuness"]
+__Lisence__ = "MIT"
+__maintainer__ = "Justin Furuness"
+__email__ = "jfuruness@gmail.com"
+__status__ = "Development"
 
 
 class Test_Relationships_File:
@@ -25,12 +32,10 @@ class Test_Relationships_File:
 
         # Initialize a Relationships Parser object
         self.rel_par = Relationships_Parser()
-        # Use the Parser object to get the file URL
-        url = self.rel_par._get_url()[0]
         # Initialize Relationships File object
         self.rel_file = Rel_File(self.rel_par.path,
                                  self.rel_par.csv_dir,
-                                 url,
+                                 self.rel_par._get_urls()[0],  # Gets URL
                                  self.rel_par.logger)
 
     def test__db_insert(self):
@@ -43,31 +48,18 @@ class Test_Relationships_File:
         # Unzip this file and assign its new path
         self.rel_file.path = utils.unzip_bz2(self.rel_file.logger,
                                              self.rel_file.path)
-        with open(self.rel_file.path) as sample:
-            peer_count = 0
-            cust_prov_count = 0
-            for line in sample:
-                if "|0|" in line:
-                    peer_count += 1
-                elif "|-1|" in line:
-                    cust_prov_count += 1
-                else:
-                    continue
-        # Clean up with utils
+        peer_count, cust_prov_count = self._get_lines(self.rel_file.path)
+
+        # Clean up with utils so as not to contaminate test
         utils.delete_paths(self.rel_file.logger,
                            [self.rel_file.csv_dir, self.rel_file.path])
-        # Initialize a 'peers' table and a 'customer_providers' table object
-        peers = Peers_Table()
-        cust_prov = Customer_Providers_Table()
-        # Make sure file for counts above gets parsed and added to database
-        Config(self.rel_par.logger).update_last_date(date(1, 1, 1))
         self.rel_par.parse_files()
+
         # Make sure the counts are accurate
-        assert peer_count == peers.get_count()
-        assert cust_prov_count == cust_prov.get_count()
-        # Close database connections
-        peers.close()
-        cust_prov.close()
+        with db_connection(Peers_Table) as peers:
+            assert peer_count == peers.get_count()
+        with db_connection(Customer_Providers_Table) as cust_provs:
+            assert cust_prov_count == cust_provs.get_count()
 
     def test__get_rel_attributes(self):
         """Tests the _get_rel_attributes function"""
@@ -96,7 +88,7 @@ class Test_Relationships_File:
                       Rel_Types.PEERS: Peers_Table}
         # Finally, make sure all output matches what is expected
         assert self.rel_file._get_rel_attributes() == \
-         (exp_grep, exp_csvs, table_attr)
+            (exp_grep, exp_csvs, table_attr)
 
     def test__get_table_attributes(self):
         """Tests the _get_table_attributes function"""
@@ -111,3 +103,23 @@ class Test_Relationships_File:
         # Make sure both calls give expected output.
         assert self.rel_file._get_table_attributes(rovpp=False) == rovpp_false
         assert self.rel_file._get_table_attributes(rovpp=True) == rovpp_true
+
+########################
+### Helper Functions ###
+########################
+
+    def _get_lines(self, path):
+        """Returns total number of lines in the file"""
+
+        with open(path) as sample:
+            peer_count = 0
+            cust_prov_count = 0
+            for line in sample:
+                if "|0|" in line:
+                    peer_count += 1
+                elif "|-1|" in line:
+                    cust_prov_count += 1
+                else:
+                    continue
+
+        return peer_count, cust_prov_count

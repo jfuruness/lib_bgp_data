@@ -185,14 +185,14 @@ class RPKI_Validator:
         """
 
         # Initializes a prefix origin table
-        with db_connection(Unique_Prefix_Origins_Table, self.logger) as table:
+        with db_connection(Unique_Prefix_Origins_Table, self.logger) as db:
             # Generates a unique prefix origin table for ripe
             # Gets the unique prefix origins from the mrt announcements
             # And write them to a table with the default placeholder of 100
             # For easy integration with rpki validator
             # This writes the validator file that the rpki validator will use
             # And returns the file path and the total rows of the file
-            return table.write_validator_file(path=self.upo_csv_path)
+            return db.write_validator_file(path=self.upo_csv_path)
 
     @error_catcher()
     def _get_ripe_data(self):

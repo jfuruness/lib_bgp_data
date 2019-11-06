@@ -13,13 +13,8 @@ insert the data into a database. This is done through a series of steps.
     -In that url we have the date of the file, which is also parsed out
     -The serial 2 dataset is used because it has multilateral peering
     -which appears to be the more complete dataset
-2. Then check if the file has already been parsed before
-    -Handled in parse_files function
-    -If the url date is less than the config file date do nothing
-    -Else, parse
-    -This is done to avoid unneccesarily parsing files
-    -If ROVPP, then download a specific file every time
 2. Then the Relationships_File class is then instantiated
+    -Note: You can aggregate relationship data sets, which loops over urls
 3. The relationship file is then downloaded
     -This is handled in the utils.download_file function
 4. Then the file is unzipped
@@ -48,13 +43,14 @@ Possible Future Extensions:
 """
 
 
-import re
 from .relationships_file import Rel_File
-from ..utils import utils, Config, error_catcher
-from datetime import date, datetime
+from .tables import ROVPP_ASes_Table, ROVPP_AS_Connectivity_Table
+from .tables import Peers_Table, Customer_Providers_Table
+from .tables import ROVPP_Peers_Table, ROVPP_Customer_Providers_Table
+from ..utils import utils, error_catcher, db_connection
 
-__author__ = "Justin Furuness"
-__credits__ = ["Justin Furuness"]
+__author__ = "Justin Furuness", "Matt Jaccino"
+__credits__ = ["Justin Furuness", "Matt Jaccino"]
 __Lisence__ = "MIT"
 __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
@@ -80,86 +76,55 @@ class Relationships_Parser:
     # records start/end time, and upon end or error deletes everything
     @error_catcher()
     @utils.run_parser()
-    def parse_files(self, rovpp=False, url=None):
+    def parse_files(self, rovpp=False, agg_months=0, url=False):
         """Downloads and parses file
 
-        In depth explanation at top of module
+        In depth explanation at top of module. Aggregate months aggregates
+        relationship data from x months ago into the same table
         """
 
-        # For the rovpp simulation, pass in rovpp and a url to use
+        # deletes old tables and creates new ones
+        self._init_tables()
+
+        # Init Relationships_File class and parse file
+        # This could be multithreaded
+        # But it's fast compared to other modules so no need
+        for url in self._get_urls(agg_months) if not url else [url]:
+            Rel_File(self.path, self.csv_dir,
+                     url, self.logger).parse_file(rovpp)
         if rovpp:
-            Rel_File(self.path,
-                     self.csv_dir,
-                     url,
-                     self.logger).parse_file(rovpp)
-            return
+            # Fills these rov++ specific tables
+            with db_connection(ROVPP_ASes_Table, self.logger) as as_table:
+                as_table.fill_table()
+                # creates and closes table
+                ROVPP_AS_Connectivity_Table(self.logger).close()
 
-        # Gets the url and the integer date for the latest file
-        url, date = self._get_url()
-        # If this is a new file, the config date will be less than the
-        # websites file date, and so we renew our data
-        config = Config(self.logger)
-        if config.last_date < date:
-            # Init Relationships_File class and parse file
-            Rel_File(self.path, self.csv_dir, url, self.logger).parse_file()
-            # Update the last date of the config
-            config.update_last_date(date)
-        else:
-            self.logger.info("old file, not parsing")
-
-    def parse_files_agg(self, months_back=0, rovpp=False):
-        """Downloads and parses multiple relationship files to aggregate
-        relationship data across multiple timeframes with respect to the
-        number of months back passed in as a parameter.
-        """
-
-        # Get list of URLs for multiple datasets
-        urls = self._get_urls_agg(months_back)
-        # Iterate over all URLs
-        for url in urls:
-            # Initialize Relationship File object and parse file
-            Rel_File(self.path, self.csv_dir, url, self.logger).parse_file()
 
 ########################
 ### Helper Functions ###
 ########################
     @error_catcher()
-    def _get_url(self):
+    def _get_urls(self, months_back=0):
         """Gets urls to download relationship files and the dates.
 
         For more in depth explanation see the top of the file
         """
 
         # Api url
-        url = 'http://data.caida.org/datasets/as-relationships/serial-2/'
+        prepend = 'http://data.caida.org/datasets/as-relationships/serial-2/'
         # Get all html tags that might have links
-        _elements = [x for x in utils.get_tags(url, 'a')[0]]
+        _elements = [x for x in utils.get_tags(prepend, 'a')[0]]
         # Gets the last file of all bz2 files
-        file_url = [x["href"] for x in _elements if "bz2" in x["href"]][-1]
-        # Get html of file list
-        _pre = [x for x in utils.get_tags(url, 'pre')[0]][0]
-        # Get the 'Last Modified' date for all files listed
-        _last_modified_dates = [x for x in str(_pre).split()
-                                if re.match('\d{2}-\w{3}-\d{4}', x)]
-        # Get the 'Last Modified' date for the last bz2 
-        # file as a numerical string
-        file_last_modified = \
-         datetime.strptime(_last_modified_dates[-3], "%d-%b-%Y").date()
-        # Returns the url plus the max number (the date) in the url
-        return url + file_url, file_last_modified
+        file_urls = [x["href"] for x in _elements if "bz2" in x["href"]]
+        return [prepend + x for x in file_urls[-1 - months_back:]]
 
-    @error_catcher()
-    def _get_urls_agg(self, months_back=0):
-        """Gets URLs to download relationship files for aggregating
-        relationship datasets based on the number of months
-        """
+    def _init_tables(self):
+        """Inititializes table and deletes old ones"""
 
-        # API URL
-        url = 'http://data.caida.org/datasets/as-relationships/serial-2/'
-        # Get all file URLs from the API
-        _files = [x["href"] for x in utils.get_tags(url, 'a')[0]
-                  if "bz2" in x["href"]]
-        # Make a list for the URLs
-        urls = [url + x for x in _files[-1 - months_back:]]
-        # Return the file URLs
-        return urls
+        for table in [Customer_Providers_Table,
+                      Peers_Table,
+                      ROVPP_Customer_Providers_Table,
+                      ROVPP_Peers_Table]:
+            with db_connection(table, self.logger) as db:
+                # Clears and then creates new tables
+                db.clear_table()

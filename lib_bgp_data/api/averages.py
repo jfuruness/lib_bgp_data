@@ -33,7 +33,7 @@ def averages():
 
     sql = """SELECT TRUNC(SUM(blocked_hijacked)/COUNT(*), 2)
                  AS blocked_hijacked_average,
-             TRUNC(SUM(not_blocked_hijacked)/COUNT(*), 2)
+             TRUNC(SUM(prefix_in_transition)/COUNT(*), 2)
                  AS not_blocked_hijacked_average,
              TRUNC(SUM(blocked_not_hijacked)/COUNT(*), 2)
                  AS blocked_not_hijacked_average,

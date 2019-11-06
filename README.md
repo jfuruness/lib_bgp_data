@@ -2067,6 +2067,8 @@ First of all, thanks to Comcast for funding such amazing research. It had really
 
 Thanks to Dr. Amir Herzberg and Dr. Bing Wang with all the help for leading the development team and for all of their knowledge on this subject, and for employing me to work on this.
 
+Thanks to Matt Jaccino for adding many useful features and unit tests, great work lots of contributions
+
 Thanks to Cameron Morris for his help writing the RPKI Validator submodule, and configuring the RPKI Validator to run off of our own file. Also thanks for pointing out other bugs throughout development. And pulling numerous all nighters with me to push for getting the forecast up and running for deadlines for demonstrations. Definitely MVP.
 
 Thanks to James for looking into the mrt_w_roas join duplication bug and the numerous bugs that were discovered in Caida's API, and communicating with them and debugging some SQL queries
@@ -2206,9 +2208,9 @@ Long term:
 ## FAQ
    * [lib\_bgp\_data](#lib_bgp_data)
 
-Q: What? WHAT???
+Q: More links to some research
 
-A: Read these, and become more confused:
+A: Read these:
 * [https://www.cs.bu.edu/~goldbe/papers/survey.pdf](https://www.cs.bu.edu/~goldbe/papers/survey.pdf)
 * [https://www.nsf.gov/awardsearch/showAward?AWD_ID=1840041&HistoricalAwards=false](https://www.nsf.gov/awardsearch/showAward?AWD_ID=1840041&HistoricalAwards=false)
 	* Feel free to email Dr. Amir Herzberg for this paper

@@ -55,8 +55,8 @@ from subprocess import call
 from ..utils import utils, error_catcher
 from .tables import MRT_Announcements_Table
 
-__author__ = "Justin Furuness"
-__credits__ = ["Justin Furuness", "Cameron Morris"]
+__author__ = "Justin Furuness", "Matt Jaccino"
+__credits__ = ["Justin Furuness", "Matt Jaccino", "Cameron Morris"]
 __Lisence__ = "MIT"
 __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
@@ -253,7 +253,7 @@ class MRT_File:
         # Performs regex matching with sed and adds brackets to as_path
         bash_args += '-e "s/\(.*|.*|\)\(.*$\)/\\1{\\2}/g" '
         # Replaces pipes and spaces with commas for csv insertion
-        # leaves out first one: -e "s/, / /" 
+        # leaves out first one: -e "s/, / /"
         bash_args += '-e "s/ /, /g" -e "s/|/\t/g" '
         # Adds a column for the origin
         bash_args += '-e "s/\([[:digit:]]\+\)}/\\1}\t\\1/g"'

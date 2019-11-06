@@ -8,12 +8,13 @@ from .roas_collector import ROAs_Collector
 from .relationships_parser import Relationships_Parser
 from .mrt_parser import MRT_Parser
 
-__author__ = "Justin Furuness"
-__credits__ = ["Justin Furuness"]
+__author__ = "Justin Furuness", "Matt Jaccino"
+__credits__ = ["Justin Furuness", "Matt Jaccino"]
 __Lisence__ = "MIT"
 __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
+
 
 def main():
     """Does all the command line options available"""
@@ -23,12 +24,14 @@ def main():
     args = vars(parser.parse_args())
     run_parsers(args)
 
+
 def add_args(parser):
     """Adds all arguments to the parser"""
 
     _add_roas_args(parser)
     _add_rel_par_args(parser)
     _add_mrt_parser_args(parser)
+
 
 def run_parsers(args):
     """Runs all parsers for arguments passed in"""
@@ -53,12 +56,14 @@ def _run_roas_parser(args):
                     ROAs_Collector().parse_roas()
                     return
 
+
 def _add_roas_args(parser):
     """Adds all roas permutations to the parser"""
 
     roas_permutations = _roas_collector_permutations()
     for permutation in roas_permutations:
         parser.add_argument(permutation, action="store_true", default=False)
+
 
 def _roas_collector_permutations():
     """Gets every possible combination of arg for useability"""
@@ -73,7 +78,6 @@ def _roas_collector_permutations():
                               "Parser", "parser", "PARSER"]:
                         possible_permutations.append(i + j + k + l + m)
     return possible_permutations
-
 
 ######################################
 ### Relationships_Parser Functions ###
@@ -90,6 +94,7 @@ def _run_rel_parser(args):
                     Relationships_Parser().parse_files()
                     return
 
+
 def _add_rel_par_args(parser):
     """Adds all relationships parser permutations to the parser"""
 
@@ -97,17 +102,16 @@ def _add_rel_par_args(parser):
     for permutation in rel_par_permutations:
         parser.add_argument(permutation, action="store_true", default=False)
 
+
 def _rel_parser_permutations():
     """Gets every possible combination of arg for usability"""
 
     possible_permutations = []
     for i in [" ", "-", "--"]:
-        for j in ["Relationship", "relationship", "rel", "Rel", 
-                  "RELATIONSHIP", "REL"]:
+        for j in ["Relationship", "relationship", "rel", "Rel"]:
             for k in ["S", "s", ""]:
                 for l in ["-", "_", " "]:
-                    for m in ["Parser", "parser", "PARSER", "Par", 
-                              "par", "PAR"]:
+                    for m in ["Parser", "parser", "Par", "par"]:
                         possible_permutations.append(i + j + k + l + m)
     return possible_permutations
 
@@ -127,12 +131,14 @@ def _run_mrt_parser(args):
                     MRT_Parser().parse_files()
                     return
 
+
 def _add_mrt_parser_args(parser):
     """Adds all MRT Parser permutations to the parser"""
 
     mrt_parser_permutations = _mrt_parser_permutations()
     for perm in mrt_parser_permutations:
         parser.add_argument(perm, action="store_true", default=False)
+
 
 def _mrt_parser_permutations():
     """Gets every possible combination of arg for usability"""
@@ -142,10 +148,10 @@ def _mrt_parser_permutations():
         for j in ["MRT", "mrt"]:
             for k in ["S", "s", ""]:
                 for l in ["-", " ", "_"]:
-                    for m in ["Parser", "parser", "PARSER",
-                              "PAR", "par"]:
+                    for m in ["Parser", "parser", "par", "par"]:
                         possible_permutations.append(i + j + k + l + m)
     return possible_permutations
+
 
 if __name__ == "__main__":
     main()

@@ -1,5 +1,6 @@
 from setuptools import setup, find_packages
 
+
 def _get_console_scripts():
     """Returns all console scripts, needs docs"""
 
@@ -13,6 +14,7 @@ def _get_console_scripts():
             append_str = '= lib_bgp_data.{}.__main__:main'.format(module_name)
             console_scripts.append(permutation + append_str)
     return console_scripts
+
 
 def _roas_collector_permutations():
     """Gets every possible combination of arg for useability"""
@@ -28,17 +30,18 @@ def _roas_collector_permutations():
     # Returns the permutations and the package name
     return possible_permutations, "roas_collector"
 
+
 def _relationships_parser_permutations():
     """Gets every possible combination of arg for usability"""
 
     possible_permutations = []
-    for i in ["Relationship", "RELATIONSHIP", "relationship",
-              "Rel", "REL", "rel"]:
+    for i in ["Relationship", "relationship", "Rel", "rel"]:
         for j in ["S", "s", ""]:
             for k in ["_", " ", "-"]:
-                for l in ["Parser", "parser", "PARSER", "Par", "par", "PAR"]:
+                for l in ["Parser", "parser", "Par", "par"]:
                     possible_permutations.append(i + j + k + l)
     return possible_permutations, "relationships_parser"
+
 
 def _mrt_parser_permutations():
     """Gets every possible combination pf arg for usability"""
@@ -47,8 +50,7 @@ def _mrt_parser_permutations():
     for j in ["MRT", "mrt"]:
         for k in ["S", "s", ""]:
             for l in ["-", " ", "_"]:
-                for m in ["Parser", "parser", "PARSER",
-                          "PAR", "par"]:
+                for m in ["Parser", "parser", "par", "Par"]:
                     possible_permutations.append(j + k + l + m)
     return possible_permutations, "mrt_parser"
 
@@ -57,11 +59,11 @@ setup(
     name='lib_bgp_data',
     packages=find_packages(),
     version='0.2.4',
-    author='Justin Furuness',
+    author='Justin Furuness and Matt Jaccino',
     author_email='jfuruness@gmail.com',
     url='https://github.com/jfuruness/lib_bgp_data.git',
     download_url='https://github.com/jfuruness/lib_bgp_data.git',
-    keywords=['Furuness', 'BGP', 'ROA', 'MRT', 'RPKI', 'ROV', 'ROV++'],  # arbitrary keywords
+    keywords=['Furuness', 'BGP', 'ROA', 'MRT', 'RPKI', 'ROV', 'ROV++'],
     install_requires=[
         'wheel',
         'setuptools',
@@ -74,7 +76,7 @@ setup(
         'psutil',
         'psycopg2-binary',
         'pytest',
-        'validators',
+        'pytz',
         'Werkzeug'
     ],
     classifiers=[
@@ -83,7 +85,7 @@ setup(
         'License :: OSI Approved :: MIT License',
         'Programming Language :: Python :: 3'],
     entry_points={
-        'console_scripts': [*_get_console_scripts()]},
+        'console_scripts': _get_console_scripts()},
     setup_requires=['pytest-runner'],
     tests_require=['pytest'],
 )

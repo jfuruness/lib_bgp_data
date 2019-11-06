@@ -102,10 +102,14 @@ class Hijack_Table(Database):
                     h.url,
                     h.expected_prefix,
                     h.expected_origin_number
-              FROM hijack h
-              WHERE
-                (h.start_time, COALESCE(h.end_time, now())) OVERLAPS
-                (%s::timestamp with time zone, %s::timestamp with time zone)
+                      FROM hijack h
+                      LEFT JOIN roas r
+                        ON r.prefix >>= h.more_specific_prefix AND r.asn = h.detected_origin_number
+                            AND MASKLEN(h.more_specific_prefix) <= r.max_length
+                      WHERE
+                        (h.start_time, COALESCE(h.end_time, now())) OVERLAPS
+                        (%s::timestamp with time zone, %s::timestamp with time zone)
+                        AND r.asn IS NULL
               );"""
         self.cursor.execute(sql, [start, end])
 

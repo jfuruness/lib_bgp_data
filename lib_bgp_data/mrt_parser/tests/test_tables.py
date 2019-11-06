@@ -10,8 +10,8 @@ from psycopg2.errors import UndefinedTable
 from ..tables import MRT_Announcements_Table
 from ...utils import Database, error_catcher, db_connection
 
-__author__ = "Justin Furuness"
-__credits__ = ["Justin Furuness"]
+__author__ = "Justin Furuness", "Matt Jaccino"
+__credits__ = ["Justin Furuness", "Matt Jaccino"]
 __Lisence__ = "MIT"
 __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"

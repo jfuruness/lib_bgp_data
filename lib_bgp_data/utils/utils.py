@@ -19,6 +19,7 @@ import functools
 from datetime import datetime, timedelta
 import csv
 import json
+import pytz
 from bz2 import BZ2Decompressor
 from bs4 import BeautifulSoup as Soup
 from pathos.multiprocessing import ProcessingPool
@@ -83,7 +84,8 @@ def run_parser(paths=True):
 def now():
     """Returns current time"""
 
-    return datetime.utcnow()
+    # https://stackoverflow.com/a/7065242
+    return pytz.utc.localize(datetime.utcnow())
 
 
 def get_default_start():
@@ -92,20 +94,16 @@ def get_default_start():
     return (now()-timedelta(days=2)).replace(hour=0,
                                              minute=0,
                                              second=0,
-                                             microsecond=0).timestamp()
+                                             microsecond=0).timestamp() - 5
 
 
 def get_default_end():
     """Gets default end time, used in multiple places."""
 
-    # Note: This replaces time to be at beginning of day because
-    # the Caida API is actually broken. We've contacted them but
-    # they have not fixed it even though they admitted it was incorrect
-
-    return (now()-timedelta(days=1)).replace(hour=0,
-                                             minute=0,
-                                             second=0,
-                                             microsecond=0).timestamp()
+    return (now()-timedelta(days=2)).replace(hour=23,
+                                             minute=59,
+                                             second=59,
+                                             microsecond=59).timestamp()
 
 def set_common_init_args(self, args, paths=True):
     """Sets self attributes for arguments common across many classes"""

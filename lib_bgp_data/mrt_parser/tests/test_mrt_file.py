@@ -12,6 +12,12 @@ from ...utils import utils, db_connection
 from ..tables import MRT_Announcements_Table
 from subprocess import call
 
+__author__ = "Matt Jaccino"
+__credits__ = ["Matt Jaccino", "Justin Furuness"]
+__Lisence__ = "MIT"
+__maintainer__ = "Justin Furuness"
+__email__ = "jfuruness@gmail.com"
+__status__ = "Development"
 
 class Test_MRT_File:
     """This will test methods of the MRT_File class."""
