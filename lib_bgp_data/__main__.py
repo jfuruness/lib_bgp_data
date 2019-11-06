@@ -148,7 +148,7 @@ def _mrt_parser_permutations():
         for j in ["MRT", "mrt"]:
             for k in ["S", "s", ""]:
                 for l in ["-", " ", "_"]:
-                    for m in ["Parser", "parser", "par", "par"]:
+                    for m in ["Parser", "parser", "par"]:
                         possible_permutations.append(i + j + k + l + m)
     return possible_permutations
 
