@@ -172,14 +172,18 @@ class MRT_Parser:
 ########################
 
     @error_catcher()
-    def _get_mrt_urls(self, start, end, PARAMS_modification={}):
+    def _get_mrt_urls(self, start, end, PARAMS_modification={}, iso=True):
         caida_urls = self._get_caida_mrt_urls(start, end, PARAMS_modification)
-        isolario_urls = self._get_iso_mrt_urls(start, end)
+        # Give Isolario URLs if parameter is not changed
+        if iso:
+            isolario_urls = self._get_iso_mrt_urls(start, end)
+            return caida_urls + isolario_urls
+        # Otherwise just give Caida URLs
+        else:
+            return caida_urls
 
         # If you ever want RIPE without the caida api, look at the commit
         # Where the relationship_parser_tests where merged in
-
-        return caida_urls + isolario_urls
 
     @error_catcher()
     def _get_caida_mrt_urls(self, start, end, PARAMS_modification={}):

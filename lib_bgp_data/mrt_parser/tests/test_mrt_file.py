@@ -19,6 +19,7 @@ __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
+
 class Test_MRT_File:
     """This will test methods of the MRT_File class."""
 
@@ -142,6 +143,7 @@ class Test_MRT_File:
         return entries
 
     def _mrt_file_factory(self):
+        """Generates MRT File objects with the same URL for comparison"""
         parser = MRT_Parser()
         file_url = parser._get_mrt_urls(utils.get_default_start(),
                                         utils.get_default_end())[0]

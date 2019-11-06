@@ -80,12 +80,16 @@ class Test_MRT_Parser:
         # Gets all the mrt file urls
         mrt_file_urls = parser._get_mrt_urls(self._start,
                                              self._end,
-                                             api_param_mods)
-        # Checks that the number of urls is the number of Caida URLS + the
-        # few from Isolario
-        assert len(mrt_file_urls) >= num_files
+                                             api_param_mods,
+                                             iso=False)
+        # Checks that the number of urls is correct
+        assert len(mrt_file_urls) == num_files
+        # Now compare when including Isolario URLs
+        mrt_file_urls_iso = parser._get_mrt_urls(self._start,
+                                                 self._end,
+                                                 api_param_mods)
         # Makes sure that all of them are actually urls
-        for url in mrt_file_urls:
+        for url in mrt_file_urls_iso:
             assert validators.url(url)
         return mrt_file_urls
 
