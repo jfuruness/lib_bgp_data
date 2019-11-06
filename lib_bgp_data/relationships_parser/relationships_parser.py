@@ -89,9 +89,20 @@ class Relationships_Parser:
         # Init Relationships_File class and parse file
         # This could be multithreaded
         # But it's fast compared to other modules so no need
-        for url in self._get_urls(agg_months) if not url else [url]:
-            Rel_File(self.path, self.csv_dir,
-                     url, self.logger).parse_file(rovpp)
+
+        rel_files = \
+         [Rel_File(self.path,
+                   self.csv_dir,
+                   url,
+                   self.logger) for url in self._get_urls(agg_months)]
+        for f in rel_files:
+            f.parse_file(rovpp)
+        for f in rel_files:
+            utils.delete_paths(self.logger, [self.csv_dir, self.path])
+
+#        for url in self._get_urls(agg_months) if not url else [url]:
+#            Rel_File(self.path, self.csv_dir,
+#                     url, self.logger).parse_file(rovpp)
         if rovpp:
             # Fills these rov++ specific tables
             with db_connection(ROVPP_ASes_Table, self.logger) as as_table:
@@ -128,3 +139,4 @@ class Relationships_Parser:
             with db_connection(table, self.logger) as db:
                 # Clears and then creates new tables
                 db.clear_table()
+
