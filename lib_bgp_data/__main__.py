@@ -143,7 +143,7 @@ def _mrt_parser_permutations():
             for k in ["S", "s", ""]:
                 for l in ["-", " ", "_"]:
                     for m in ["Parser", "parser", "PARSER",
-                              "PAR", "par", "par"]:
+                              "PAR", "par"]:
                         possible_permutations.append(i + j + k + l + m)
     return possible_permutations
 
