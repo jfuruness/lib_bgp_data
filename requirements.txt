@@ -10,3 +10,4 @@ Werkzeug>=0.15.4
 psutil
 pytest
 pytz
+validators

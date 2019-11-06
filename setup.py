@@ -77,6 +77,7 @@ setup(
         'psycopg2-binary',
         'pytest',
         'pytz',
+        'validators',
         'Werkzeug'
     ],
     classifiers=[
