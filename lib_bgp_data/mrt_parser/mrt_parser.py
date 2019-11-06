@@ -174,7 +174,7 @@ class MRT_Parser:
     @error_catcher()
     def _get_mrt_urls(self, start, end, PARAMS_modification={}):
         caida_urls = self._get_caida_mrt_urls(start, end, PARAMS_modification)
-        isolario_urls = [] # self._get_iso_mrt_urls(start, end)
+        isolario_urls = self._get_iso_mrt_urls(start, end)
 
         # If you ever want RIPE without the caida api, look at the commit
         # Where the relationship_parser_tests where merged in
@@ -211,63 +211,56 @@ class MRT_Parser:
 
         # API URL
         url = "http://isolario.it/Isolario_MRT_data/"
-        # Get the folder names based on start and end UNIX times
-        start_folder = time.strftime("%Y_%m/", time.localtime(start))
-        end_folder = time.strftime("%Y_%m/", time.localtime(end))
-        # Get RIB file names based on start and end UNIX times
-        # The file name format is 'rib.YYYYMMDD.HH00.bz2'
+        # Get the collectors from the page
+        # Slice out the parent directory link and sorting links
+        _collectors = [x["href"] for x in utils.get_tags(url, 'a')[0]][5:]
+        # Get the folder name according to the start parameter
+        folder = time.strftime("%Y_%m/", time.localtime(start))
+        # The file name for the RIB wanted according to the start parameter...
         start_filename = "rib." + \
                          time.strftime("%Y%m%d.%H00",
                                        time.localtime(start)) + \
                          ".bz2"
-        end_filename = "rib." + \
-                       time.strftime("%Y%m%d.%H00",
-                                     time.localtime(end)) + \
-                       ".bz2"
-        # Make a list for the most recent RIB from each subdirectory
+        # but Isolario files are added every 2 hours, so if the start time
+        # is an odd numbered hour, add an hour
+        if int(start_filename[-8:-6]) % 2:
+            start_filename = "rib." + \
+                             time.strftime("%Y%m%d.%H00",
+                                           time.localtime(start + 3600)) + \
+                             ".bz2"
+        # Make a list of all possible file URLs
+        possible_mrt_urls = [url +
+                             coll +
+                             folder +
+                             start_filename for coll in _collectors]
+        # Make sure all file URLs exist on the server then add them to list
         mrt_urls = []
-        # Get the oldest RIB in the time interval from each subdirectory below
-        for sub in ["Alderaan/", "Dagobah/", "Korriban/", "Naboo/", "Taris/"]:
-            # Get the folder name needed for interval
-            # Check for '_' since all folders are named 'YYYY_MM/'
-            _folder_links = [x["href"] for
-                             x in utils.get_tags(url + sub, 'a')[0]
-                             if "_" in x["href"]]
-            # Start from the beginning since ascending order
-            # Start at index 1 to skip parent directory
-            i = 1
-            while(_folder_links[i] < start_folder and
-                  i < len(_folder_links)):
-                # Work down towards newer folders to find oldest in interval
-                # If at the end, take the most recent RIB?
-                i += 1
-            # If the folder date is outside of the interval
-            # like, if the oldest folder is still outside of our timeframe
-            # then we don't want it
-            if _folder_links[i] > end_folder:
+        for url in possible_mrt_urls:
+            # Make a request to each url
+            try:
+                resp = requests.get(url, timeout=10)
+            # If this raises a timeout exception, try again 9 more times
+            except Exception as e:
+                fails = 0
+                while resp.status_code != 200 and fails < 10:
+                    fails += 1
+                    self.logger.debug("GET fail {} for {}".format(fails, url))
+                    resp = requests.get(url, timeout=10)
+                # If it failed all 10 times, error out
+                if fails == 10:
+                    self.logger.error(
+                     "Failed to get {} after 10 attempts".format(url))
+                    if self._check_for_update_time():
+                        self.logger.error("This is most likely because the "
+                                          "data is currently being updated.")
+                    raise e
+                # Otherwise, the URL works
+            # If the URL gets a 404 response, or anything besides 200, it
+            # most likely doesn't exist
+            if not resp:
                 continue
-            folder = _folder_links[i]
-            # Find all RIB file URLs from those tags
-            _files = [x["href"] for x in utils.get_tags(url + sub + folder,
-                                                        'a')[0]
-                      if "rib." in x["href"] and "bz2" in x["href"]]
-            # Start from beginning since ascending order
-            i = 0
-            while(_files[i] < "/Isolario_MRT_data/" +
-                              sub +
-                              folder +
-                              start_filename and
-                  i < len(_files)):
-                # Work down towards newer files to find oldest in interval
-                i += 1
-            # Get the oldest RIB in the interval
-            _rib = _files[i]
-            # If this RIB is outside of our interval, we don't want it
-            if _rib > "/Isolario_MRT_data/" + sub + folder + end_filename:
-                continue
-            # Add it to the list
-            mrt_urls.append("http://isolario.it" + _rib)
-        # Return the list of MRT URLs from all 5 subdirectories
+            # Add to list if there's no issue
+            mrt_urls.append(url)
         return mrt_urls
 
     @error_catcher()

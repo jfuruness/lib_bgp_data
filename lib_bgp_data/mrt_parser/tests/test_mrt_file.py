@@ -33,9 +33,6 @@ class Test_MRT_File:
         # Create another MRT_File object and download
         test_file2 = self._mrt_file_factory()
         # Get the number of entries in the table when parsed with BGPDump
-        #
-        # BGPDUMP FAILS
-        #
         dump = self._get_entries(test_file2, bgpscanner=False)
         # Make sure both entries are identical
         assert scanner == dump
