@@ -41,8 +41,8 @@ Possible Future Extensions:
     -Move unzip_bz2 to this file? Nothing else uses it anymore
 """
 
-from enum import Enum
 import os
+from enum import Enum
 from subprocess import call
 from ..utils import utils, error_catcher
 from .tables import Customer_Providers_Table, Peers_Table
@@ -93,7 +93,7 @@ class Rel_File:
         self.path = utils.unzip_bz2(self.logger, self.path)
         # Gets data and writes it to the csvs
         self._db_insert(rovpp)
-        # Paths are deleted in the parser to allow for aggregating data
+        # Paths are deleted in the parser to allow aggregating data
 
     @error_catcher()
     def _db_insert(self, rovpp=False):

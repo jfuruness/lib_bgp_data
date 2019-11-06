@@ -84,4 +84,3 @@ class Test_Relationships_Parser:
         for url in urls:
             assert validators.url(url)
             assert "as-rel" in url and "bz2" in url
-

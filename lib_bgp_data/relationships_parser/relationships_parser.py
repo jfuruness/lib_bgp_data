@@ -139,4 +139,3 @@ class Relationships_Parser:
             with db_connection(table, self.logger) as db:
                 # Clears and then creates new tables
                 db.clear_table()
-
