@@ -73,7 +73,7 @@ def _roas_collector_permutations():
         for j in ["ROA", "roa"]:
             for k in ["S", "s", ""]:
                 # I know l is bad but this function sucks anways
-                for l in ["-", "_", " "]:
+                for l in ["-", "_"]:
                     for m in ["Collector", "COLLECTOR", "collector",
                               "Parser", "parser", "PARSER"]:
                         possible_permutations.append(i + j + k + l + m)
@@ -110,7 +110,7 @@ def _rel_parser_permutations():
     for i in ["-", "--"]:
         for j in ["Relationship", "relationship", "rel", "Rel"]:
             for k in ["S", "s", ""]:
-                for l in ["-", "_", " "]:
+                for l in ["-", "_"]:
                     for m in ["Parser", "parser", "Par", "par"]:
                         possible_permutations.append(i + j + k + l + m)
     return possible_permutations
@@ -147,7 +147,7 @@ def _mrt_parser_permutations():
     for i in ["-", "--"]:
         for j in ["MRT", "mrt"]:
             for k in ["S", "s", ""]:
-                for l in ["-", " ", "_"]:
+                for l in ["-",  "_"]:
                     for m in ["Parser", "Par", "parser", "par"]:
                         possible_permutations.append(i + j + k + l + m)
     return possible_permutations
