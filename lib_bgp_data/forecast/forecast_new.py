@@ -2,8 +2,10 @@
 # -*- coding: utf-8 -*-
 
 """This submodule runs all parsers to get a days worth of data.
+
 The Forecast class basically follows all of the steps in the package
 description in the README with a couple of minor variations:
+
 -If fresh_install is passed as True, the install process is started
 -If test is passed as true, all but one prefix is deleted from the mrt
  announcements. This makes the extrapolator run much faster, and is for
@@ -14,8 +16,10 @@ description in the README with a couple of minor variations:
  space, create statistics on all of the tables, and write to disk. This
  helps the query planner when planning table joins and massively
  decreases runtime.
+
 Again, this module is too hard to explain in a docstring, please refer
 to the https://github.com/jfuruness/lib_bgp_data#package-description
+
 Design Choices:
 -Nothing is multithreaded for simplicity of code, and since each parser
  either takes up all the threads or takes <1 minute
@@ -23,12 +27,14 @@ Design Choices:
  help the query planner choose the right query plan
 -When testing only one prefix is used to reduce data size and speed up
  extrapolator
+
 Possible Future Extensions:
 -Unit tests
 -Cmd line args
 -Docs on both
 """
 
+from datetime import timedelta
 from ..relationships_parser import Relationships_Parser
 from ..roas_collector import ROAs_Collector
 from ..bgpstream_website_parser import BGPStream_Website_Parser
@@ -37,7 +43,6 @@ from ..extrapolator import Extrapolator
 from ..rpki_validator import RPKI_Validator
 from ..what_if_analysis import What_If_Analysis
 from ..utils import utils, Database, db_connection, Install, error_catcher
-from .tables import MRT_W_Roas_Table
 
 __author__ = "Justin Furuness"
 __credits__ = ["Justin Furuness"]
@@ -72,7 +77,8 @@ class Forecast:
                      exr_args={},
                      rpki_args={},
                      what_if_args={},
-                     test=False):
+                     test=False,
+                     mrt_w_roas=False):
 
         self.logger.info("Running from {} to {} in UTC".format(start, end))
 
@@ -100,22 +106,31 @@ class Forecast:
             # Cleans up the database
             _db.vacuum_analyze_checkpoint()
 
-        # Only keep announcements covered by a roa
+        # Runs the rpki validator and stores data in db
+        RPKI_Validator(rpki_args).run_validator()
+
+        what_if = What_If_Analysis(what_if_args)
+
+        # Only keep announcements invalid or hijacked
         # drops old table, unhinges db, performs query, rehinges db
-        with db_connection(MRT_W_Roas_Table, self.logger) as _db:
+        with db_connection(Database, self.logger) as _db:
             _db.vacuum_analyze_checkpoint()
 
-            # Runs the extrapolator and creates the neccessary indexes
-            Extrapolator(exr_args).run_forecast(_db.name)
+            seconds_in_a_week = 604800
+            what_if.run_pre_exr(start - seconds_in_a_week)
 
-            # Runs the rpki validator and stores data in db
-            RPKI_Validator(rpki_args).run_validator()
+            input("run depref")
+
+            # Runs the extrapolator and creates the neccessary indexes
+            Extrapolator(exr_args).run_forecast("interesting_ann")
 
             # Cleans up db and performs statistics for what if joins
             _db.vacuum_analyze_checkpoint()
 
+            input("Run what if analysis")
+
             # Runs the what if analysis
-            What_If_Analysis(what_if_args).run_rov_policy()
+            what_if.run_post_exr()
 
             # Rewrites the whole database for storage
             _db.vacuum_analyze_checkpoint(full=True)

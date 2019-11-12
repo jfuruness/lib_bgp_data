@@ -92,6 +92,8 @@ class Relationships_Parser:
         for url in self._get_urls(agg_months) if not url else [url]:
             Rel_File(self.path, self.csv_dir,
                      url, self.logger).parse_file(rovpp)
+        utils.delete_paths(self.logger, [self.csv_dir, self.path])
+
         if rovpp:
             # Fills these rov++ specific tables
             with db_connection(ROVPP_ASes_Table, self.logger) as as_table:
@@ -103,6 +105,7 @@ class Relationships_Parser:
 ########################
 ### Helper Functions ###
 ########################
+
     @error_catcher()
     def _get_urls(self, months_back=0):
         """Gets urls to download relationship files and the dates.

@@ -41,15 +41,15 @@ Possible Future Extensions:
     -Move unzip_bz2 to this file? Nothing else uses it anymore
 """
 
-from enum import Enum
 import os
+from enum import Enum
 from subprocess import call
 from ..utils import utils, error_catcher
 from .tables import Customer_Providers_Table, Peers_Table
 from .tables import ROVPP_Customer_Providers_Table, ROVPP_Peers_Table
 
-__author__ = "Justin Furuness"
-__credits__ = ["Justin Furuness"]
+__author__ = "Justin Furuness", "Matt Jaccino"
+__credits__ = ["Justin Furuness", "Matt Jaccino"]
 __Lisence__ = "MIT"
 __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
@@ -93,8 +93,7 @@ class Rel_File:
         self.path = utils.unzip_bz2(self.logger, self.path)
         # Gets data and writes it to the csvs
         self._db_insert(rovpp)
-        # Deletes all paths/files that could have been created
-        utils.delete_paths(self.logger, [self.csv_dir, self.path])
+        # Paths are deleted in the parser to allow aggregating data
 
     @error_catcher()
     def _db_insert(self, rovpp=False):

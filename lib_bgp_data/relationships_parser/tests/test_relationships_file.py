@@ -119,7 +119,5 @@ class Test_Relationships_File:
                     peer_count += 1
                 elif "|-1|" in line:
                     cust_prov_count += 1
-                else:
-                    continue
 
         return peer_count, cust_prov_count

@@ -69,11 +69,11 @@ def _roas_collector_permutations():
     """Gets every possible combination of arg for useability"""
 
     possible_permutations = []
-    for i in [" ", "-", "--"]:
+    for i in ["-", "--"]:
         for j in ["ROA", "roa"]:
             for k in ["S", "s", ""]:
                 # I know l is bad but this function sucks anways
-                for l in ["-", "_", " "]:
+                for l in ["-", "_"]:
                     for m in ["Collector", "COLLECTOR", "collector",
                               "Parser", "parser", "PARSER"]:
                         possible_permutations.append(i + j + k + l + m)
@@ -107,10 +107,17 @@ def _rel_parser_permutations():
     """Gets every possible combination of arg for usability"""
 
     possible_permutations = []
+<<<<<<< HEAD
     for i in [" ", "-", "--"]:
         for j in ["Relationship", "relationship", "rel", "Rel"]:
             for k in ["S", "s", ""]:
                 for l in ["-", "_", " "]:
+=======
+    for i in ["-", "--"]:
+        for j in ["Relationship", "relationship", "rel", "Rel"]:
+            for k in ["S", "s", ""]:
+                for l in ["-", "_"]:
+>>>>>>> origin/tests
                     for m in ["Parser", "parser", "Par", "par"]:
                         possible_permutations.append(i + j + k + l + m)
     return possible_permutations
@@ -144,11 +151,16 @@ def _mrt_parser_permutations():
     """Gets every possible combination of arg for usability"""
 
     possible_permutations = []
-    for i in [" ", "-", "--"]:
+    for i in ["-", "--"]:
         for j in ["MRT", "mrt"]:
             for k in ["S", "s", ""]:
+<<<<<<< HEAD
                 for l in ["-", " ", "_"]:
                     for m in ["Parser", "parser", "par", "par"]:
+=======
+                for l in ["-",  "_"]:
+                    for m in ["Parser", "Par", "parser", "par"]:
+>>>>>>> origin/tests
                         possible_permutations.append(i + j + k + l + m)
     return possible_permutations
 
