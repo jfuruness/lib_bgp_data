@@ -142,7 +142,8 @@ class MRT_Parser:
                     parse_threads=None,
                     IPV4=True,
                     IPV6=False,
-                    bgpscanner=True):
+                    bgpscanner=True,
+                    iso=True):
         """Downloads and parses files using multiprocessing.
 
         In depth explanation at the top of the file.
@@ -159,7 +160,7 @@ class MRT_Parser:
         """
 
         # Gets urls of all mrt files needed
-        urls = self._get_mrt_urls(start, end, api_param_mods)
+        urls = self._get_mrt_urls(start, end, api_param_mods, iso)
         self.logger.debug("Total files {}".format(len(urls)))
         # Get downloaded instances of mrt files using multithreading
         mrt_files = self._multiprocess_download(download_threads, urls)
@@ -175,10 +176,9 @@ class MRT_Parser:
     def _get_mrt_urls(self, start, end, PARAMS_modification={}, iso=True):
         caida_urls = self._get_caida_mrt_urls(start, end, PARAMS_modification)
         # Give Isolario URLs if parameter is not changed
+        # one liner too hard to read ugh
         if iso:
-            isolario_urls = self._get_iso_mrt_urls(start, end)
-            return caida_urls + isolario_urls
-        # Otherwise just give Caida URLs
+            return caida_urls + self._get_iso_mrt_urls(start, end)
         else:
             return caida_urls
 
@@ -213,6 +213,7 @@ class MRT_Parser:
     def _get_iso_mrt_urls(self, start, end):
         """Gets URLs to download MRT files from Isolario.it"""
 
+        self.logger.info("retrieving isolari urls")
         # API URL
         url = "http://isolario.it/Isolario_MRT_data/"
         # Get the collectors from the page
@@ -265,6 +266,7 @@ class MRT_Parser:
                 continue
             # Add to list if there's no issue
             mrt_urls.append(url)
+        self.logger.info("retrieved iso urls")
         return mrt_urls
 
     @error_catcher()

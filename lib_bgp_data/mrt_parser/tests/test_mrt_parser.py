@@ -34,8 +34,8 @@ class Test_MRT_Parser:
 
         # Put here because at some point they will be outdated
         # So here it is a one line fix
-        self._start = 1559394000
-        self._end = 1559397600
+        self._start = 1572613200
+        self._end = 1572616800
         # Two are used to test for multiprocessing
         # Two are also used to limit the number of files and reduce runtime
         self._api_param_mods = {"collectors[]": ["route-views.telxatl",
@@ -57,16 +57,16 @@ class Test_MRT_Parser:
             # Check to make sure the table exists and is empty
             assert db.execute("SELECT * FROM mrt_announcements") == []
 
-    def test_get_mrt_urls(self, parser=None, param_mods=True):
-        """Tests the get_mrt_urls function with api parameters.
+    def test_get_caida_mrt_urls(self, parser=None, param_mods=True):
+        """Tests the get_mrt_urls function with api parameters specifically
+        for the CAIDA URLs, since the other tests will use these to cut
+        runtime.  The Isolario URLs are tested seperately
 
         This makes sure it returns the proper data for the request. This
         is done through first querying the api and getting the debug
         information. That information is later checked against the total
         number urls in the return of the _get_mrt_urls function.
 
-        Note: If this test is failing later, it's possible the dates are
-        outdated, or the api parameter mods.
         """
 
         # Creates parser
@@ -84,14 +84,31 @@ class Test_MRT_Parser:
                                              iso=False)
         # Checks that the number of urls is correct
         assert len(mrt_file_urls) == num_files
-        # Now compare when including Isolario URLs
-        mrt_file_urls_iso = parser._get_mrt_urls(self._start,
-                                                 self._end,
-                                                 api_param_mods)
-        # Makes sure that all of them are actually urls
-        for url in mrt_file_urls_iso:
+        # Make sure they are all valid URLs
+        for url in mrt_file_urls:
             assert validators.url(url)
         return mrt_file_urls
+
+    def test_get_iso_mrt_urls(self, parser=None):
+        """Tests the get_mrt_iso_urls function"""
+
+        # Initialize a parser
+        parser = parser if parser else MRT_Parser()
+        # Get Isolario URLs
+        mrt_file_urls = parser._get_iso_mrt_urls(self._start,
+                                                 self._end)
+        # Make sure the output has at least 5 URLS in it
+        assert len(mrt_file_urls) >= 5
+        # Make sure that all of them are actually urls
+        for url in mrt_file_urls:
+            assert validators.url(url)
+        return mrt_file_urls
+
+    def _get_mrt_urls(self, parser=None, param_mods=True):
+        """Gets all MRT URLs from CAIDA and Isolario."""
+
+        return self.test_get_caida_mrt_urls(parser, param_mods) + \
+         self.test_get_iso_mrt_urls(parser)
 
     def test_get_mrt_urls_no_param_mods(self):
         """Tests the get_mrt_urls function without api parameters.
@@ -99,7 +116,10 @@ class Test_MRT_Parser:
         For a more in depth explanation, see the test_get_mrt_urls func.
         """
 
-        self.test_get_mrt_urls(param_mods=False)
+        num_files = self._get_num_mrt_files(self._start,
+                                            self._end)
+        mrt_file_urls = self._get_mrt_urls(param_mods=False)
+        assert len(mrt_file_urls) == num_files # and len(mrt_file_urls) >= 40
 
     def test_multiprocess_download(self, parser=None,
                                    clean=False,
@@ -117,7 +137,7 @@ class Test_MRT_Parser:
         # Creates parser
         parser = parser if parser else MRT_Parser()
         # Api param mods used to limit to only one file
-        urls = self.test_get_mrt_urls(parser, param_mods)
+        urls = self._get_mrt_urls(parser, param_mods)
         # This errors due to the amount of times the mrt parser is initialized
         # https://github.com/uqfoundation/pathos/issues/111
         # I tried the fixes suggested but it did not fix the problem
@@ -151,9 +171,9 @@ class Test_MRT_Parser:
         """
 
         # Get the URLs with api parameters
-        urls_param_mods = self.test_get_mrt_urls(param_mods=True)
+        urls_param_mods = self._get_mrt_urls(param_mods=True)
         # Get all of the URLs
-        urls_no_param_mods = self.test_get_mrt_urls(param_mods=False)
+        urls_no_param_mods = self._get_mrt_urls(param_mods=False)
         # Download using a single process
         singular_mods = self._single_process_download(urls_param_mods)
         # Download using multiprocessing
@@ -217,7 +237,7 @@ class Test_MRT_Parser:
                 assert len(db.execute(sql)) == 0
         return select_all
 
-    def OFFtest_multiprocess_parse_dls_no_param_mods(self):
+    def test_multiprocess_parse_dls_no_param_mods(self):
         """Tests the multiprocess_parse_dls with no api parameters.
 
         For a better explanation, see the test_multiprocess_parse_dls
@@ -249,7 +269,7 @@ class Test_MRT_Parser:
         # Make sure these counts are the same
         assert multi_params == singular_params
 
-    def OFFtest_single_vs_multiprocess_parse_dls_no_param_mods(self):
+    def test_single_vs_multiprocess_parse_dls_no_param_mods(self):
         """Test single vs. multiprocess parsing without api parameters"""
 
         # Repeat last test, but without using api parameters
@@ -281,7 +301,7 @@ class Test_MRT_Parser:
         with db_connection() as db:
             db.execute("SELECT * FROM mrt_announcements")
 
-    def OFFtest_parse_files_no_param_mods(self):
+    def test_parse_files_no_param_mods(self):
         """Tests parse_files without api parameters.
 
         For a better explanation, see the test_parse_files function.
