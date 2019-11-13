@@ -410,26 +410,28 @@ class Install:
         Must be installed from source due to bug fixes not in apt repo.
         """
 
-        return
-        # bgpdump is moving to github so it is currently impossible to download
-        # It used to be on mercurial but I guess that's gone now
-        # Hopefuly this will be fixed soon
-
-        # Commands to install from source
-        cmds = ["sudo apt -y install mercurial",
-                "git clone https://bitbucket.org/ripencc/bgpdump.git",
-                "cd bgpdump",
-                "sudo apt install automake",
-                "./bootstrap.sh",
-                "make",
-                "./bgpdump -T",
-                "sudo cp bgpdump /usr/bin/bgpdump"]
-
-        check_call("&& ".join(cmds), shell=True)
         try:
-            check_call("sudo cp bgpdump /usr/local/bin/bgpdump", shell=True)
+            # bgpdump is moving to github so it is currently impossible to download
+            # It used to be on mercurial but I guess that's gone now
+            # Hopefuly this will be fixed soon
+    
+            # Commands to install from source
+            cmds = ["sudo apt -y install mercurial",
+                    "git clone https://bitbucket.org/ripencc/bgpdump.git",
+                    "cd bgpdump",
+                    "sudo apt install automake",
+                    "./bootstrap.sh",
+                    "make",
+                    "./bgpdump -T",
+                    "sudo cp bgpdump /usr/bin/bgpdump"]
+
+            check_call("&& ".join(cmds), shell=True)
+            try:
+                check_call("sudo cp bgpdump /usr/local/bin/bgpdump", shell=True)
+            except:
+                pass
         except:
-            pass
+            print("BGPdump failed to install, but this is unnessecary")
 
 ########################
 ### Helper Functions ###
