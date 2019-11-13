@@ -187,7 +187,6 @@ def incriment_bar(logger):
         sys.stdout.write("#")
         sys.stdout.flush()
     else:
-        print("fuck")
         sys.stdout.flush()
 
 def delete_paths(logger, paths):
