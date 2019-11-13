@@ -99,10 +99,10 @@ Possible Future Extensions:
 
 
 import requests
-import time
 import datetime
 from .mrt_file import MRT_File
 from ..utils import error_catcher, utils, db_connection
+from ..utils.utils import progress_bar
 from .tables import MRT_Announcements_Table
 
 __author__ = "Justin Furuness", "Matt Jaccino"
@@ -176,6 +176,7 @@ class MRT_Parser:
     def _get_mrt_urls(self, start, end, PARAMS_modification={}, iso=True):
         """Gets caida and iso URLs, start and end should be epoch"""
 
+        self.logger.info("Getting MRT urls")
         caida_urls = self._get_caida_mrt_urls(start, end, PARAMS_modification)
         # Give Isolario URLs if parameter is not changed
         if iso:
@@ -223,20 +224,19 @@ class MRT_Parser:
         _start = datetime.datetime.fromtimestamp(start)
 
         # Get the folder name according to the start parameter
-        folder = time.strftime("%Y_%m/", _start)
+        folder = _start.strftime("%Y_%m/")
         # Isolario files are added every 2 hrs, so if start time is odd numbered,
         # then make it an even number and add an hour
         # https://stackoverflow.com/q/12400256/8903959
-        if _start.hours % 2 != 0:
-            _start.replace(hours=start.hours + 1)
+        if _start.hour % 2 != 0:
+            _start.replace(hour=start.hours + 1)
 
         # The file name for the RIB wanted according to the start parameter...
-        start_file = "rib.{}.bz2".format(time.strftime("%Y%m%d.%H00", _start))
+        start_file = "rib.{}.bz2".format(_start.strftime("%Y%m%d.%H00"))
 
         # Make a list of all possible file URLs
         return [url + coll + folder + start_file for coll in _collectors]
 
-    @error_catcher()
     def _multiprocess_download(self, dl_threads, urls):
         """Downloads MRT files in parallel.
 
@@ -252,13 +252,14 @@ class MRT_Parser:
                               self.logger)
                      for i, url in enumerate(urls)]
 
-        # Creates a dl pool with 4xCPUs since it is I/O based
-        with utils.Pool(self.logger, dl_threads, 4, "download") as dl_pool:
-            self.logger.debug("About to start downloading files")
-            # Download files in parallel
-            dl_pool.map(lambda f: utils.download_file(f.logger, f.url,
-                        f.path, f.num, f.total_files, f.num/5), mrt_files)
-            self.logger.debug("started to download files")
+        with progress_bar(self.logger, "Downloading MRTs, ", len(mrt_files)):
+            # Creates a dl pool with 4xCPUs since it is I/O based
+            with utils.Pool(self.logger, dl_threads, 4, "download") as dl_pool:
+                
+                # Download files in parallel
+                dl_pool.map(lambda f: utils.download_file(
+                        f.logger, f.url, f.path, f.num, f.total_files,
+                        f.num/5, progress_bar=True), mrt_files)
         return mrt_files
 
     @error_catcher()
@@ -269,11 +270,12 @@ class MRT_Parser:
         dl=download, p=parse.
         """
 
-        # Creates a parsing pool with cpu_count since it is CPU bound
-        with utils.Pool(self.logger, p_threads, 1, "parsing") as p_pool:
-            # Runs the parsing of files in parallel, largest first
-            p_pool.map(lambda f: f.parse_file(bgpscanner),
-                       sorted(mrt_files, reverse=True))
+
+        with progress_bar(self.logger, "Parsing MRT Files,", len(mrt_files)):
+            with utils.Pool(self.logger, p_threads, 1, "parsing") as p_pool:
+                # Runs the parsing of files in parallel, largest first
+                p_pool.map(lambda f: f.parse_file(bgpscanner),
+                           sorted(mrt_files, reverse=True))
 
     @error_catcher()
     def _filter_and_clean_up_db(self, IPV4, IPV6):

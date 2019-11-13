@@ -20,11 +20,12 @@ from datetime import datetime, timedelta
 import csv
 import json
 import pytz
+from tqdm import tqdm
 from bz2 import BZ2Decompressor
 from bs4 import BeautifulSoup as Soup
 from pathos.multiprocessing import ProcessingPool
 from contextlib import contextmanager
-from multiprocessing import cpu_count
+from multiprocessing import cpu_count, Queue, Process, Manager
 from .logger import Thread_Safe_Logger as Logger
 from .database import db_connection
 
@@ -42,7 +43,7 @@ def Pool(logger, threads, multiplier, name):
 
     # Creates a pool with threads else cpu_count * multiplier
     p = ProcessingPool(threads if threads else cpu_count() * multiplier)
-    logger.info("Created {} pool".format(name))
+    logger.debug("Created {} pool".format(name))
     yield p
     # Need to clear due to:
     # https://github.com/uqfoundation/pathos/issues/111
@@ -50,6 +51,25 @@ def Pool(logger, threads, multiplier, name):
     p.join()
     p.clear()
 
+# tqdm fails whenever large multiprocess operations take place
+# We don't want 60 print statements every time we run multiprocess things
+# So instead I wrote my own progress bar
+# This prints a progress bar, func should write to sys.stdout to incriment
+# This works well with multiprocessing for our applications
+# https://stackoverflow.com/a/3160819/8903959
+@contextmanager
+def progress_bar(logger, msg, toolbar_width):
+    if logger.level <= 20:  # logging.INFO
+        sys.stdout.write("{}: {} X/{}".format(datetime.now(),
+                                               msg,
+                                               toolbar_width))
+        sys.stdout.write("[%s]" % (" " * toolbar_width))
+        sys.stdout.flush()
+        # return to start of line, after '['
+        sys.stdout.write("\b" * (toolbar_width+1))
+    yield
+    if logger.level <= 20:
+        sys.stdout.write("]\n")
 
 # This decorator wraps any run parser function
 # This starts the parser, cleans all paths, ends the parser, and records time
@@ -128,12 +148,17 @@ def set_common_init_args(self, args, paths=True):
     self.logger.debug("Initialized {} at {}".format(name, now()))
 
 
-def download_file(logger, url, path, file_num=1, total_files=1, sleep_time=0):
+def download_file(logger,
+                  url,
+                  path,
+                  file_num=1,
+                  total_files=1,
+                  sleep_time=0,
+                  progress_bar=False):
     """Downloads a file from a url into a path."""
 
     logger.debug("Downloading a file.\n    Path: {}\n    Link: {}\n"
                  .format(path, url))
-
     # This is to make sure that the network is not bombarded with requests
     time.sleep(sleep_time)
     retries = 10
@@ -145,7 +170,9 @@ def download_file(logger, url, path, file_num=1, total_files=1, sleep_time=0):
                     as response, open(path, 'wb') as out_file:
                 # Copy the file into the specified file_path
                 shutil.copyfileobj(response, out_file)
-                logger.info("{} / {} downloaded".format(file_num, total_files))
+                logger.debug("{} / {} downloaded".format(file_num, total_files))
+                if progress_bar:
+                    incriment_bar(logger)
                 return
         # If there is an error in the download this will be called
         # And the download will be retried
@@ -156,6 +183,13 @@ def download_file(logger, url, path, file_num=1, total_files=1, sleep_time=0):
                 logger.error("Failed download {}\nDue to: {}".format(url, e))
                 sys.exit(1)
 
+def incriment_bar(logger):
+    if logger.level <= 20:  # INFO
+        sys.stdout.write("#")
+        sys.stdout.flush()
+    else:
+        print("fuck")
+        sys.stdout.flush()
 
 def delete_paths(logger, paths):
     """Removes directory if directory, or removes path if path"""

@@ -117,6 +117,7 @@ class MRT_File:
         utils.csv_to_db(self.logger, MRT_Announcements_Table, self.csv_name)
         # Deletes all old files
         utils.delete_paths(self.logger, [self.path, self.csv_name])
+        utils.incriment_bar(self.logger)
 
 
 ########################
@@ -143,7 +144,7 @@ class MRT_File:
         # writes to a csv
         args += '> ' + self.csv_name
         call(args, shell=True)
-        self.logger.info("Wrote {}\n\tFrom {}".format(self.csv_name, self.url))
+        self.logger.debug("Wrote {}\n\tFrom {}".format(self.csv_name, self.url))
         utils.delete_paths(self.logger, self.path)
 
     @error_catcher()
