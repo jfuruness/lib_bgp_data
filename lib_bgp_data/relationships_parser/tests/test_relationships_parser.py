@@ -68,7 +68,8 @@ class Test_Relationships_Parser:
         print(self.parser._get_urls(agg_months)[0])
 
         # Test for default case (0 months back)
-        assert self.parser._get_urls()[0] == self.parser._get_urls(agg_months)[-1]
+        assert self.parser._get_urls()[0] == \
+            self.parser._get_urls(agg_months)[-1]
         # Test for arbitrary number of months back
         urls = self.parser._get_urls(agg_months)
         # Make sure there are the right amount of urls in the list
