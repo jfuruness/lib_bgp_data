@@ -60,6 +60,7 @@ class Config:
 
         # Conf info
         _config = SCP()
+        _config.read(self.path)
         _config[self.section] = {"host": "localhost",
                                  "database": self.section,
                                  "password": _password,
