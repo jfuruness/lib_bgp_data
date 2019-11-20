@@ -8,5 +8,5 @@ pathos>=0.2.3
 psycopg2-binary>=2.8.3
 Werkzeug>=0.15.4
 psutil
-pytest
+pytest==4.6.6
 pytz
