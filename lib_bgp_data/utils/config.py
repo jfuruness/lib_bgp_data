@@ -30,10 +30,10 @@ def set_global_section_header(section):
 class Config:
     """Interact with config file"""
 
-    __slots__ = ["path", "logger"]
+    __slots__ = ["path", "logger", "section"]
 
     @error_catcher()
-    def __init__(self, logger, path="/etc/bgp/bgp.conf", section="bgp"):
+    def __init__(self, logger, section="bgp", path="/etc/bgp/bgp.conf"):
         """Initializes path for config file."""
 
         self.path = path

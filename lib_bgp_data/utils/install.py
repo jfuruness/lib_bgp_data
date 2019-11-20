@@ -91,7 +91,7 @@ sql_install_file = "/tmp/db_install.sql"
 class Install:
     """Installs and configures the lib_bgp_data package"""
 
-    __slots__ = ['logger', 'db_pass']
+    __slots__ = ['section', 'logger', 'db_pass']
 
     @error_catcher()
     def __init__(self, section="bgp"):
