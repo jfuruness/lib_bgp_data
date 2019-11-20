@@ -27,6 +27,8 @@ from contextlib import contextmanager
 from multiprocessing import cpu_count
 from .logger import Thread_Safe_Logger as Logger
 from .database import db_connection
+#from .config import Config
+from .config import set_global_section_header
 
 __author__ = "Justin Furuness"
 __credits__ = ["Justin Furuness"]
@@ -105,7 +107,7 @@ def get_default_end():
                                              second=59,
                                              microsecond=59).timestamp()
 
-def set_common_init_args(self, args, paths=True):
+def set_common_init_args(self, args, section="bgp", paths=True):
     """Sets self attributes for arguments common across many classes"""
 
     # The class name. This because when parsers are done,
@@ -113,15 +115,19 @@ def set_common_init_args(self, args, paths=True):
     # the same directories and delete files that others are using
     name = self.__class__.__name__
 
+    # Set global section header varaible in Config's init
+#    Config(self.logger, section)
+    set_global_section_header(section)
+
     self.logger = args.get("logger") if args.get("logger") else\
         Logger(args)
 
     if paths:
         # Path to where all files willi go. It does not have to exist
         self.path = args.get("path") if args.get("path") else\
-            "/tmp/bgp_{}".format(name)
+            "/tmp/{}_{}".format(section, name)
         self.csv_dir = args.get("csv_dir") if args.get("csv_dir") else\
-            "/dev/shm/bgp_{}".format(name)
+            "/dev/shm/{}_{}".format(section, name)
         clean_paths(self.logger, [self.path, self.csv_dir])
 
     # Deletes and creates dirs from fresh

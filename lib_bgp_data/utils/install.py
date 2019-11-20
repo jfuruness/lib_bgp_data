@@ -94,7 +94,7 @@ class Install:
     __slots__ = ['logger', 'db_pass']
 
     @error_catcher()
-    def __init__(self):
+    def __init__(self, section="bgp"):
         """Makes sure that you are a sudo user"""
 
         class NotSudo(Exception):
@@ -103,6 +103,8 @@ class Install:
         DEBUG = 10  # Cannot import logging due to deadlocks
         # Initializes self.logger
         self.logger = logger({"stream_level": DEBUG})
+        # Store the section header for the config file
+        self.section = section
         # Makes sure that you are a sudo user
         if os.getuid() != 0:
             raise NotSudo("Sudo priveleges are required for install")
@@ -119,7 +121,7 @@ class Install:
                 password_characters = string.ascii_letters + string.digits
                 self.db_pass = ''.join(random.SystemRandom().choice(
                     password_characters) for i in range(24))
-            Config(self.logger).create_config(self.db_pass)
+            Config(self.logger, self.section).create_config(self.db_pass)
             self._create_database()
         # Set unhinged to true to prevent automated writes to disk
         self._modify_database()
@@ -136,24 +138,30 @@ class Install:
         """Creates the bgp database and bgp_user and extensions."""
 
         # SQL commands to write
-        sqls = ["DROP DATABASE bgp;",
-                "DROP OWNED BY bgp_user;",
-                "DROP USER bgp_user;",
-                "CREATE DATABASE bgp;",
-                "CREATE USER bgp_user;",
-                "REVOKE CONNECT ON DATABASE bgp FROM PUBLIC;"
-                "REVOKE ALL ON ALL TABLES IN SCHEMA public FROM bgp_user;",
-                "GRANT ALL PRIVILEGES ON DATABASE bgp TO bgp_user;",
+        sqls = ["DROP DATABASE {};".format(self.section),
+                "DROP OWNED BY {}_user;".format(self.section),
+                "DROP USER {}_user;".format(self.section),
+                "CREATE DATABASE {};".format(self.section),
+                "CREATE USER {}_user;".format(self.section),
+                "REVOKE CONNECT ON DATABASE "
+                "{} FROM PUBLIC;".format(self.section),
+                "REVOKE ALL ON ALL TABLES IN SCHEMA "
+                "public FROM {}_user;".format(self.section),
+                "GRANT ALL PRIVILEGES ON DATABASE "
+                "{} TO {}_user;".format(self.section, self.section),
                 """GRANT ALL PRIVILEGES ON ALL SEQUENCES
-                IN SCHEMA public TO bgp_user;""",
-                "ALTER USER bgp_user WITH PASSWORD '{}';".format(self.db_pass),
-                "ALTER USER bgp_user WITH SUPERUSER;",
-                "CREATE EXTENSION btree_gist WITH SCHEMA bgp;"]
+                IN SCHEMA public TO {}_user;""".format(self.section),
+                "ALTER USER {}_user WITH PASSWORD '{}';".format(self.section,
+                                                                self.db_pass),
+                "ALTER USER {}_user WITH SUPERUSER;".format(self.section),
+                "CREATE EXTENSION btree_gist "
+                "WITH SCHEMA {};".format(self.section)]
         # Writes sql file
         self._run_sql_file(sqls)
         # Must do this here, nothing else seems to create it
-        create_extension_args = ('sudo -u postgres psql -d bgp'
-                                 ' -c "CREATE EXTENSION btree_gist;"')
+        create_extension_args = ('sudo -u postgres psql -d {}'
+                                 ' -c "CREATE EXTENSION '
+                                 'btree_gist;"'.format(self.section))
         # Allow for failures in case it's already there
         call(create_extension_args, shell=True)
 
@@ -167,7 +175,7 @@ class Install:
         work at a cluster level, so all databases will be changed.
         """
 
-        ram = Config(self.logger).ram
+        ram = Config(self.logger, self.section).ram
         usr_input = input("If SSD, enter 1 or enter, else enter 2: ")
         if str(usr_input) in ["", "1"]:
             random_page_cost = float(1)
@@ -178,7 +186,8 @@ class Install:
             ulimit = 8192
         # Extension neccessary for some postgres scripts
         sqls = ["CREATE EXTENSION btree_gist;",
-                "ALTER DATABASE bgp SET timezone TO 'UTC';",
+                "ALTER DATABASE {} SET timezone "
+                "TO 'UTC';".format(self.section),
                 # These are settings that ensure data isn't corrupted in
                 # the event of a crash. We don't care so...
                 "ALTER SYSTEM SET fsync TO off;",
