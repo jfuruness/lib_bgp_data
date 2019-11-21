@@ -12,7 +12,11 @@ import requests
 import os
 from multiprocessing import cpu_count
 from subprocess import check_call
+<<<<<<< HEAD
 import validators
+=======
+#import validators
+>>>>>>> 64a89db2aff06585491f2b5f053b60d59a7a0822
 from ..mrt_parser import MRT_Parser
 from ..mrt_file import MRT_File
 from ..tables import MRT_Announcements_Table
@@ -26,6 +30,13 @@ __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
 
+<<<<<<< HEAD
+=======
+# TODO:
+#       fix 'validators' import error for good
+
+
+>>>>>>> 64a89db2aff06585491f2b5f053b60d59a7a0822
 class Test_MRT_Parser:
     """Tests all functions within the mrt parser class."""
 
@@ -40,6 +51,12 @@ class Test_MRT_Parser:
         # Two are also used to limit the number of files and reduce runtime
         self._api_param_mods = {"collectors[]": ["route-views.telxatl",
                                                  "route-views2"]}
+<<<<<<< HEAD
+=======
+        # This errors due to the amount of times the mrt parser is initialized
+        # https://github.com/uqfoundation/pathos/issues/111
+        # I tried the fixes suggested but it did not fix the problem
+>>>>>>> 64a89db2aff06585491f2b5f053b60d59a7a0822
 
     def test_mrt_init_(self):
         """Tests the __init__ function of the mrt parser.
@@ -77,6 +94,7 @@ class Test_MRT_Parser:
         # Gets all the mrt file urls
         mrt_file_urls = parser._get_mrt_urls(self._start,
                                              self._end,
+<<<<<<< HEAD
                                              api_param_mods,
                                              iso=False)
         # Checks that the number of urls is correct
@@ -88,6 +106,16 @@ class Test_MRT_Parser:
         # Makes sure that all of them are actually urls
         for url in mrt_file_urls_iso:
             assert validators.url(url)
+=======
+                                             api_param_mods)
+        # Checks that the number of urls is the same as the num_files
+        assert len(mrt_file_urls) == num_files
+        print(mrt_file_urls[0])
+        assert False
+        # Makes sure that all of them are actually urls
+#        for url in mrt_file_urls:
+#            assert validators.url(url)
+>>>>>>> 64a89db2aff06585491f2b5f053b60d59a7a0822
         return mrt_file_urls
 
     def test_get_mrt_urls_no_param_mods(self):
@@ -112,8 +140,13 @@ class Test_MRT_Parser:
         # of the time interval but not if it is after the end
         assert 0 < len(mrt_file_urls) <= 5
         # Make sure each element of the list returned is a valid URL
+<<<<<<< HEAD
         for url in mrt_file_urls:
             assert validators.url(url)
+=======
+#       for url in mrt_file_urls:
+#            assert validators.url(url)
+>>>>>>> 64a89db2aff06585491f2b5f053b60d59a7a0822
         return mrt_file_urls
 
     def test_multiprocess_download(self, parser=None,
@@ -133,6 +166,13 @@ class Test_MRT_Parser:
         parser = parser if parser else MRT_Parser()
         # Api param mods used to limit to only one file
         urls = self.test_get_mrt_urls(parser, param_mods)
+<<<<<<< HEAD
+=======
+        # This errors due to the amount of times the mrt parser is initialized
+        # https://github.com/uqfoundation/pathos/issues/111
+        # I tried the fixes suggested but it did not fix the problem
+        # So now I just changed the number of threads every time
+>>>>>>> 64a89db2aff06585491f2b5f053b60d59a7a0822
         # Download mrt files
         mrt_files = parser._multiprocess_download(3, urls)
         # Makes sure the mrt files are the same length as the urls
@@ -228,7 +268,11 @@ class Test_MRT_Parser:
                 assert len(db.execute(sql)) == 0
         return select_all
 
+<<<<<<< HEAD
     def test_multiprocess_parse_dls_no_param_mods(self):
+=======
+    def OFFtest_multiprocess_parse_dls_no_param_mods(self):
+>>>>>>> 64a89db2aff06585491f2b5f053b60d59a7a0822
         """Tests the multiprocess_parse_dls with no api parameters.
 
         For a better explanation, see the test_multiprocess_parse_dls
@@ -260,7 +304,11 @@ class Test_MRT_Parser:
         # Make sure these counts are the same
         assert multi_params == singular_params
 
+<<<<<<< HEAD
     def test_single_vs_multiprocess_parse_dls_no_param_mods(self):
+=======
+    def OFFtest_single_vs_multiprocess_parse_dls_no_param_mods(self):
+>>>>>>> 64a89db2aff06585491f2b5f053b60d59a7a0822
         """Test single vs. multiprocess parsing without api parameters"""
 
         # Repeat last test, but without using api parameters
@@ -292,7 +340,11 @@ class Test_MRT_Parser:
         with db_connection() as db:
             db.execute("SELECT * FROM mrt_announcements")
 
+<<<<<<< HEAD
     def test_parse_files_no_param_mods(self):
+=======
+    def OFFtest_parse_files_no_param_mods(self):
+>>>>>>> 64a89db2aff06585491f2b5f053b60d59a7a0822
         """Tests parse_files without api parameters.
 
         For a better explanation, see the test_parse_files function.

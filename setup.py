@@ -75,7 +75,7 @@ setup(
         'pathos',
         'psutil',
         'psycopg2-binary',
-        'pytest',
+        'pytest==4.6.6',
         'pytz',
         'validators',
         'Werkzeug'

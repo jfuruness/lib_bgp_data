@@ -10,7 +10,11 @@ from ..mrt_file import MRT_File
 from ..mrt_parser import MRT_Parser
 from ...utils import utils, db_connection
 from ..tables import MRT_Announcements_Table
+<<<<<<< HEAD
 from subprocess import check_call
+=======
+from subprocess import call
+>>>>>>> 64a89db2aff06585491f2b5f053b60d59a7a0822
 
 __author__ = "Matt Jaccino"
 __credits__ = ["Matt Jaccino", "Justin Furuness"]
@@ -33,6 +37,12 @@ class Test_MRT_File:
         # Create another MRT_File object and download
         test_file2 = self._mrt_file_factory()
         # Get the number of entries in the table when parsed with BGPDump
+<<<<<<< HEAD
+=======
+        #
+        # BGPDUMP FAILS
+        #
+>>>>>>> 64a89db2aff06585491f2b5f053b60d59a7a0822
         dump = self._get_entries(test_file2, bgpscanner=False)
         # Make sure both entries are identical
         assert scanner == dump
@@ -53,14 +63,22 @@ class Test_MRT_File:
         expected_out += "\t67890\t1234567890"
         # Pipe the example output through the args and output to a new file
         sys_call = "cat .bgpscanner_out.txt" + args + " > bgpscanner_reg.txt"
+<<<<<<< HEAD
         check_call(sys_call, shell=True)
+=======
+        call(sys_call, shell=True)
+>>>>>>> 64a89db2aff06585491f2b5f053b60d59a7a0822
         # Use this file to compare to the expected output
         with open("bgpscanner_reg.txt", 'r') as reg:
             regex_out = reg.read()
         # Slice off the \n for comparison
         assert regex_out[:-1] == expected_out
         # Delete CSV files when complete
+<<<<<<< HEAD
         check_call("rm bgpscanner_reg.txt", shell=True)
+=======
+        call("rm bgpscanner_reg.txt", shell=True)
+>>>>>>> 64a89db2aff06585491f2b5f053b60d59a7a0822
         # Create an MRT File object to use to get output
         test_file = self._mrt_file_factory()
         # Create a text file of the CSV after modifying BGPScanner output
@@ -69,7 +87,11 @@ class Test_MRT_File:
         # Get the number of lines in this file
         lines = self._number_of_lines("scanner.txt")
         # Delete the file once the lines have been counted
+<<<<<<< HEAD
         check_call("rm scanner.txt", shell=True)
+=======
+        call("rm scanner.txt", shell=True)
+>>>>>>> 64a89db2aff06585491f2b5f053b60d59a7a0822
         # Get the number of entries in the MRT Announcements table
         entries = len(self._get_entries(self._mrt_file_factory()))
         # Make sure these values match
@@ -89,14 +111,22 @@ class Test_MRT_File:
         expected_out += "1234, 5678, 90}\t90"
         # Pipe the example output through the args and output to a new file
         sys_call = "cat .bgpdump_out.txt" + args + " > bgpdump_reg.txt"
+<<<<<<< HEAD
         check_call(sys_call, shell=True)
+=======
+        call(sys_call, shell=True)
+>>>>>>> 64a89db2aff06585491f2b5f053b60d59a7a0822
         # Use this file to compare to the expected output
         with open("bgpdump_reg.txt", 'r') as reg:
             regex_out = reg.read()
         # Slice off the \n for comparison
         assert regex_out[:-1] == expected_out
         # Delete the CSV files when complete
+<<<<<<< HEAD
         check_call("rm bgpdump_reg.txt", shell=True)
+=======
+        call("rm bgpdump_reg.txt", shell=True)
+>>>>>>> 64a89db2aff06585491f2b5f053b60d59a7a0822
         # Create an MRT File object to use to get output
         test_file = self._mrt_file_factory()
         # Create a text file of the CSV after modifying BGPDump output
@@ -105,7 +135,11 @@ class Test_MRT_File:
         # Get the number of lines in this file
         lines = self._number_of_lines("dump.txt")
         # Delete the file once the lines have been counted
+<<<<<<< HEAD
         check_call("rm dump.txt", shell=True)
+=======
+        call("rm dump.txt", shell=True)
+>>>>>>> 64a89db2aff06585491f2b5f053b60d59a7a0822
         # Get the number of entries in the MRT Announcements table
         entries = len(self._get_entries(self._mrt_file_factory(),
                                         bgpscanner=False))
@@ -120,7 +154,11 @@ class Test_MRT_File:
             assert len(db.execute("SELECT * FROM mrt_announcements;")) > 0
             for entry in db.execute("SELECT as_path FROM mrt_announcements;"):
                 # Check for sets by looking for set notation
+<<<<<<< HEAD
                 assert "{" not in str(entry)
+=======
+                assert "{" not in entry
+>>>>>>> 64a89db2aff06585491f2b5f053b60d59a7a0822
 
 ###############
 ### Helpers ###
@@ -128,9 +166,17 @@ class Test_MRT_File:
 
     def _number_of_lines(self, filename):
         """Short helper function to get the number of lines in a file"""
+<<<<<<< HEAD
         with open(filename, 'r') as f:
             for count, line in enumerate(f):
         return count + 1
+=======
+        count = 0
+        with open(filename, 'r') as f:
+            for line in f:
+                count += 1
+        return count
+>>>>>>> 64a89db2aff06585491f2b5f053b60d59a7a0822
 
     def _get_entries(self, mrt_file, bgpscanner=True):
         """Short helper function to get entries from MRT Announcements"""
@@ -140,7 +186,10 @@ class Test_MRT_File:
         return entries
 
     def _mrt_file_factory(self):
+<<<<<<< HEAD
         """Generates MRT File objects with the same URL for comparison"""
+=======
+>>>>>>> 64a89db2aff06585491f2b5f053b60d59a7a0822
         parser = MRT_Parser()
         file_url = parser._get_mrt_urls(utils.get_default_start(),
                                         utils.get_default_end())[0]

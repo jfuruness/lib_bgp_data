@@ -399,7 +399,19 @@ class Install:
              check_call("cp bgpscanner/build/bgpscanner /usr/local/bin/bgpscanner", shell=True)
         except:
             pass
-
+        # Now to install libisocore so BGPScanner works
+        cmds = ["cd bgpscanner/subprojects/",
+                "git clone https://gitlab.com/Isolario/isocore.git",
+                "cd isocore",
+                "mkdir build && cd build",
+                "../../../../delete_me/bin/meson ..",
+                "cd ../../",
+                "cd isocore/build",
+                "sudo ninja install",
+                "sudo ldconfig",
+                "cd ../../",
+                "cp isocore/build/libisocore.so /usr/lib/libisocore.so"]
+        check_call("&& ".join(cmds), shell=True)
         check_call("rm -rf delete_me", shell=True)
 
     @error_catcher()
