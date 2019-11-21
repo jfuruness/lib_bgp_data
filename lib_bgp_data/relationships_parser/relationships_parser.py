@@ -92,11 +92,8 @@ class Relationships_Parser:
         for url in self._get_urls(agg_months) if not url else [url]:
             Rel_File(self.path, self.csv_dir,
                      url, self.logger).parse_file(rovpp)
-<<<<<<< HEAD
         utils.delete_paths(self.logger, [self.csv_dir, self.path])
 
-=======
->>>>>>> 64a89db2aff06585491f2b5f053b60d59a7a0822
         if rovpp:
             # Fills these rov++ specific tables
             with db_connection(ROVPP_ASes_Table, self.logger) as as_table:

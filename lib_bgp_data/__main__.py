@@ -107,23 +107,10 @@ def _rel_parser_permutations():
     """Gets every possible combination of arg for usability"""
 
     possible_permutations = []
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 64a89db2aff06585491f2b5f053b60d59a7a0822
-    for i in [" ", "-", "--"]:
-        for j in ["Relationship", "relationship", "rel", "Rel"]:
-            for k in ["S", "s", ""]:
-                for l in ["-", "_", " "]:
-<<<<<<< HEAD
-=======
     for i in ["-", "--"]:
         for j in ["Relationship", "relationship", "rel", "Rel"]:
             for k in ["S", "s", ""]:
                 for l in ["-", "_"]:
->>>>>>> origin/tests
-=======
->>>>>>> 64a89db2aff06585491f2b5f053b60d59a7a0822
                     for m in ["Parser", "parser", "Par", "par"]:
                         possible_permutations.append(i + j + k + l + m)
     return possible_permutations
@@ -157,24 +144,11 @@ def _mrt_parser_permutations():
     """Gets every possible combination of arg for usability"""
 
     possible_permutations = []
-<<<<<<< HEAD
     for i in ["-", "--"]:
         for j in ["MRT", "mrt"]:
             for k in ["S", "s", ""]:
-<<<<<<< HEAD
-                for l in ["-", " ", "_"]:
-                    for m in ["Parser", "parser", "par", "par"]:
-=======
                 for l in ["-",  "_"]:
                     for m in ["Parser", "Par", "parser", "par"]:
->>>>>>> origin/tests
-=======
-    for i in [" ", "-", "--"]:
-        for j in ["MRT", "mrt"]:
-            for k in ["S", "s", ""]:
-                for l in ["-", " ", "_"]:
-                    for m in ["Parser", "parser", "par", "par"]:
->>>>>>> 64a89db2aff06585491f2b5f053b60d59a7a0822
                         possible_permutations.append(i + j + k + l + m)
     return possible_permutations
 
