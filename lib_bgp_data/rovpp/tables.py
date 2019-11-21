@@ -21,7 +21,7 @@ Possible future improvements:
 
 from random import sample
 from .enums import Policies, Hijack_Types
-from ..utils import Database, error_catcher
+from ..utils import Database, error_catcher, db_connection
 
 __author__ = "Justin Furuness"
 __credits__ = ["Justin Furuness"]
@@ -69,12 +69,12 @@ class ROVPP_MRT_Announcements_Table(Database):
         sql = """INSERT INTO rovpp_mrt_announcements(
               origin, as_path, prefix) VALUES
               (%s, %s, %s)"""
-        attacker_data = [subprefix_hijack["attacker"],
-                         [subprefix_hijack["attacker"]],
-                         subprefix_hijack["more_specific_prefix"]]
-        victim_data = [subprefix_hijack["victim"],
-                       [subprefix_hijack["victim"]],
-                       subprefix_hijack["expected_prefix"]]
+        attacker_data = [subprefix_hijack.attacker_asn,
+                         [subprefix_hijack.attacker_asn],
+                         subprefix_hijack.attacker_prefix]
+        victim_data = [subprefix_hijack.victim_asn,
+                       [subprefix_hijack.victim_asn],
+                       subprefix_hijack.victim_prefix]
         data_list = [attacker_data]
         if hijack_type != Hijack_Types.NO_COMPETING_ANNOUNCEMENT_HIJACK.value:
             data_list.append(victim_data)
@@ -134,7 +134,18 @@ class Subprefix_Hijack_Temp_Table(Database):
         self.cursor.execute(sql, data)
 
         self.logger.debug("Creating fake data for subprefix hijacks")
-        return Hijack(self.get_all()[0])
+        hijack = Hijack(self.get_all()[0])
+        with db_connection(ROVPP_MRT_Announcements_Table) as db:
+            db.populate_mrt_announcements(hijack, hijack_type)
+        return hijack
+
+class Hijack:
+    def __init__(self, info_dict):
+        self.attacker_asn = info_dict.get("attacker")
+        self.attacker_prefix = info_dict.get("more_specific_prefix")
+        self.victim_asn = info_dict.get("victim")
+        self.victim_prefix = info_dict.get("expected_prefix")
+        
 
 ####################
 ### Subtables!!! ###
@@ -232,3 +243,47 @@ class ROVPP_Etc_ASes_Table(ROVPP_ASes_Subtable):
         sql += ");"
         self.logger.debug("ETC AS SQL:\n\n{}\n".format(sql))
         self.cursor.execute(sql)
+
+class ROVPP_All_Trials_Table(Database):
+    """Class with database functionality.
+
+    In depth explanation at the top of the file."""
+
+    __slots__ = ['attacker_asn', 'attacker_prefix', 'victim_asn',
+                 'victim_prefix']
+
+    def _create_tables(self):
+        """Creates tables if they do not exist.
+
+        Called during initialization of the database class.
+        """
+
+        sql = """CREATE UNLOGGED TABLE IF NOT EXISTS
+                 rovpp_all_trials (
+                 hijack_type smallint,
+                 adopt_pol smallint
+                 trial_num bigint
+                 opt_hijacked bigint
+                 opt_nothijacked bigint
+                 opt_blackholed bigint
+                 opt_preventivehijacked bigint
+                 opt_preventive nothijacked bigint
+                 trace_hijacked bigint
+                 trace_nothijacked bigint
+                 trace_blackholed bigint
+                 trace_preventivehijacked bigint
+                 trace_preventive nothijacked bigint
+                 );"""
+        self.cursor.execute(sql)
+
+    def clear_table(self):
+        """Clears the rovpp_ases table.
+
+        Should be called at the start of every run.
+        """
+
+        self.logger.debug("Dropping ROVPP_All_Trials_Table")
+        self.cursor.execute("DROP TABLE IF EXISTS rovpp_all_trials")
+        self.logger.debug("ROVPP_All_Trials_Table Table dropped")
+
+

@@ -14,9 +14,9 @@ __status__ = "Development"
 
 class Hijack_Types(Enum):
 
-    SUBPREFIX_HIJACK = 0
-    PREFIX_HIJACK = 1
-    NO_COMPETING_ANNOUNCEMENT_HIJACK = 2
+    SUBPREFIX_HIJACK = "subprefix_hijack"
+    PREFIX_HIJACK = "prefix_hijack"
+    NO_COMPETING_ANNOUNCEMENT_HIJACK = "no_competing_announcement_hijack"
 
 # enum because strings shouldn't just be being passed around
 # This is for all the policies
@@ -43,13 +43,15 @@ class Planes(Enum):
 
 
     # This uses the last hop and checks if recieved hijack
-    DATA_PLANE = 0
+    DATA_PLANE = "data_plane"
     # This checks if recieved hijack
-    CONTROL_PLANE = 1
+    CONTROL_PLANE = "control_plane"
 
 class Conditions(Enum):
 
-    BHOLED = 0  # blackholed
-    HIJACKED = 1  # not blackholed hijacked
-    NOTHIJACKED = 2  # "not_hijacked"
-    DISCONNECTED = 3  # disconnected
+    BHOLED = 0
+    HIJACKED = -1
+    NOTHIJACKED = -2
+    PREVENTATIVEHIJACKED = -3
+    PREVENTATIVENOTHIJACKED = -4
+    NORIB = -5

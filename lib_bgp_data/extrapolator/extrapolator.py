@@ -65,9 +65,9 @@ class Extrapolator:
         # Don't invert the results so that we have the last hop
         bash_args += "--invert-results=0 "
         # Gives the attacker asn
-        bash_args += "--attacker_asn={} ".format(hijack.attacker)
+        bash_args += "--attacker_asn={} ".format(hijack.attacker_asn)
         # Gives the victim asn
-        bash_args += "--victim_asn={} ".format(hijack.victim)
+        bash_args += "--victim_asn={} ".format(hijack.victim_asn)
         # Gives the more specific prefix that the attacker sent out
         bash_args += "--victim_prefix={} ".format(hijack.victim_prefix)
         bash_args += "--rovpp_ases_tables {}".format(" ".join(table_names))
@@ -101,7 +101,7 @@ class Extrapolator:
             for table_name in table_names:
                 sql = "DROP TABLE IF EXISTS rovpp_exr_{}".format(table_name)
                 db.execute(sql)
-                sql = """CREATE TABLE rovpp_exr_{} AS (
+                sql = """CREATE TABLE rovpp_exr_{0} AS (
                       SELECT exr.asn, exr.prefix, exr.origin, {0}.as_type
                           FROM rovpp_extrapolation_results_filtered exr
                       INNER JOIN {0} ON

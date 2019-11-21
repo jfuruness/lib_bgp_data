@@ -9,7 +9,7 @@ __Lisence__ = "MIT"
 __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
-
+"""
 import json
 from pprint import pprint
 from statistics import mean, variance
@@ -17,7 +17,7 @@ from math import sqrt
 from copy import deepcopy
 from .enums import Policies, Non_BGP_Policies, Planes, Conditions, Hijack_Types
 from ..utils import error_catcher, utils
-
+"""
 class Graph_Data:
     """This class graphs the data recieved from the rovpp simulation.
 
