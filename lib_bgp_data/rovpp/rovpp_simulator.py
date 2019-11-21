@@ -52,8 +52,8 @@ class ROVPP_Simulator:
 
         # Sets up all trials and percents
         Relationships_Parser(self.args).parse_files(rovpp=True)
-        with db_connection(ROVPP_All_trials_Table, self.logger) as db:
-            db.clear_table()
+#        with db_connection(ROVPP_All_trials_Table, self.logger) as db:
+#            db.clear_table()
 
 
         data_points = [Data_Point(trials, p_i, percent, percents, self.logger)
