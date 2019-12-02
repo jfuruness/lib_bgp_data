@@ -173,6 +173,7 @@ class Thread_Safe_Logger:
         # Sets stream level
         stream_level = int(stream_level) if stream_level else logging.INFO
         self.level = stream_level
+        self.stream_level = stream_level
         # Sets all the standard logging functions
         levels = ["notset", "debug", "info", "warning", "error", "critical"]
         # Makes log functions

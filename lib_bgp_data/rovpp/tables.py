@@ -21,6 +21,8 @@ Possible future improvements:
 
 from random import sample
 from .enums import Policies, Hijack_Types
+from .enums import Conditions as Conds
+from .enums import Control_Plane_Conditions as C_Plane_Conds
 from ..utils import Database, error_catcher, db_connection
 
 __author__ = "Justin Furuness"
@@ -260,19 +262,29 @@ class ROVPP_All_Trials_Table(Database):
 
         sql = """CREATE UNLOGGED TABLE IF NOT EXISTS
                  rovpp_all_trials (
-                 hijack_type smallint,
-                 adopt_pol smallint
-                 trial_num bigint
-                 opt_hijacked bigint
-                 opt_nothijacked bigint
-                 opt_blackholed bigint
-                 opt_preventivehijacked bigint
-                 opt_preventive nothijacked bigint
-                 trace_hijacked bigint
-                 trace_nothijacked bigint
-                 trace_blackholed bigint
-                 trace_preventivehijacked bigint
-                 trace_preventive nothijacked bigint
+                 hijack_type varchar(50),
+                 subtable_name varchar(50),
+                 attacker_asn bigint,
+                 attacker_prefix CIDR,
+                 victim bigint,
+                 victim_prefix CIDR,
+                 adopt_pol varchar(50),
+                 trial_num bigint,
+                 opt_hijacked bigint,
+                 opt_nothijacked bigint,
+                 opt_blackholed bigint,
+                 opt_preventivehijacked bigint,
+                 opt_preventivenothijacked bigint,
+                 opt_total bigint,
+                 trace_hijacked bigint,
+                 trace_nothijacked bigint,
+                 trace_blackholed bigint,
+                 trace_preventivehijacked bigint,
+                 trace_preventivenothijacked bigint,
+                 trace_total bigint,
+                 c_plane_has_attacker_prefix bigint,
+                 c_plane_has_only_victim_prefix bigint,
+                 no_rib bigint
                  );"""
         self.cursor.execute(sql)
 
@@ -286,4 +298,94 @@ class ROVPP_All_Trials_Table(Database):
         self.cursor.execute("DROP TABLE IF EXISTS rovpp_all_trials")
         self.logger.debug("ROVPP_All_Trials_Table Table dropped")
 
+    def insert(self,
+               subtable_name,
+               hijack,
+               hijack_type,
+               adopt_pol_name,
+               tnum,
+               opt_flag_data,
+               traceback_data,
+               c_plane_data):
+
+        sql = """INSERT INTO rovpp_all_trials(
+                 hijack_type,
+                 subtable_name,
+                 attacker_asn,
+                 attacker_prefix,
+                 victim,
+                 victim_prefix,
+                 adopt_pol,
+                 trial_num,
+                 opt_hijacked,
+                 opt_nothijacked,
+                 opt_blackholed,
+                 opt_preventivehijacked,
+                 opt_preventivenothijacked,
+                 opt_total,
+                 trace_hijacked,
+                 trace_nothijacked,
+                 trace_blackholed,
+                 trace_preventivehijacked,
+                 trace_preventivenothijacked,
+                 trace_total,
+                 c_plane_has_attacker_prefix,
+                 c_plane_has_only_victim_prefix,
+                 no_rib)
+              VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
+                      %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
+                      %s, %s, %s);"""
+
+        no_rib = c_plane_data[C_Plane_Conds.NO_RIB.value]
+
+        data = [hijack_type,
+                subtable_name,
+                hijack.attacker_asn,
+                hijack.attacker_prefix,
+                hijack.victim_asn,
+                hijack.victim_prefix,
+                adopt_pol_name,
+                tnum,
+                opt_flag_data[Conds.HIJACKED.value],
+                opt_flag_data[Conds.NOTHIJACKED.value],
+                opt_flag_data[Conds.BHOLED.value],
+                opt_flag_data[Conds.PREVENTATIVEHIJACKED.value],
+                opt_flag_data[Conds.PREVENTATIVENOTHIJACKED.value],
+                sum(v for k, v in opt_flag_data.items()) + no_rib,
+                traceback_data[Conds.HIJACKED.value],
+                traceback_data[Conds.NOTHIJACKED.value],
+                traceback_data[Conds.BHOLED.value],
+                traceback_data[Conds.PREVENTATIVEHIJACKED.value],
+                traceback_data[Conds.PREVENTATIVENOTHIJACKED.value],
+                sum(v for k, v in traceback_data.items()) + no_rib,
+                c_plane_data[C_Plane_Conds.RECEIVED_ATTACKER_PREFIX.value],
+                c_plane_data[C_Plane_Conds.RECEIVED_ONLY_VICTIM_PREFIX.value],
+                no_rib]
+        self.cursor.execute(sql, data)
+
+class ROVPP_Statistics_Table(Database):
+    """Class with database functionality.
+
+    In depth explanation at the top of the file."""
+
+    __slots__ = ['attacker_asn', 'attacker_prefix', 'victim_asn',
+                 'victim_prefix']
+
+    def _create_tables(self):
+        """Creates tables if they do not exist.
+
+        Called during initialization of the database class.
+        """
+
+        pass
+
+    def clear_table(self):
+        """Clears the rovpp_ases table.
+
+        Should be called at the start of every run.
+        """
+
+        self.logger.debug("Dropping ROVPP_Statistics_Table")
+        self.cursor.execute("DROP TABLE IF EXISTS rovpp_statistics")
+        self.logger.debug("ROVPP_All_Statistics_Table Table dropped")
 

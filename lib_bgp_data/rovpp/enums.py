@@ -49,9 +49,13 @@ class Planes(Enum):
 
 class Conditions(Enum):
 
-    BHOLED = 0
-    HIJACKED = -1
-    NOTHIJACKED = -2
-    PREVENTATIVEHIJACKED = -3
-    PREVENTATIVENOTHIJACKED = -4
-    NORIB = -5
+    BHOLED = 64512
+    HIJACKED = 64513
+    NOTHIJACKED = 64514
+    PREVENTATIVEHIJACKED = 64515
+    PREVENTATIVENOTHIJACKED = 64516
+
+class Control_Plane_Conditions(Enum):
+    RECEIVED_ATTACKER_PREFIX = "received_attacker_prefix"
+    RECEIVED_ONLY_VICTIM_PREFIX = "recieved_only_victim_prefix"
+    NO_RIB = "no_rib"

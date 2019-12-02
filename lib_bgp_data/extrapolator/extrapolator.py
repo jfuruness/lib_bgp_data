@@ -75,7 +75,8 @@ class Extrapolator:
         if self.logger.level == DEBUG:
             check_call(bash_args, shell=True)
         else:
-            check_call(bash_args, stdout=DEVNULL, stderr=DEVNULL, shell=True)
+            check_call(bash_args, stdout=open('/tmp/extrapolatordebug.log','w'), stderr=DEVNULL, shell=True)
+            #check_call(bash_args, stdout=DEVNULL, stderr=DEVNULL, shell=True)
         self._filter_extrapolator(hijack)
         self._join_w_tables(table_names)
 
@@ -84,7 +85,8 @@ class Extrapolator:
             db.execute("DROP TABLE IF EXISTS rovpp_extrapolation_results_filtered")
 
             sql = """CREATE TABLE rovpp_extrapolation_results_filtered AS (
-                  SELECT DISTINCT ON (exr.asn) exr.asn, COALESCE(exrh.prefix, exrnh.prefix) AS prefix,
+                  SELECT DISTINCT ON (exr.asn) exr.asn, exr.opt_flag,
+                         COALESCE(exrh.prefix, exrnh.prefix) AS prefix,
                          COALESCE(exrh.origin, exrnh.origin) AS origin,
                          COALESCE(exrh.received_from_asn, exrnh.received_from_asn)
                              AS received_from_asn
@@ -102,7 +104,8 @@ class Extrapolator:
                 sql = "DROP TABLE IF EXISTS rovpp_exr_{}".format(table_name)
                 db.execute(sql)
                 sql = """CREATE TABLE rovpp_exr_{0} AS (
-                      SELECT exr.asn, exr.prefix, exr.origin, {0}.as_type
+                      SELECT exr.asn, exr.opt_flag, exr.prefix, exr.origin,
+                              exr.received_from_asn, {0}.as_type
                           FROM rovpp_extrapolation_results_filtered exr
                       INNER JOIN {0} ON
                           {0}.asn = exr.asn);""".format(table_name)
