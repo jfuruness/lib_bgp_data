@@ -1851,7 +1851,9 @@ After this you are going to need a install a couple of other things to be able t
 >[https://www.ripe.net/manage-ips-and-asns/resource-management/certification/tools-and-resources](https://www.ripe.net/manage-ips-and-asns/resource-management/certification/tools-and-resources)
 
 To run the automatic install process, make a script called install.py with the script below.
-WARNING: THIS WILL OVERWRITE ALL PREVIOUS DB AND OTHER CONFIGURATIONS:
+WARNING: THIS WILL OVERWRITE ALL PREVIOUS DB AND OTHER CONFIGURATIONS.
+
+ALSO NOTE: We are still in development. The current pip version has some installation bugs, and the development version should be used. Also, on different machines installs are buggy, please lmk if you have any problems at jfuruness@gmail.com
 ```python
 from lib_bgp_data import Install
 Install().install()
