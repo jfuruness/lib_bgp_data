@@ -51,7 +51,8 @@ class ROVPP_MRT_Announcements_Table(Database):
                  rovpp_mrt_announcements (
                  origin bigint,
                  as_path bigint ARRAY,
-                 prefix CIDR
+                 prefix CIDR,
+                 attacker BOOLEAN
                  );"""
         self.cursor.execute(sql)
 
@@ -69,14 +70,16 @@ class ROVPP_MRT_Announcements_Table(Database):
         """Populates the mrt announcements table"""
 
         sql = """INSERT INTO rovpp_mrt_announcements(
-              origin, as_path, prefix) VALUES
-              (%s, %s, %s)"""
+              origin, as_path, prefix, attacker) VALUES
+              (%s, %s, %s, %s)"""
         attacker_data = [subprefix_hijack.attacker_asn,
                          [subprefix_hijack.attacker_asn],
-                         subprefix_hijack.attacker_prefix]
+                         subprefix_hijack.attacker_prefix,
+                         True]
         victim_data = [subprefix_hijack.victim_asn,
                        [subprefix_hijack.victim_asn],
-                       subprefix_hijack.victim_prefix]
+                       subprefix_hijack.victim_prefix,
+                       False]
         data_list = [attacker_data]
         if hijack_type != Hijack_Types.NO_COMPETING_ANNOUNCEMENT_HIJACK.value:
             data_list.append(victim_data)

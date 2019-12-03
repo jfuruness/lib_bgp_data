@@ -48,7 +48,7 @@ class ROVPP_Simulator:
         self.args["stream_level"] = self.args.get("stream_level", 20)
 
     @utils.run_parser(paths=False)
-    def simulate(self, percents=range(5, 31, 5), trials=100):
+    def simulate(self, percents=range(5, 31, 5), trials=100, exr_bash=None):
         """Runs ROVPP simulation.
 
         In depth explanation at top of module.
@@ -73,7 +73,7 @@ class ROVPP_Simulator:
 
         with tqdm(total=total, desc="Running simulator") as pbar:
             for data_point in data_points:
-                data_point.get_data(self.args, pbar)
+                data_point.get_data(self.args, pbar, exr_bash)
         print("Due to fixes in exr, statistics will be done later.")
         print("For now look in rovpp_all_trials table")
 
@@ -104,14 +104,14 @@ class Data_Point:
         self.tables = Subtables(self.default_percents, self.logger)
         self.logger.debug("Initialized Data Point")
 
-    def get_data(self, exr_args, pbar):
-        self.run_tests(exr_args, pbar)
+    def get_data(self, exr_args, pbar, exr_bash):
+        self.run_tests(exr_args, pbar, exr_bash)
         self.calculate_statistics()
 
-    def run_tests(self, exr_args, pbar):
+    def run_tests(self, exr_args, pbar, exr_bash):
         for trial in range(self.total_trials):
             for test in self.get_possible_tests(set_up=True):
-                test.run(trial, exr_args, pbar)
+                test.run(trial, exr_args, pbar, exr_bash)
 
     def calculate_statistics(self):
         return
@@ -176,7 +176,7 @@ class Test:
     def __repr__(self):
         return (self.hijack, self.hijack_type, self.adopt_pol)
 
-    def run(self, trial_num, exr_args, pbar):
+    def run(self, trial_num, exr_args, pbar, exr_bash):
         # Runs sim, gets data
         pbar.set_description("{}, {}, atk {}, vic {} ".format(
                                     self.hijack_type,
@@ -189,7 +189,8 @@ class Test:
         # DEBUG = 10, ERROR = 40
         exr_args["stream_level"] = 10 if self.logger.level == 10 else 40
         Extrapolator(exr_args).run_rovpp(self.hijack,
-                                         [x.table.name for x in self.tables])
+                                         [x.table.name for x in self.tables],
+                                         exr_bash)
         self.tables.store_trial_data(self.hijack,
                                      self.hijack_type,
                                      self.adopt_pol_name,
