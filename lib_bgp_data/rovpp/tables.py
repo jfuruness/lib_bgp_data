@@ -56,6 +56,8 @@ class ROVPP_MRT_Announcements_Table(Database):
                  );"""
         self.cursor.execute(sql)
 
+        
+
     def clear_table(self):
         """Clears the rovpp_ases table.
 
