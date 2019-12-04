@@ -25,7 +25,11 @@ __status__ = "Development"
 
 def set_global_section_header(section):
     global global_section_header
-    global_section_header = section
+    try:
+        if pytest.global_running_test:
+            global_section_header = "test"
+    except AttributeError:
+        global_section_header = section
     return
 
 
