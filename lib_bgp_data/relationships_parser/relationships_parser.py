@@ -66,11 +66,11 @@ class Relationships_Parser:
     __slots__ = ['path', 'csv_dir', 'logger']
 
     @error_catcher()
-    def __init__(self, args={}):
+    def __init__(self, section="bgp", args={}):
         """Initializes logger and path variables"""
 
         # Sets path vars and logger
-        utils.set_common_init_args(self, args)
+        utils.set_common_init_args(self, args, section)
 
     # Note that the utils.run_parser decorator deletes/creates all paths,
     # records start/end time, and upon end or error deletes everything

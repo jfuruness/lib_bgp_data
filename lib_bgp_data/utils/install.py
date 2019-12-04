@@ -52,6 +52,7 @@ Possible Future Extensions:
 import functools
 import random
 import string
+import pytest
 from getpass import getpass
 from subprocess import check_call, call
 import os
@@ -176,14 +177,20 @@ class Install:
         """
 
         ram = Config(self.logger, self.section).ram
-        usr_input = input("If SSD, enter 1 or enter, else enter 2: ")
-        if str(usr_input) in ["", "1"]:
+        # Can't take input during tests
+        if pytest.global_running_test:
             random_page_cost = float(1)
-        else:
-            random_page_cost = float(2)
-        ulimit = input("Enter the output of ulimit -s or press enter for 8192: ")
-        if ulimit == "":
             ulimit = 8192
+        # Otherwise get from user
+        else:
+            usr_input = input("If SSD, enter 1 or enter, else enter 2: ")
+            if str(usr_input) in ["", "1"]:
+                random_page_cost = float(1)
+            else:
+                random_page_cost = float(2)
+            ulimit = input("Enter the output of ulimit -s or press enter for 8192: ")
+            if ulimit == "":
+                ulimit = 8192
         # Extension neccessary for some postgres scripts
         sqls = ["CREATE EXTENSION btree_gist;",
                 "ALTER DATABASE {} SET timezone "
@@ -439,6 +446,33 @@ class Install:
             check_call("sudo cp bgpdump /usr/local/bin/bgpdump", shell=True)
         except:
             pass
+
+    @error_catcher()
+    def _erase_all(self):
+        """Deletes config section and drops database from Postgres"""
+
+        # Check user inteded to erase everything
+        ans = input("You are about to erase the config file and drop all "
+                        "Postgres databases.  Enter 'Yes' to confirm.\n")
+        if ans.lower() != "yes":
+            return
+        # Use default path (get from Config?)
+        path = "/etc/bgp/bgp.conf"
+        # First delete the databases
+        _conf = SCP()
+        _conf.read(path)
+        # Database names correspond to section headers
+        # Exclude first since ConfigParser reserves for 'DEFAULT'
+        db_names = [x for x in _conf][1:]
+        cmds = ['sudo -u postgres psql -c "DROP DATABASE {}"'.format(db)
+                for db in db_names]
+        check_call("&& ".join(cmds), shell=True)
+        # Now remove the section from the config file
+        # Fastest way to do this is create a new object
+        # and write to the same location
+        new_conf = SCP()
+        with open(self.path, 'w+') as configfile:
+            new_conf.write(configfile)
 
 ########################
 ### Helper Functions ###

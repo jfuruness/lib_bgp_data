@@ -8,6 +8,7 @@ _config dictionary.
 """
 
 import os
+import pytest
 from datetime import datetime
 from configparser import ConfigParser as SCP
 from configparser import NoSectionError
@@ -20,6 +21,7 @@ __Lisence__ = "MIT"
 __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
+
 
 def set_global_section_header(section):
     global global_section_header
@@ -41,14 +43,18 @@ class Config:
         self.section = section
         # Declare the section header to be global so Database can refer to it
         set_global_section_header(section)
-#        global global_section_header
-#        global_section_header = section
 
     def create_config(self, _password):
         """Creates the default config file."""
 
-        # Do this here so that ram is set correctly
-        restart = self.restart_postgres_cmd
+        if pytest.global_running_test:
+            # Can't take input during tests
+            print("RUNNING TEST")
+            restart = "sudo systemctl restart postgresql@12-main.service"
+        else:
+            # Do this here so that ram is set correctly
+            print("NO TESTS")
+            restart = self.restart_postgres_cmd
 
         # Creates the /etc/bgp directory
         self._create_config_dir()
@@ -99,14 +105,6 @@ class Config:
         with open(self.path, "w+") as configfile:
             _conf.write(configfile)
         
-        # Supposedly try except is more pythonic than if then so yah whatever
-        # This looks wicked dumb though
-        # Removes the old config if exists
-#        try:
-#            os.remove(self.path)
-#        except FileNotFoundError:
-#            pass
-
     def _read_config(self, section, tag, raw=False):
         """Reads the specified section from the configuration file."""
 
@@ -140,7 +138,6 @@ class Config:
     def restart_postgres_cmd(self):
         """Returns restart postgres cmd or writes it if none exists."""
 
-        # section = "bgp"
         subsection = "restart_postgres_cmd"
         try:
             cmd = self._read_config(self.section, subsection)

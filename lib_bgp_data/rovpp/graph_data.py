@@ -24,11 +24,11 @@ class Graph_Data:
     In depth explanation at the top of the file
     """
 
-    def __init__(self, args):
+    def __init__(self, args, section="bgp"):
         """Initializes logger and path variables."""
 
         # Sets path vars, logger, config, etc
-        utils.set_common_init_args(self, args, paths=False)
+        utils.set_common_init_args(self, args, section, paths=False)
 
 ########################
 ### Helper Functions ###

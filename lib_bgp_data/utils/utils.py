@@ -27,7 +27,6 @@ from contextlib import contextmanager
 from multiprocessing import cpu_count
 from .logger import Thread_Safe_Logger as Logger
 from .database import db_connection
-#from .config import Config
 from .config import set_global_section_header
 
 __author__ = "Justin Furuness"
@@ -116,7 +115,6 @@ def set_common_init_args(self, args, section="bgp", paths=True):
     name = self.__class__.__name__
 
     # Set global section header varaible in Config's init
-#    Config(self.logger, section)
     set_global_section_header(section)
 
     self.logger = args.get("logger") if args.get("logger") else\

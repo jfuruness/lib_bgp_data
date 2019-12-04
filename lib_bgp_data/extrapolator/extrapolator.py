@@ -32,11 +32,11 @@ class Extrapolator:
     __slots__ = ['path', 'csv_dir', 'logger']
 
     @error_catcher()
-    def __init__(self, args={}):
+    def __init__(self, section="bgp", args={}):
         """Initializes logger and path variables."""
 
         # Sets path vars, logger, config, etc
-        utils.set_common_init_args(self, args)
+        utils.set_common_init_args(self, args, section)
 
     @error_catcher()
     @utils.run_parser()

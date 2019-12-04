@@ -121,11 +121,11 @@ class MRT_Parser:
     __slots__ = ['path', 'csv_dir', 'logger', 'dl_pool', 'p_pool']
 
     @error_catcher()
-    def __init__(self, args={}):
+    def __init__(self, section="bgp", args={}):
         """Initializes logger and path variables."""
 
         # Sets path vars, logger, config, etc
-        utils.set_common_init_args(self, args)
+        utils.set_common_init_args(self, args, section)
         with db_connection(MRT_Announcements_Table, self.logger) as ann_table:
             # Clears the table for insertion
             ann_table.clear_tables()

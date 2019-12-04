@@ -34,11 +34,11 @@ class ROVPP_Simulator:
     """
 
 
-    def __init__(self, args={}):
+    def __init__(self, section="bgp", args={}):
         """Initializes logger and path variables."""
 
         # Sets path vars, logger, config, etc
-        utils.set_common_init_args(self, args, paths=False)
+        utils.set_common_init_args(self, args, section, paths=False)
         self.args = args
         if not self.args.get("stream_level"):
             self.args["stream_level"] = 20 # Can't import logging, threadsafe

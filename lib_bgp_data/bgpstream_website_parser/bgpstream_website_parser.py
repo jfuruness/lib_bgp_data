@@ -72,11 +72,11 @@ class BGPStream_Website_Parser:
     __slots__ = ['path', 'csv_dir', 'logger', '_data', '_data_types']
 
     @error_catcher()
-    def __init__(self, args={}):
+    def __init__(self, section="bgp", args={}):
         """Initializes path, csv_dir, logger, and data"""
 
         # Inits paths, csv_dir, logger
-        utils.set_common_init_args(self, args)
+        utils.set_common_init_args(self, args, section)
         # These classes are used for parsing rows
         self._data = {Event_Types.HIJACK.value: Hijack(self.logger,
                                                        self.csv_dir),

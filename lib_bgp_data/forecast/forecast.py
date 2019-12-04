@@ -56,10 +56,10 @@ class Forecast:
     """This class contains all the neccessary parsing functions"""
 
     @error_catcher()
-    def __init__(self, forecast_args={}):
+    def __init__(self, section="bgp", forecast_args={}):
         """Initializes paths and logger."""
 
-        utils.set_common_init_args(self, forecast_args),
+        utils.set_common_init_args(self, forecast_args, section),
 
     @utils.run_parser()
     @error_catcher()
