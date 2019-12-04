@@ -47,14 +47,14 @@ class Config:
     def create_config(self, _password):
         """Creates the default config file."""
 
-        if pytest.global_running_test:
-            # Can't take input during tests
-            print("RUNNING TEST")
-            restart = "sudo systemctl restart postgresql@12-main.service"
-        else:
-            # Do this here so that ram is set correctly
-            print("NO TESTS")
-            restart = self.restart_postgres_cmd
+        try:
+            # Error when Pytest isn't used to install
+            if pytest.global_running_test:
+                # Can't take input during tests
+                restart = "sudo systemctl restart postgresql@12-main.service"
+        except AttributeError:
+                # Do this here so that ram is set correctly
+                restart = self.restart_postgres_cmd
 
         # Creates the /etc/bgp directory
         self._create_config_dir()

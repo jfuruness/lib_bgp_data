@@ -131,6 +131,10 @@ class Install:
         self._install_bgpscanner()
         self._install_bgpdump()
         self._install_rpki_validator()
+        # Install a 'test' section
+        # Use this check to prevent looping calls
+        if self.section != "test":
+            Install("test").install()
 
     # Must remove that file due to password change history
     @error_catcher()
@@ -178,11 +182,13 @@ class Install:
 
         ram = Config(self.logger, self.section).ram
         # Can't take input during tests
-        if pytest.global_running_test:
-            random_page_cost = float(1)
-            ulimit = 8192
+        # Error when Pytest is not running
+        try:
+            if pytest.global_running_test:
+                random_page_cost = float(1)
+                ulimit = 8192
         # Otherwise get from user
-        else:
+        except AttributeError:
             usr_input = input("If SSD, enter 1 or enter, else enter 2: ")
             if str(usr_input) in ["", "1"]:
                 random_page_cost = float(1)
