@@ -15,9 +15,11 @@ __status__ = "Development"
 
 def pytest_runtest_setup():
     pytest.global_running_test = True
-    bash = "sudo -i -u postgres psql -d test -c 'CREATE SCHEMA IF NOT EXISTS public;'"
+    bash = "sudo -i -u postgres psql -d test -c "
+    bash += "'CREATE SCHEMA IF NOT EXISTS public;'"
     check_call(bash, shell=True)
 
 def pytest_runtest_teardown():
-    bash = "sudo -i -u postgres psql -d test -c 'DROP SCHEMA public CASCADE;'"
+    bash = "sudo -i -u postgres psql -d test -c "
+    bash += "'DROP SCHEMA IF EXISTS public CASCADE;'"
     check_call(bash, shell=True)

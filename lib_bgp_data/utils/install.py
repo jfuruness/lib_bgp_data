@@ -183,12 +183,12 @@ class Install:
         ram = Config(self.logger, self.section).ram
         # Can't take input during tests
         # Error when Pytest is not running
-        try:
-            if pytest.global_running_test:
+        if hasattr(pytest, 'global_running_install_test') \
+           and pytest.global_running_install_test:
                 random_page_cost = float(1)
                 ulimit = 8192
         # Otherwise get from user
-        except AttributeError:
+        else:
             usr_input = input("If SSD, enter 1 or enter, else enter 2: ")
             if str(usr_input) in ["", "1"]:
                 random_page_cost = float(1)

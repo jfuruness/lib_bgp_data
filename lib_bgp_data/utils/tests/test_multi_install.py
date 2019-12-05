@@ -2,12 +2,31 @@
 # -*- codingL utf-8 -*-
 
 import pytest
+import sys
 from subprocess import check_output, check_call
 from ..install import Install
 from ..utils import db_connection
 from ..config import Config
+from ..logger import Logger
 from ...relationships_parser import Relationships_Parser
 from multiprocessing import Process
+
+
+# Set this global since the conftest file must be ignored so
+# the test1 and test2 sections and databases can be created
+pytest.global_running_install_test = True
+
+# Need this to run before anything else to make sure conftest is ignored.
+if "--noconftest" not in sys.argv:
+    # If the arg isn't passed, like when Pytest is running at top level,
+    # this whole file is skipped
+    pytestmark = \
+        pytest.mark.skip("For this test to work properly, please add the "
+                         "argument:\n\n'--noconftest'\n\nso Pytest does not "
+                         "overwrite the section headers that are about to "
+                         "be created.")
+    Logger().logger.error("Missing '--noconftest' to run "
+                          "'utils/test_multi_install.py")
 
 
 def test_config():
@@ -54,9 +73,11 @@ def test_cleanup():
     check_call(bash_1 + "test1" + bash_2, shell=True)
     check_call(bash_1 + "test2" + bash_2, shell=True)
 
+
 #############
 ## Helpers ##
 #############
+
 
 def parser(section):
     """Helper function for new processes to use.

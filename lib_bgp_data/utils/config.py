@@ -25,10 +25,9 @@ __status__ = "Development"
 
 def set_global_section_header(section):
     global global_section_header
-    try:
-        if pytest.global_running_test:
-            global_section_header = "test"
-    except AttributeError:
+    if hasattr(pytest, 'global_running_test') and pytest.global_running_test:
+        global_section_header = "test"
+    else:
         global_section_header = section
     return
 
@@ -51,12 +50,11 @@ class Config:
     def create_config(self, _password):
         """Creates the default config file."""
 
-        try:
-            # Error when Pytest isn't used to install
-            if pytest.global_running_test:
+        if hasattr(pytest, 'global_running_install_test') \
+           and pytest.global_running_install_test:
                 # Can't take input during tests
                 restart = "sudo systemctl restart postgresql@12-main.service"
-        except AttributeError:
+        else:
                 # Do this here so that ram is set correctly
                 restart = self.restart_postgres_cmd
 
