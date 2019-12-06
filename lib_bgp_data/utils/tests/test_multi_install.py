@@ -14,6 +14,7 @@ from multiprocessing import Process
 
 # Set this global since the conftest file must be ignored so
 # the test1 and test2 sections and databases can be created
+# This is used in config and install to know not to ask for user input
 pytest.global_running_install_test = True
 
 # Need this to run before anything else to make sure conftest is ignored.
@@ -72,11 +73,6 @@ def test_cleanup():
     bash_2 = ";'"
     check_call(bash_1 + "test1" + bash_2, shell=True)
     check_call(bash_1 + "test2" + bash_2, shell=True)
-
-
-#############
-## Helpers ##
-#############
 
 
 def parser(section):
