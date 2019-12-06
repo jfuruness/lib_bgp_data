@@ -18,16 +18,16 @@ from multiprocessing import Process
 pytest.global_running_install_test = True
 
 # Need this to run before anything else to make sure conftest is ignored.
-if "--noconftest" not in sys.argv:
-    # If the arg isn't passed, like when Pytest is running at top level,
-    # this whole file is skipped
-    pytestmark = \
-        pytest.mark.skip("For this test to work properly, please add the "
-                         "argument:\n\n'--noconftest'\n\nso Pytest does not "
-                         "overwrite the section headers that are about to "
-                         "be created.")
-    Logger().logger.error("Missing '--noconftest' to run "
-                          "'utils/test_multi_install.py")
+# If the arg isn't passed, like when Pytest is running at top level,
+# this whole file is skipped
+pytestmark = \
+    pytest.mark.skipif('--noconftest' not in sys.argv,
+                       reason="For this test to work properly, please add the "
+                       "argument:\n\n'--noconftest'\n\nso Pytest does not "
+                       "overwrite the section headers that are about to "
+                       "be created.")
+Logger().logger.error("Missing '--noconftest' to run "
+                      "'utils/test_multi_install.py")
 
 
 def test_config():
