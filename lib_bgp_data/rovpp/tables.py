@@ -88,6 +88,15 @@ class ROVPP_MRT_Announcements_Table(Database):
         for data in data_list:
             self.cursor.execute(sql, data)
 
+        # Split into two separate tables, because we decided to use a bool
+        # and other people keep going back and forth so gonna leave it
+        sql = """CREATE TABLE {} AS
+              SELECT origin, as_path, prefix FROM rovpp_mrt_announcements
+              WHERE attacker = {}"""
+        for attacker, table in zip([True, False], ["attackers", "victims"]):
+            self.cursor.execute("DROP TABLE IF EXISTS " + table)
+            self.cursor.execute(sql.format(table, attacker))
+
 class Subprefix_Hijack_Temp_Table(Database):
     """Class with database functionality.
 
@@ -287,8 +296,9 @@ class ROVPP_All_Trials_Table(Database):
                  trace_preventivehijacked bigint,
                  trace_preventivenothijacked bigint,
                  trace_total bigint,
-                 c_plane_has_attacker_prefix bigint,
-                 c_plane_has_only_victim_prefix bigint,
+                 c_plane_has_attacker_prefix_origin bigint,
+                 c_plane_has_only_victim_prefix_origin bigint,
+                 c_plane_has_bhole bigint,
                  no_rib bigint
                  );"""
         self.cursor.execute(sql)
@@ -334,12 +344,13 @@ class ROVPP_All_Trials_Table(Database):
                  trace_preventivehijacked,
                  trace_preventivenothijacked,
                  trace_total,
-                 c_plane_has_attacker_prefix,
-                 c_plane_has_only_victim_prefix,
+                 c_plane_has_attacker_prefix_origin,
+                 c_plane_has_only_victim_prefix_origin,
+                 c_plane_has_bhole
                  no_rib)
               VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
                       %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
-                      %s, %s, %s);"""
+                      %s, %s, %s, %s);"""
 
         no_rib = c_plane_data[C_Plane_Conds.NO_RIB.value]
 
@@ -363,8 +374,9 @@ class ROVPP_All_Trials_Table(Database):
                 traceback_data[Conds.PREVENTATIVEHIJACKED.value],
                 traceback_data[Conds.PREVENTATIVENOTHIJACKED.value],
                 sum(v for k, v in traceback_data.items()) + no_rib,
-                c_plane_data[C_Plane_Conds.RECEIVED_ATTACKER_PREFIX.value],
-                c_plane_data[C_Plane_Conds.RECEIVED_ONLY_VICTIM_PREFIX.value],
+                c_plane_data[C_Plane_Conds.RECEIVED_ATTACKER_PREFIX_ORIGIN.value],
+                c_plane_data[C_Plane_Conds.RECEIVED_ONLY_VICTIM_PREFIX_ORIGIN.value],
+                c_plane_data[C_Plane_Conds.RECEIVED_BHOLE.value],
                 no_rib]
         self.cursor.execute(sql, data)
 

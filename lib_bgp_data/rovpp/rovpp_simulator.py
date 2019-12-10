@@ -352,11 +352,17 @@ class Subtable:
     def _get_control_plane_data(self, hijack):
         c_plane_data = {}
         sql = "SELECT COUNT(*) FROM " + self.exr_table_name
-        sql += " WHERE prefix = %s;"
-        c_plane_data[C_Plane_Conds.RECEIVED_ATTACKER_PREFIX.value] =\
-            self.table.execute(sql, [hijack.attacker_prefix])[0]["count"]
-        c_plane_data[C_Plane_Conds.RECEIVED_ONLY_VICTIM_PREFIX.value] =\
-            self.table.execute(sql, [hijack.victim_prefix])[0]["count"]
+        sql += " WHERE prefix = %s AND origin = %s;"
+        c_plane_data[C_Plane_Conds.RECEIVED_ATTACKER_PREFIX_ORIGIN.value] =\
+            self.table.execute(sql, [hijack.attacker_prefix,
+                                     hijack.attacker_asn])[0]["count"]
+        c_plane_data[C_Plane_Conds.RECEIVED_ONLY_VICTIM_PREFIX_ORIGIN.value] =\
+            self.table.execute(sql, [hijack.victim_prefix,
+                                     hijack.victim_asn])[0]["count"]
+        c_plane_data[C_Plane_Conds.RECEIVED_BHOLE.value] =\
+            self.table.execute(sql, [hijack.victim_prefix,
+                                     Conditions.BHOLE.value])[0]["count"]
+
 
         no_rib_sql = """SELECT COUNT(*) FROM {0}
                      LEFT JOIN {1} ON {0}.asn = {1}.asn WHERE {1}.asn IS NULL;

@@ -73,17 +73,19 @@ class Extrapolator:
         bash_args += "--rovpp_ases_tables {}".format(" ".join(table_names))
         if exr_bash is not None:
             bash_args = exr_bash
-        self.logger.debug("Caling extrapolator with:\n{}".format(bash_args))
+        self.logger.debug("Calling extrapolator with:\n\t{}".format(bash_args))
         if self.logger.level == DEBUG:
             check_call(bash_args, shell=True)
         else:
             check_call(bash_args, stdout=open('/tmp/extrapolatordebug.log','w'), stderr=DEVNULL, shell=True)
-            #check_call(bash_args, stdout=DEVNULL, stderr=DEVNULL, shell=True)
+            #check_call(bash_args, stdout=DEVNULL, stderr=DEVNULL, shell=True
         self._filter_extrapolator(hijack)
         self._join_w_tables(table_names)
 
     def _filter_extrapolator(self, hijack):
         with db_connection() as db:
+            # NOTE: should be removed later!!!
+
             db.execute("DROP TABLE IF EXISTS rovpp_extrapolation_results_filtered")
 
             sql = """CREATE TABLE rovpp_extrapolation_results_filtered AS (

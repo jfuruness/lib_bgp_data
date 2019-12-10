@@ -56,6 +56,7 @@ class Conditions(Enum):
     PREVENTATIVENOTHIJACKED = 64516
 
 class Control_Plane_Conditions(Enum):
-    RECEIVED_ATTACKER_PREFIX = "received_attacker_prefix"
-    RECEIVED_ONLY_VICTIM_PREFIX = "recieved_only_victim_prefix"
+    RECEIVED_ATTACKER_PREFIX_ORIGIN = "received_attacker_prefix_origin"
+    RECEIVED_ONLY_VICTIM_PREFIX_ORIGIN = "recieved_only_victim_prefix_origin"
+    RECEIVED_BHOLE = "received_blackhole"
     NO_RIB = "no_rib"
