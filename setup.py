@@ -67,18 +67,21 @@ setup(
     install_requires=[
         'wheel',
         'setuptools',
-        'requests',
-        'beautifulsoup4',
-        'flasgger',
-        'Flask',
-        'multiprocess',
-        'pathos',
-        'psutil',
-        'psycopg2-binary',
+        'validators>=0.14.1',
+        'tqdm>=4.40.2',
         'pytest==4.6.6',
-        'pytz',
-        'validators',
-        'Werkzeug'
+        'psutil==5.6.7',
+        'Flask>=1.1.1',
+        'requests>=2.22.0',
+        'pathos>=0.2.5',
+        'flasgger>=0.9.3',
+        'multiprocess>=0.70.9',
+        'psycopg2_binary>=2.8.4',
+        'Werkzeug>=0.16.0',
+        'pytz>=2019.3',
+        'beautifulsoup4>=4.8.1',
+        'psycopg2>=2.8.4'
+        'jsonschema==2.6.0'  # required for flasgger
     ],
     classifiers=[
         'Environment :: Console',

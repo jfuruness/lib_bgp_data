@@ -130,6 +130,7 @@ class Test_MRT_File:
         """Short helper function to get the number of lines in a file"""
         with open(filename, 'r') as f:
             for count, line in enumerate(f):
+                pass
         return count + 1
 
     def _get_entries(self, mrt_file, bgpscanner=True):
