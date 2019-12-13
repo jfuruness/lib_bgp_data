@@ -1806,9 +1806,10 @@ sudo apt-get install libpq-dev
 Then install postgres 11 (see [Postgres Installation](#postgres-installation))
 
 If you are on a machine that has SELinux, you are going to need to run this in a python environment. On Ubuntu, the steps are as follows
+NOTE: We now use python3.8, so this will be slightly different
 ```bash
 sudo apt-get install python3-pip
-sudo pip3 install virtualenv 
+sudo python3 -m pip3 install virtualenv 
 ```
 
 On Redhat the steps can be found here:
@@ -1819,10 +1820,10 @@ Note: if you are using our machine ahlocal, there are some very weird permission
 
 Once you have virtualenv installed, run 
 ```bash
-python3 -m venv env
+python3.8 -m venv env
 source ./env/bin/activate
 ```
-You now have a python virtual environment where you do not need sudo to install packages. 
+You now have a python virtual environment. You should still be a super user.
 Then, if you are not installing for development, run:
 ```bash
 pip3 install wheel --upgrade
@@ -1837,7 +1838,7 @@ cd lib_bgp_data
 pip3 install wheel --upgrade
 pip3 install -r requirements.txt --upgrade
 python3 setup.py sdist bdist_wheel
-python3 setup.py develop --force
+python3 setup.py develop
 ```
 
 After this you are going to need a install a couple of other things to be able to use most features. bgscanner, bgpdump, and the extrapolator are all automatically installed and moved to /usr/bin. bgpdump must be installed from source because it has bug fixes that are necessary. The RPKI validator is installed and move to /var/lib.

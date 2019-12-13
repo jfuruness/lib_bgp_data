@@ -80,7 +80,7 @@ setup(
         'Werkzeug>=0.16.0',
         'pytz>=2019.3',
         'beautifulsoup4>=4.8.1',
-        'psycopg2>=2.8.4'
+        'psycopg2>=2.8.4',
         'jsonschema==2.6.0'  # required for flasgger
     ],
     classifiers=[
