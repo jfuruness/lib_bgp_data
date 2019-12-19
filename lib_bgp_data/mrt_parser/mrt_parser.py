@@ -104,6 +104,7 @@ from .mrt_file import MRT_File
 from ..utils import error_catcher, utils, db_connection
 from ..utils.utils import progress_bar
 from .tables import MRT_Announcements_Table
+from .mrt_sources import MRT_Sources
 
 __author__ = "Justin Furuness", "Matt Jaccino"
 __credits__ = ["Justin Furuness", "Matt Jaccino"]
@@ -143,7 +144,9 @@ class MRT_Parser:
                     parse_threads=None,
                     IPV4=True,
                     IPV6=False,
-                    bgpscanner=True):
+                    bgpscanner=True,
+                    sources=[x.value for x in
+                             MRT_Sources.__members__.values()]):
         """Downloads and parses files using multiprocessing.
 
         In depth explanation at the top of the file.
@@ -160,7 +163,7 @@ class MRT_Parser:
         """
 
         # Gets urls of all mrt files needed
-        urls = self._get_mrt_urls(start, end, api_param_mods)
+        urls = self._get_mrt_urls(start, end, api_param_mods, sources)
         self.logger.debug("Total files {}".format(len(urls)))
         # Get downloaded instances of mrt files using multithreading
         mrt_files = self._multiprocess_download(download_threads, urls)
@@ -173,25 +176,22 @@ class MRT_Parser:
 ########################
 
     @error_catcher()
-    def _get_mrt_urls(self, start, end, PARAMS_modification={}, iso=True):
+    def _get_mrt_urls(self, start, end, PARAMS_modification={}, sources=None):
         """Gets caida and iso URLs, start and end should be epoch"""
 
-        self.logger.info("Getting MRT urls")
-        caida_urls = self._get_caida_mrt_urls(start, end, PARAMS_modification)
+        self.logger.info("Getting MRT urls for {}".format(sources))
+        caida_urls = self._get_caida_mrt_urls(start,
+                                              end,
+                                              sources,
+                                              PARAMS_modification)
         # Give Isolario URLs if parameter is not changed
-        if iso:
-            return caida_urls + self._get_iso_mrt_urls(start) 
-        # Otherwise just give Caida URLs
-        else:
-            return caida_urls
+        return caida_urls + self._get_iso_mrt_urls(start, sources) 
 
         # If you ever want RIPE without the caida api, look at the commit
         # Where the relationship_parser_tests where merged in
 
-        return caida_urls + isolario_urls
-
     @error_catcher()
-    def _get_caida_mrt_urls(self, start, end, PARAMS_modification={}):
+    def _get_caida_mrt_urls(self, start, end, sources, PARAMS_modification={}):
         """Gets urls to download MRT files. Start and end should be epoch."""
 
         # Parameters for the get request, look at caida for more in depth info
@@ -200,6 +200,18 @@ class MRT_Parser:
                   'intervals': ["{},{}".format(start, end)],
                   'types': ['ribs']
                   }
+        # Done this way because cannot specify two params with same name
+        if MRT_Sources.RIPE.value and MRT_Sources.ROUTE_VIEWS.value in sources:
+            pass
+        # Else just routeviews:
+        elif MRT_Sources.RIPE.value in sources:
+            PARAMS["projects[]"] = ["routeviews"]
+        # else just ripe
+        elif MRT_Sources.ROUTE_VIEWS.value in sources:
+            PARAMS["projects[]"] = ["ris"]
+        # else neither
+        else:
+            return []
         # Other api calls can be made with these modifications
         PARAMS.update(PARAMS_modification)
         # API docs: https://bgpstream.caida.org/docs/api/broker#data
@@ -215,8 +227,11 @@ class MRT_Parser:
         return [x.get('url') for x in data.get('data').get('dumpFiles')]
 
     @error_catcher()
-    def _get_iso_mrt_urls(self, start):
+    def _get_iso_mrt_urls(self, start, sources):
         """Gets URLs to download MRT files from Isolario.it"""
+
+        if MRT_Sources.ISOLARIO.value not in sources:
+            return []
 
         # API URL
         url = "http://isolario.it/Isolario_MRT_data/"

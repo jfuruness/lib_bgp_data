@@ -48,7 +48,12 @@ class ROVPP_Simulator:
         self.args["stream_level"] = self.args.get("stream_level", 20)
 
     @utils.run_parser(paths=False)
-    def simulate(self, percents=range(5, 31, 5), trials=100, exr_bash=None):
+    def simulate(self,
+                 percents=range(5, 31, 5),
+                 trials=100,
+                 exr_bash=None,
+                 deterministic=False,
+                 deterministic_trial=None):
         """Runs ROVPP simulation.
 
         In depth explanation at top of module.
@@ -70,10 +75,20 @@ class ROVPP_Simulator:
             for trial in range(data_point.total_trials):
                for test in data_point.get_possible_tests():
                     total += 1
+        # Change this later!
+        if deterministic and deterministic_trial is not None:
+            total = 0
+            for data_point in data_points:
+               for test in data_point.get_possible_tests():
+                    total += 1
 
         with tqdm(total=total, desc="Running simulator") as pbar:
             for data_point in data_points:
-                data_point.get_data(self.args, pbar, exr_bash)
+                data_point.get_data(self.args,
+                                    pbar,
+                                    deterministic,
+                                    deterministic_trial,
+                                    exr_bash)
         print("Due to fixes in exr, statistics will be done later.")
         print("For now look in rovpp_all_trials table")
 
@@ -104,14 +119,18 @@ class Data_Point:
         self.tables = Subtables(self.default_percents, self.logger)
         self.logger.debug("Initialized Data Point")
 
-    def get_data(self, exr_args, pbar, exr_bash):
-        self.run_tests(exr_args, pbar, exr_bash)
+    def get_data(self, exr_args, pbar, seeded, seeded_trial, exr_bash):
+        self.run_tests(exr_args, pbar, seeded, seeded_trial, exr_bash)
         self.calculate_statistics()
 
-    def run_tests(self, exr_args, pbar, exr_bash):
+    def run_tests(self, exr_args, pbar, seeded, seeded_trial, exr_bash):
         for trial in range(self.total_trials):
-            for test in self.get_possible_tests(set_up=True):
-                test.run(trial, exr_args, pbar, exr_bash)
+            if seeded:
+                random.seed(trial)
+                if seeded_trial and trial != seeded_trial:
+                    continue
+            for test in self.get_possible_tests(set_up=True, seeded=seeded):
+                test.run(trial, exr_args, pbar, self.percent_iter, exr_bash)
 
     def calculate_statistics(self):
         return
@@ -134,10 +153,10 @@ class Data_Point:
                     # FROM HERE calc avg percent using both totals
                     # STORE ALL THIS DATA INTO WHERE IT IS NEEDED TO BE GRAPHED!
 
-    def get_possible_tests(self, set_up=False):
+    def get_possible_tests(self, set_up=False, deterministic=False):
         for hijack_type in [x.value for x in Hijack_Types.__members__.values()]:
             if set_up:
-                hijack = self.set_up_trial(hijack_type)
+                hijack = self.set_up_test(hijack_type, deterministic)
             else:
                  hijack = None
             for adopt_pol in [x.value for x in
@@ -145,7 +164,7 @@ class Data_Point:
                 yield Test(self.logger, self.tables, hijack=hijack,
                            hijack_type=hijack_type, adopt_pol=adopt_pol)
 
-    def set_up_trial(self, hijack_type):
+    def set_up_test(self, hijack_type, deterministic):
         self.tables = Subtables(self.default_percents, self.logger)
         # sets hijack data
         # Also return hijack variable
@@ -153,7 +172,8 @@ class Data_Point:
             hijack = db.populate(self.tables.possible_hijacker_ases,
                                  hijack_type)
         self.tables.set_implimentable_ases(self.percent_iter,
-                                           hijack.attacker_asn)
+                                           hijack.attacker_asn,
+                                           deterministic)
         return hijack
             
     def toJSON(self):
@@ -176,7 +196,7 @@ class Test:
     def __repr__(self):
         return (self.hijack, self.hijack_type, self.adopt_pol)
 
-    def run(self, trial_num, exr_args, pbar, exr_bash):
+    def run(self, trial_num, exr_args, pbar, percent_iter, exr_bash):
         # Runs sim, gets data
         pbar.set_description("{}, {}, atk {}, vic {} ".format(
                                     self.hijack_type,
@@ -194,7 +214,8 @@ class Test:
         self.tables.store_trial_data(self.hijack,
                                      self.hijack_type,
                                      self.adopt_pol_name,
-                                     trial_num)
+                                     trial_num,
+                                     percent_iter)
 
         pbar.update(1)
 
@@ -220,7 +241,10 @@ class Subtables:
         for sub_table in self.tables:
             sub_table.table.fill_table()
 
-        etc = Subtable(ROVPP_Etc_ASes_Table, self.logger, default_percents)
+        etc = Subtable(ROVPP_Etc_ASes_Table,
+                       self.logger,
+                       default_percents,
+                       possible_hijacker=False)
         etc.table.fill_table([x.table.name for x in self.tables])
         self.tables.append(etc)
         self.logger.debug("Initialized subtables")
@@ -264,7 +288,7 @@ class Subtables:
                     possible_hijacker_ases.append(result["asn"])
         return possible_hijacker_ases
 
-    def store_trial_data(self, hijack, hijack_type, adopt_pol_name, trial_num):
+    def store_trial_data(self, hijack, hijack_type, adopt_pol_name, trial_num, percent_iter):
         # NOTE: Change this later, should be exr_filtered,
         # Or at the very least pass in the args required
         sql = """SELECT asn, opt_flag, received_from_asn FROM
@@ -276,7 +300,8 @@ class Subtables:
                                    hijack,
                                    hijack_type,
                                    adopt_pol_name,
-                                   trial_num)
+                                   trial_num,
+                                   percent_iter)
 
 class Subtable:
     """Subtable class for ease of use"""
@@ -304,7 +329,7 @@ class Subtable:
             policy = self.policy_to_impliment
         self.table.change_routing_policies(policy)
 
-    def store_trial_data(self, all_ases, hijack, h_type, adopt_pol_name, tnum):
+    def store_trial_data(self, all_ases, hijack, h_type, adopt_pol_name, tnum, percent_iter):
 
 
         sql = """SELECT asn, opt_flag, received_from_asn FROM
@@ -327,6 +352,7 @@ class Subtable:
                       h_type,
                       adopt_pol_name,
                       tnum,
+                      percent_iter,
                       opt_flag_data,
                       traceback_data,
                       control_plane_data)

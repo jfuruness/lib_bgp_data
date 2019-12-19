@@ -284,6 +284,7 @@ class ROVPP_All_Trials_Table(Database):
                  victim_prefix CIDR,
                  adopt_pol varchar(50),
                  trial_num bigint,
+                 percent_iter bigint,
                  opt_hijacked bigint,
                  opt_nothijacked bigint,
                  opt_blackholed bigint,
@@ -319,6 +320,7 @@ class ROVPP_All_Trials_Table(Database):
                hijack_type,
                adopt_pol_name,
                tnum,
+               percent_iter,
                opt_flag_data,
                traceback_data,
                c_plane_data):
@@ -332,6 +334,7 @@ class ROVPP_All_Trials_Table(Database):
                  victim_prefix,
                  adopt_pol,
                  trial_num,
+                 percent_iter,
                  opt_hijacked,
                  opt_nothijacked,
                  opt_blackholed,
@@ -350,7 +353,7 @@ class ROVPP_All_Trials_Table(Database):
                  no_rib)
               VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
                       %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
-                      %s, %s, %s, %s);"""
+                      %s, %s, %s, %s, %s);"""
 
         no_rib = c_plane_data[C_Plane_Conds.NO_RIB.value]
 
@@ -362,6 +365,7 @@ class ROVPP_All_Trials_Table(Database):
                 hijack.victim_prefix,
                 adopt_pol_name,
                 tnum,
+                percent_iter,
                 opt_flag_data[Conds.HIJACKED.value],
                 opt_flag_data[Conds.NOTHIJACKED.value],
                 opt_flag_data[Conds.BHOLED.value],

@@ -64,9 +64,9 @@ class MRT_Announcements_Table(Database):
         Should be called at the start of every run.
         """
 
-        self.logger.info("Dropping MRT Announcements")
+        self.logger.debug("Dropping MRT Announcements")
         self.cursor.execute("DROP TABLE IF EXISTS mrt_announcements")
-        self.logger.info("MRT Announcements Table dropped")
+        self.logger.debug("MRT Announcements Table dropped")
 
     @error_catcher()
     def filter_by_IPV_family(self, IPV4, IPV6):
@@ -76,9 +76,9 @@ class MRT_Announcements_Table(Database):
             self.logger.info("Deleting IPV6 from mrt announcements")
             sql = "DELETE FROM mrt_announcements WHERE family(prefix) = 6;"
             self.cursor.execute(sql)
-            self.logger.info("IPV6 deleted from mrt_announcements")
+            self.logger.debug("IPV6 deleted from mrt_announcements")
         if not IPV4:
             self.logger.info("Deleting IPV4 from mrt_announcements")
             sql = "DELETE FROM mrt_announcements WHERE family(prefix) = 4;"
             self.cursor.execute(sql)
-            self.logger.info("IPV4 deleted from mrt_announcements")
+            self.logger.debug("IPV4 deleted from mrt_announcements")

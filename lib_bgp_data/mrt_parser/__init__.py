@@ -109,6 +109,7 @@ Possible Future Extensions:
 
 
 from .mrt_parser import MRT_Parser
+from .mrt_sources import MRT_Sources
 
 __author__ = "Justin Furuness", "Matt Jaccino"
 __credits__ = ["Justin Furuness", "Matt Jaccino"]

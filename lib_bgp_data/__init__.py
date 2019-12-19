@@ -14,6 +14,7 @@ from .extrapolator import Extrapolator
 from .rovpp import ROVPP_Simulator
 from .utils import Install, Database, db_connection, Thread_Safe_Logger
 from .forecast import Forecast
+from .verification_parser import Verification_Parser
 
 __author__ = "Justin Furuness"
 __credits__ = ["Justin Furuness"]
