@@ -201,14 +201,14 @@ class MRT_Parser:
                   'types': ['ribs']
                   }
         # Done this way because cannot specify two params with same name
-        if MRT_Sources.RIPE.value and MRT_Sources.ROUTE_VIEWS.value in sources:
+        if MRT_Sources.RIPE.value in sources and MRT_Sources.ROUTE_VIEWS.value in sources:
             pass
         # Else just routeviews:
         elif MRT_Sources.RIPE.value in sources:
-            PARAMS["projects[]"] = ["routeviews"]
+            PARAMS["projects[]"] = ["ris"]
         # else just ripe
         elif MRT_Sources.ROUTE_VIEWS.value in sources:
-            PARAMS["projects[]"] = ["ris"]
+            PARAMS["projects[]"] = ["routeviews"]
         # else neither
         else:
             return []
