@@ -185,19 +185,30 @@ class ROVPP_ASes_Subtable(Database):
         self.cursor.execute("DROP TABLE IF EXISTS {}".format(self.name))
         self.logger.debug("{} dropped".format(self.name))
 
-    def set_implimentable_ases(self, percent, attacker):
+    def set_implimentable_ases(self, percent, attacker, deterministic):
         """Sets ases to impliment. Due to large sample size,
            1 (the attacker) is not subtracted from the count,
            since we don't know which data set the attacker is from"""
 
-        sql = """UPDATE {0} SET impliment = TRUE
-                FROM (SELECT * FROM {0}
-                         WHERE {0}.asn != {1}
-                         ORDER BY RANDOM() LIMIT (
-                             SELECT COUNT(*) FROM {0}) * ({2}::decimal/100.0)
-                         ) b
-               WHERE b.asn = {0}.asn;""".format(self.name, attacker, percent)
-        self.execute(sql)
+        if deterministic:
+            ases = sorted(set([x["asn"] for x
+                               in self.execute("SELECT * FROM " + self.name)]))
+            ases.remove(attacker)
+            num_ases = len(ases) * percent // 100
+            impliment_ases = sample(ases, k=num_ases)
+            for _as in impliment_ases:
+                self.execute("""UPDATE {} SET impliment = TRUE
+                                WHERE asn = {}""".format(self.name, _as))
+        else:
+
+            sql = """UPDATE {0} SET impliment = TRUE
+                    FROM (SELECT * FROM {0}
+                             WHERE {0}.asn != {1}
+                             ORDER BY RANDOM() LIMIT (
+                                 SELECT COUNT(*) FROM {0}) * ({2}::decimal/100.0)
+                             ) b
+                   WHERE b.asn = {0}.asn;""".format(self.name, attacker, percent)
+            self.execute(sql)
 
     def change_routing_policies(self, policy):
         sql = """UPDATE {} SET as_type = {}
@@ -349,7 +360,7 @@ class ROVPP_All_Trials_Table(Database):
                  trace_total,
                  c_plane_has_attacker_prefix_origin,
                  c_plane_has_only_victim_prefix_origin,
-                 c_plane_has_bhole
+                 c_plane_has_bhole,
                  no_rib)
               VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
                       %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,

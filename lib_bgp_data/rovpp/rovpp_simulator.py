@@ -129,7 +129,7 @@ class Data_Point:
                 random.seed(trial)
                 if seeded_trial and trial != seeded_trial:
                     continue
-            for test in self.get_possible_tests(set_up=True, seeded=seeded):
+            for test in self.get_possible_tests(set_up=True, deterministic=seeded):
                 test.run(trial, exr_args, pbar, self.percent_iter, exr_bash)
 
     def calculate_statistics(self):
@@ -263,10 +263,10 @@ class Subtables:
             raise StopIteration
 
 
-    def set_implimentable_ases(self, percent_iteration_num, attacker):
+    def set_implimentable_ases(self, percent_iteration_num, attacker, deterministic):
 
         for sub_table in self.tables:
-            sub_table.set_implimentable_ases(percent_iteration_num, attacker)
+            sub_table.set_implimentable_ases(percent_iteration_num, attacker, deterministic)
 
     def change_routing_policies(self, policy):
         """Changes the routing policy for that percentage of ASes"""
@@ -321,9 +321,9 @@ class Subtable:
         # None for whatever policy is being tested
         self.policy_to_impliment = policy_to_impliment
 
-    def set_implimentable_ases(self, iteration_num, attacker):
+    def set_implimentable_ases(self, iteration_num, attacker, deterministic):
         self.table.set_implimentable_ases(self.percents[iteration_num],
-                                          attacker)
+                                          attacker, deterministic)
     def change_routing_policies(self, policy):
         if self.policy_to_impliment is not None:
             policy = self.policy_to_impliment
@@ -387,7 +387,7 @@ class Subtable:
                                      hijack.victim_asn])[0]["count"]
         c_plane_data[C_Plane_Conds.RECEIVED_BHOLE.value] =\
             self.table.execute(sql, [hijack.victim_prefix,
-                                     Conditions.BHOLE.value])[0]["count"]
+                                     Conditions.BHOLED.value])[0]["count"]
 
 
         no_rib_sql = """SELECT COUNT(*) FROM {0}
