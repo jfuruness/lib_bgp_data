@@ -84,11 +84,7 @@ class Extrapolator:
 
     def _filter_extrapolator(self, hijack):
         with db_connection() as db:
-            # NOTE: should be removed later!!!
-            db.execute("ALTER TABLE rovpp_extrapolation_results ADD COLUMN opt_flag bigint DEFAULT 1;")
-
             db.execute("DROP TABLE IF EXISTS rovpp_extrapolation_results_filtered")
-
             sql = """CREATE TABLE rovpp_extrapolation_results_filtered AS (
                   SELECT DISTINCT ON (exr.asn) exr.asn, exr.opt_flag,
                          COALESCE(exrh.prefix, exrnh.prefix) AS prefix,
