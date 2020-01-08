@@ -258,8 +258,8 @@ class Install:
                 "sudo ./apt-install-deps.sh",
                 "sudo apt -y install libboost-test-dev",
                 "cd ..",
-                "git checkout remotes/origin/rovpp",
-                "git checkout -b rovpp"]
+                "git checkout remotes/origin/rovpp2",
+                "git checkout -b rovpp2"]
 
         check_call("&& ".join(cmds), shell=True)
 

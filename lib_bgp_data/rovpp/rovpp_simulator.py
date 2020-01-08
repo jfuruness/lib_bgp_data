@@ -4,6 +4,9 @@
 """Due to lots of last minute decisions in the way we want to run 
 our sims, this module has turned into hardcoded crap. Fixing it now."""
 
+from math import sqrt
+import matplotlib.pyplot as plt
+from statistics import mean, variance
 from random import sample
 from subprocess import check_call
 from copy import deepcopy
@@ -94,7 +97,9 @@ class ROVPP_Simulator:
         # Graph data here!!!
         # Possibly move back to iterator (below)
 
-    def gen_graphs(self, data_points):
+    def gen_graphs(self, trials=100, percents=range(5,31,5)):
+        data_points = [Data_Point(trials, p_i, percent, percents, self.logger)
+                       for p_i, percent in enumerate(percents)]
         for hijack_type in [x.value for x in Hijack_Types.__members__.values()]:
             self.gen_ctrl_plane_graphs(data_points, hijack_type)
             self.gen_data_plane_graphs(data_points, hijack_type)
@@ -106,34 +111,49 @@ class ROVPP_Simulator:
             ctrl_titles = ["Control Plane Hijacked",
                            "Control Plane Successful Connection",
                            "Control Plane Disconnected"]
-            gen_graph(data_points, ctrl_val_strs, hijack_type, ctrl_titles, "ctrl")
+            self.gen_graph(data_points, ctrl_val_strs, hijack_type, ctrl_titles, "ctrl")
 
     def gen_data_plane_graphs(self, data_points, hijack_type):
             data_val_strs = [["trace_hijacked", "trace_preventivehijacked"],
-                             ["trace_not_hijacked", "trace_preventivenothijacked"],
-                             ["trace_blackholed", "no_rib"]
+                             ["trace_nothijacked", "trace_preventivenothijacked"],
+                             ["trace_blackholed", "no_rib"]]
             data_titles = ["Data Plane Hijacked",
                            "Data Plane Successful Connection",
                            "Data Plane Disconnected"]
-            gen_graph(data_points, data_val_strs, hijack_type, data_titles, "data")
+            self.gen_graph(data_points, data_val_strs, hijack_type, data_titles, "data")
             
 
 
     def gen_graph(self, data_points, val_strs_list, hijack_type, titles, g_title):
-        fig, axs = plt.subplots(len(val_strs), len(data_points[0].tables))
-        pol_name_dict = {v.value: k for k, v in Policies.__members__.items()}
+        fig, axs = plt.subplots(len(val_strs_list), len(data_points[0].tables))
+        fig.set_size_inches(18.5, 10.5)
+        pol_name_dict = {v.value: k for k, v in Non_BGP_Policies.__members__.items()}
         for i, table in enumerate(data_points[0].tables):
-            for j, val_strs, title in enumerate(zip(val_strs_list, titles)):
+            for j, vals in enumerate(zip(val_strs_list, titles)):
                 # Graphing Hijacked
-                for pol in [x.value for x in Policies.__members__.values()]:
+                ax = axs[i,j]
+                legend_vals = []
+                for pol in [x.value for x in Non_BGP_Policies.__members__.values()]:
                     sql_data = [hijack_type,
-                                table.name,
+                                table.table.name,
                                 pol_name_dict[pol]]
-                    self._gen_subplot(data_points, val_strs, sql_data, axs[i, j], hijack_type, title)
-        fig.show()
-        fig.savefig("/tmp/{}_{}".format(g_title, hijack_type)
+                    self._gen_subplot(data_points, vals[0], sql_data, ax, hijack_type, vals[1], pol_name_dict[pol])
+                # Must be done here so as not to be set twice
+                ax.set(xlabel="% adoption", ylabel=table.table.name)
+                ax.title.set_text("{} for {}".format(vals[1], hijack_type))
+                if "hijacked" in vals[1].lower():
+                    loc="lower left"
+                else:
+                    loc = "upper left"
+                ax.legend(loc=loc)
+#                ax.title.set_text(table.table.name)
+#                plt.ylabel("{} for {}".format(g_title, hijack_type), axes=ax)
+#                plt.xlabel("% adoption", axes=ax)
+        fig.tight_layout()
+#        plt.show()
+        fig.savefig("/tmp/bgp_pics/{}_{}".format(g_title, hijack_type))
 
-    def _gen_subplot(data_points, val_strs, sql_data, ax, hijack_type, title):
+    def _gen_subplot(self, data_points, val_strs, sql_data, ax, hijack_type, title, adopt_pol):
         X = []
         Y = []
         Y_err = []
@@ -146,14 +166,13 @@ class ROVPP_Simulator:
                        adopt_pol = %s AND
                        percent_iter = %s"""
             with db_connection(logger=self.logger) as db:
-                results = db.execute(sql, data + [data_point.percent_iter])
+                results = db.execute(sql, sql_data + [data_point.percent_iter])
+#                print(db.cursor.mogrify(sql, sql_data + [data_point.percent_iter]))
                 X.append(data_point.default_percents[data_point.percent_iter])
-                raw = [sum(x[y] for y in val_strs)/x["trace_total"] for x in results]
+                raw = [sum(x[y] for y in val_strs) * 100 / x["trace_total"] for x in results]
                 Y.append(mean(raw))
-                Y_err.append(1.645 * 2 * sqrt(variance(raw))/sqrt(len(raw))
-        ax.plot(X, Y, yerr=Y_err)
-        ax.y_label("{} for {}".format(title, hijack_type))
-        ax.x_label("% adoption")
+                Y_err.append(1.645 * 2 * sqrt(variance(raw))/sqrt(len(raw)))
+        ax.errorbar(X, Y, yerr=Y_err, label=adopt_pol)
 
 
 class Data_Point:
@@ -276,7 +295,7 @@ class Subtables:
         self.tables.append(etc)
         self.logger.debug("Initialized subtables")
 
-        selfi._cur_table = -1
+        self._cur_table = -1
 
     def __len__(self):
         return len(self.tables)
