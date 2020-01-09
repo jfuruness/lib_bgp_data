@@ -21,6 +21,23 @@ __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
 
+class ROVPP_Extrapolation_Results_Table(Database):
+    def _create_tables(self):
+        self.clear_table()
+        sql = """CREATE UNLOGGED TABLE IF NOT EXISTS
+                 {} (
+                 asn bigint,
+                 origin bigint,
+                 recieved_from_asn bigint,
+                 prefix CIDR,
+                 time bigint,
+                 opt_flag smallint,
+                 alternate_as bigint
+                 );""".format(self.name)
+        self.cursor.execute(sql)
+    def clear_table(self):
+        self.execute("DROP TABLE IF EXISTS {}".format(self.name))
+
 class Extrapolator_Inverse_Results_Table(Database):
     """Class with database functionality.
 

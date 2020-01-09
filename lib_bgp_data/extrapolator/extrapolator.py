@@ -62,15 +62,11 @@ class Extrapolator:
         self.logger.debug("About to run the rovpp extrapolator")
         # Run the extrapolator
         bash_args = "rovpp-extrapolator "
-        # Don't invert the results so that we have the last hop
-        bash_args += "--invert-results=0 "
-        # Gives the attacker asn
-        bash_args += "--attacker_asn={} ".format(hijack.attacker_asn)
-        # Gives the victim asn
-        bash_args += "--victim_asn={} ".format(hijack.victim_asn)
-        # Gives the more specific prefix that the attacker sent out
-        bash_args += "--victim_prefix={} ".format(hijack.victim_prefix)
-        bash_args += "--rovpp_ases_tables {}".format(" ".join(table_names))
+        # version 1
+        bash_args += "-v 1 "
+        # lists tables nessecary
+        for table_name in table_names:
+            bash_args += "-t {}".format(table_name)
         if exr_bash is not None:
             bash_args = exr_bash
         self.logger.debug("Calling extrapolator with:\n\t{}".format(bash_args))
@@ -86,7 +82,7 @@ class Extrapolator:
         with db_connection() as db:
             db.execute("DROP TABLE IF EXISTS rovpp_extrapolation_results_filtered")
             sql = """CREATE TABLE rovpp_extrapolation_results_filtered AS (
-                  SELECT DISTINCT ON (exr.asn) exr.asn, exr.opt_flag,
+                  SELECT DISTINCT ON (exr.asn) exr.asn, exr.opt_flag, exr.alternate_as,
                          COALESCE(exrh.prefix, exrnh.prefix) AS prefix,
                          COALESCE(exrh.origin, exrnh.origin) AS origin,
                          COALESCE(exrh.received_from_asn, exrnh.received_from_asn)
@@ -105,7 +101,7 @@ class Extrapolator:
                 sql = "DROP TABLE IF EXISTS rovpp_exr_{}".format(table_name)
                 db.execute(sql)
                 sql = """CREATE TABLE rovpp_exr_{0} AS (
-                      SELECT exr.asn, exr.opt_flag, exr.prefix, exr.origin,
+                      SELECT exr.asn, exr.opt_flag, exr.prefix, exr.origin, exr.alternate_as
                               exr.received_from_asn, {0}.as_type
                           FROM rovpp_extrapolation_results_filtered exr
                       INNER JOIN {0} ON

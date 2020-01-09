@@ -379,7 +379,7 @@ class Subtable:
         self.table.change_routing_policies(policy)
 
     def store_trial_data(self, all_ases, hijack, h_type, adopt_pol_name, tnum, percent_iter):
-        sql = """SELECT asn, opt_flag, received_from_asn, prefix, origin FROM
+        sql = """SELECT asn, opt_flag, received_from_asn, prefix, origin, alternate_as FROM
               {}""".format(self.exr_table_name)
         subtable_ases = {x["asn"]: x for x in self.table.execute(sql)}
         conds = {x.value: 0 for x in Conditions.__members__.values()}
@@ -449,7 +449,15 @@ class Subtable:
                         conds[Conditions.BHOLED.value] += 1
                         break
                 elif as_data["received_from_asn"] in possible_conditions:
-                    conds[as_data["received_from_asn"]] += 1
+                    # Preventative announcements
+                    if as_data["alternate_as"] is not None:
+                        if as_data["received_from_asn"] == Conditions.Hijacked.value:
+                            conds[Conditions.PREVENTATIVEHIJACKED.value] += 1
+                        else:
+                            conds[Conditions.PREVENTATIVENOTHIJACKED.value] += 1
+                    # Non preventative announcements
+                    else:
+                        conds[as_data["received_from_asn"]] += 1
                     break
                 else:
                     asn = as_data["received_from_asn"]
