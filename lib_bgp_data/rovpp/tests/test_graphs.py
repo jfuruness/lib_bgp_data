@@ -8,6 +8,7 @@ For speciifics on each test, see the docstrings under each function.
 
 from ..relationships_parser import Relationships_Parser
 from ..rovpp_simulator import ROVPP_Simulator
+from ...enums import Hijack_Types
 from ..tables import Hijack, Subprefix_Hijack_Table
 from ...utils import Database, db_connection, utils
 
@@ -19,23 +20,51 @@ __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
 
+class Hijack:
+    def __init__(self, info_dict):
+        self.attacker_asn = info_dict.get("attacker")
+        self.attacker_prefix = info_dict.get("more_specific_prefix")
+        self.victim_asn = info_dict.get("victim")
+        self.victim_prefix = info_dict.get("expected_prefix")
+
 class Test_Graphs:
     """Tests all example graphs within our paper."""
 
-    def test_ex_1(self):
+    def test_double_propogation(self):
+        # double prop stored in rovpp_exrtrapolation_results
+        exr_bash=("rovpp-extrapolator -v 1 "
+                  "-t rovpp_top_100_ases "
+                  "-t rovpp_etc_ases "
+                  "-t rovpp_edge_ases "
+                  "-b 0 "  # deterministic
+                  "-k 1")  # double propogation
+        ROVPP_Simulator().run(trials=1, percents=[30])
+        exr_bash = exr_bash[:-1] + "0 -r exr_single_prop_test"
+        Extrapolator().run_rovpp(exr_bash=exr_bash)
+        with db_connection(
+        
+
+    def AAAAAtest_ex(self):
         """For a more in depth explanation, see _test_example"""
 
-        1/0
+        hijack = Hijack({"attacker": 123,
+                         "more_specific_prefix": "1.2.3.0/24",
+                         "victim": 1,
+                         "expected_prefix": "1.2.0.0/16"})
+        hijack_type = Hijack_Types.SUBPREFIX_HIJACK.value
+        peers = [[1, 2]
+                 [2, 3]]
 
 ########################
 ### Helper Functions ###
 ########################
 
-    def _test_example(self, hijack, hijack_type, peers, customer_providers, as_list, output):
+    def _graph_example(self, hijack, hijack_type, peers, customer_providers, as_list, output):
         """tests example graphs from paper
 
         Input:
             hijack: hijack class, with ann info
+                contains attributes for 
             peers: list of Peers, rows in peers table
             customer_providers: list of [provider, customer] pairs, rows in customer_providers table
             as_list: list of ases and what they are implimenting

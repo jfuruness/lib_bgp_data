@@ -56,7 +56,7 @@ class Extrapolator:
 
     @error_catcher()
     @utils.run_parser()
-    def run_rovpp(self, hijack, table_names, exr_bash=None):
+    def run_rovpp(self, hijack, table_names, exr_bash=None, test=False):
         """Runs extrapolator with a subprefix hijack."""
 
         self.logger.debug("About to run the rovpp extrapolator")
@@ -67,19 +67,42 @@ class Extrapolator:
         # lists tables nessecary
         for table_name in table_names:
             bash_args += "-t {}".format(table_name)
+        if test is True:
+            bash_args = ("rovpp-extrapolator -v 1 "
+                         "-t rovpp_top_100_ases "
+                         "-t rovpp_etc_ases "
+                         "-t rovpp_edge_ases "
+                         "-b 0 "  # deterministic
+                         "-k 1")  # double propogation
         if exr_bash is not None:
             bash_args = exr_bash
+        self._call_exr(bash_args)
+        self._filter_extrapolator(hijack)
+        self._join_w_tables(table_names)
+
+        # For testing single vs double prop
+        if test is True:
+            bash_args = bash_args[:-1] + "0 -r rovpp_exr_single_prop_test"
+            self._call_exr(bash_args)
+            with db_connection(logger=self.logger) as db:
+                db.execute("ALTER TABLE rovpp_exr_single_prop_test ADD COLUMN alternate_as bigint;")
+
+
+                assert len(db.execute("SELECT * FROM rovpp_extrapolation_results EXCEPT SELECT * FROM rovpp_exr_single_prop_test")) == 0
+                assert len(db.execute("SELECT * FROM rovpp_exr_single_prop_test EXCEPT SELECT * FROM rovpp_extrapolation_results")) == 0
+
+
+    def _call_exr(self, bash_args):
         self.logger.debug("Calling extrapolator with:\n\t{}".format(bash_args))
         if self.logger.level == DEBUG:
             check_call(bash_args, shell=True)
         else:
             check_call(bash_args, stdout=open('/tmp/extrapolatordebug.log','w'), stderr=DEVNULL, shell=True)
-            #check_call(bash_args, stdout=DEVNULL, stderr=DEVNULL, shell=True
-        self._filter_extrapolator(hijack)
-        self._join_w_tables(table_names)
+
 
     def _filter_extrapolator(self, hijack):
         with db_connection() as db:
+            db.execute("ALTER TABLE rovpp_extrapolation_results ADD COLUMN alternate_as bigint;")
             db.execute("DROP TABLE IF EXISTS rovpp_extrapolation_results_filtered")
             sql = """CREATE TABLE rovpp_extrapolation_results_filtered AS (
                   SELECT DISTINCT ON (exr.asn) exr.asn, exr.opt_flag, exr.alternate_as,
@@ -101,7 +124,7 @@ class Extrapolator:
                 sql = "DROP TABLE IF EXISTS rovpp_exr_{}".format(table_name)
                 db.execute(sql)
                 sql = """CREATE TABLE rovpp_exr_{0} AS (
-                      SELECT exr.asn, exr.opt_flag, exr.prefix, exr.origin, exr.alternate_as
+                      SELECT exr.asn, exr.opt_flag, exr.prefix, exr.origin, exr.alternate_as,
                               exr.received_from_asn, {0}.as_type
                           FROM rovpp_extrapolation_results_filtered exr
                       INNER JOIN {0} ON

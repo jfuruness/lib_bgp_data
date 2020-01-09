@@ -55,6 +55,7 @@ class ROVPP_Simulator:
                  percents=range(5, 31, 5),
                  trials=100,
                  exr_bash=None,
+                 exr_test=False,
                  deterministic=False,
                  deterministic_trial=None):
         """Runs ROVPP simulation.
@@ -91,7 +92,8 @@ class ROVPP_Simulator:
                                     pbar,
                                     deterministic,
                                     deterministic_trial,
-                                    exr_bash)
+                                    exr_bash,
+                                    exr_test)
 
         # Close all tables here!!!
         # Graph data here!!!
@@ -187,17 +189,17 @@ class Data_Point:
         self.tables = Subtables(self.default_percents, self.logger)
         self.logger.debug("Initialized Data Point")
 
-    def get_data(self, exr_args, pbar, seeded, seeded_trial, exr_bash):
-        self.run_tests(exr_args, pbar, seeded, seeded_trial, exr_bash)
+    def get_data(self, exr_args, pbar, seeded, seeded_trial, exr_bash, exr_test):
+        self.run_tests(exr_args, pbar, seeded, seeded_trial, exr_bash, exr_test)
 
-    def run_tests(self, exr_args, pbar, seeded, seeded_trial, exr_bash):
+    def run_tests(self, exr_args, pbar, seeded, seeded_trial, exr_bash, exr_test):
         for trial in range(self.total_trials):
             if seeded:
                 random.seed(trial)
                 if seeded_trial and trial != seeded_trial:
                     continue
             for test in self.get_possible_tests(set_up=True, deterministic=seeded):
-                test.run(trial, exr_args, pbar, self.percent_iter, exr_bash)
+                test.run(trial, exr_args, pbar, self.percent_iter, exr_bash, exr_test)
 
     def get_possible_tests(self, set_up=False, deterministic=False):
         for hijack_type in [x.value for x in Hijack_Types.__members__.values()]:
@@ -242,7 +244,7 @@ class Test:
     def __repr__(self):
         return (self.hijack, self.hijack_type, self.adopt_pol)
 
-    def run(self, trial_num, exr_args, pbar, percent_iter, exr_bash):
+    def run(self, trial_num, exr_args, pbar, percent_iter, exr_bash, exr_test):
         # Runs sim, gets data
         pbar.set_description("{}, {}, atk {}, vic {} ".format(
                                     self.hijack_type,
@@ -256,7 +258,8 @@ class Test:
         exr_args["stream_level"] = 10 if self.logger.level == 10 else 40
         Extrapolator(exr_args).run_rovpp(self.hijack,
                                          [x.table.name for x in self.tables],
-                                         exr_bash)
+                                         exr_bash,
+                                         exr_test)
         self.tables.store_trial_data(self.hijack,
                                      self.hijack_type,
                                      self.adopt_pol_name,
@@ -340,7 +343,7 @@ class Subtables:
     def store_trial_data(self, hijack, hijack_type, adopt_pol_name, trial_num, percent_iter):
         # NOTE: Change this later, should be exr_filtered,
         # Or at the very least pass in the args required
-        sql = """SELECT asn, opt_flag, received_from_asn FROM
+        sql = """SELECT asn, opt_flag, received_from_asn, alternate_as FROM
               rovpp_extrapolation_results_filtered;"""
         with db_connection() as db:
             ases = {x["asn"]: x for x in db.execute(sql)}
