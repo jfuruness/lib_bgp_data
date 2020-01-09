@@ -87,7 +87,6 @@ class Extrapolator:
             with db_connection(logger=self.logger) as db:
                 db.execute("ALTER TABLE rovpp_exr_single_prop_test ADD COLUMN alternate_as bigint;")
 
-
                 assert len(db.execute("SELECT * FROM rovpp_extrapolation_results EXCEPT SELECT * FROM rovpp_exr_single_prop_test")) == 0
                 assert len(db.execute("SELECT * FROM rovpp_exr_single_prop_test EXCEPT SELECT * FROM rovpp_extrapolation_results")) == 0
 
