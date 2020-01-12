@@ -4,6 +4,7 @@
 """Due to lots of last minute decisions in the way we want to run 
 our sims, this module has turned into hardcoded crap. Fixing it now."""
 
+import sys
 from math import sqrt
 import matplotlib.pyplot as plt
 from statistics import mean, variance
@@ -447,6 +448,7 @@ class Subtable:
         possible_conditions = set(conds.keys())
         for asn, as_data in subtable_ases.items():
             # Could not use true here but then it becomes very long and ugh
+            count = 0
             while True:
                 if (asn in blackholed_ases
                     and as_data["prefix"] == blackholed_ases[asn]["prefix"]
@@ -467,6 +469,9 @@ class Subtable:
                 else:
                     asn = as_data["received_from_asn"]
                     as_data = all_ases[asn]
+                    count += 1
+                    if count > 100:
+                        sys.exit(1)
         return conds
 
 # COMMENTING OUT OLD VERSION (NEW ONE SENT ON SLACK) DELETE THIS WHEN WE KNOW IT WORKS
