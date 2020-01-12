@@ -99,7 +99,8 @@ class ROVPP_Simulator:
         # Graph data here!!!
         # Possibly move back to iterator (below)
 
-    def gen_graphs(self, trials=100, percents=range(5,31,5)):
+    def gen_graphs(self, trials=20, percents=range(5,31,5)):
+        utils.clean_paths(self.logger, ["/tmp/bgp_pics"])
         data_points = [Data_Point(trials, p_i, percent, percents, self.logger)
                        for p_i, percent in enumerate(percents)]
         for hijack_type in [x.value for x in Hijack_Types.__members__.values()]:
@@ -168,6 +169,7 @@ class ROVPP_Simulator:
                        adopt_pol = %s AND
                        percent_iter = %s"""
             with db_connection(logger=self.logger) as db:
+#                print(db.cursor.mogrify(sql, sql_data + [data_point.percent_iter]))
                 results = db.execute(sql, sql_data + [data_point.percent_iter])
 #                print(db.cursor.mogrify(sql, sql_data + [data_point.percent_iter]))
                 X.append(data_point.default_percents[data_point.percent_iter])
