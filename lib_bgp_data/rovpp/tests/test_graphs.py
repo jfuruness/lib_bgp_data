@@ -46,14 +46,45 @@ class Test_Graphs:
 
     def AAAAAtest_ex(self):
         """For a more in depth explanation, see _test_example"""
-
+        
+        # Figure 1a from SIGCOMM paper
         hijack = Hijack({"attacker": 123,
                          "more_specific_prefix": "1.2.3.0/24",
                          "victim": 1,
                          "expected_prefix": "1.2.0.0/16"})
         hijack_type = Hijack_Types.SUBPREFIX_HIJACK.value
-        peers = [[1, 2]
-                 [2, 3]]
+        peers = [[]]
+        customer_providers = [[77, 44]
+                              [78, 44]
+                              [666, 44]
+                              [78, 88]
+                              [86, 88]
+                              [11, 77]
+                              [12, 78]
+                              [99, 86]
+        as_list = [[44, 0]
+                   [88, 0]
+                   [77, 1]
+                   [666, 0]
+                   [11, 0]
+                   [78, 1]
+                   [12, 0]
+                   [86, 0]
+                   [99, 0]]
+       
+        #  [ asn   |   prefix   | origin | received_from_asn | time | opt_flag | alternate_as ]
+        output = [[11, "1.2.0.0/16", 99, 77, 0, 1, 0]
+                  [77, "1.2.0.0/16", 99, 44, 0, 1, 0]
+                  [77, "1.2.3.0/16", 666, 44, 0, 1, 0]
+                  [44, "1.2.0.0/16", 99, 99, 0, 1, 0]
+                  [44, "1.2.3.0/16", 666, 666, 0, 1, 0]
+                  [78, "1.2.0.0/16", 99, 44, 0, 1, 0]
+                  [12, "1.2.0.0/16", 99, 78, 0, 1, 0]
+                  [88, "1.2.0.0/16", 99, 86, 0, 1, 0]
+                  [86, "1.2.0.0/16", 99, 99, 0, 1, 0]
+                  [99, "1.2.0.0/16", 99, 99, 0, 1, 0]
+                  [666, "1.2.3.0/16", 666, 666, 0, 1, 0]]
+        # How is this called test called?
 
 ########################
 ### Helper Functions ###

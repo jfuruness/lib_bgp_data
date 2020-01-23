@@ -15,12 +15,10 @@ from pprint import pprint
 import json
 from tqdm import tqdm
 from .enums import Policies, Non_BGP_Policies, Hijack_Types, Conditions
-from .enums import Control_Plane_Conditions as C_Plane_Conds
+from .enums import AS_Types, Control_Plane_Conditions as C_Plane_Conds
 from .tables import Subprefix_Hijack_Temp_Table
 from .tables import ROVPP_MRT_Announcements_Table, ROVPP_Top_100_ASes_Table
 from .tables import ROVPP_Edge_ASes_Table, ROVPP_Etc_ASes_Table, ROVPP_All_Trials_Table
-from .tables import ROVPP_Statistics_Table
-from .graph_data import Graph_Data
 from ..relationships_parser import Relationships_Parser
 from ..relationships_parser.tables import ROVPP_AS_Connectivity_Table
 from ..bgpstream_website_parser import BGPStream_Website_Parser
@@ -68,8 +66,6 @@ class ROVPP_Simulator:
         Relationships_Parser(self.args).parse_files(rovpp=True)
         with db_connection(ROVPP_All_Trials_Table, self.logger) as db:
             db.clear_table()
-        with db_connection(ROVPP_Statistics_Table, self.logger) as db:
-            db.clear_table
 
         data_points = [Data_Point(trials, p_i, percent, percents, self.logger)
                        for p_i, percent in enumerate(percents)]
@@ -101,34 +97,35 @@ class ROVPP_Simulator:
         # Possibly move back to iterator (below)
 
     def gen_graphs(self, trials=20, percents=range(5,31,5)):
-        utils.clean_paths(self.logger, ["/tmp/bgp_pics"])
-        data_points = [Data_Point(trials, p_i, percent, percents, self.logger)
-                       for p_i, percent in enumerate(percents)]
-        for hijack_type in [x.value for x in Hijack_Types.__members__.values()]:
-            self.gen_ctrl_plane_graphs(data_points, hijack_type)
-            self.gen_data_plane_graphs(data_points, hijack_type)
+        with tqdm(total=324, desc="Generating subplots") as pbar:
+            utils.clean_paths(self.logger, ["/tmp/bgp_pics"])
+            data_points = [Data_Point(trials, p_i, percent, percents, self.logger)
+                           for p_i, percent in enumerate(percents)]
+            for hijack_type in [x.value for x in Hijack_Types.__members__.values()]:
+                self.gen_ctrl_plane_graphs(data_points, hijack_type, pbar)
+                self.gen_data_plane_graphs(data_points, hijack_type, pbar)
 
-    def gen_ctrl_plane_graphs(self, data_points, hijack_type):
+    def gen_ctrl_plane_graphs(self, data_points, hijack_type, pbar):
             ctrl_val_strs = [["c_plane_has_attacker_prefix_origin"],
                              ["c_plane_has_only_victim_prefix_origin"],
                              ["c_plane_has_bhole", "no_rib"]]
             ctrl_titles = ["Control Plane Hijacked",
                            "Control Plane Successful Connection",
                            "Control Plane Disconnected"]
-            self.gen_graph(data_points, ctrl_val_strs, hijack_type, ctrl_titles, "ctrl")
+            self.gen_graph(data_points, ctrl_val_strs, hijack_type, ctrl_titles, "ctrl", pbar)
 
-    def gen_data_plane_graphs(self, data_points, hijack_type):
+    def gen_data_plane_graphs(self, data_points, hijack_type, pbar):
             data_val_strs = [["trace_hijacked", "trace_preventivehijacked"],
                              ["trace_nothijacked", "trace_preventivenothijacked"],
                              ["trace_blackholed", "no_rib"]]
             data_titles = ["Data Plane Hijacked",
                            "Data Plane Successful Connection",
                            "Data Plane Disconnected"]
-            self.gen_graph(data_points, data_val_strs, hijack_type, data_titles, "data")
+            self.gen_graph(data_points, data_val_strs, hijack_type, data_titles, "data", pbar)
             
 
 
-    def gen_graph(self, data_points, val_strs_list, hijack_type, titles, g_title):
+    def gen_graph(self, data_points, val_strs_list, hijack_type, titles, g_title, pbar):
         fig, axs = plt.subplots(len(val_strs_list), len(data_points[0].tables))
         fig.set_size_inches(18.5, 10.5)
         pol_name_dict = {v.value: k for k, v in Non_BGP_Policies.__members__.items()}
@@ -141,7 +138,7 @@ class ROVPP_Simulator:
                     sql_data = [hijack_type,
                                 table.table.name,
                                 pol_name_dict[pol]]
-                    self._gen_subplot(data_points, vals[0], sql_data, ax, hijack_type, vals[1], pol_name_dict[pol])
+                    self._gen_subplot(data_points, vals[0], sql_data, ax, hijack_type, vals[1], pol_name_dict[pol], pbar)
                 # Must be done here so as not to be set twice
                 ax.set(xlabel="% adoption", ylabel=table.table.name)
                 ax.title.set_text("{} for {}".format(vals[1], hijack_type))
@@ -157,27 +154,29 @@ class ROVPP_Simulator:
 #        plt.show()
         fig.savefig("/tmp/bgp_pics/{}_{}".format(g_title, hijack_type))
 
-    def _gen_subplot(self, data_points, val_strs, sql_data, ax, hijack_type, title, adopt_pol):
-        X = []
-        Y = []
-        Y_err = []
-        for data_point in data_points:
-            sql = "SELECT " + ",".join(val_strs)
-            sql += """, trace_total
-                   FROM rovpp_all_trials WHERE
-                       hijack_type = %s AND
-                       subtable_name = %s AND
-                       adopt_pol = %s AND
-                       percent_iter = %s"""
-            with db_connection(logger=self.logger) as db:
-#                print(db.cursor.mogrify(sql, sql_data + [data_point.percent_iter]))
-                results = db.execute(sql, sql_data + [data_point.percent_iter])
-#                print(db.cursor.mogrify(sql, sql_data + [data_point.percent_iter]))
-                X.append(data_point.default_percents[data_point.percent_iter])
-                raw = [sum(x[y] for y in val_strs) * 100 / x["trace_total"] for x in results]
-                Y.append(mean(raw))
-                Y_err.append(1.645 * 2 * sqrt(variance(raw))/sqrt(len(raw)))
-        ax.errorbar(X, Y, yerr=Y_err, label=adopt_pol)
+    def _gen_subplot(self, data_points, val_strs, sql_data, ax, hijack_type, title, adopt_pol, pbar):
+        for as_type in ["_collateral", "_adopting"]:
+            X = []
+            Y = []
+            Y_err = []
+            for data_point in data_points:
+                sql = "SELECT " + ", ".join([x + as_type for x in val_strs])
+                sql += """, trace_total""" + as_type
+                sql += """ FROM rovpp_all_trials WHERE
+                           hijack_type = %s AND
+                           subtable_name = %s AND
+                           adopt_pol = %s AND
+                           percent_iter = %s"""
+                with db_connection(logger=self.logger) as db:
+#                    print(db.cursor.mogrify(sql, sql_data + [data_point.percent_iter]))
+                    results = db.execute(sql, sql_data + [data_point.percent_iter])
+    #                print(db.cursor.mogrify(sql, sql_data + [data_point.percent_iter]))
+                    X.append(data_point.default_percents[data_point.percent_iter])
+                    raw = [sum(x[y + as_type] for y in val_strs) * 100 / x["trace_total" + as_type] for x in results]
+                    Y.append(mean(raw))
+                    Y_err.append(1.645 * 2 * sqrt(variance(raw))/sqrt(len(raw)))
+            ax.errorbar(X, Y, yerr=Y_err, label=adopt_pol)
+        pbar.update(1)
 
 
 class Data_Point:
@@ -262,7 +261,8 @@ class Test:
         Extrapolator(exr_args).run_rovpp(self.hijack,
                                          [x.table.name for x in self.tables],
                                          exr_bash,
-                                         exr_test)
+                                         exr_test,
+                                         self.adopt_pol)
         self.tables.store_trial_data(self.hijack,
                                      self.hijack_type,
                                      self.adopt_pol_name,
@@ -346,9 +346,9 @@ class Subtables:
     def store_trial_data(self, hijack, hijack_type, adopt_pol_name, trial_num, percent_iter):
         # NOTE: Change this later, should be exr_filtered,
         # Or at the very least pass in the args required
-        sql = """SELECT asn, opt_flag, received_from_asn, alternate_as FROM
+        sql = """SELECT asn, received_from_asn, alternate_as FROM
               rovpp_extrapolation_results_filtered;"""
-        with db_connection() as db:
+        with db_connection(logger=self.logger) as db:
             ases = {x["asn"]: x for x in db.execute(sql)}
         for table in self.tables:
             table.store_trial_data(ases,
@@ -385,17 +385,18 @@ class Subtable:
         self.table.change_routing_policies(policy)
 
     def store_trial_data(self, all_ases, hijack, h_type, adopt_pol_name, tnum, percent_iter):
-        sql = """SELECT asn, opt_flag, received_from_asn, prefix, origin, alternate_as FROM
-              {}""".format(self.exr_table_name)
+        sql = """SELECT asn, received_from_asn, prefix, origin, alternate_as, impliment FROM {}""".format(self.exr_table_name)
         subtable_ases = {x["asn"]: x for x in self.table.execute(sql)}
-        conds = {x.value: 0 for x in Conditions.__members__.values()}
-        opt_flag_data = self._get_opt_flag_data(deepcopy(conds))
+        conds = {x.value: {y.value: 0 for y in AS_Types.__members__.values()}
+                 for x in Conditions.__members__.values()}
         traceback_data = self._get_traceback_data(deepcopy(conds),
                                                   subtable_ases,
                                                   all_ases)
         # Control plane received any kind of prefix that is the same as
         # the attackers, and vice versa
-        control_plane_data = self._get_control_plane_data(hijack)
+        control_plane_data = {x.value: self._get_control_plane_data(hijack,
+                                                                    x.value)
+                              for x in AS_Types.__members__.values()}
         with db_connection(ROVPP_All_Trials_Table) as db:
             db.insert(self.table.name,
                       hijack,
@@ -403,68 +404,33 @@ class Subtable:
                       adopt_pol_name,
                       tnum,
                       percent_iter,
-                      opt_flag_data,
                       traceback_data,
                       control_plane_data)
-
-# COMMENTING OUT OLD VERSION (NEW ONE SENT ON SLACK) DELETE THIS WHEN WE KNOW IT WORKS
-#    def store_trial_data(self, all_ases, hijack, h_type, adopt_pol_name, tnum, percent_iter):
-#
-#
-#        sql = """SELECT asn, opt_flag, received_from_asn FROM
-#              {}""".format(self.exr_table_name)
-#        subtable_ases = {x["asn"]: x for x in self.table.execute(sql)}
-#
-#        conds = {x.value: 0 for x in Conditions.__members__.values()}
-#
-#        opt_flag_data = self._get_opt_flag_data(deepcopy(conds))
-#        traceback_data = self._get_traceback_data(deepcopy(conds),
-#                                                  subtable_ases,
-#                                                  all_ases)
-#        # Control plane received any kind of prefix that is the same as
-#        # the attackers, and vice versa
-#        control_plane_data = self._get_control_plane_data(hijack)
-#
-#        with db_connection(ROVPP_All_Trials_Table) as db:
-#            db.insert(self.table.name,
-#                      hijack,
-#                      h_type,
-#                      adopt_pol_name,
-#                      tnum,
-#                      percent_iter,
-#                      opt_flag_data,
-#                      traceback_data,
-#                      control_plane_data)
-
-    def _get_opt_flag_data(self, conds):
-        for cond in [x.value for x in Conditions.__members__.values()]:
-            sql = """SELECT COUNT(*) FROM {}
-                  WHERE opt_flag = {}""".format(self.exr_table_name, cond)
-            conds[cond] = self.table.execute(sql)[0]["count"]
-        return conds
 
     def _get_traceback_data(self, conds, subtable_ases, all_ases):
         blackholed_ases = {x["asn"]: x for x in self.table.execute("SELECT * FROM rovpp_blackholes")}
         possible_conditions = set(conds.keys())
-        for asn, as_data in subtable_ases.items():
+        for og_asn, og_as_data in subtable_ases.items():
+            asn = og_asn
+            as_data = og_as_data
             # Could not use true here but then it becomes very long and ugh
             count = 0
             while True:
                 if (asn in blackholed_ases
                     and as_data["prefix"] == blackholed_ases[asn]["prefix"]
                     and as_data["origin"] == blackholed_ases[asn]["origin"]):
-                        conds[Conditions.BHOLED.value] += 1
+                        conds[Conditions.BHOLED.value][og_as_data["impliment"]] += 1
                         break
                 elif as_data["received_from_asn"] in possible_conditions:
                     # Preventative announcements
                     if as_data["alternate_as"] is not None:
                         if as_data["received_from_asn"] == Conditions.Hijacked.value:
-                            conds[Conditions.PREVENTATIVEHIJACKED.value] += 1
+                            conds[Conditions.PREVENTATIVEHIJACKED.value][og_as_data["impliment"]] += 1
                         else:
-                            conds[Conditions.PREVENTATIVENOTHIJACKED.value] += 1
+                            conds[Conditions.PREVENTATIVENOTHIJACKED.value][og_as_data["impliment"]] += 1
                     # Non preventative announcements
                     else:
-                        conds[as_data["received_from_asn"]] += 1
+                        conds[as_data["received_from_asn"]][og_as_data["impliment"]] += 1
                     break
                 else:
                     asn = as_data["received_from_asn"]
@@ -474,22 +440,10 @@ class Subtable:
                         sys.exit(1)
         return conds
 
-# COMMENTING OUT OLD VERSION (NEW ONE SENT ON SLACK) DELETE THIS WHEN WE KNOW IT WORKS
-#    def _get_traceback_data(self, conds, subtable_ases, all_ases):
-#
-#        possible_conditions = set(conds.keys())
-#        for asn, as_data in subtable_ases.items():
-#            while as_data["received_from_asn"] not in possible_conditions:
-#                asn = as_data["received_from_asn"]
-#                as_data = all_ases[asn]
-#            conds[as_data["received_from_asn"]] += 1
-#
-#        return conds
-
-    def _get_control_plane_data(self, hijack):
+    def _get_control_plane_data(self, hijack, impliment):
         c_plane_data = {}
         sql = "SELECT COUNT(*) FROM " + self.exr_table_name
-        sql += " WHERE prefix = %s AND origin = %s;"
+        sql += " WHERE prefix = %s AND origin = %s AND impliment = " + ("TRUE" if impliment else "FALSE") + ";"
         c_plane_data[C_Plane_Conds.RECEIVED_ATTACKER_PREFIX_ORIGIN.value] =\
             self.table.execute(sql, [hijack.attacker_prefix,
                                      hijack.attacker_asn])[0]["count"]
@@ -502,9 +456,10 @@ class Subtable:
 
 
         no_rib_sql = """SELECT COUNT(*) FROM {0}
-                     LEFT JOIN {1} ON {0}.asn = {1}.asn WHERE {1}.asn IS NULL;
+                     LEFT JOIN {1} ON {0}.asn = {1}.asn
+                     WHERE {1}.asn IS NULL AND {1}.impliment =
                      """.format(self.table.name, self.exr_table_name)
         c_plane_data[C_Plane_Conds.NO_RIB.value] =\
-            self.table.execute(no_rib_sql)[0]["count"]
+            self.table.execute(no_rib_sql + ("TRUE" if impliment else "FALSE") + ";")[0]["count"]
 
         return c_plane_data

@@ -21,7 +21,7 @@ Possible future improvements:
 
 from random import sample
 from .enums import Policies, Hijack_Types
-from .enums import Conditions as Conds
+from .enums import AS_Types, Conditions as Conds
 from .enums import Control_Plane_Conditions as C_Plane_Conds
 from ..utils import Database, error_catcher, db_connection
 
@@ -296,22 +296,26 @@ class ROVPP_All_Trials_Table(Database):
                  adopt_pol varchar(50),
                  trial_num bigint,
                  percent_iter bigint,
-                 opt_hijacked bigint,
-                 opt_nothijacked bigint,
-                 opt_blackholed bigint,
-                 opt_preventivehijacked bigint,
-                 opt_preventivenothijacked bigint,
-                 opt_total bigint,
-                 trace_hijacked bigint,
-                 trace_nothijacked bigint,
-                 trace_blackholed bigint,
-                 trace_preventivehijacked bigint,
-                 trace_preventivenothijacked bigint,
-                 trace_total bigint,
-                 c_plane_has_attacker_prefix_origin bigint,
-                 c_plane_has_only_victim_prefix_origin bigint,
-                 c_plane_has_bhole bigint,
-                 no_rib bigint
+                 trace_hijacked_collateral bigint,
+                 trace_nothijacked_collateral bigint,
+                 trace_blackholed_collateral bigint,
+                 trace_preventivehijacked_collateral bigint,
+                 trace_preventivenothijacked_collateral bigint,
+                 trace_total_collateral bigint,
+                 trace_hijacked_adopting bigint,
+                 trace_nothijacked_adopting bigint,
+                 trace_blackholed_adopting bigint,
+                 trace_preventivehijacked_adopting bigint,
+                 trace_preventivenothijacked_adopting bigint,
+                 trace_total_adopting bigint,
+                 c_plane_has_attacker_prefix_origin_collateral bigint,
+                 c_plane_has_only_victim_prefix_origin_collateral bigint,
+                 c_plane_has_bhole_collateral bigint,
+                 no_rib_collateral bigint,
+                 c_plane_has_attacker_prefix_origin_adopting bigint,
+                 c_plane_has_only_victim_prefix_origin_adopting bigint,
+                 c_plane_has_bhole_adopting bigint,
+                 no_rib_adopting bigint
                  );"""
         self.cursor.execute(sql)
 
@@ -332,7 +336,6 @@ class ROVPP_All_Trials_Table(Database):
                adopt_pol_name,
                tnum,
                percent_iter,
-               opt_flag_data,
                traceback_data,
                c_plane_data):
 
@@ -346,27 +349,29 @@ class ROVPP_All_Trials_Table(Database):
                  adopt_pol,
                  trial_num,
                  percent_iter,
-                 opt_hijacked,
-                 opt_nothijacked,
-                 opt_blackholed,
-                 opt_preventivehijacked,
-                 opt_preventivenothijacked,
-                 opt_total,
-                 trace_hijacked,
-                 trace_nothijacked,
-                 trace_blackholed,
-                 trace_preventivehijacked,
-                 trace_preventivenothijacked,
-                 trace_total,
-                 c_plane_has_attacker_prefix_origin,
-                 c_plane_has_only_victim_prefix_origin,
-                 c_plane_has_bhole,
-                 no_rib)
+                 trace_hijacked_collateral,
+                 trace_nothijacked_collateral,
+                 trace_blackholed_collateral,
+                 trace_preventivehijacked_collateral,
+                 trace_preventivenothijacked_collateral,
+                 trace_total_collateral,
+                 trace_hijacked_adopting,
+                 trace_nothijacked_adopting,
+                 trace_blackholed_adopting,
+                 trace_preventivehijacked_adopting,
+                 trace_preventivenothijacked_adopting,
+                 trace_total_adopting,
+                 c_plane_has_attacker_prefix_origin_collateral,
+                 c_plane_has_only_victim_prefix_origin_collateral,
+                 c_plane_has_bhole_collateral,
+                 no_rib_collateral,
+                 c_plane_has_attacker_prefix_origin_adopting,
+                 c_plane_has_only_victim_prefix_origin_adopting,
+                 c_plane_has_bhole_adopting,
+                 no_rib_adopting)
               VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
                       %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
-                      %s, %s, %s, %s, %s);"""
-
-        no_rib = c_plane_data[C_Plane_Conds.NO_RIB.value]
+                      %s, %s, %s, %s, %s, %s, %s, %s, %s);"""
 
         data = [hijack_type,
                 subtable_name,
@@ -377,47 +382,28 @@ class ROVPP_All_Trials_Table(Database):
                 adopt_pol_name,
                 tnum,
                 percent_iter,
-                opt_flag_data[Conds.HIJACKED.value],
-                opt_flag_data[Conds.NOTHIJACKED.value],
-                opt_flag_data[Conds.BHOLED.value],
-                opt_flag_data[Conds.PREVENTATIVEHIJACKED.value],
-                opt_flag_data[Conds.PREVENTATIVENOTHIJACKED.value],
-                sum(v for k, v in opt_flag_data.items()) + no_rib,
-                traceback_data[Conds.HIJACKED.value],
-                traceback_data[Conds.NOTHIJACKED.value],
-                traceback_data[Conds.BHOLED.value],
-                traceback_data[Conds.PREVENTATIVEHIJACKED.value],
-                traceback_data[Conds.PREVENTATIVENOTHIJACKED.value],
-                sum(v for k, v in traceback_data.items()) + no_rib,
-                c_plane_data[C_Plane_Conds.RECEIVED_ATTACKER_PREFIX_ORIGIN.value],
-                c_plane_data[C_Plane_Conds.RECEIVED_ONLY_VICTIM_PREFIX_ORIGIN.value],
-                c_plane_data[C_Plane_Conds.RECEIVED_BHOLE.value],
-                no_rib]
+
+                traceback_data[Conds.HIJACKED.value][AS_Types.NON_ADOPTING.value],
+                traceback_data[Conds.NOTHIJACKED.value][AS_Types.NON_ADOPTING.value],
+                traceback_data[Conds.BHOLED.value][AS_Types.NON_ADOPTING.value],
+                traceback_data[Conds.PREVENTATIVEHIJACKED.value][AS_Types.NON_ADOPTING.value],
+                traceback_data[Conds.PREVENTATIVENOTHIJACKED.value][AS_Types.NON_ADOPTING.value],
+                int(sum(v[AS_Types.NON_ADOPTING.value] for k, v in traceback_data.items()) / 2) + c_plane_data[AS_Types.NON_ADOPTING.value][C_Plane_Conds.NO_RIB.value],
+
+                traceback_data[Conds.HIJACKED.value][AS_Types.ADOPTING.value],
+                traceback_data[Conds.NOTHIJACKED.value][AS_Types.ADOPTING.value],
+                traceback_data[Conds.BHOLED.value][AS_Types.ADOPTING.value],
+                traceback_data[Conds.PREVENTATIVEHIJACKED.value][AS_Types.ADOPTING.value],
+                traceback_data[Conds.PREVENTATIVENOTHIJACKED.value][AS_Types.ADOPTING.value],
+                int(sum(v[AS_Types.ADOPTING.value] for k, v in traceback_data.items()) / 2) + c_plane_data[AS_Types.NON_ADOPTING.value][C_Plane_Conds.NO_RIB.value],
+
+                c_plane_data[AS_Types.NON_ADOPTING.value][C_Plane_Conds.RECEIVED_ATTACKER_PREFIX_ORIGIN.value],
+                c_plane_data[AS_Types.NON_ADOPTING.value][C_Plane_Conds.RECEIVED_ONLY_VICTIM_PREFIX_ORIGIN.value],
+                c_plane_data[AS_Types.NON_ADOPTING.value][C_Plane_Conds.RECEIVED_BHOLE.value],
+                c_plane_data[AS_Types.NON_ADOPTING.value][C_Plane_Conds.NO_RIB.value],
+
+                c_plane_data[AS_Types.ADOPTING.value][C_Plane_Conds.RECEIVED_ATTACKER_PREFIX_ORIGIN.value],
+                c_plane_data[AS_Types.ADOPTING.value][C_Plane_Conds.RECEIVED_ONLY_VICTIM_PREFIX_ORIGIN.value],
+                c_plane_data[AS_Types.ADOPTING.value][C_Plane_Conds.RECEIVED_BHOLE.value],
+                c_plane_data[AS_Types.ADOPTING.value][C_Plane_Conds.NO_RIB.value]]
         self.cursor.execute(sql, data)
-
-class ROVPP_Statistics_Table(Database):
-    """Class with database functionality.
-
-    In depth explanation at the top of the file."""
-
-    __slots__ = ['attacker_asn', 'attacker_prefix', 'victim_asn',
-                 'victim_prefix']
-
-    def _create_tables(self):
-        """Creates tables if they do not exist.
-
-        Called during initialization of the database class.
-        """
-
-        pass
-
-    def clear_table(self):
-        """Clears the rovpp_ases table.
-
-        Should be called at the start of every run.
-        """
-
-        self.logger.debug("Dropping ROVPP_Statistics_Table")
-        self.cursor.execute("DROP TABLE IF EXISTS rovpp_statistics")
-        self.logger.debug("ROVPP_All_Statistics_Table Table dropped")
-
