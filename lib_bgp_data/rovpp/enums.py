@@ -28,7 +28,7 @@ class Policies(Enum):
     ROVPP = 2
     ROVPPB = 3
     ROVPPBP = 4
-#    ROVPPBIS = 5
+    ROVPPBIS = 5
 # This creates an enum that is for non bgp policies
 _non_bgp_policies_dict = {x[0]: x[1].value
                          for x in Policies.__members__.items()
