@@ -160,21 +160,22 @@ class ROVPP_Simulator:
             Y = []
             Y_err = []
             for data_point in data_points:
-                sql = "SELECT " + ", ".join([x + as_type for x in val_strs])
-                sql += """, trace_total""" + as_type
-                sql += """ FROM rovpp_all_trials WHERE
-                           hijack_type = %s AND
-                           subtable_name = %s AND
-                           adopt_pol = %s AND
-                           percent_iter = %s"""
-                with db_connection(logger=self.logger) as db:
-#                    print(db.cursor.mogrify(sql, sql_data + [data_point.percent_iter]))
-                    results = db.execute(sql, sql_data + [data_point.percent_iter])
-    #                print(db.cursor.mogrify(sql, sql_data + [data_point.percent_iter]))
-                    X.append(data_point.default_percents[data_point.percent_iter])
-                    raw = [sum(x[y + as_type] for y in val_strs) * 100 / x["trace_total" + as_type] for x in results]
-                    Y.append(mean(raw))
-                    Y_err.append(1.645 * 2 * sqrt(variance(raw))/sqrt(len(raw)))
+                try:
+                    sql = "SELECT " + ", ".join([x + as_type for x in val_strs])
+                    sql += """, trace_total""" + as_type
+                    sql += """ FROM rovpp_all_trials WHERE
+                               hijack_type = %s AND
+                               subtable_name = %s AND
+                               adopt_pol = %s AND
+                               percent_iter = %s"""
+                    with db_connection(logger=self.logger) as db:
+                        results = db.execute(sql, sql_data + [data_point.percent_iter])
+                        raw = [sum(x[y + as_type] for y in val_strs) * 100 / x["trace_total" + as_type] for x in results]                                                                                         
+                        X.append(data_point.default_percents[data_point.percent_iter])
+                        Y.append(mean(raw))
+                        Y_err.append(1.645 * 2 * sqrt(variance(raw))/sqrt(len(raw)))
+                except ZeroDivisionError:
+                    pass  # 0 nodes for that
             ax.errorbar(X, Y, yerr=Y_err, label=adopt_pol)
         pbar.update(1)
 
@@ -397,6 +398,10 @@ class Subtable:
         control_plane_data = {x.value: self._get_control_plane_data(hijack,
                                                                     x.value)
                               for x in AS_Types.__members__.values()}
+
+#        pprint(traceback_data)
+#        pprint(control_plane_data)
+
         with db_connection(ROVPP_All_Trials_Table) as db:
             db.insert(self.table.name,
                       hijack,
@@ -408,7 +413,6 @@ class Subtable:
                       control_plane_data)
 
     def _get_traceback_data(self, conds, subtable_ases, all_ases):
-        blackholed_ases = {x["asn"]: x for x in self.table.execute("SELECT * FROM rovpp_blackholes")}
         possible_conditions = set(conds.keys())
         for og_asn, og_as_data in subtable_ases.items():
             asn = og_asn
@@ -416,20 +420,18 @@ class Subtable:
             # Could not use true here but then it becomes very long and ugh
             count = 0
             while True:
-                if (asn in blackholed_ases
-                    and as_data["prefix"] == blackholed_ases[asn]["prefix"]
-                    and as_data["origin"] == blackholed_ases[asn]["origin"]):
-                        conds[Conditions.BHOLED.value][og_as_data["impliment"]] += 1
-                        break
-                elif as_data["received_from_asn"] in possible_conditions:
+                if as_data["received_from_asn"] in possible_conditions:
                     # Preventative announcements
                     if as_data["alternate_as"] is not None:
-                        if as_data["received_from_asn"] == Conditions.Hijacked.value:
+                        if as_data["received_from_asn"] == Conditions.HIJACKED.value:
                             conds[Conditions.PREVENTATIVEHIJACKED.value][og_as_data["impliment"]] += 1
+                            self.logger.debug("Just hit preventive hijacked in traceback")
                         else:
                             conds[Conditions.PREVENTATIVENOTHIJACKED.value][og_as_data["impliment"]] += 1
+                            self.logger.debug("Just hit preventive not hijacked in traceback")
                     # Non preventative announcements
                     else:
+                        # TODO: SPELLING WRONG
                         conds[as_data["received_from_asn"]][og_as_data["impliment"]] += 1
                     break
                 else:
@@ -451,13 +453,13 @@ class Subtable:
             self.table.execute(sql, [hijack.victim_prefix,
                                      hijack.victim_asn])[0]["count"]
         c_plane_data[C_Plane_Conds.RECEIVED_BHOLE.value] =\
-            self.table.execute(sql, [hijack.victim_prefix,
+            self.table.execute(sql, [hijack.attacker_prefix,
                                      Conditions.BHOLED.value])[0]["count"]
 
 
         no_rib_sql = """SELECT COUNT(*) FROM {0}
                      LEFT JOIN {1} ON {0}.asn = {1}.asn
-                     WHERE {1}.asn IS NULL AND {1}.impliment =
+                     WHERE {1}.asn IS NULL AND {0}.impliment =
                      """.format(self.table.name, self.exr_table_name)
         c_plane_data[C_Plane_Conds.NO_RIB.value] =\
             self.table.execute(no_rib_sql + ("TRUE" if impliment else "FALSE") + ";")[0]["count"]

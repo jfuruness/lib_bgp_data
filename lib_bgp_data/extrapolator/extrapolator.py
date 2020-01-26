@@ -67,10 +67,10 @@ class Extrapolator:
         # Run the extrapolator
         bash_args = "rovpp-extrapolator "
         # version 1
-        bash_args += "-v 1 "
+        bash_args += "-v 1"
         # lists tables nessecary
         for table_name in table_names:
-            bash_args += "-t {}".format(table_name)
+            bash_args += " -t {}".format(table_name)
         if test is True:
             bash_args = ("rovpp-extrapolator -v 1 "
                          "-t rovpp_top_100_ases "
@@ -91,7 +91,6 @@ class Extrapolator:
             bash_args = bash_args[:-1] + "0 -r rovpp_exr_single_prop_test"
             self._call_exr(bash_args)
             with db_connection(logger=self.logger) as db:
-                db.execute("ALTER TABLE rovpp_exr_single_prop_test ADD COLUMN alternate_as bigint;")
 
                 assert len(db.execute("SELECT * FROM rovpp_extrapolation_results EXCEPT SELECT * FROM rovpp_exr_single_prop_test")) == 0
                 assert len(db.execute("SELECT * FROM rovpp_exr_single_prop_test EXCEPT SELECT * FROM rovpp_extrapolation_results")) == 0
@@ -107,7 +106,6 @@ class Extrapolator:
 
     def _filter_extrapolator(self, hijack):
         with db_connection() as db:
-            db.execute("ALTER TABLE rovpp_extrapolation_results ADD COLUMN alternate_as bigint;")
             db.execute("DROP TABLE IF EXISTS rovpp_extrapolation_results_filtered")
             sql = """CREATE TABLE rovpp_extrapolation_results_filtered AS (
                   SELECT DISTINCT ON (exr.asn) exr.asn, exr.alternate_as,

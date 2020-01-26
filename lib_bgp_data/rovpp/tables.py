@@ -388,14 +388,14 @@ class ROVPP_All_Trials_Table(Database):
                 traceback_data[Conds.BHOLED.value][AS_Types.NON_ADOPTING.value],
                 traceback_data[Conds.PREVENTATIVEHIJACKED.value][AS_Types.NON_ADOPTING.value],
                 traceback_data[Conds.PREVENTATIVENOTHIJACKED.value][AS_Types.NON_ADOPTING.value],
-                int(sum(v[AS_Types.NON_ADOPTING.value] for k, v in traceback_data.items()) / 2) + c_plane_data[AS_Types.NON_ADOPTING.value][C_Plane_Conds.NO_RIB.value],
+                int(sum(v[AS_Types.NON_ADOPTING.value] for k, v in traceback_data.items())) + c_plane_data[AS_Types.NON_ADOPTING.value][C_Plane_Conds.NO_RIB.value],
 
                 traceback_data[Conds.HIJACKED.value][AS_Types.ADOPTING.value],
                 traceback_data[Conds.NOTHIJACKED.value][AS_Types.ADOPTING.value],
                 traceback_data[Conds.BHOLED.value][AS_Types.ADOPTING.value],
                 traceback_data[Conds.PREVENTATIVEHIJACKED.value][AS_Types.ADOPTING.value],
                 traceback_data[Conds.PREVENTATIVENOTHIJACKED.value][AS_Types.ADOPTING.value],
-                int(sum(v[AS_Types.ADOPTING.value] for k, v in traceback_data.items()) / 2) + c_plane_data[AS_Types.NON_ADOPTING.value][C_Plane_Conds.NO_RIB.value],
+                int(sum(v[AS_Types.ADOPTING.value] for k, v in traceback_data.items())) + c_plane_data[AS_Types.NON_ADOPTING.value][C_Plane_Conds.NO_RIB.value],
 
                 c_plane_data[AS_Types.NON_ADOPTING.value][C_Plane_Conds.RECEIVED_ATTACKER_PREFIX_ORIGIN.value],
                 c_plane_data[AS_Types.NON_ADOPTING.value][C_Plane_Conds.RECEIVED_ONLY_VICTIM_PREFIX_ORIGIN.value],
