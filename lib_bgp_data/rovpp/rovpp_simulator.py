@@ -147,6 +147,8 @@ class ROVPP_Simulator:
                 else:
                     loc = "upper left"
                 ax.legend(loc=loc)
+                # Force Y to go between 0 and 100
+                ax.set_ylim(0, 100)
 #                ax.title.set_text(table.table.name)
 #                plt.ylabel("{} for {}".format(g_title, hijack_type), axes=ax)
 #                plt.xlabel("% adoption", axes=ax)
@@ -176,7 +178,7 @@ class ROVPP_Simulator:
                         Y_err.append(1.645 * 2 * sqrt(variance(raw))/sqrt(len(raw)))
                 except ZeroDivisionError:
                     pass  # 0 nodes for that
-            ax.errorbar(X, Y, yerr=Y_err, label=adopt_pol)
+            ax.errorbar(X, Y, yerr=Y_err, label=adopt_pol + as_type)
         pbar.update(1)
 
 
