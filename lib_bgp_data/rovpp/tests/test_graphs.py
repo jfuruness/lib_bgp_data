@@ -14,6 +14,7 @@ from ..tables import Hijack, ROVPP_MRT_Announcements_Table#, Subprefix_Hijack_Ta
 from ...utils import Database, db_connection, utils
 from ...extrapolator.tables import ROVPP_Extrapolation_Results_Table
 from ...extrapolator import Extrapolator
+from ..enums import Conditions as Conds
 
 __author__ = "Justin Furuness"
 __credits__ = ["Justin Furuness"]
@@ -51,22 +52,23 @@ class Test_Graphs:
         """For a more in depth explanation, see _test_example"""
         
         # Figure 1a from SIGCOMM paper
-        hijack = Hijack({"attacker": 123,
+        hijack = Hijack({"attacker": 666,
                          "more_specific_prefix": "1.2.3.0/24",
-                         "victim": 1,
+                         "victim": 99,
                          "expected_prefix": "1.2.0.0/16"})
         hijack_type = Hijack_Types.SUBPREFIX_HIJACK.value
         peers = []
         # NOTE PROVIDERS IS FIRST!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         # [PROVIDER | CUSTOMER
-        customer_providers = [[77, 44],
-                              [78, 44],
-                              [666, 44],
-                              [78, 88],
-                              [86, 88],
-                              [11, 77],
-                              [12, 78],
-                              [99, 86]]
+        customer_providers = [[44, 77],
+                              [44, 78],
+                              [44, 666],
+                              [88, 78],
+                              [88, 86],
+                              [77, 11],
+                              [78, 12],
+                              [86, 99]]
+        # populates rovpp ases
         # ASN | policy_num | impliment (impliment is true if policy_num != 0, but doesn't matter here
         as_list = [[44, 0, 0],
                    [88, 0, 0],
@@ -88,8 +90,8 @@ class Test_Graphs:
                   [12, "1.2.0.0/16", 99, 78, 0, 0, None],
                   [88, "1.2.0.0/16", 99, 86, 0, 0, None],
                   [86, "1.2.0.0/16", 99, 99, 0, 0, None],
-                  [99, "1.2.0.0/16", 99, 99, 0, 0, None],
-                  [666, "1.2.3.0/24", 666, 666, 0, 0, None]]
+                  [99, "1.2.0.0/16", 99, Conds.NOTHIJACKED.value, 0, 0, None],
+                  [666, "1.2.3.0/24", 666, Conds.HIJACKED.value, 0, 0, None]]
         # How is this called test called?
         self._graph_example(hijack, hijack_type, peers, customer_providers, as_list, output)
 
