@@ -224,6 +224,8 @@ def delete_paths(logger, paths):
 def clean_paths(logger, paths):
     """If path exists remove it, else create it"""
 
+    assert isinstance(paths, list)
+
     delete_paths(logger, paths)
     for path in paths:
         # Yes I know this is a security flaw, but

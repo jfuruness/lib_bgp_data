@@ -27,12 +27,12 @@ class ROVPP_Extrapolation_Results_Table(Database):
         sql = """CREATE UNLOGGED TABLE IF NOT EXISTS
                  {} (
                  asn bigint,
+                 prefix CIDR,
                  origin bigint,
                  recieved_from_asn bigint,
-                 prefix CIDR,
                  time bigint,
-                 opt_flag smallint,
-                 alternate_as bigint
+                 alternate_as bigint,
+                 opt_flag bigint
                  );""".format(self.name)
         self.cursor.execute(sql)
     def clear_table(self):
