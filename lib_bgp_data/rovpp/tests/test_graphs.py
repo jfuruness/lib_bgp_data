@@ -63,6 +63,7 @@ class Test_Graphs:
         customer_providers = [[44, 77],
                               [44, 78],
                               [44, 666],
+                              [44, 99],
                               [88, 78],
                               [88, 86],
                               [77, 11],
@@ -81,17 +82,19 @@ class Test_Graphs:
                    [99, 0, 0]]
        
         #  [ asn   |   prefix   | origin | received_from_asn | time | alternate_as | opt_flag ]
-        output = [[11, "1.2.0.0/16", 99, 77, 0, 0, None],
-                  [77, "1.2.0.0/16", 99, 44, 0, 0, None],
-                  [77, "1.2.3.0/24", 666, 44, 0, 0, None],
-                  [44, "1.2.0.0/16", 99, 99, 0, 0, None],
-                  [44, "1.2.3.0/24", 666, 666, 0, 0, None],
-                  [78, "1.2.0.0/16", 99, 44, 0, 0, None],
-                  [12, "1.2.0.0/16", 99, 78, 0, 0, None],
-                  [88, "1.2.0.0/16", 99, 86, 0, 0, None],
-                  [86, "1.2.0.0/16", 99, 99, 0, 0, None],
-                  [99, "1.2.0.0/16", 99, Conds.NOTHIJACKED.value, 0, 0, None],
-                  [666, "1.2.3.0/24", 666, Conds.HIJACKED.value, 0, 0, None]]
+        output = [[11, "1.2.0.0/16", 99, 77, 1, 0, None],
+                  [12, "1.2.0.0/16", 99, 78, 1, 0, None],
+                  [44, "1.2.0.0/16", 99, 99, 1, 0, None],
+                  [44, "1.2.3.0/24", 666, 666, 1, 0, None],
+                  [77, "1.2.0.0/16", 99, 44, 1, 0, None],
+                  [78, "1.2.0.0/16", 99, 44, 1, 0, None],
+                  [86, "1.2.0.0/16", 99, 99, 1, 0, None],
+                  [88, "1.2.0.0/16", 99, 86, 1, 0, None],
+                  [99, "1.2.0.0/16", 99, Conds.NOTHIJACKED.value, 1, 0, None],
+                  [99, "1.2.3.0/24", 666, Conds.NOTHIJACKED.value, 1, 0, None],  # MUST BE REMOVED
+                  [666, "1.2.0.0/16", 99, 44, 1, 0, None],
+                  [666, "1.2.3.0/24", 666, Conds.HIJACKED.value, 1, 0, None]]
+
         # How is this called test called?
         self._graph_example(hijack, hijack_type, peers, customer_providers, as_list, output)
 
