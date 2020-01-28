@@ -62,6 +62,11 @@ class ROVPP_Simulator:
         In depth explanation at top of module.
         """
 
+        ##### UHINGE
+        with db_connection() as db:
+            db.unhinge_db()
+
+
         # Sets up all trials and percents
         Relationships_Parser(self.args).parse_files(rovpp=True)
         with db_connection(ROVPP_All_Trials_Table, self.logger) as db:
@@ -95,6 +100,9 @@ class ROVPP_Simulator:
         # Close all tables here!!!
         # Graph data here!!!
         # Possibly move back to iterator (below)
+
+        with db_connection() as db:
+            db.rehinge_db()
 
     def gen_graphs(self, trials=20, percents=range(5,31,5)):
         with tqdm(total=324, desc="Generating subplots") as pbar:
