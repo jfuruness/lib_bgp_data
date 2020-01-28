@@ -62,11 +62,6 @@ class ROVPP_Simulator:
         In depth explanation at top of module.
         """
 
-        ##### UHINGE
-        with db_connection() as db:
-            db.rehinge_db()
-
-
         # Sets up all trials and percents
         Relationships_Parser(self.args).parse_files(rovpp=True)
         with db_connection(ROVPP_All_Trials_Table, self.logger) as db:
