@@ -29,6 +29,8 @@ class Policies(Enum):
     ROVPPB = 3
     ROVPPBP = 4
     ROVPPBIS = 5
+    NON_ADOPTING = 6
+
 # This creates an enum that is for non bgp policies
 _non_bgp_policies_dict = {x[0]: x[1].value
                          for x in Policies.__members__.items()
@@ -61,3 +63,7 @@ class Control_Plane_Conditions(Enum):
     RECEIVED_ONLY_VICTIM_PREFIX_ORIGIN = "recieved_only_victim_prefix_origin"
     RECEIVED_BHOLE = "received_blackhole"
     NO_RIB = "no_rib"
+
+class AS_Types(Enum):
+    NON_ADOPTING = 0
+    ADOPTING = 1

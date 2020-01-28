@@ -56,17 +56,21 @@ class Extrapolator:
 
     @error_catcher()
     @utils.run_parser()
-    def run_rovpp(self, hijack, table_names, exr_bash=None, test=False):
+    def run_rovpp(self, hijack, table_names, exr_bash=None, test=False, adopt_pol=None):
         """Runs extrapolator with a subprefix hijack."""
+
+        # Must be done here to avoid circular imports
+        from ..rovpp.enums import Policies
+
 
         self.logger.debug("About to run the rovpp extrapolator")
         # Run the extrapolator
         bash_args = "rovpp-extrapolator "
         # version 1
-        bash_args += "-v 1 "
+        bash_args += "-v 1"
         # lists tables nessecary
         for table_name in table_names:
-            bash_args += "-t {}".format(table_name)
+            bash_args += " -t {}".format(table_name)
         if test is True:
             bash_args = ("rovpp-extrapolator -v 1 "
                          "-t rovpp_top_100_ases "
@@ -81,11 +85,12 @@ class Extrapolator:
         self._join_w_tables(table_names)
 
         # For testing single vs double prop
-        if test is True:
+        if test is True and adopt_pol in [Policies.BGP.value,
+                                          Policies.NON_ADOPTING.value,
+                                          Policies.ROV.value]:
             bash_args = bash_args[:-1] + "0 -r rovpp_exr_single_prop_test"
             self._call_exr(bash_args)
             with db_connection(logger=self.logger) as db:
-                db.execute("ALTER TABLE rovpp_exr_single_prop_test ADD COLUMN alternate_as bigint;")
 
                 assert len(db.execute("SELECT * FROM rovpp_extrapolation_results EXCEPT SELECT * FROM rovpp_exr_single_prop_test")) == 0
                 assert len(db.execute("SELECT * FROM rovpp_exr_single_prop_test EXCEPT SELECT * FROM rovpp_extrapolation_results")) == 0
@@ -101,10 +106,9 @@ class Extrapolator:
 
     def _filter_extrapolator(self, hijack):
         with db_connection() as db:
-            db.execute("ALTER TABLE rovpp_extrapolation_results ADD COLUMN alternate_as bigint;")
             db.execute("DROP TABLE IF EXISTS rovpp_extrapolation_results_filtered")
             sql = """CREATE TABLE rovpp_extrapolation_results_filtered AS (
-                  SELECT DISTINCT ON (exr.asn) exr.asn, exr.opt_flag, exr.alternate_as,
+                  SELECT DISTINCT ON (exr.asn) exr.asn, exr.alternate_as,
                          COALESCE(exrh.prefix, exrnh.prefix) AS prefix,
                          COALESCE(exrh.origin, exrnh.origin) AS origin,
                          COALESCE(exrh.received_from_asn, exrnh.received_from_asn)
@@ -123,8 +127,8 @@ class Extrapolator:
                 sql = "DROP TABLE IF EXISTS rovpp_exr_{}".format(table_name)
                 db.execute(sql)
                 sql = """CREATE TABLE rovpp_exr_{0} AS (
-                      SELECT exr.asn, exr.opt_flag, exr.prefix, exr.origin, exr.alternate_as,
-                              exr.received_from_asn, {0}.as_type
+                      SELECT exr.asn, exr.prefix, exr.origin, exr.alternate_as,
+                              exr.received_from_asn, {0}.as_type, {0}.impliment
                           FROM rovpp_extrapolation_results_filtered exr
                       INNER JOIN {0} ON
                           {0}.asn = exr.asn);""".format(table_name)
