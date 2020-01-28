@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-"""This file contains system tests for the extrapolator.
+"""This file contains system tests for the extrapolator pertaining to withdrawls.
 
 For speciifics on each test, see the docstrings under each function.
 """
@@ -10,16 +10,16 @@ from .graph_tester import Graph_Tester
 from ..tables import Hijack
 from ..enums import Hijack_Types, Conditions as Conds
 
-__author__ = "Justin Furuness"
-__credits__ = ["Justin Furuness"]
+
+__author__ = "Cameron Morris"
+__credits__ = ["Cameron Morris"]
 __Lisence__ = "MIT"
 __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
 
-
-class Test_Graphs(Graph_Tester):
+class Test_Withdrawls(Graph_Tester):
     """Tests all example graphs within our paper."""
 
     def test_ex(self):
