@@ -7,7 +7,7 @@ our sims, this module has turned into hardcoded crap. Fixing it now."""
 import sys
 from math import sqrt
 import matplotlib.pyplot as plt
-from statistics import mean, variance
+from statistics import mean, variance, StatisticsError
 from random import sample
 from subprocess import check_call
 from copy import deepcopy
@@ -138,7 +138,7 @@ class ROVPP_Simulator:
                     sql_data = [hijack_type,
                                 table.table.name,
                                 pol_name_dict[pol]]
-                    self._gen_subplot(data_points, vals[0], sql_data, ax, hijack_type, vals[1], pol_name_dict[pol], pbar)
+                    self._gen_subplot(data_points, vals[0], sql_data, ax, hijack_type, vals[1], pol_name_dict[pol], pbar, pol)
                 # Must be done here so as not to be set twice
                 ax.set(xlabel="% adoption", ylabel=table.table.name)
                 ax.title.set_text("{} for {}".format(vals[1], hijack_type))
@@ -156,8 +156,8 @@ class ROVPP_Simulator:
 #        plt.show()
         fig.savefig("/tmp/bgp_pics/{}_{}".format(g_title, hijack_type))
 
-    def _gen_subplot(self, data_points, val_strs, sql_data, ax, hijack_type, title, adopt_pol, pbar):
-        for as_type in ["_adopting"]:#["_collateral", "_adopting"]:
+    def _gen_subplot(self, data_points, val_strs, sql_data, ax, hijack_type, title, adopt_pol, pbar, pol):
+        for as_type in ["_collateral"]:#["_adopting"]:#["_collateral", "_adopting"]:
             X = []
             Y = []
             Y_err = []
@@ -171,6 +171,7 @@ class ROVPP_Simulator:
                                adopt_pol = %s AND
                                percent_iter = %s"""
                     with db_connection(logger=self.logger) as db:
+                        query = db.cursor.mogrify(sql, sql_data + [data_point.percent_iter]).decode('UTF-8')
                         results = db.execute(sql, sql_data + [data_point.percent_iter])
                         raw = [sum(x[y + as_type] for y in val_strs) * 100 / x["trace_total" + as_type] for x in results]                                                                                         
                         X.append(data_point.default_percents[data_point.percent_iter])
@@ -178,7 +179,13 @@ class ROVPP_Simulator:
                         Y_err.append(1.645 * 2 * sqrt(variance(raw))/sqrt(len(raw)))
                 except ZeroDivisionError:
                     pass  # 0 nodes for that
-            ax.errorbar(X, Y, yerr=Y_err, label=adopt_pol + as_type)
+                except StatisticsError:
+                    self.logger.error("Statistics error. Probably need more than one trial for the following query:")
+                    self.logger.error(f"Query: {query}")
+                    sys.exit(1)
+            line = ax.errorbar(X, Y, yerr=Y_err, label=adopt_pol + as_type)
+            # 1 pt line, 1pt break, 1 pt line, pol pt break
+            line.set_dashes(1, 1, pol, 1)
         pbar.update(1)
 
 
@@ -440,7 +447,6 @@ class Subtable:
                     asn = as_data["received_from_asn"]
                     as_data = all_ases[asn]
                     count += 1
-                    print("Loop!!!")
                     if count > 20:
                         self.logger.error("Loop\n\trecieved_from_asn: {}".format(as_data["received_from_asn"]))
                     if count > 25:
