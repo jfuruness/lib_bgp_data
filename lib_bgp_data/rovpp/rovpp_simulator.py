@@ -157,7 +157,7 @@ class ROVPP_Simulator:
         fig.savefig("/tmp/bgp_pics/{}_{}".format(g_title, hijack_type))
 
     def _gen_subplot(self, data_points, val_strs, sql_data, ax, hijack_type, title, adopt_pol, pbar):
-        for as_type in ["_collateral", "_adopting"]:
+        for as_type in ["_adopting"]:#["_collateral", "_adopting"]:
             X = []
             Y = []
             Y_err = []
@@ -440,7 +440,10 @@ class Subtable:
                     asn = as_data["received_from_asn"]
                     as_data = all_ases[asn]
                     count += 1
-                    if count > 100:
+                    print("Loop!!!")
+                    if count > 20:
+                        self.logger.error("Loop\n\trecieved_from_asn: {}".format(as_data["received_from_asn"]))
+                    if count > 25:
                         sys.exit(1)
         return conds
 

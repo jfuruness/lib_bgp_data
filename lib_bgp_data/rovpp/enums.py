@@ -24,11 +24,11 @@ class Policies(Enum):
     """The three types of routing policies"""
 
     BGP = 0
-    ROV = 1
-    ROVPP = 2
-    ROVPPB = 3
-    ROVPPBP = 4
-    ROVPPBIS = 5
+#    ROV = 1
+#    ROVPP = 2
+#    ROVPPB = 3
+#    ROVPPBP = 4
+#    ROVPPBIS = 5
     NON_ADOPTING = 6
 
 # This creates an enum that is for non bgp policies
