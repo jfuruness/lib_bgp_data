@@ -157,7 +157,7 @@ class ROVPP_Simulator:
         fig.savefig("/tmp/bgp_pics/{}_{}".format(g_title, hijack_type))
 
     def _gen_subplot(self, data_points, val_strs, sql_data, ax, hijack_type, title, adopt_pol, pbar, pol):
-        for as_type in ["_collateral"]:#["_adopting"]:#["_collateral", "_adopting"]:
+        for as_type in ["_adopting"]:#["_adopting"]:#["_collateral", "_adopting"]:
             X = []
             Y = []
             Y_err = []
@@ -175,17 +175,21 @@ class ROVPP_Simulator:
                         results = db.execute(sql, sql_data + [data_point.percent_iter])
                         raw = [sum(x[y + as_type] for y in val_strs) * 100 / x["trace_total" + as_type] for x in results]                                                                                         
                         X.append(data_point.default_percents[data_point.percent_iter])
+                        if data_point.default_percents[data_point.percent_iter] == 0:
+                            print("FUCK")
+                            print(query)
                         Y.append(mean(raw))
                         Y_err.append(1.645 * 2 * sqrt(variance(raw))/sqrt(len(raw)))
                 except ZeroDivisionError:
-                    pass  # 0 nodes for that
+                    continue  # 0 nodes for that
                 except StatisticsError:
                     self.logger.error("Statistics error. Probably need more than one trial for the following query:")
                     self.logger.error(f"Query: {query}")
                     sys.exit(1)
-            line = ax.errorbar(X, Y, yerr=Y_err, label=adopt_pol + as_type)
-            # 1 pt line, 1pt break, 1 pt line, pol pt break
-            line.set_dashes(1, 1, pol, 1)
+            styles = ["-", "--", "-.", ":", "solid", "dotted", "dashdot", "dashed"]
+            markers = [".", "1", "*", "x", "d", "2", "3", "4"]
+            assert pol < len(styles), "Must add more styles, sorry no time deadline"
+            line = ax.errorbar(X, Y, yerr=Y_err, label=adopt_pol + as_type, ls=styles[pol], marker=markers[pol])
         pbar.update(1)
 
 
