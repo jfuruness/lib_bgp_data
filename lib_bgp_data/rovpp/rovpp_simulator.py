@@ -435,25 +435,29 @@ class Subtable:
             while True:
                 if as_data["received_from_asn"] in possible_conditions:
                     # Preventative announcements
-                    if as_data["alternate_as"] is not None:
-                        if as_data["received_from_asn"] == Conditions.HIJACKED.value:
-                            conds[Conditions.PREVENTATIVEHIJACKED.value][og_as_data["impliment"]] += 1
-                            self.logger.debug("Just hit preventive hijacked in traceback")
-                        else:
-                            conds[Conditions.PREVENTATIVENOTHIJACKED.value][og_as_data["impliment"]] += 1
-                            self.logger.debug("Just hit preventive not hijacked in traceback")
-                    # Non preventative announcements
-                    else:
+#                    if as_data["alternate_as"] != 0:
+#                        if as_data["received_from_asn"] == Conditions.HIJACKED.value:
+#                            conds[Conditions.PREVENTATIVEHIJACKED.value][og_as_data["impliment"]] += 1
+#                            self.logger.debug("Just hit preventive hijacked in traceback")
+#                        else:
+#                            conds[Conditions.PREVENTATIVENOTHIJACKED.value][og_as_data["impliment"]] += 1
+#                            self.logger.debug("Just hit preventive not hijacked in traceback")
+#                    # Non preventative announcements
+                            # MUST ADD PREVENTIVE BLACKHOLES - THIS SHOULD JUST TRACE BACK TO ALL CONDITIONS!!!!
+#                    else:
                         # TODO: SPELLING WRONG
-                        conds[as_data["received_from_asn"]][og_as_data["impliment"]] += 1
-                    break
+                     conds[as_data["received_from_asn"]][og_as_data["impliment"]] += 1
+                     break
                 else:
                     asn = as_data["received_from_asn"]
                     as_data = all_ases[asn]
                     count += 1
                     if count > 20:
-                        self.logger.error("Loop\n\trecieved_from_asn: {}".format(as_data["received_from_asn"]))
-                    if count > 25:
+                        print(count)
+                        print("yo")
+                    if count > 64:
+                        self.logger.error("Loop {}\n\trecieved_from_asn: {}".format(count, as_data["received_from_asn"]))
+                    if count > 128:
                         sys.exit(1)
         return conds
 
