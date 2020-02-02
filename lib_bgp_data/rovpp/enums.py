@@ -46,6 +46,8 @@ class Conditions(Enum):
     BHOLED = 64512
     HIJACKED = 64513
     NOTHIJACKED = 64514
+    PREVENTATIVEHIJACKED = 64515
+    PREVENTATIVENOTHIJACKED = 64516
 
 class Control_Plane_Conditions(Enum):
     RECEIVED_ATTACKER_PREFIX_ORIGIN = "received_attacker_prefix_origin"
