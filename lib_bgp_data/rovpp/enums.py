@@ -41,22 +41,11 @@ Non_BGP_Policies = Enum('Non_BGP_Policies', _non_bgp_policies_dict)
 ### Statistics Enums ###
 ########################
 
-class Planes(Enum):
-    """The two types of data planes"""
-
-
-    # This uses the last hop and checks if recieved hijack
-    DATA_PLANE = "data_plane"
-    # This checks if recieved hijack
-    CONTROL_PLANE = "control_plane"
-
 class Conditions(Enum):
 
     BHOLED = 64512
     HIJACKED = 64513
     NOTHIJACKED = 64514
-    PREVENTATIVEHIJACKED = 64515
-    PREVENTATIVENOTHIJACKED = 64516
 
 class Control_Plane_Conditions(Enum):
     RECEIVED_ATTACKER_PREFIX_ORIGIN = "received_attacker_prefix_origin"
