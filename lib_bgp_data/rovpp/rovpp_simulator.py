@@ -405,7 +405,10 @@ class Subtable:
                  for x in Conditions.__members__.values()}
         traceback_data = self._get_traceback_data(deepcopy(conds),
                                                   subtable_ases,
-                                                  all_ases)
+                                                  all_ases,
+                                                  hijack,
+                                                  h_type,
+                                                  adopt_pol_name)
         # Control plane received any kind of prefix that is the same as
         # the attackers, and vice versa
         control_plane_data = {x.value: self._get_control_plane_data(hijack,
@@ -425,14 +428,16 @@ class Subtable:
                       traceback_data,
                       control_plane_data)
 
-    def _get_traceback_data(self, conds, subtable_ases, all_ases):
+    def _get_traceback_data(self, conds, subtable_ases, all_ases, hijack, h_type, adopt_pol_name):
         possible_conditions = set(conds.keys())
         for og_asn, og_as_data in subtable_ases.items():
+            # NEEDED FOR EXR DEVS
+            looping = True
             asn = og_asn
             as_data = og_as_data
             # Could not use true here but then it becomes very long and ugh
-            count = 0
-            while True:
+            # SHOULD NEVER BE LONGER THAN 64
+            for i in range(64):
                 if as_data["received_from_asn"] in possible_conditions:
                     # Preventative announcements
 #                    if as_data["alternate_as"] != 0:
@@ -447,19 +452,44 @@ class Subtable:
 #                    else:
                         # TODO: SPELLING WRONG
                      conds[as_data["received_from_asn"]][og_as_data["impliment"]] += 1
+                     looping = False
                      break
                 else:
                     asn = as_data["received_from_asn"]
                     as_data = all_ases[asn]
-                    count += 1
-                    if count > 20:
-                        print(count)
-                        print("yo")
-                    if count > 64:
-                        self.logger.error("Loop {}\n\trecieved_from_asn: {}".format(count, as_data["received_from_asn"]))
-                    if count > 128:
-                        sys.exit(1)
+            # NEEDED FOR EXR DEVS
+            if looping:
+                self._print_loop_debug_data(all_ases, og_asn, og_as_data, hijack, h_type, adopt_pol_name)
+        ########## ADD STR METHOD TO HIJACK
         return conds
+
+    def _print_loop_debug_data(self, all_ases, og_asn, og_as_data, hijack, h_type, adopt_pol_name):
+        class ASN:
+            def __init__(self, asn, implimenting):
+                self.asn = asn
+                self.implimenting = implimenting
+            def __repr__(self):
+                return f"ASN:{self.asn:<8}: {self.implimenting}"
+        debug_loop_list = []
+        debug_loop_set = {}
+        asn = og_asn
+        as_data = og_as_data
+        for i in range(64):
+            debug_loop_list.append(ASN(asn, as_data["impliment"]))
+            asn = as_data["received_from_asn"]
+            as_data = all_ases[asn]
+            if asn in debug_loop_set:
+                loop_strs = ["Loop was found with:",
+                             f"Adopt policy: {adopt_pol_name}",
+                             f"{hijack}",
+                             f"hijack_type: {h_type}",
+                             "loop path:",
+                             "\t" + "\n\t".join(str(x) for x in debug_loop_list) + "\n"]
+
+                self.logger.error("\n".join(loop_strs))
+                sys.exit(1)
+            else:
+                debug_loop_set.add(asn)
 
     def _get_control_plane_data(self, hijack, impliment):
         c_plane_data = {}

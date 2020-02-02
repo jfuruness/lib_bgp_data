@@ -161,6 +161,10 @@ class Hijack:
         self.attacker_prefix = info_dict.get("more_specific_prefix")
         self.victim_asn = info_dict.get("victim")
         self.victim_prefix = info_dict.get("expected_prefix")
+
+    def __repr__(self):
+        my_str = (f"Attacker: {self.attacker_asn:<8}, prefix: {self.attacker_prefix}\n"
+                  f"Victim:   {self.victim_asn:<8}, prefix: {self.victim_prefix}\n")
         
 
 ####################
