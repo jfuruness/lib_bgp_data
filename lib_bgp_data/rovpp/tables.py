@@ -228,10 +228,111 @@ class ROVPP_Top_100_ASes_Table(ROVPP_ASes_Subtable):
 
     def fill_table(self):
         self.clear_table()
+        # TODO deadlines so fuck it
         sql = """CREATE UNLOGGED TABLE IF NOT EXISTS rovpp_top_100_ases AS (
                  SELECT a.asn, {} AS as_type, FALSE as impliment
-                     FROM rovpp_ases a ORDER BY asn DESC LIMIT 100
-                 );""".format(Policies.BGP.value)
+                     FROM rovpp_ases a WHERE asn = 3356
+                     OR asn = 1299
+OR asn = 174
+OR asn = 2914
+OR asn = 3257
+OR asn = 6762
+OR asn = 6939
+OR asn = 6453
+OR asn = 3491
+OR asn = 6461
+OR asn = 1273
+OR asn = 3549
+OR asn = 9002
+OR asn = 5511
+OR asn = 12956
+OR asn = 4637
+OR asn = 7473
+OR asn = 209
+OR asn = 12389
+OR asn = 701
+OR asn = 3320
+OR asn = 7018
+OR asn = 7922
+OR asn = 20485
+OR asn = 3216
+OR asn = 9498
+OR asn = 31133
+OR asn = 20764
+OR asn = 6830
+OR asn = 1239
+OR asn = 52320
+OR asn = 16735
+OR asn = 2828
+OR asn = 15412
+OR asn = 8359
+OR asn = 286
+OR asn = 58453
+OR asn = 28917
+OR asn = 262589
+OR asn = 10429
+OR asn = 4809
+OR asn = 7738
+OR asn = 4755
+OR asn = 41095
+OR asn = 37468
+OR asn = 33891
+OR asn = 43531
+OR asn = 4766
+OR asn = 11537
+OR asn = 8220
+OR asn = 31500
+OR asn = 4826
+OR asn = 18881
+OR asn = 7843
+OR asn = 29076
+OR asn = 4230
+OR asn = 46887
+OR asn = 34800
+OR asn = 62663
+OR asn = 8167
+OR asn = 9304
+OR asn = 7029
+OR asn = 5588
+OR asn = 267613
+OR asn = 3303
+OR asn = 11164
+OR asn = 20804
+OR asn = 8218
+OR asn = 5617
+OR asn = 4134
+OR asn = 1221
+OR asn = 7474
+OR asn = 13786
+OR asn = 22773
+OR asn = 9049
+OR asn = 28329
+OR asn = 12741
+OR asn = 61832
+OR asn = 28598
+OR asn = 132602
+OR asn = 3326
+OR asn = 22356
+OR asn = 2516
+OR asn = 7545
+OR asn = 26615
+OR asn = 6663
+OR asn = 2497
+OR asn = 577
+OR asn = 23520
+OR asn = 55410
+OR asn = 9318
+OR asn = 3786
+OR asn = 20115
+OR asn = 3267
+OR asn = 3223
+OR asn = 20562
+OR asn = 6128
+OR asn = 3741
+OR asn = 9505
+OR asn = 50607
+
+                 );""".format(Policies.BGP.value)              
         self.cursor.execute(sql)
 
 

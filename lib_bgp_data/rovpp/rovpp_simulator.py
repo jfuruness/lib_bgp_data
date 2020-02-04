@@ -157,7 +157,7 @@ class ROVPP_Simulator:
         fig.savefig("/tmp/bgp_pics/{}_{}".format(g_title, hijack_type))
 
     def _gen_subplot(self, data_points, val_strs, sql_data, ax, hijack_type, title, adopt_pol, pbar, pol):
-        for as_type in ["_adopting"]:#["_adopting"]:#["_collateral", "_adopting"]:
+        for as_type in ["_collateral"]:#["_adopting"]:#["_collateral", "_adopting"]:
             X = []
             Y = []
             Y_err = []
