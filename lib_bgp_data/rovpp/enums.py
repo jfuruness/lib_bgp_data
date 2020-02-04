@@ -16,25 +16,26 @@ class Hijack_Types(Enum):
 
     SUBPREFIX_HIJACK = "subprefix_hijack"
     PREFIX_HIJACK = "prefix_hijack"
-    NO_COMPETING_ANNOUNCEMENT_HIJACK = "no_competing_announcement_hijack"
+    UNANNOUNCED_PREFIX_HIJACK = "no_competing_announcement_hijack"
 
 # enum because strings shouldn't just be being passed around
 # This is for all the policies
 class Policies(Enum):
     """The three types of routing policies"""
 
-    BGP = 0
+    DEFAULT = 0
     ROV = 1
     ROVPP = 2
     ROVPPB = 3
     ROVPPBP = 4
     ROVPPBIS = 5
-    NON_ADOPTING = 6
+    BGP = 6
 
 # This creates an enum that is for non bgp policies
+# NOTE: This is completely wrong
 _non_bgp_policies_dict = {x[0]: x[1].value
                          for x in Policies.__members__.items()
-                         if x[1].value != Policies.BGP.value}
+                         if x[1].value != Policies.DEFAULT.value}
 Non_BGP_Policies = Enum('Non_BGP_Policies', _non_bgp_policies_dict)
 
 ########################

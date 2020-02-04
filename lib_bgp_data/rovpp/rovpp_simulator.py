@@ -13,6 +13,7 @@ from subprocess import check_call
 from copy import deepcopy
 from pprint import pprint
 import json
+import os
 from tqdm import tqdm
 from .enums import Policies, Non_BGP_Policies, Hijack_Types, Conditions
 from .enums import AS_Types, Control_Plane_Conditions as C_Plane_Conds
@@ -173,18 +174,22 @@ class ROVPP_Simulator:
                     with db_connection(logger=self.logger) as db:
                         query = db.cursor.mogrify(sql, sql_data + [data_point.percent_iter]).decode('UTF-8')
                         results = db.execute(sql, sql_data + [data_point.percent_iter])
-                        raw = [sum(x[y + as_type] for y in val_strs) * 100 / x["trace_total" + as_type] for x in results]                                                                                         
+                        raw = [sum(x[y + as_type] for y in val_strs) * 100 / x["trace_total" + as_type] for x in results]
+
                         X.append(data_point.default_percents[data_point.percent_iter])
                         if data_point.default_percents[data_point.percent_iter] == 0:
-                            print("FUCK")
-                            print(query)
+#                            print("FUCK")
+#                            print(query)
+                            pass
                         Y.append(mean(raw))
                         Y_err.append(1.645 * 2 * sqrt(variance(raw))/sqrt(len(raw)))
                 except ZeroDivisionError:
                     continue  # 0 nodes for that
-                except StatisticsError:
-                    self.logger.error("Statistics error. Probably need more than one trial for the following query:")
+                except StatisticsError as e:
+                    self.logger.error(f"Statistics error. {e} Probably need more than one trial for the following query:")
                     self.logger.error(f"Query: {query}")
+                    self.logger.error(raw)
+                    self.logger.error(results)
                     sys.exit(1)
             styles = ["-", "--", "-.", ":", "solid", "dotted", "dashdot", "dashed"]
             markers = [".", "1", "*", "x", "d", "2", "3", "4"]

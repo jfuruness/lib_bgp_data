@@ -102,6 +102,7 @@ class Database:
                 self.cursor = conn.cursor()
                 break
             except:
+                self.logger.warning("DB conn problem")
                 time.sleep(10)
         if create_tables:
             # Creates tables if do not exist
@@ -121,8 +122,8 @@ class Database:
             self.cursor.execute(sql, data)
         try:
             return self.cursor.fetchall()
-        except psycopg2.ProgrammingError:
-            self.logger.debug("No results to fetch")
+        except psycopg2.ProgrammingError as e:
+            self.logger.debug(f"No results to fetch: {e}")
             return []
 
     def multiprocess_execute(self, sqls):

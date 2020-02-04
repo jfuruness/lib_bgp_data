@@ -83,7 +83,7 @@ class ROVPP_MRT_Announcements_Table(Database):
                        subprefix_hijack.victim_prefix,
                        False]
         data_list = [attacker_data]
-        if hijack_type != Hijack_Types.NO_COMPETING_ANNOUNCEMENT_HIJACK.value:
+        if hijack_type != Hijack_Types.UNANNOUNCED_PREFIX_HIJACK.value:
             data_list.append(victim_data)
         for data in data_list:
             self.cursor.execute(sql, data)
