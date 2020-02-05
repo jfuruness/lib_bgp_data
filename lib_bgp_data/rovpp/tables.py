@@ -332,7 +332,7 @@ OR asn = 3741
 OR asn = 9505
 OR asn = 50607
 
-                 );""".format(Policies.BGP.value)              
+                 );""".format(Policies.DEFAULT.value)              
         self.cursor.execute(sql)
 
 
@@ -349,7 +349,7 @@ class ROVPP_Edge_ASes_Table(ROVPP_ASes_Subtable):
                          FROM rovpp_ases r
                          INNER JOIN rovpp_as_connectivity c ON c.asn = r.asn
                      WHERE c.connectivity = 0
-                 );""".format(Policies.BGP.value)
+                 );""".format(Policies.DEFAULT.value)
         self.cursor.execute(sql)
 
 class ROVPP_Etc_ASes_Table(ROVPP_ASes_Subtable):
@@ -362,7 +362,7 @@ class ROVPP_Etc_ASes_Table(ROVPP_ASes_Subtable):
         self.clear_table()
         sql = """CREATE UNLOGGED TABLE IF NOT EXISTS rovpp_etc_ases AS (
                  SELECT ra.asn, {} AS as_type, FALSE as impliment
-                     FROM rovpp_ases ra""".format(Policies.BGP.value)
+                     FROM rovpp_ases ra""".format(Policies.DEFAULT.value)
         if len(table_names) > 0:
             for table_name in table_names:
                 sql += " LEFT JOIN {0} ON {0}.asn = ra.asn".format(table_name)

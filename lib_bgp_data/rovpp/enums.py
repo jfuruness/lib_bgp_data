@@ -24,7 +24,7 @@ class Policies(Enum):
     """The three types of routing policies"""
 
     DEFAULT = 0
-    BGP = 6
+#    BGP = 6 ######## SHOULD BE 6
     ROV = 1
     ROVPP = 2
     ROVPPB = 3

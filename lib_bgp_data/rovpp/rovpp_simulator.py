@@ -15,7 +15,7 @@ from pprint import pprint
 import json
 import os
 from tqdm import tqdm
-from .enums import Policies, Non_BGP_Policies, Hijack_Types, Conditions
+from .enums import Non_BGP_Policies, Policies, Non_BGP_Policies, Hijack_Types, Conditions
 from .enums import AS_Types, Control_Plane_Conditions as C_Plane_Conds
 from .tables import Subprefix_Hijack_Temp_Table
 from .tables import ROVPP_MRT_Announcements_Table, ROVPP_Top_100_ASes_Table
@@ -97,36 +97,87 @@ class ROVPP_Simulator:
         # Graph data here!!!
         # Possibly move back to iterator (below)
 
-    def gen_graphs(self, trials=20, percents=range(5,31,5)):
-        with tqdm(total=324, desc="Generating subplots") as pbar:
+    # https://stackoverflow.com/a/1482316
+    def powerset_of_policies(self):
+        from itertools import chain, combinations
+        pol_nums = [x.value for x in Non_BGP_Policies.__members__.values()]
+        return chain.from_iterable(combinations(pol_nums, r) for r in range(1, len(pol_nums) + 1))
+
+    def gen_graphs(self, percents):
+        with tqdm(total=1440 * 9, desc="Generating subplots") as pbar:
             utils.clean_paths(self.logger, ["/tmp/bgp_pics"])
+            trials = 1
             data_points = [Data_Point(trials, p_i, percent, percents, self.logger)
                            for p_i, percent in enumerate(percents)]
-            for hijack_type in [x.value for x in Hijack_Types.__members__.values()]:
-                self.gen_ctrl_plane_graphs(data_points, hijack_type, pbar)
-                self.gen_data_plane_graphs(data_points, hijack_type, pbar)
+            self.pbar = 0
+            subtable_names = ["rovpp_top_100_ases", "rovpp_edge_ases", "rovpp_etc_ases"]
+            self.g_dict = {x.value: {} for x in Hijack_Types.__members__.values()}
+            for h_type in [x.value for x in Hijack_Types.__members__.values()]:
+                self.g_dict[h_type] = {name: {} for name in subtable_names}
+                for name in subtable_names:
+                    self.g_dict[h_type][name] = {pol.value: {} for pol in Policies.__members__.values()}
+                    for pol in [x.value for x in Policies.__members__.values()]:
+                        self.g_dict[h_type][name][pol] = {"data": {}, "ctrl": {}}
+                        for plane_type in ["data", "ctrl"]:
+                            for as_type in ["_adopting", "_collateral"]:
+                                self.g_dict[h_type][name][pol][plane_type][as_type] = {}
+                                for val_strs in [["c_plane_has_attacker_prefix_origin"],
+                                                 ["c_plane_has_only_victim_prefix_origin"],
+                                                 ["c_plane_has_bhole", "no_rib"],
+                                                 ["trace_hijacked", "trace_preventivehijacked"],
+                                                 ["trace_nothijacked", "trace_preventivenothijacked"],
+                                                 ["trace_blackholed", "no_rib"]]:
+                                    self.g_dict[h_type][name][pol][plane_type][as_type][str(val_strs)] = {"X": [], "Y": [], "YERR": []}
 
-    def gen_ctrl_plane_graphs(self, data_points, hijack_type, pbar):
+            pol_name_dict = {v.value: k for k, v in Non_BGP_Policies.__members__.items()}
+
+            for plane_type in ["ctrl", "data"]:
+                for ado_col in ["adopting", "collateral", "adopting__collateral"]:
+                    for pol_set in self.powerset_of_policies():
+                        os.makedirs("/tmp/bgp_pics/{}/{}/{}".format(plane_type, ado_col, "_".join(pol_name_dict[x] for x in pol_set)))
+
+            self.figs = []
+            self.fig_paths = []
+
+            # SHOULD BE MULTITHREADED!!!
+            # OHHHHHHHHH - jk this needs to work differently. The script needs to retain the dict of info to be effective.
+            # Get dict of info first, doing only single sets for adopting collateral dataplane hijack type etc. Then gen all graphs. Boom
+            for ado_col_list in [["_adopting"], ["_collateral"], ["_adopting", "_collateral"]]:
+                print("starting ado col list")
+                for hijack_type in [x.value for x in Hijack_Types.__members__.values()]:
+                    for pol_subset in self.powerset_of_policies():
+                        # OPEN PROCESS HERE BECAUSE WE CAN HAVE A LOT OPEN DUE TO MOSTLY IO. BUT MUST ALSO WRITE FILES FROM HERE.
+                        self.gen_ctrl_plane_graphs(data_points, hijack_type, pbar, ado_col_list, pol_subset)
+                        self.gen_data_plane_graphs(data_points, hijack_type, pbar, ado_col_list, pol_subset)
+                    print("Done with " + str(ado_col_list) + str(hijack_type))
+                    print(self.pbar)
+                    for fig, path in zip(self.figs, self.fig_paths):
+                        fig.savefig(path)
+                    self.figs = []
+                    self.fig_paths = []
+
+
+    def gen_ctrl_plane_graphs(self, data_points, hijack_type, pbar, ado_col_list, pol_subset):
             ctrl_val_strs = [["c_plane_has_attacker_prefix_origin"],
                              ["c_plane_has_only_victim_prefix_origin"],
                              ["c_plane_has_bhole", "no_rib"]]
-            ctrl_titles = ["Control Plane Hijacked",
-                           "Control Plane Successful Connection",
-                           "Control Plane Disconnected"]
-            self.gen_graph(data_points, ctrl_val_strs, hijack_type, ctrl_titles, "ctrl", pbar)
+            ctrl_titles = ["Control Plane % Hijacked",
+                           "Control Plane % Successful Connection",
+                           "Control Plane % Disconnected"]
+            self.gen_graph(data_points, ctrl_val_strs, hijack_type, ctrl_titles, "ctrl", pbar, ado_col_list, pol_subset)
 
-    def gen_data_plane_graphs(self, data_points, hijack_type, pbar):
+    def gen_data_plane_graphs(self, data_points, hijack_type, pbar, ado_col_list, pol_subset):
             data_val_strs = [["trace_hijacked", "trace_preventivehijacked"],
                              ["trace_nothijacked", "trace_preventivenothijacked"],
                              ["trace_blackholed", "no_rib"]]
-            data_titles = ["Data Plane Hijacked",
-                           "Data Plane Successful Connection",
-                           "Data Plane Disconnected"]
-            self.gen_graph(data_points, data_val_strs, hijack_type, data_titles, "data", pbar)
+            data_titles = ["Data Plane % Hijacked",
+                           "Data Plane % Successful Connection",
+                           "Data Plane % Disconnected"]
+            self.gen_graph(data_points, data_val_strs, hijack_type, data_titles, "data", pbar, ado_col_list, pol_subset)
             
 
 
-    def gen_graph(self, data_points, val_strs_list, hijack_type, titles, g_title, pbar):
+    def gen_graph(self, data_points, val_strs_list, hijack_type, titles, g_title, pbar, ado_col_list, pol_subset):
         fig, axs = plt.subplots(len(val_strs_list), len(data_points[0].tables))
         fig.set_size_inches(18.5, 10.5)
         pol_name_dict = {v.value: k for k, v in Non_BGP_Policies.__members__.items()}
@@ -135,67 +186,89 @@ class ROVPP_Simulator:
                 # Graphing Hijacked
                 ax = axs[i,j]
                 legend_vals = []
-                for pol in [x.value for x in Non_BGP_Policies.__members__.values()]:
+                for pol in pol_subset:#[x.value for x in Non_BGP_Policies.__members__.values()]:
                     sql_data = [hijack_type,
                                 table.table.name,
                                 pol_name_dict[pol]]
-                    self._gen_subplot(data_points, vals[0], sql_data, ax, hijack_type, vals[1], pol_name_dict[pol], pbar, pol)
+                    self._gen_subplot(data_points, vals[0], sql_data, ax, hijack_type, vals[1], pol_name_dict[pol], pbar, pol, ado_col_list, g_title, table.table.name, hijack_type)
                 # Must be done here so as not to be set twice
-                ax.set(xlabel="% adoption", ylabel=table.table.name)
-                ax.title.set_text("{} for {}".format(vals[1], hijack_type))
+                ax.set(xlabel="% adoption", ylabel=vals[1])
+                ax.title.set_text("{} for {}".format(table.table.name, hijack_type))
                 if "hijacked" in vals[1].lower():
                     loc="lower left"
                 else:
                     loc = "upper left"
-                ax.legend(loc=loc)
+
+#                ax.legend(loc=loc)
                 # Force Y to go between 0 and 100
                 ax.set_ylim(0, 100)
 #                ax.title.set_text(table.table.name)
 #                plt.ylabel("{} for {}".format(g_title, hijack_type), axes=ax)
 #                plt.xlabel("% adoption", axes=ax)
         fig.tight_layout()
-#        plt.show()
-        fig.savefig("/tmp/bgp_pics/{}_{}".format(g_title, hijack_type))
+#        plt.shoiw()
+        plane_type = g_title
+        # /tmp/bgp_pics/plane_type/ado_col/policies/graph_title
+        save_path = "/tmp/bgp_pics/{}/{}/{}".format(g_title, "_".join(ado_col_list)[1:], "_".join(pol_name_dict[x] for x in pol_subset))
+        self.figs.append(fig)
+        self.fig_paths.append(os.path.join(save_path, "{}_{}".format(g_title, hijack_type)))
+#        fig.savefig(os.path.join(save_path, "{}_{}".format(g_title, hijack_type)))
 
-    def _gen_subplot(self, data_points, val_strs, sql_data, ax, hijack_type, title, adopt_pol, pbar, pol):
-        for as_type in ["_collateral"]:#["_adopting"]:#["_collateral", "_adopting"]:
+    def _gen_subplot(self, data_points, val_strs, sql_data, ax, hijack_type, title, adopt_pol, pbar, pol, ado_col_list, plane_type, name, h_type):
+        for as_type in ado_col_list:
             X = []
             Y = []
             Y_err = []
-            for data_point in data_points:
-                try:
-                    sql = "SELECT " + ", ".join([x + as_type for x in val_strs])
-                    sql += """, trace_total""" + as_type
-                    sql += """ FROM rovpp_all_trials WHERE
-                               hijack_type = %s AND
-                               subtable_name = %s AND
-                               adopt_pol = %s AND
-                               percent_iter = %s"""
-                    with db_connection(logger=self.logger) as db:
-                        query = db.cursor.mogrify(sql, sql_data + [data_point.percent_iter]).decode('UTF-8')
-                        results = db.execute(sql, sql_data + [data_point.percent_iter])
-                        raw = [sum(x[y + as_type] for y in val_strs) * 100 / x["trace_total" + as_type] for x in results]
-
-                        X.append(data_point.default_percents[data_point.percent_iter])
-                        if data_point.default_percents[data_point.percent_iter] == 0:
-#                            print("FUCK")
-#                            print(query)
-                            pass
-                        Y.append(mean(raw))
-                        Y_err.append(1.645 * 2 * sqrt(variance(raw))/sqrt(len(raw)))
-                except ZeroDivisionError:
-                    continue  # 0 nodes for that
-                except StatisticsError as e:
-                    self.logger.error(f"Statistics error. {e} Probably need more than one trial for the following query:")
-                    self.logger.error(f"Query: {query}")
-                    self.logger.error(raw)
-                    self.logger.error(results)
-                    sys.exit(1)
+            if len(self.g_dict[h_type][name][pol][plane_type][as_type][str(val_strs)]["X"]) == 0:
+                for data_point in data_points:
+                    try:
+                        sql = "SELECT " + ", ".join([x + as_type for x in val_strs])
+                        sql += """, trace_total""" + as_type
+                        sql += """ FROM rovpp_all_trials WHERE
+                                   hijack_type = %s AND
+                                   subtable_name = %s AND
+                                   adopt_pol = %s AND
+                                   percent_iter = %s"""
+                        with db_connection(logger=self.logger) as db:
+                            # In the future must not do this in grapher must do this while running
+                            # At 100% adoption attacker is only node left for collateral - not good
+                            query = db.cursor.mogrify(sql, sql_data + [data_point.percent_iter]).decode('UTF-8')
+                            results = db.execute(sql, sql_data + [data_point.percent_iter])
+                            if sql_data[1] == "rovpp_edge_ases" and as_type == "_collateral":
+                                raw = [(sum(x[y + as_type] for y in val_strs) - 1) * 100 / (x["trace_total" + as_type] - 1) for x in results]
+                            else:
+                                raw = [sum(x[y + as_type] for y in val_strs) * 100 / x["trace_total" + as_type] for x in results]    
+                            X.append(data_point.default_percents[data_point.percent_iter])
+                            if data_point.default_percents[data_point.percent_iter] == 0:
+    #                            print("FUCK")
+    #                            print(query)
+                                pass
+                            Y.append(mean(raw))
+                            Y_err.append(1.645 * 2 * sqrt(variance(raw))/sqrt(len(raw)))
+                    except ZeroDivisionError:
+                        continue  # 0 nodes for that
+                    except StatisticsError as e:
+                        self.logger.error(f"Statistics error. {e} Probably need more than one trial for the following query:")
+                        self.logger.error(f"Query: {query}")
+                        self.logger.error(raw)
+                        self.logger.error(results)
+                        sys.exit(1)
+                self.g_dict[h_type][name][pol][plane_type][as_type][str(val_strs)]["X"] = X
+                self.g_dict[h_type][name][pol][plane_type][as_type][str(val_strs)]["Y"] = Y
+                self.g_dict[h_type][name][pol][plane_type][as_type][str(val_strs)]["YERR"] = Y_err
             styles = ["-", "--", "-.", ":", "solid", "dotted", "dashdot", "dashed"]
             markers = [".", "1", "*", "x", "d", "2", "3", "4"]
             assert pol < len(styles), "Must add more styles, sorry no time deadline"
-            line = ax.errorbar(X, Y, yerr=Y_err, label=adopt_pol + as_type, ls=styles[pol], marker=markers[pol])
+            labels_dict = {"ROV": "ROV",
+                           "ROVPP": "ROV++v1",
+                           "ROVPPB": "ROV++v2",
+                           "ROVPPBP": "ROV++v3",
+                           "ROVPPBIS": "ROV++v2b"}
+            line = ax.errorbar(self.g_dict[h_type][name][pol][plane_type][as_type][str(val_strs)]["X"],
+                               self.g_dict[h_type][name][pol][plane_type][as_type][str(val_strs)]["Y"],
+                               yerr=self.g_dict[h_type][name][pol][plane_type][as_type][str(val_strs)]["YERR"], label=labels_dict[adopt_pol] + as_type, ls=styles[pol], marker=markers[pol])
         pbar.update(1)
+        self.pbar += 1
 
 
 class Data_Point:
