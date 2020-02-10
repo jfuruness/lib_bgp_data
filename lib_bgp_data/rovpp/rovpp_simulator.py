@@ -396,6 +396,7 @@ class ROVPP_Simulator:
 
         fig, axs = plt.subplots(len(ctrl_val_strs), len(data_points[0].tables))
         fig.set_size_inches(18.5, 10.5)
+        fig.tight_layout()
         pol_name_dict = {v.value: k for k, v in Non_BGP_Policies.__members__.items()}
         val_strs_list = ctrl_val_strs
         titles = ctrl_titles
@@ -443,10 +444,12 @@ class ROVPP_Simulator:
                         loc = "upper left"
 
                     ax.legend(loc=loc)
+                # Needed so that subplots don't overlap, takes time tho fix later
+                fig.tight_layout()
                 # https://stackoverflow.com/a/26432947
                 extent = self.full_extent(ax).transformed(fig.dpi_scale_trans.inverted())
                 fig.savefig(os.path.join(save_path, vals[1] + "_" + table.table.name), bbox_inches=extent)
-`
+
 #                ax.title.set_text(table.table.name)
 #                plt.ylabel("{} for {}".format(g_title, hijack_type), axes=ax)
 #                plt.xlabel("% adoption", axes=ax)
@@ -477,6 +480,7 @@ class ROVPP_Simulator:
     def gen_graph(self, data_points, val_strs_list, hijack_type, titles, g_title, pbar, ado_col_list, pol_subset, labelled):
         fig, axs = plt.subplots(len(val_strs_list), len(data_points[0].tables))
         fig.set_size_inches(18.5, 10.5)
+        fig.tight_layout()
         pol_name_dict = {v.value: k for k, v in Non_BGP_Policies.__members__.items()}
         # /data/bgp_pics/plane_type/ado_col/policies/overall_graph_title/graph_titles
         save_path = "/data/bgp_pics/{}/{}/{}/{}/{}".format(labelled, g_title, "_".join(ado_col_list)[1:], "_".join(pol_name_dict[x] for x in pol_subset), hijack_type)
@@ -501,6 +505,8 @@ class ROVPP_Simulator:
                         loc = "upper left"
 
                     ax.legend(loc=loc)
+                # Needed so that subplots don't overlap, takes time though fix later
+                fig.tight_layout()
                 # https://stackoverflow.com/a/26432947
                 extent = self.full_extent(ax).transformed(fig.dpi_scale_trans.inverted())
                 fig.savefig(os.path.join(save_path, vals[1] + "_" + table.table.name), bbox_inches=extent)
