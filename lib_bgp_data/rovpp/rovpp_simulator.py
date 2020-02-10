@@ -160,7 +160,8 @@ class ROVPP_Simulator:
         self.graph_pool.amap(self.multiprocess_call_to_save_fig, [fig], [path], [plt])
 #        plt.close(fig)
 
-    def gen_graphs(self, percents, save_json=False):
+    # NOTE: if save_json is false, it will use the OLD JSON FILE!!!!!!
+    def gen_graphs(self, percents, save_json=True):
         pol_name_dict = {v.value: k for k, v in Non_BGP_Policies.__members__.items()}
         # SHOULD REALLY USE UTILS.POOL!!!
         pool_incrementer = 0
