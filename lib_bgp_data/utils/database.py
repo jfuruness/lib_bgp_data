@@ -75,38 +75,39 @@ class Database:
     __slots__ = ['logger', 'conn', 'cursor']
 
     @error_catcher()
-    def __init__(self, logger=Logger(), cursor_factory=RealDictCursor):
+    def __init__(self, logger=Logger(), cursor_factory=RealDictCursor, _open=True):
         """Create a new connection with the database"""
 
         # Initializes self.logger
         self.logger = logger
-        self._connect(cursor_factory)
+        self._connect(cursor_factory, _open=_open)
 
     @error_catcher()
-    def _connect(self, cursor_factory=RealDictCursor, create_tables=True):
+    def _connect(self, cursor_factory=RealDictCursor, create_tables=True, _open=True):
         """Connects to db with default RealDictCursor.
 
         Note that RealDictCursor returns everything as a dictionary."""
-
         kwargs = Config(self.logger).get_db_creds()
-        if cursor_factory:
-            kwargs["cursor_factory"] = cursor_factory
-        # In case the database is somehow off we wait
-        for i in range(10):
-            try:
-                conn = psycopg2.connect(**kwargs)
-                self.logger.debug("Database Connected")
-                self.conn = conn
-                # Automatically execute queries
-                self.conn.autocommit = True
-                self.cursor = conn.cursor()
-                break
-            except:
-                self.logger.warning("DB conn problem")
-                time.sleep(10)
-        if create_tables:
-            # Creates tables if do not exist
-            self._create_tables()
+        if _open:
+            if cursor_factory:
+                kwargs["cursor_factory"] = cursor_factory
+            # In case the database is somehow off we wait
+            for i in range(10):
+                try:
+                    conn = psycopg2.connect(**kwargs)
+                    self.logger.debug("Database Connected")
+                    self.conn = conn
+                    # Automatically execute queries
+                    self.conn.autocommit = True
+                    self.cursor = conn.cursor()
+                    break
+                except Exception as e:
+                    self.logger.warning(f"DB conn problem: {e}")
+                    time.sleep(10)
+            if create_tables:
+                # Creates tables if do not exist
+                self._create_tables()
+            print("opened conn")
 
     def _create_tables(self):
         """Method that is overwritten when inherited"""
@@ -152,6 +153,7 @@ class Database:
 
         self.cursor.close()
         self.conn.close()
+        print("Closed conn")
 
     def vacuum_analyze_checkpoint(self, full=False):
         """Vaccums, analyzes, and checkpoints.
