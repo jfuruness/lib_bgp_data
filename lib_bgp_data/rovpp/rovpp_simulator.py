@@ -152,7 +152,7 @@ class ROVPP_Simulator:
         return chain.from_iterable(combinations(pol_nums, r) for r in range(1, len(pol_nums) + 1))
 
     def multiprocess_call_to_save_fig(self, fig, path, plt):
-        fig.savefig(path, format="eps")
+        fig.savefig(path + ".eps", format="eps")
         plt.close(fig)
 
     def save_fig(self, fig, path, plt):
@@ -337,7 +337,7 @@ class ROVPP_Simulator:
                self.gen_data_plane_graphs(data_points, hijack_type, pbar, ado_col_list, pol_subset, labelled)
             print(f"{hijack_type}, {ado_col_list}, {labelled} done")
             for fig, path in zip(self.figs, self.fig_paths):
-                fig.savefig(path, format="eps")
+                fig.savefig(path + ".eps", format="eps")
                 plt.close(fig)
             print(f"{hijack_type}, {ado_col_list}, {labelled} saved")
             self.figs = []
@@ -358,7 +358,7 @@ class ROVPP_Simulator:
             self.gen_ctrl_data_plane_graphs(data_points, hijack_type, pbar, ado_col_list, pol_subset, labelled, save_dir)
 #            print(f"{hijack_type}, {ado_col_list}, {labelled} done")
             for fig, path in zip(self.figs, self.fig_paths):
-                fig.savefig(path, format="eps")
+                fig.savefig(path + ".eps", format="eps")
                 plt.close(fig)
 #            print(f"{hijack_type}, {ado_col_list}, {labelled} saved")
             self.figs = []
@@ -460,7 +460,7 @@ class ROVPP_Simulator:
                 fig.tight_layout()
                 # https://stackoverflow.com/a/26432947
                 extent = self.full_extent(ax).transformed(fig.dpi_scale_trans.inverted())
-                fig.savefig(os.path.join(save_path, vals[1] + "_" + table.table.name), bbox_inches=extent, format="eps")
+                fig.savefig(os.path.join(save_path, vals[1] + "_" + table.table.name) + ".eps", bbox_inches=extent, format="eps")
 
 #                ax.title.set_text(table.table.name)
 #                plt.ylabel("{} for {}".format(g_title, hijack_type), axes=ax)
@@ -523,7 +523,7 @@ class ROVPP_Simulator:
                 fig.tight_layout()
                 # https://stackoverflow.com/a/26432947
                 extent = self.full_extent(ax).transformed(fig.dpi_scale_trans.inverted())
-                fig.savefig(os.path.join(save_path, vals[1] + "_" + table.table.name), bbox_inches=extent, format="eps")
+                fig.savefig(os.path.join(save_path, vals[1] + "_" + table.table.name) + ".eps", bbox_inches=extent, format="eps")
                 # Force Y to go between 0 and 100
 #                ax.set_ylim(0, 100)
 #                ax.title.set_text(table.table.name)
