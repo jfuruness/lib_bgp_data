@@ -107,7 +107,6 @@ class Database:
             if create_tables:
                 # Creates tables if do not exist
                 self._create_tables()
-            print("opened conn")
 
     def _create_tables(self):
         """Method that is overwritten when inherited"""
@@ -153,7 +152,6 @@ class Database:
 
         self.cursor.close()
         self.conn.close()
-        print("Closed conn")
 
     def vacuum_analyze_checkpoint(self, full=False):
         """Vaccums, analyzes, and checkpoints.

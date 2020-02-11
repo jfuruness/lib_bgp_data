@@ -78,7 +78,6 @@ def threadme_bb(data_points, h_type, name, pol_name_dict, pol, as_type, val_strs
                 sys.exit(1)
             finally:
                 pass #pbar.update(1)
-    print("Thread done")
 
 
 
@@ -153,15 +152,23 @@ class ROVPP_Simulator:
         return chain.from_iterable(combinations(pol_nums, r) for r in range(1, len(pol_nums) + 1))
 
     def multiprocess_call_to_save_fig(self, fig, path, plt):
-        fig.savefig(path)
+        fig.savefig(path, format="eps")
         plt.close(fig)
 
     def save_fig(self, fig, path, plt):
         self.graph_pool.amap(self.multiprocess_call_to_save_fig, [fig], [path], [plt])
 #        plt.close(fig)
 
+    def gen_all_graphs(self):
+        percents_in_trials = [0,1,2,3,4,5,10,20,30,40,60,80]
+        # NOTE save json must be true for all because it only saves X, not what individual points are in it!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        self.gen_graphs(percents_in_trials, [0,1,2,3,4,5,10], True, "/data/bgp_pics_0_to_10")
+        self.gen_graphs(percents_in_trials, [0,1,2,3,4,5,10, 20, 30], True, "/data/bgp_pics_0_to_30")
+        self.gen_graphs(percents_in_trials, [0,10,20,30,40,60,80], True, "/data/bgp_pics_0_to_80")
+        self.gen_graphs(percents_in_trials, [0,1,2,3,4,5,10,20,30,40,60,80], True, "/data/bgp_pics_0_to_80_all")
+
     # NOTE: if save_json is false, it will use the OLD JSON FILE!!!!!!
-    def gen_graphs(self, percents, save_json=True):
+    def gen_graphs(self, percents_in_trials, percents_this_graph, save_json=True, save_dir="/data/bgp_pics"):
         pol_name_dict = {v.value: k for k, v in Non_BGP_Policies.__members__.items()}
         # SHOULD REALLY USE UTILS.POOL!!!
         pool_incrementer = 0
@@ -171,10 +178,10 @@ class ROVPP_Simulator:
         count = 0
         print(utils.now())
         with tqdm(total=12960, desc="Reading in rovpp_all_trials") as pbar:
-            utils.clean_paths(self.logger, ["/data/bgp_pics"])
+            utils.clean_paths(self.logger, [save_dir])
             trials = 1
-            data_points = [Data_Point(trials, p_i, percent, percents, self.logger, _open=False)
-                           for p_i, percent in enumerate(percents)]
+            data_points = [Data_Point(trials, p_i, percent, percents_this_graph, self.logger, _open=False)
+                           for p_i, percent in enumerate(percents_in_trials) if percent in percents_this_graph]
 #            for data_point in data_points:
 #                data_point.tables.close()
 
@@ -295,7 +302,7 @@ class ROVPP_Simulator:
                     for ado_col in ["adopting", "collateral", "adopting__collateral"]:
                         for pol_set in self.powerset_of_policies():
                             for htype in [x.value for x in Hijack_Types.__members__.values()]:
-                                os.makedirs("/data/bgp_pics/{}/{}/{}/{}/{}".format(labelled, plane_type, ado_col, "_".join(pol_name_dict[x] for x in pol_set), htype))
+                                os.makedirs("{}/{}/{}/{}/{}/{}".format(save_dir, labelled, plane_type, ado_col, "_".join(pol_name_dict[x] for x in pol_set), htype))
 
             self.figs = []
             self.fig_paths = []
@@ -312,7 +319,7 @@ class ROVPP_Simulator:
                         
 #                        self.graph_pool.amap(self.multiprocess_call_to_graphing, [data_points], [hijack_type], [pbar], [ado_col_list], [labelled])
                         for pol_subset in self.powerset_of_policies():
-                            self.graph_pool.amap(self.multiprocess_call_to_graphing2, [data_points], [hijack_type], [pbar], [ado_col_list], [labelled], [pol_subset])
+                            self.graph_pool.amap(self.multiprocess_call_to_graphing2, [data_points], [hijack_type], [pbar], [ado_col_list], [labelled], [pol_subset], [save_dir])
 #                            self.multiprocess_call_to_graphing2(data_points, hijack_type, pbar, ado_col_list, labelled, pol_subset)
         print("joining now?")
         self.graph_pool.close()
@@ -330,7 +337,7 @@ class ROVPP_Simulator:
                self.gen_data_plane_graphs(data_points, hijack_type, pbar, ado_col_list, pol_subset, labelled)
             print(f"{hijack_type}, {ado_col_list}, {labelled} done")
             for fig, path in zip(self.figs, self.fig_paths):
-                fig.savefig(path)
+                fig.savefig(path, format="eps")
                 plt.close(fig)
             print(f"{hijack_type}, {ado_col_list}, {labelled} saved")
             self.figs = []
@@ -338,7 +345,7 @@ class ROVPP_Simulator:
 #        except Exception as e:
 #            print(f"OOOOOOO {e}")
 
-    def multiprocess_call_to_graphing2(self, data_points, hijack_type, pbar, ado_col_list, labelled, pol_subset):
+    def multiprocess_call_to_graphing2(self, data_points, hijack_type, pbar, ado_col_list, labelled, pol_subset, save_dir):
 
         # Takes ~3 min 39 seconds with 18 threads, same with 24, so I guess lets stick with 18
         # I tried just generating one fig and copying it to multiple processes, but it didn't seem to like that
@@ -346,12 +353,12 @@ class ROVPP_Simulator:
         try:
             # OPEN PROCESS HERE BECAUSE WE CAN HAVE A LOT OPEN DUE TO MOSTLY IO. BUT MUST ALSO WRITE FILES FROM HERE.
             # Potential optimization for the future, make it gen one fig, and pass to each func?
-            self.gen_ctrl_plane_graphs(data_points, hijack_type, pbar, ado_col_list, pol_subset, labelled)
-            self.gen_data_plane_graphs(data_points, hijack_type, pbar, ado_col_list, pol_subset, labelled)
-            self.gen_ctrl_data_plane_graphs(data_points, hijack_type, pbar, ado_col_list, pol_subset, labelled)
+            self.gen_ctrl_plane_graphs(data_points, hijack_type, pbar, ado_col_list, pol_subset, labelled, save_dir)
+            self.gen_data_plane_graphs(data_points, hijack_type, pbar, ado_col_list, pol_subset, labelled, save_dir)
+            self.gen_ctrl_data_plane_graphs(data_points, hijack_type, pbar, ado_col_list, pol_subset, labelled, save_dir)
 #            print(f"{hijack_type}, {ado_col_list}, {labelled} done")
             for fig, path in zip(self.figs, self.fig_paths):
-                fig.savefig(path)
+                fig.savefig(path, format="eps")
                 plt.close(fig)
 #            print(f"{hijack_type}, {ado_col_list}, {labelled} saved")
             self.figs = []
@@ -360,25 +367,25 @@ class ROVPP_Simulator:
             print(f"OOOOOOO {e}")
 
 
-    def gen_ctrl_plane_graphs(self, data_points, hijack_type, pbar, ado_col_list, pol_subset, labelled):
+    def gen_ctrl_plane_graphs(self, data_points, hijack_type, pbar, ado_col_list, pol_subset, labelled, save_dir):
         ctrl_val_strs = [["c_plane_has_attacker_prefix_origin"],
                              ["c_plane_has_only_victim_prefix_origin"],
                              ["c_plane_has_bhole", "no_rib"]]
         ctrl_titles = ["Control Plane % Hijacked",
                            "Control Plane % Successful Connection",
                            "Control Plane % Disconnected"]
-        self.gen_graph(data_points, ctrl_val_strs, hijack_type, ctrl_titles, "ctrl", pbar, ado_col_list, pol_subset, labelled)
+        self.gen_graph(data_points, ctrl_val_strs, hijack_type, ctrl_titles, "ctrl", pbar, ado_col_list, pol_subset, labelled, save_dir)
 
-    def gen_data_plane_graphs(self, data_points, hijack_type, pbar, ado_col_list, pol_subset, labelled):
+    def gen_data_plane_graphs(self, data_points, hijack_type, pbar, ado_col_list, pol_subset, labelled, save_dir):
         data_val_strs = [["trace_hijacked", "trace_preventivehijacked"],
                              ["trace_nothijacked", "trace_preventivenothijacked"],
                              ["trace_blackholed", "no_rib"]]
         data_titles = ["Data Plane % Hijacked",
                            "Data Plane % Successful Connection",
                            "Data Plane % Disconnected"]
-        self.gen_graph(data_points, data_val_strs, hijack_type, data_titles, "data", pbar, ado_col_list, pol_subset, labelled)
+        self.gen_graph(data_points, data_val_strs, hijack_type, data_titles, "data", pbar, ado_col_list, pol_subset, labelled, save_dir)
 
-    def gen_ctrl_data_plane_graphs(self, data_points, hijack_type, pbar, ado_col_list, pol_subset, labelled):
+    def gen_ctrl_data_plane_graphs(self, data_points, hijack_type, pbar, ado_col_list, pol_subset, labelled, save_dir):
 
         data_val_strs = [["trace_hijacked", "trace_preventivehijacked"],
                              ["trace_nothijacked", "trace_preventivenothijacked"],
@@ -407,6 +414,8 @@ class ROVPP_Simulator:
                 # Graphing Hijacked
                 ax = axs[i,j]
                 ax.set_ylim(0, 100)
+                # Needed due to annoying error https://stackoverflow.com/a/19640319
+                ax.set_rasterized(True)
                 legend_vals = []
                 for pol in pol_subset:#[x.value for x in Non_BGP_Policies.__members__.values()]:
                     sql_data = [hijack_type,
@@ -419,11 +428,13 @@ class ROVPP_Simulator:
         val_strs_list = data_val_strs
         titles = data_titles
         g_title="data"
-        save_path = "/data/bgp_pics/{}/{}/{}/{}/{}".format(labelled, g_title, "_".join(ado_col_list)[1:], "_".join(pol_name_dict[x] for x in pol_subset), hijack_type)
+        save_path = "{}/{}/{}/{}/{}/{}".format(save_dir, labelled, g_title, "_".join(ado_col_list)[1:], "_".join(pol_name_dict[x] for x in pol_subset), hijack_type)
         for i, table in enumerate(data_points[0].tables):
             for j, vals in enumerate(zip(val_strs_list, titles)):
                 # Graphing Hijacked
                 ax = axs[i,j]
+                # Needed due to annoying error https://stackoverflow.com/a/19640319
+                ax.set_rasterized(True)
                 ax.set_ylim(0, 100)
                 legend_vals = []
                 for pol in pol_subset:#[x.value for x in Non_BGP_Policies.__members__.values()]:
@@ -449,7 +460,7 @@ class ROVPP_Simulator:
                 fig.tight_layout()
                 # https://stackoverflow.com/a/26432947
                 extent = self.full_extent(ax).transformed(fig.dpi_scale_trans.inverted())
-                fig.savefig(os.path.join(save_path, vals[1] + "_" + table.table.name), bbox_inches=extent)
+                fig.savefig(os.path.join(save_path, vals[1] + "_" + table.table.name), bbox_inches=extent, format="eps")
 
 #                ax.title.set_text(table.table.name)
 #                plt.ylabel("{} for {}".format(g_title, hijack_type), axes=ax)
@@ -459,7 +470,7 @@ class ROVPP_Simulator:
         plane_type = "ctrl_data"
         g_title="ctrl_data"
         # /data/bgp_pics/plane_type/ado_col/policies/graph_title
-        save_path = "/data/bgp_pics/{}/{}/{}/{}".format(labelled, g_title, "_".join(ado_col_list)[1:], "_".join(pol_name_dict[x] for x in pol_subset))
+        save_path = "{}/{}/{}/{}/{}".format(save_dir, labelled, g_title, "_".join(ado_col_list)[1:], "_".join(pol_name_dict[x] for x in pol_subset))
         self.figs.append(fig)
         self.fig_paths.append(os.path.join(save_path, "{}_{}".format(g_title, hijack_type)))
 
@@ -478,17 +489,19 @@ class ROVPP_Simulator:
         return bbox.expanded(1.0 + pad, 1.0 + pad)            
 
 
-    def gen_graph(self, data_points, val_strs_list, hijack_type, titles, g_title, pbar, ado_col_list, pol_subset, labelled):
+    def gen_graph(self, data_points, val_strs_list, hijack_type, titles, g_title, pbar, ado_col_list, pol_subset, labelled, save_dir):
         fig, axs = plt.subplots(len(val_strs_list), len(data_points[0].tables))
         fig.set_size_inches(18.5, 10.5)
         fig.tight_layout()
         pol_name_dict = {v.value: k for k, v in Non_BGP_Policies.__members__.items()}
         # /data/bgp_pics/plane_type/ado_col/policies/overall_graph_title/graph_titles
-        save_path = "/data/bgp_pics/{}/{}/{}/{}/{}".format(labelled, g_title, "_".join(ado_col_list)[1:], "_".join(pol_name_dict[x] for x in pol_subset), hijack_type)
+        save_path = "{}/{}/{}/{}/{}/{}".format(save_dir, labelled, g_title, "_".join(ado_col_list)[1:], "_".join(pol_name_dict[x] for x in pol_subset), hijack_type)
         for i, table in enumerate(data_points[0].tables):
             for j, vals in enumerate(zip(val_strs_list, titles)):
                 # Graphing Hijacked
                 ax = axs[i,j]
+                # Needed due to annoying error https://stackoverflow.com/a/19640319
+                ax.set_rasterized(True)
                 ax.set_ylim(0, 100)
                 legend_vals = []
                 for pol in pol_subset:#[x.value for x in Non_BGP_Policies.__members__.values()]:
@@ -510,7 +523,7 @@ class ROVPP_Simulator:
                 fig.tight_layout()
                 # https://stackoverflow.com/a/26432947
                 extent = self.full_extent(ax).transformed(fig.dpi_scale_trans.inverted())
-                fig.savefig(os.path.join(save_path, vals[1] + "_" + table.table.name), bbox_inches=extent)
+                fig.savefig(os.path.join(save_path, vals[1] + "_" + table.table.name), bbox_inches=extent, format="eps")
                 # Force Y to go between 0 and 100
 #                ax.set_ylim(0, 100)
 #                ax.title.set_text(table.table.name)
@@ -520,7 +533,7 @@ class ROVPP_Simulator:
 #        plt.shoiw()
         plane_type = g_title
         self.figs.append(fig)
-        save_path = "/data/bgp_pics/{}/{}/{}/{}".format(labelled, g_title, "_".join(ado_col_list)[1:], "_".join(pol_name_dict[x] for x in pol_subset))
+        save_path = "{}/{}/{}/{}/{}".format(save_dir, labelled, g_title, "_".join(ado_col_list)[1:], "_".join(pol_name_dict[x] for x in pol_subset))
         self.fig_paths.append(os.path.join(save_path, "{}_{}".format(g_title, hijack_type)))
 #        fig.savefig(os.path.join(save_path, "{}_{}".format(g_title, hijack_type)))
 #        self.save_fig(fig, save_path, plt)
