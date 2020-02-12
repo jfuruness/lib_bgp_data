@@ -328,6 +328,7 @@ class ROVPP_Simulator:
         self.graph_pool.join()
         self.graph_pool.clear()
         print(utils.now())
+        print("It appears that this script leaks like literally 20GB of RAM. Deaadline, but def should be fixed later lmaoooooooooooooooooooo. And they said python couldn't leak memory.")
 
     def multiprocess_call_to_graphing(self, data_points, hijack_type, pbar, ado_col_list, labelled):
         # This approach takes 4 min 9 seconds if json is loaded with 18 threads
