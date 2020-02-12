@@ -152,7 +152,7 @@ class ROVPP_Simulator:
         return chain.from_iterable(combinations(pol_nums, r) for r in range(1, len(pol_nums) + 1))
 
     def multiprocess_call_to_save_fig(self, fig, path, plt):
-        fig.savefig(path.replace("%", "") + ".svg", format="svg")
+        fig.savefig(path.replace("%", "").replace(" ", "_") + ".png", format="png")
         plt.close(fig)
 
     def save_fig(self, fig, path, plt):
@@ -338,7 +338,7 @@ class ROVPP_Simulator:
                self.gen_data_plane_graphs(data_points, hijack_type, pbar, ado_col_list, pol_subset, labelled)
             print(f"{hijack_type}, {ado_col_list}, {labelled} done")
             for fig, path in zip(self.figs, self.fig_paths):
-                fig.savefig(path.replace("%", "") + ".svg", format="svg")
+                fig.savefig(path.replace("%", "").replace(" ", "_") + ".png", format="png")
                 plt.close(fig)
             print(f"{hijack_type}, {ado_col_list}, {labelled} saved")
             self.figs = []
@@ -359,7 +359,7 @@ class ROVPP_Simulator:
             self.gen_ctrl_data_plane_graphs(data_points, hijack_type, pbar, ado_col_list, pol_subset, labelled, save_dir)
 #            print(f"{hijack_type}, {ado_col_list}, {labelled} done")
             for fig, path in zip(self.figs, self.fig_paths):
-                fig.savefig(path.replace("%", "") + ".svg", format="svg")
+                fig.savefig(path.replace("%", "").replace(" ", "_") + ".png", format="png")
                 plt.close(fig)
 #            print(f"{hijack_type}, {ado_col_list}, {labelled} saved")
             self.figs = []
@@ -429,7 +429,7 @@ class ROVPP_Simulator:
         val_strs_list = data_val_strs
         titles = data_titles
         g_title="data"
-        save_path = "{}/{}/{}/{}/{}/{}".format(save_dir, labelled, "ctrl_data", "_".join(ado_col_list)[1:], "_".join(pol_name_dict[x] for x in pol_subset), hijack_type).replace("%", "")
+        save_path = "{}/{}/{}/{}/{}/{}".format(save_dir, labelled, "ctrl_data", "_".join(ado_col_list)[1:], "_".join(pol_name_dict[x] for x in pol_subset), hijack_type).replace("%", "").replace(" ", "_")
         for i, table in enumerate(data_points[0].tables):
             for j, vals in enumerate(zip(val_strs_list, titles)):
                 # Graphing Hijacked
@@ -461,7 +461,7 @@ class ROVPP_Simulator:
                 fig.tight_layout()
                 # https://stackoverflow.com/a/26432947
                 extent = self.full_extent(ax).transformed(fig.dpi_scale_trans.inverted())
-                fig.savefig(os.path.join(save_path, vals[1] + "_" + table.table.name).replace("%", "") + ".svg", bbox_inches=extent, format="svg")
+                fig.savefig(os.path.join(save_path, vals[1] + "_" + table.table.name).replace("%", "").replace(" ", "_") + ".png", bbox_inches=extent, format="png")
 
 #                ax.title.set_text(table.table.name)
 #                plt.ylabel("{} for {}".format(g_title, hijack_type), axes=ax)
@@ -471,7 +471,7 @@ class ROVPP_Simulator:
         plane_type = "ctrl_data"
         g_title="ctrl_data"
         # /data/bgp_pics/plane_type/ado_col/policies/graph_title
-        save_path = "{}/{}/{}/{}/{}".format(save_dir, labelled, g_title, "_".join(ado_col_list)[1:], "_".join(pol_name_dict[x] for x in pol_subset)).replace("%", "")
+        save_path = "{}/{}/{}/{}/{}".format(save_dir, labelled, g_title, "_".join(ado_col_list)[1:], "_".join(pol_name_dict[x] for x in pol_subset)).replace("%", "").replace(" ", "_")
         self.figs.append(fig)
         self.fig_paths.append(os.path.join(save_path, "{}_{}".format(g_title, hijack_type)))
 
@@ -490,7 +490,7 @@ class ROVPP_Simulator:
         bbox = Bbox.union([item.get_window_extent() for item in items])
         extent = bbox.expanded(1.0 + pad, 1.0 + pad)
         extent.x0 -= 5
-        extent.x1 -= 57
+        extent.x1 -= 55
         return extent 
 
 
@@ -500,7 +500,7 @@ class ROVPP_Simulator:
         fig.tight_layout()
         pol_name_dict = {v.value: k for k, v in Non_BGP_Policies.__members__.items()}
         # /data/bgp_pics/plane_type/ado_col/policies/overall_graph_title/graph_titles
-        save_path = "{}/{}/{}/{}/{}/{}".format(save_dir, labelled, g_title, "_".join(ado_col_list)[1:], "_".join(pol_name_dict[x] for x in pol_subset), hijack_type).replace("%", "")
+        save_path = "{}/{}/{}/{}/{}/{}".format(save_dir, labelled, g_title, "_".join(ado_col_list)[1:], "_".join(pol_name_dict[x] for x in pol_subset), hijack_type).replace("%", "").replace(" ", "_")
         for i, table in enumerate(data_points[0].tables):
             for j, vals in enumerate(zip(val_strs_list, titles)):
                 # Graphing Hijacked
@@ -528,7 +528,7 @@ class ROVPP_Simulator:
                 fig.tight_layout()
                 # https://stackoverflow.com/a/26432947
                 extent = self.full_extent(ax).transformed(fig.dpi_scale_trans.inverted())
-                fig.savefig(os.path.join(save_path, vals[1] + "_" + table.table.name).replace("%", "") + ".svg", bbox_inches=extent, format="svg")
+                fig.savefig(os.path.join(save_path, vals[1] + "_" + table.table.name).replace("%", "").replace(" ", "_") + ".png", bbox_inches=extent, format="png")
                 # Force Y to go between 0 and 100
 #                ax.set_ylim(0, 100)
 #                ax.title.set_text(table.table.name)
@@ -538,7 +538,7 @@ class ROVPP_Simulator:
 #        plt.shoiw()
         plane_type = g_title
         self.figs.append(fig)
-        save_path = "{}/{}/{}/{}/{}".format(save_dir, labelled, g_title, "_".join(ado_col_list)[1:], "_".join(pol_name_dict[x] for x in pol_subset)).replace("%", "")
+        save_path = "{}/{}/{}/{}/{}".format(save_dir, labelled, g_title, "_".join(ado_col_list)[1:], "_".join(pol_name_dict[x] for x in pol_subset)).replace("%", "").replace(" ", "_")
         self.fig_paths.append(os.path.join(save_path, "{}_{}".format(g_title, hijack_type)))
 #        fig.savefig(os.path.join(save_path, "{}_{}".format(g_title, hijack_type)))
 #        self.save_fig(fig, save_path, plt)
