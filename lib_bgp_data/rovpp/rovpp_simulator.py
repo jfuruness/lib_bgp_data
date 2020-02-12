@@ -152,7 +152,7 @@ class ROVPP_Simulator:
         return chain.from_iterable(combinations(pol_nums, r) for r in range(1, len(pol_nums) + 1))
 
     def multiprocess_call_to_save_fig(self, fig, path, plt):
-        fig.savefig(path + ".eps", format="eps")
+        fig.savefig(path.replace("%", "") + ".svg", format="svg")
         plt.close(fig)
 
     def save_fig(self, fig, path, plt):
@@ -160,12 +160,13 @@ class ROVPP_Simulator:
 #        plt.close(fig)
 
     def gen_all_graphs(self):
+        print("Takes ~3.5 hrs to run")
         percents_in_trials = [0,1,2,3,4,5,10,20,30,40,60,80]
         # NOTE save json must be true for all because it only saves X, not what individual points are in it!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        self.gen_graphs(percents_in_trials, [0,1,2,3,4,5,10], True, "/data/bgp_pics_0_to_10")
-        self.gen_graphs(percents_in_trials, [0,1,2,3,4,5,10, 20, 30], True, "/data/bgp_pics_0_to_30")
-        self.gen_graphs(percents_in_trials, [0,10,20,30,40,60,80], True, "/data/bgp_pics_0_to_80")
-        self.gen_graphs(percents_in_trials, [0,1,2,3,4,5,10,20,30,40,60,80], True, "/data/bgp_pics_0_to_80_all")
+        self.gen_graphs(percents_in_trials, [0,1,2,3,4,5,10], True, "/data/bgp_pics/0_to_10")
+        self.gen_graphs(percents_in_trials, [0,1,2,3,4,5,10, 20, 30], True, "/data/bgp_pics/0_to_30")
+        self.gen_graphs(percents_in_trials, [1,10,20,30,40,60,80], True, "/data/bgp_pics/0_to_80")
+        self.gen_graphs(percents_in_trials, [0,1,2,3,4,5,10,20,30,40,60,80], True, "/data/bgp_pics/0_to_80_all")
 
     # NOTE: if save_json is false, it will use the OLD JSON FILE!!!!!!
     def gen_graphs(self, percents_in_trials, percents_this_graph, save_json=True, save_dir="/data/bgp_pics"):
@@ -180,7 +181,7 @@ class ROVPP_Simulator:
         with tqdm(total=12960, desc="Reading in rovpp_all_trials") as pbar:
             utils.clean_paths(self.logger, [save_dir])
             trials = 1
-            data_points = [Data_Point(trials, p_i, percent, percents_this_graph, self.logger, _open=False)
+            data_points = [Data_Point(trials, p_i, percent, percents_in_trials, self.logger, _open=False)
                            for p_i, percent in enumerate(percents_in_trials) if percent in percents_this_graph]
 #            for data_point in data_points:
 #                data_point.tables.close()
@@ -337,7 +338,7 @@ class ROVPP_Simulator:
                self.gen_data_plane_graphs(data_points, hijack_type, pbar, ado_col_list, pol_subset, labelled)
             print(f"{hijack_type}, {ado_col_list}, {labelled} done")
             for fig, path in zip(self.figs, self.fig_paths):
-                fig.savefig(path + ".eps", format="eps")
+                fig.savefig(path.replace("%", "") + ".svg", format="svg")
                 plt.close(fig)
             print(f"{hijack_type}, {ado_col_list}, {labelled} saved")
             self.figs = []
@@ -358,7 +359,7 @@ class ROVPP_Simulator:
             self.gen_ctrl_data_plane_graphs(data_points, hijack_type, pbar, ado_col_list, pol_subset, labelled, save_dir)
 #            print(f"{hijack_type}, {ado_col_list}, {labelled} done")
             for fig, path in zip(self.figs, self.fig_paths):
-                fig.savefig(path + ".eps", format="eps")
+                fig.savefig(path.replace("%", "") + ".svg", format="svg")
                 plt.close(fig)
 #            print(f"{hijack_type}, {ado_col_list}, {labelled} saved")
             self.figs = []
@@ -428,7 +429,7 @@ class ROVPP_Simulator:
         val_strs_list = data_val_strs
         titles = data_titles
         g_title="data"
-        save_path = "{}/{}/{}/{}/{}/{}".format(save_dir, labelled, g_title, "_".join(ado_col_list)[1:], "_".join(pol_name_dict[x] for x in pol_subset), hijack_type)
+        save_path = "{}/{}/{}/{}/{}/{}".format(save_dir, labelled, "ctrl_data", "_".join(ado_col_list)[1:], "_".join(pol_name_dict[x] for x in pol_subset), hijack_type).replace("%", "")
         for i, table in enumerate(data_points[0].tables):
             for j, vals in enumerate(zip(val_strs_list, titles)):
                 # Graphing Hijacked
@@ -448,8 +449,8 @@ class ROVPP_Simulator:
 
                 # Must be done here so as not to be set twice
                 ax.set(xlabel="% adoption", ylabel=vals[1])
-                if labelled:
-                    ax.title.set_text("{} for {}".format(table.table.name, hijack_type))
+                if labelled == "labelled":
+#                    ax.title.set_text("{} for {}".format(table.table.name, hijack_type))
                     if "hijacked" in vals[1].lower():
                         loc="lower left"
                     else:
@@ -460,7 +461,7 @@ class ROVPP_Simulator:
                 fig.tight_layout()
                 # https://stackoverflow.com/a/26432947
                 extent = self.full_extent(ax).transformed(fig.dpi_scale_trans.inverted())
-                fig.savefig(os.path.join(save_path, vals[1] + "_" + table.table.name) + ".eps", bbox_inches=extent, format="eps")
+                fig.savefig(os.path.join(save_path, vals[1] + "_" + table.table.name).replace("%", "") + ".svg", bbox_inches=extent, format="svg")
 
 #                ax.title.set_text(table.table.name)
 #                plt.ylabel("{} for {}".format(g_title, hijack_type), axes=ax)
@@ -470,7 +471,7 @@ class ROVPP_Simulator:
         plane_type = "ctrl_data"
         g_title="ctrl_data"
         # /data/bgp_pics/plane_type/ado_col/policies/graph_title
-        save_path = "{}/{}/{}/{}/{}".format(save_dir, labelled, g_title, "_".join(ado_col_list)[1:], "_".join(pol_name_dict[x] for x in pol_subset))
+        save_path = "{}/{}/{}/{}/{}".format(save_dir, labelled, g_title, "_".join(ado_col_list)[1:], "_".join(pol_name_dict[x] for x in pol_subset)).replace("%", "")
         self.figs.append(fig)
         self.fig_paths.append(os.path.join(save_path, "{}_{}".format(g_title, hijack_type)))
 
@@ -483,10 +484,14 @@ class ROVPP_Simulator:
         ax.figure.canvas.draw()
         items = ax.get_xticklabels() + ax.get_yticklabels() 
     #    items += [ax, ax.title, ax.xaxis.label, ax.yaxis.label]
+        # NEED TO CHANGE CROPPING BY TYPE OF GRAPH
         items += [ax, ax.title]
         items += [ax.get_xaxis().get_label(), ax.get_yaxis().get_label()]
         bbox = Bbox.union([item.get_window_extent() for item in items])
-        return bbox.expanded(1.0 + pad, 1.0 + pad)            
+        extent = bbox.expanded(1.0 + pad, 1.0 + pad)
+        extent.x0 -= 5
+        extent.x1 -= 57
+        return extent 
 
 
     def gen_graph(self, data_points, val_strs_list, hijack_type, titles, g_title, pbar, ado_col_list, pol_subset, labelled, save_dir):
@@ -495,7 +500,7 @@ class ROVPP_Simulator:
         fig.tight_layout()
         pol_name_dict = {v.value: k for k, v in Non_BGP_Policies.__members__.items()}
         # /data/bgp_pics/plane_type/ado_col/policies/overall_graph_title/graph_titles
-        save_path = "{}/{}/{}/{}/{}/{}".format(save_dir, labelled, g_title, "_".join(ado_col_list)[1:], "_".join(pol_name_dict[x] for x in pol_subset), hijack_type)
+        save_path = "{}/{}/{}/{}/{}/{}".format(save_dir, labelled, g_title, "_".join(ado_col_list)[1:], "_".join(pol_name_dict[x] for x in pol_subset), hijack_type).replace("%", "")
         for i, table in enumerate(data_points[0].tables):
             for j, vals in enumerate(zip(val_strs_list, titles)):
                 # Graphing Hijacked
@@ -511,8 +516,8 @@ class ROVPP_Simulator:
                     self._gen_subplot(data_points, vals[0], sql_data, ax, hijack_type, vals[1], pol_name_dict[pol], pbar, pol, ado_col_list, g_title, table.table.name, hijack_type, labelled)
                 # Must be done here so as not to be set twice
                 ax.set(xlabel="% adoption", ylabel=vals[1])
-                if labelled:
-                    ax.title.set_text("{} for {}".format(table.table.name, hijack_type))
+                if labelled == "labelled":
+#                    ax.title.set_text("{} for {}".format(table.table.name, hijack_type))
                     if "hijacked" in vals[1].lower():
                         loc="lower left"
                     else:
@@ -523,7 +528,7 @@ class ROVPP_Simulator:
                 fig.tight_layout()
                 # https://stackoverflow.com/a/26432947
                 extent = self.full_extent(ax).transformed(fig.dpi_scale_trans.inverted())
-                fig.savefig(os.path.join(save_path, vals[1] + "_" + table.table.name) + ".eps", bbox_inches=extent, format="eps")
+                fig.savefig(os.path.join(save_path, vals[1] + "_" + table.table.name).replace("%", "") + ".svg", bbox_inches=extent, format="svg")
                 # Force Y to go between 0 and 100
 #                ax.set_ylim(0, 100)
 #                ax.title.set_text(table.table.name)
@@ -533,7 +538,7 @@ class ROVPP_Simulator:
 #        plt.shoiw()
         plane_type = g_title
         self.figs.append(fig)
-        save_path = "{}/{}/{}/{}/{}".format(save_dir, labelled, g_title, "_".join(ado_col_list)[1:], "_".join(pol_name_dict[x] for x in pol_subset))
+        save_path = "{}/{}/{}/{}/{}".format(save_dir, labelled, g_title, "_".join(ado_col_list)[1:], "_".join(pol_name_dict[x] for x in pol_subset)).replace("%", "")
         self.fig_paths.append(os.path.join(save_path, "{}_{}".format(g_title, hijack_type)))
 #        fig.savefig(os.path.join(save_path, "{}_{}".format(g_title, hijack_type)))
 #        self.save_fig(fig, save_path, plt)
@@ -586,9 +591,9 @@ class ROVPP_Simulator:
             assert pol < len(styles), "Must add more styles, sorry no time deadline"
             labels_dict = {"ROV": "ROV",
                            "ROVPP": "ROV++v1",
-                           "ROVPPB": "ROV++v2",
+                           "ROVPPB": "ROV++v2a",
                            "ROVPPBP": "ROV++v3",
-                           "ROVPPBIS": "ROV++v2b"}
+                           "ROVPPBIS": "ROV++v2"}
 #            print(self.g_dict[h_type][name])
             # JSON messed up converts to str which is why this is all messed up with casts
             line = ax.errorbar(self.g_dict[h_type][name][str(pol)][plane_type][as_type][str(val_strs)]["X"],
@@ -719,7 +724,6 @@ class Subtables:
                        possible_hijacker=False, _open=_open)
         if _open:
             etc.table.fill_table([x.table.name for x in self.tables])
-            print("opennnn")
         self.tables.append(etc)
         self.logger.debug("Initialized subtables")
 
