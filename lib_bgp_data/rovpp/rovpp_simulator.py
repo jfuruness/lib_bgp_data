@@ -163,10 +163,13 @@ class ROVPP_Simulator:
         print("Takes ~3.5 hrs to run")
         percents_in_trials = [0,1,2,3,4,5,10,20,30,40,60,80]
         # NOTE save json must be true for all because it only saves X, not what individual points are in it!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        self.gen_graphs(percents_in_trials, [0,1,2,3,4,5,10], True, "/data/bgp_pics/0_to_10")
-        self.gen_graphs(percents_in_trials, [0,1,2,3,4,5,10, 20, 30], True, "/data/bgp_pics/0_to_30")
-        self.gen_graphs(percents_in_trials, [1,10,20,30,40,60,80], True, "/data/bgp_pics/0_to_80")
-        self.gen_graphs(percents_in_trials, [0,1,2,3,4,5,10,20,30,40,60,80], True, "/data/bgp_pics/0_to_80_all")
+#        self.gen_graphs(percents_in_trials, [0,1,2,3,4,5,10], True, "/data/bgp_pics/0_to_10")
+#        self.gen_graphs(percents_in_trials, [0,1,2,3,4,5,10, 20, 30], True, "/data/bgp_pics/0_to_30")
+        self.gen_graphs(percents_in_trials, [1,10,20,30,40,60,80], False, "/data/bgp_pics/0_to_80")
+        print("SET JSON TO TRUE IN LINE ABOVE")
+        1/0
+
+#        self.gen_graphs(percents_in_trials, [0,1,2,3,4,5,10,20,30,40,60,80], True, "/data/bgp_pics/0_to_80_all")
 
     # NOTE: if save_json is false, it will use the OLD JSON FILE!!!!!!
     def gen_graphs(self, percents_in_trials, percents_this_graph, save_json=True, save_dir="/data/bgp_pics"):
@@ -491,7 +494,7 @@ class ROVPP_Simulator:
         bbox = Bbox.union([item.get_window_extent() for item in items])
         extent = bbox.expanded(1.0 + pad, 1.0 + pad)
         extent.x0 -= 5
-        extent.x1 -= 55
+        extent.x1 -= 25
         return extent 
 
 
