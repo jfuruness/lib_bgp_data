@@ -37,7 +37,7 @@ def _relationships_parser_permutations():
     possible_permutations = []
     for i in ["Relationship", "relationship", "Rel", "rel"]:
         for j in ["S", "s", ""]:
-            for k in ["_", " ", "-"]:
+            for k in ["_", "", "-"]:
                 for l in ["Parser", "parser", "Par", "par"]:
                     possible_permutations.append(i + j + k + l)
     return possible_permutations, "relationships_parser"
@@ -49,7 +49,7 @@ def _mrt_parser_permutations():
     possible_permutations = []
     for j in ["MRT", "mrt"]:
         for k in ["S", "s", ""]:
-            for l in ["-", " ", "_"]:
+            for l in ["-", "", "_"]:
                 for m in ["Parser", "parser", "par", "Par"]:
                     possible_permutations.append(j + k + l + m)
     return possible_permutations, "mrt_parser"
