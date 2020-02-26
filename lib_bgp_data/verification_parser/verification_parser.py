@@ -36,8 +36,8 @@ class Verification_Parser:
         utils.set_common_init_args(self, args)
         self.args = args
 
-    @error_catcher()
-    @utils.run_parser()
+#    @error_catcher()
+#    @utils.run_parser()
     def parse_files(self, start=1573430400, end=1573516800):
         self.logger.info("About to download the Caida data")
         start = 1573430400

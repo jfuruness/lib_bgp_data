@@ -151,8 +151,8 @@ class RPKI_Validator:
         self.rpki_db_paths = [rpki_package_path + x for x in ["db/", "rsync/"]]
         self.upo_csv_path = "/tmp/upo_csv_path.csv"
 
-    @error_catcher()
-    @utils.run_parser()
+#    @error_catcher()
+#    @utils.run_parser()
     def run_validator(self):
         """Downloads and stores roas from a json"""
 

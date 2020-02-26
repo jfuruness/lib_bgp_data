@@ -55,8 +55,8 @@ class ROAs_Collector:
         utils.set_common_init_args(self, args, section)
         self.csv_path = "{}/roas.csv".format(self.csv_dir)
 
-    @error_catcher()
-    @utils.run_parser()
+#    @error_catcher()
+#    @utils.run_parser()
     def parse_roas(self):
         """Downloads and stores roas from a json
 

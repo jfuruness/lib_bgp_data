@@ -29,8 +29,8 @@ class What_If_Analysis:
         # Sets common file paths and logger
         utils.set_common_init_args(self, args, section)
 
-    @error_catcher()
-    @utils.run_parser()
+#    @error_catcher()
+#    @utils.run_parser()
     def run_pre_exr(self, valid_before_time):
         self.logger.info("Beginning what if analysis for pre processing")
         with db_connection(Database, self.logger) as _db:
@@ -38,8 +38,8 @@ class What_If_Analysis:
                 self.logger.info("Executing\n{}".format(sql))
                 _db.cursor.execute(sql)
 
-    @error_catcher()
-    @utils.run_parser()
+#    @error_catcher()
+#    @utils.run_parser()
     def run_post_exr(self):
         self.logger.info("Beginning what if analysis for post processing")
         with db_connection(Database, self.logger) as _db:

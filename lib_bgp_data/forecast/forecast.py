@@ -56,8 +56,8 @@ class Forecast:
 
         utils.set_common_init_args(self, forecast_args, section),
 
-    @utils.run_parser()
-    @error_catcher()
+#    @utils.run_parser()
+#    @error_catcher()
     def run_forecast(self,
                      start=utils.get_default_start(),
                      end=utils.get_default_end(),

@@ -1,59 +1,12 @@
 from setuptools import setup, find_packages
+from .lib_bgp_data.__main__ import get_parsers
 
 
 def _get_console_scripts():
-    """Returns all console scripts, needs docs"""
+    """Returns all console scripts"""
 
-    console_scripts = []
-    permutations_funcs = [_roas_collector_permutations,
-                          _relationships_parser_permutations,
-                          _mrt_parser_permutations]
-    for func in permutations_funcs:
-        permutations, module_name = func()
-        for permutation in permutations:
-            append_str = '= lib_bgp_data.{}.__main__:main'.format(module_name)
-            console_scripts.append(permutation + append_str)
-    return console_scripts
-
-
-def _roas_collector_permutations():
-    """Gets every possible combination of arg for useability"""
-
-    possible_permutations = []
-    for j in ["ROA", "roa"]:
-        for k in ["S", "s", ""]:
-            # I know l is bad but this function sucks anways
-            for l in ["-", "_", " "]:
-                for m in ["Collector", "COLLECTOR", "collector",
-                          "Parser", "parser", "PARSER"]:
-                    possible_permutations.append(j + k + l + m)
-    # Returns the permutations and the package name
-    return possible_permutations, "roas_collector"
-
-
-def _relationships_parser_permutations():
-    """Gets every possible combination of arg for usability"""
-
-    possible_permutations = []
-    for i in ["Relationship", "relationship", "Rel", "rel"]:
-        for j in ["S", "s", ""]:
-            for k in ["_", "", "-"]:
-                for l in ["Parser", "parser", "Par", "par"]:
-                    possible_permutations.append(i + j + k + l)
-    return possible_permutations, "relationships_parser"
-
-
-def _mrt_parser_permutations():
-    """Gets every possible combination pf arg for usability"""
-
-    possible_permutations = []
-    for j in ["MRT", "mrt"]:
-        for k in ["S", "s", ""]:
-            for l in ["-", "", "_"]:
-                for m in ["Parser", "parser", "par", "Par"]:
-                    possible_permutations.append(j + k + l + m)
-    return possible_permutations, "mrt_parser"
-
+    return [f'{cls.__class__.__name__.lower()} = lib_bgp_data.__main__:main'
+            for cls in get_parsers()]
 
 setup(
     name='lib_bgp_data',

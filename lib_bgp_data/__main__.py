@@ -4,11 +4,10 @@
 """This module runs all command line arguments"""
 
 from argparse import ArgumentParser
-from .roas_collector import ROAs_Collector
-from .relationships_parser import Relationships_Parser
+from sys import argv
 from .mrt_parser import MRT_Parser
 
-__author__ = "Justin Furuness", "Matt Jaccino"
+__authors__ = ["Justin Furuness", "Matt Jaccino"]
 __credits__ = ["Justin Furuness", "Matt Jaccino"]
 __Lisence__ = "MIT"
 __maintainer__ = "Justin Furuness"
@@ -19,138 +18,43 @@ __status__ = "Development"
 def main():
     """Does all the command line options available"""
 
+    # See function documention
+    change_sys_args()
+
     parser = ArgumentParser(description="lib_bgp_data, see github")
-    add_args(parser)
-    args = vars(parser.parse_args())
-    run_parsers(args)
+    for cls in get_parsers():
+        # This will override the argparse action class
+        # Now when the arg is passed, the func __call__ will be called
+        # In this case, __call__ is set to the parsers run method
+        # Note that this is dynamically creating the class using type
+        # https://www.tutorialdocs.com/article/python-class-dynamically.html
+        # https://stackoverflow.com/a/40409974
+        argparse_action_cls = type(cls.__class__.__name__,  # Class name
+                                   (argparse.Action, ),  # Classes inherited
+                                   {'__call__': B.argparse_call()})  # __dict__
+        parser.add_argument(f"--{cls.__class__.__name__}",
+                            nargs=0,
+                            action=argparse_action_cls)
+    parser.parse_args()
 
 
-def add_args(parser):
-    """Adds all arguments to the parser"""
+def change_sys_args():
+    """This function changes the sys args to be recognizable by argparse
 
-    _add_roas_args(parser)
-    _add_rel_par_args(parser)
-    _add_mrt_parser_args(parser)
+    The reason we do this is so that we can dynamically add the parser
+    classes names to the setup.py file as entry_points, and instead
+    of adding a __main__ file to each submodule, we can instead direct
+    all of those calls to this singular file, and parse in the same we
+    we would with argparse.
 
+    https://stackoverflow.com/a/55961848/8903959
+    """
 
-def run_parsers(args):
-    """Runs all parsers for arguments passed in"""
+    if argv[-1][0] != "-":
+        argv[-1] = "--" + argv[-1]
 
-    _run_roas_parser(args)
-    _run_rel_parser(args)
-    _run_mrt_parser(args)
-
-
-################################
-### ROAs_Collector Functions ###
-################################
-
-
-def _run_roas_parser(args):
-    """Runs the ROAs_Collector if arg passed in as true"""
-
-    for permutation in _roas_collector_permutations():
-        for key in args.keys():
-            if args[key]:
-                if key in permutation:
-                    ROAs_Collector().parse_roas()
-                    return
-
-
-def _add_roas_args(parser):
-    """Adds all roas permutations to the parser"""
-
-    roas_permutations = _roas_collector_permutations()
-    for permutation in roas_permutations:
-        parser.add_argument(permutation, action="store_true", default=False)
-
-
-def _roas_collector_permutations():
-    """Gets every possible combination of arg for useability"""
-
-    possible_permutations = []
-    for i in ["-", "--"]:
-        for j in ["ROA", "roa"]:
-            for k in ["S", "s", ""]:
-                # I know l is bad but this function sucks anways
-                for l in ["-", "_"]:
-                    for m in ["Collector", "COLLECTOR", "collector",
-                              "Parser", "parser", "PARSER"]:
-                        possible_permutations.append(i + j + k + l + m)
-    return possible_permutations
-
-######################################
-### Relationships_Parser Functions ###
-######################################
-
-
-def _run_rel_parser(args):
-    """Runs the Relationships_Parser if arg passed in as true"""
-
-    for permutation in _rel_parser_permutations():
-        for key in args.keys():
-            if args[key]:
-                if key in permutation:
-                    Relationships_Parser().parse_files()
-                    return
-
-
-def _add_rel_par_args(parser):
-    """Adds all relationships parser permutations to the parser"""
-
-    rel_par_permutations = _rel_parser_permutations()
-    for permutation in rel_par_permutations:
-        parser.add_argument(permutation, action="store_true", default=False)
-
-
-def _rel_parser_permutations():
-    """Gets every possible combination of arg for usability"""
-
-    possible_permutations = []
-    for i in ["-", "--"]:
-        for j in ["Relationship", "relationship", "rel", "Rel"]:
-            for k in ["S", "s", ""]:
-                for l in ["-", "_"]:
-                    for m in ["Parser", "parser", "Par", "par"]:
-                        possible_permutations.append(i + j + k + l + m)
-    return possible_permutations
-
-
-############################
-### MRT_Parser Functions ###
-############################
-
-
-def _run_mrt_parser(args):
-    """Runs the MRT Parser if arg passed in as true"""
-
-    for perm in _mrt_parser_permutations():
-        for key in args.keys():
-            if args[key]:
-                if key in perm:
-                    MRT_Parser().parse_files()
-                    return
-
-
-def _add_mrt_parser_args(parser):
-    """Adds all MRT Parser permutations to the parser"""
-
-    mrt_parser_permutations = _mrt_parser_permutations()
-    for perm in mrt_parser_permutations:
-        parser.add_argument(perm, action="store_true", default=False)
-
-
-def _mrt_parser_permutations():
-    """Gets every possible combination of arg for usability"""
-
-    possible_permutations = []
-    for i in ["-", "--"]:
-        for j in ["MRT", "mrt"]:
-            for k in ["S", "s", ""]:
-                for l in ["-",  "_"]:
-                    for m in ["Parser", "Par", "parser", "par"]:
-                        possible_permutations.append(i + j + k + l + m)
-    return possible_permutations
+def get_parsers() -> list:
+    return [MRT_Parser]
 
 
 if __name__ == "__main__":

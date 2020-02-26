@@ -38,8 +38,8 @@ class Extrapolator:
         # Sets path vars, logger, config, etc
         utils.set_common_init_args(self, args, section)
 
-    @error_catcher()
-    @utils.run_parser()
+#    @error_catcher()
+#    @utils.run_parser()
     def run_forecast(self, input_table):
         self.logger.info("About to run the forecast extrapolator")
 
@@ -54,8 +54,8 @@ class Extrapolator:
             check_call(bash_args, stdout=DEVNULL, stderr=DEVNULL, shell=True)
 
 
-    @error_catcher()
-    @utils.run_parser()
+#    @error_catcher()
+#    @utils.run_parser()
     def run_rovpp(self, hijack, table_names, exr_bash=None, test=False, adopt_pol=None):
         """Runs extrapolator with a subprefix hijack."""
 

@@ -16,6 +16,7 @@ from subprocess import check_call
 import validators
 from ..mrt_file import MRT_File
 from ..mrt_parser import MRT_Parser
+from ..mrt_sources import MRT_Sources
 from ..tables import MRT_Announcements_Table
 from ...utils import Database, db_connection, utils
 
@@ -74,11 +75,14 @@ class Test_MRT_Parser:
         num_files = self._get_num_mrt_files(self._start,
                                             self._end,
                                             api_param_mods)
+        # Everything but isolario
+        sources = [x.value for x in MRT_Sources.__members__.values()
+                   if x != MRT_Sources.ISOLARIO]
         # Gets all the mrt file urls
         mrt_file_urls = parser._get_mrt_urls(self._start,
                                              self._end,
                                              api_param_mods,
-                                             iso=False)
+                                             sources=source)
         # Checks that the number of urls is correct
         assert len(mrt_file_urls) == num_files
         # Now compare when including Isolario URLs

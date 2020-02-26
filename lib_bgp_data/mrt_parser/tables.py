@@ -50,7 +50,7 @@ class MRT_Announcements_Table(Database):
     def filter_by_IPV_family(self, IPV4: bool, IPV6: bool):
         """Filters the data by IPV family"""
 
-        self.info("Filtering by IPV family")
+        self.logger.info("Filtering by IPV family")
         for num, ipv_bool in zip([4, 6], [IPV4, IPV6]):
             if not ipb_bool:
                 self.logger.debug(f"Deleting IPV{num} from {self.name}")

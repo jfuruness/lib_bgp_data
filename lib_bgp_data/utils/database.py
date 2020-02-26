@@ -293,7 +293,7 @@ class Database:
         used in utils to insert csv into the database"""
 
         # takes out _Table and makes lowercase
-        return self.__class__.__name__.remove("_Table").lower()
+        return self.__class__.__name__.replace("_Table", "").lower()
 
     def clear_tables(self):
         """Clears the table"""

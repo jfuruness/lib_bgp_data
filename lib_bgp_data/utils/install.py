@@ -421,7 +421,6 @@ class Install:
              check_call("cp bgpscanner/build/bgpscanner /usr/local/bin/bgpscanner", shell=True)
         except:
             pass
-<<<<<<< HEAD
         # Now to install libisocore so BGPScanner works
         cmds = ["cd bgpscanner/subprojects/",
                 "git clone https://gitlab.com/Isolario/isocore.git",
@@ -435,9 +434,6 @@ class Install:
                 "cd ../../",
                 "cp isocore/build/libisocore.so /usr/lib/libisocore.so"]
         check_call("&& ".join(cmds), shell=True)
-=======
-
->>>>>>> origin/new_changes
         check_call("rm -rf delete_me", shell=True)
 
     @error_catcher()
@@ -448,7 +444,6 @@ class Install:
         Must be installed from source due to bug fixes not in apt repo.
         """
 
-<<<<<<< HEAD
         try:
             # bgpdump is moving to github so it is currently impossible to download
             # It used to be on mercurial but I guess that's gone now
@@ -471,27 +466,6 @@ class Install:
                 pass
         except:
             print("BGPdump failed to install, but this is unnessecary")
-=======
-        return
-        # bgpdump is moving to github so it is currently impossible to download
-        # It used to be on mercurial but I guess that's gone now
-        # Hopefuly this will be fixed soon
-
-        # Commands to install from source
-        cmds = ["sudo apt -y install mercurial",
-                "git clone https://bitbucket.org/ripencc/bgpdump.git",
-                "cd bgpdump",
-                "sudo apt install automake",
-                "./bootstrap.sh",
-                "make",
-                "./bgpdump -T",
-                "sudo cp bgpdump /usr/bin/bgpdump"]
-
-        check_call("&& ".join(cmds), shell=True)
-        try:
-            check_call("sudo cp bgpdump /usr/local/bin/bgpdump", shell=True)
-        except:
-            pass
 
     @error_catcher()
     def _erase_all(self):
@@ -519,7 +493,6 @@ class Install:
         new_conf = SCP()
         with open(self.path, 'w+') as configfile:
             new_conf.write(configfile)
->>>>>>> origin/new_changes
 
 ########################
 ### Helper Functions ###

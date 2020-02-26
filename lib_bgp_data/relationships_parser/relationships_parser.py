@@ -74,8 +74,8 @@ class Relationships_Parser:
 
     # Note that the utils.run_parser decorator deletes/creates all paths,
     # records start/end time, and upon end or error deletes everything
-    @error_catcher()
-    @utils.run_parser()
+#    @error_catcher()
+#    @utils.run_parser()
     def parse_files(self, rovpp=False, agg_months=0, url=False):
         """Downloads and parses file
 

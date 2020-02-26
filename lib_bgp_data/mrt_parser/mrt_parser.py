@@ -18,9 +18,11 @@ __status__ = "Development"
 
 import datetime
 import requests
+import warnings
 from .mrt_file import MRT_File
 from .mrt_sources import MRT_Sources
 from .tables import MRT_Announcements_Table
+from ..base_parser import Parser
 from ..utils import utils, db_connection
 from ..utils.utils import progress_bar
 
@@ -32,9 +34,15 @@ class MRT_Parser(Parser):
 
     __slots__ = []
 
-    def __init__(self, **kwargs):
+    def __init__(self, *args, **kwargs):
         """Initializes logger and path variables."""
 
+        if isinstance(args[0], dict):
+            warnings.warn(("Passing in a dict for args is depreciated\n"
+                           "\tPlease pass in using keyword arguments"),
+                          DeprecationWarning,
+                          stacklevel=1)
+            kwargs = args[0]
         super(MRT_Parser, self).__init__(**kwargs)
         with db_connection(MRT_Announcements_Table, self.logger) as _ann_table:
             # Clears the table for insertion
@@ -43,6 +51,7 @@ class MRT_Parser(Parser):
             _ann_table._create_tables()
 
     def _run(self,
+             *args,
              start=utils.get_default_start(),
              end=utils.get_default_end(),
              api_param_mods={},
@@ -146,7 +155,7 @@ class MRT_Parser(Parser):
         _url = "http://isolario.it/Isolario_MRT_data/"
         # Get the collectors from the page
         # Slice out the parent directory link and sorting links
-        _collectors = [x["href"] for x in utils.get_tags(url, 'a')[0]][5:]
+        _collectors = [x["href"] for x in utils.get_tags(_url, 'a')[0]][5:]
         _start = datetime.datetime.fromtimestamp(start)
 
         # Get the folder name according to the start parameter
@@ -163,7 +172,7 @@ class MRT_Parser(Parser):
         # Make a list of all possible file URLs
         return [_url + _coll + _folder + _start_file for _coll in _collectors]
 
-    def _multiprocess_download(self, dl_threads: int, urls: list) -> list[MRT_File]:
+    def _multiprocess_download(self, dl_threads: int, urls: list) -> list:
         """Downloads MRT files in parallel.
 
         In depth explanation at the top of the file, dl=download.
@@ -189,7 +198,7 @@ class MRT_Parser(Parser):
 
     def _multiprocess_parse_dls(self,
                                 p_threads: int,
-                                mrt_files: list[MRT_File],
+                                mrt_files: list,
                                 bgpscanner: bool):
         """Multiprocessingly(ooh cool verb, too bad it's not real)parse files.
 
@@ -221,3 +230,10 @@ class MRT_Parser(Parser):
             _ann_table.cursor.execute("VACUUM ANALYZE;")
             # A checkpoint is run here so that RAM isn't lost
             _ann_table.cursor.execute("CHECKPOINT;")
+
+    def parse_files(self, **kwargs):
+        warnings.warn(("MRT_Parser.parse_files is depreciated. "
+                       "Use MRT_Parser.run instead"),
+                      DeprecationWarning,
+                      stacklevel=1)
+        self._run(self, **kwargs)

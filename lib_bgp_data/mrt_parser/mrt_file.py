@@ -17,6 +17,7 @@ __status__ = "Development"
 import os
 from subprocess import check_call
 from .tables import MRT_Announcements_Table
+from ..base_parser import DecoMeta
 from ..utils import utils, error_catcher
 
 
@@ -42,10 +43,10 @@ class MRT_File:
         self.csv_dir = csv_dir
         self.url = url
         self.num = num
-        self.path = f"{path}/{num}{os.path.splitext(url)[1])}"
+        self.path = f"{path}/{num}{os.path.splitext(url)[1]}"
         self.logger.debug("Initialized file instance")
 
-    def __lt__(self, other: MRT_File):
+    def __lt__(self, other):
         """less than attribute for sorting files, sorts based on size
 
         The purpose of this is to be able to sort files in order to be

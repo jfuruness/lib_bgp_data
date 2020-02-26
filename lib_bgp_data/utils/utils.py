@@ -9,6 +9,7 @@ Possible future improvements:
 -Unit tests
 """
 
+from enum import Enum
 import requests
 import time
 import urllib
@@ -74,7 +75,7 @@ def progress_bar(logger, msg, toolbar_width):
 class Enumerable_Enum(Enum):
     # https://stackoverflow.com/a/54919285
     @classmethod
-    def list_values():
+    def list_values(cls):
         return list(map(lambda c: c.value, cls))
 
 
@@ -283,7 +284,7 @@ def get_json(url, headers={}):
 def get_lines_in_file(filename: str) -> int:
     """Returns the number of lines in a given file"""
 
-        with open(filename, 'r') as f:
-            for count, line in enumerate(f):
-                pass
-        return count + 1
+    with open(filename, 'r') as f:
+        for count, line in enumerate(f):
+            pass
+    return count + 1
