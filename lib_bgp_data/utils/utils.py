@@ -97,6 +97,7 @@ def get_default_start():
 def get_default_end():
     """Gets default end time, used in multiple places."""
 
+    # NOTE: Should use the default start for this method
     return (now()-timedelta(days=2)).replace(hour=23,
                                              minute=59,
                                              second=59,
