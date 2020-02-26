@@ -49,7 +49,7 @@ from .tables import Peers_Table, Customer_Providers_Table
 from .tables import ROVPP_Peers_Table, ROVPP_Customer_Providers_Table
 from ..utils import utils, error_catcher, db_connection
 
-__author__ = "Justin Furuness", "Matt Jaccino"
+__authors__ = ["Justin Furuness", "Matt Jaccino"]
 __credits__ = ["Justin Furuness", "Matt Jaccino"]
 __Lisence__ = "MIT"
 __maintainer__ = "Justin Furuness"
@@ -66,11 +66,11 @@ class Relationships_Parser:
     __slots__ = ['path', 'csv_dir', 'logger']
 
     @error_catcher()
-    def __init__(self, args={}):
+    def __init__(self, section="bgp", args={}):
         """Initializes logger and path variables"""
 
         # Sets path vars and logger
-        utils.set_common_init_args(self, args)
+        utils.set_common_init_args(self, args, section)
 
     # Note that the utils.run_parser decorator deletes/creates all paths,
     # records start/end time, and upon end or error deletes everything
@@ -105,6 +105,7 @@ class Relationships_Parser:
 ########################
 ### Helper Functions ###
 ########################
+
     @error_catcher()
     def _get_urls(self, months_back=0):
         """Gets urls to download relationship files and the dates.

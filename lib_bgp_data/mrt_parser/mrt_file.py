@@ -3,100 +3,59 @@
 
 """This module contains class MRT_File.
 
-The MRT_File class contains the functionality to nload and parse
-mrt files. This is done through a series of steps
-
-1. Initialize the MRT_File class
-2. The MRT File will be downloaded from the MRT_Parser using utils
-3. Parse the MRT_File using bgpscanner and sed
-    -bgpscanner is used because it is the fastest BGP dump scanner
-    -bgpscanner ignores announcements with malformed attributes
-    -bgpdump can be used for full runs to include announcements with
-     malformed attributes, because some ASs do not ignore them
-    -sed is used because it is cross compatable and fast
-        -Must use regex parser that can find/replace for array format
-        -AS Sets are not parsed because they are unreliable
-    -Possible future extensions:
-        -Use a faster regex parser?
-        -Add parsing updates functionality?
-3. Parse the MRT_File into a CSV
-    -Handled in _bgpdump_to_csv function
-    -This is done because there are 30-100GB of data
-    -Fast insertion is needed, bulk insertion is the fastest
-        -CSV is fastest insertion method, second only to binary
-        -Binary insertion isn't cross compatable with postgres versions
-    -Delete old files
-4. Insert the CSV file into the database using COPY and then deleted
-    -Handled in parse_file function
-    -Unnessecary files deleted for space
-
-Design choices (summarizing from above):
-    -bgpscanner is the fastest BGP dump scanner so it is used for tests
-    -bgpdump used to be the only parser that didn't ignore malformed
-     announcements, but now with a change bgpscanner does this as well
-        -This was a problem because some ASes do not ignore these errors
-    -sed is used for regex parsing because it is fast and portable
-    -AS Sets are not parsed because they are unreliable
-    -Data is bulk inserted into postgres
-        -Bulk insertion using COPY is the fastest way to insert data
-         into postgres and is neccessary due to massive data size
-    -Parsed information is stored in CSV files
-        -Binary files require changes based on each postgres version
-        -Not as compatable as CSV files
-
-Possible Future Extensions:
-    -Add functionality to download and parse updates?
-    -Test different regex parsers other than sed for speed?
-    -Add test cases
+The MRT_File class contains the functionality to load and parse
+mrt files. This is done through a series of steps, detailed in README.
 """
 
-import os
-from subprocess import call
-from ..utils import utils, error_catcher
-from .tables import MRT_Announcements_Table
-
-__author__ = "Justin Furuness", "Matt Jaccino"
+__authors__ = ["Justin Furuness", "Matt Jaccino"]
 __credits__ = ["Justin Furuness", "Matt Jaccino", "Cameron Morris"]
 __Lisence__ = "MIT"
 __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
+import os
+from subprocess import check_call
+from .tables import MRT_Announcements_Table
+from ..utils import utils, error_catcher
+
 
 class MRT_File:
     """Converts MRT files to CSVs and then inserts them into a database.
 
-    In depth explanation at the top of the file.
+    In depth explanation in README.
     """
 
-    __slots__ = ['logger', 'total_files', 'csv_dir', 'url', 'num', 'ext',
-                 'path', 'csv_name']
+    __slots__ = ['logger', 'csv_dir', 'url', 'num', 'path', 'csv_name']
 
-    @error_catcher()
-    def __init__(self, path, csv_dir, url, num, total_files, logger):
+    __metaclass__ = DecoMeta
+
+    def __init__(self,
+                 path: str,
+                 csv_dir: str,
+                 url: str,
+                 num: int = 1,
+                 logger=None):
         """Initializes file instance and determine info about it"""
 
         self.logger = logger
-        self.total_files = total_files
         self.csv_dir = csv_dir
         self.url = url
         self.num = num
-        self.ext = os.path.splitext(url)[1]
-        self.path = "{}/{}{}".format(path, num, self.ext)
+        self.path = f"{path}/{num}{os.path.splitext(url)[1])}"
         self.logger.debug("Initialized file instance")
 
-    @error_catcher()
-    def __lt__(self, other):
+    def __lt__(self, other: MRT_File):
         """less than attribute for sorting files, sorts based on size
 
         The purpose of this is to be able to sort files in order to be
         able to parse the largest files first
         """
 
-        # Returns the smallest file size for a comparater
-        return os.path.getsize(self.path) < os.path.getsize(other.path)
+        if isinstance(other, MRT_File):
+            # Returns the smallest file size for a comparater
+            return os.path.getsize(self.path) < os.path.getsize(other.path)
 
-    @error_catcher()
     def parse_file(self, bgpscanner=True):
         """Parses a downloaded file and inserts it into the database
 
@@ -109,8 +68,7 @@ class MRT_File:
         """
 
         # Sets CSV path
-        self.csv_name = "{}/{}.csv".format(self.csv_dir,
-                                           os.path.basename(self.path))
+        self.csv_name = f"{self.csv_dir}/{os.path.basename(self.path)}.csv"
         # Parses the MRT file into a csv file
         self._convert_dump_to_csv(bgpscanner)
         # Inserts the csv file into the MRT_Announcements Table
@@ -124,7 +82,6 @@ class MRT_File:
 ### Helper Functions ###
 ########################
 
-    @error_catcher()
     def _convert_dump_to_csv(self, bgpscanner=True):
         """Parses MRT file into a CSV
 
@@ -143,11 +100,10 @@ class MRT_File:
         args = self._bgpscanner_args() if bgpscanner else self._bgpdump_args()
         # writes to a csv
         args += '> ' + self.csv_name
-        call(args, shell=True)
-        self.logger.debug("Wrote {}\n\tFrom {}".format(self.csv_name, self.url))
+        check_call(args, shell=True)
+        self.logger.debug(f"Wrote {self.csv_name}\n\tFrom {self.url}")
         utils.delete_paths(self.logger, self.path)
 
-    @error_catcher()
     def _bgpscanner_args(self):
         """Parses MRT file into a CSV using bgpscanner
 
@@ -235,7 +191,6 @@ class MRT_File:
         bash_args += 'sed -e "s/ /, /g" '
         return bash_args
 
-    @error_catcher()
     def _bgpdump_args(self):
         """Parses MRT file into a CSV using bgpdump
 

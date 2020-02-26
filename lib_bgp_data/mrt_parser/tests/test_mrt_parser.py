@@ -8,17 +8,18 @@ Note that if tests are failing, the self.start and self.end may need
 updating to be more recent. Possibly same with the api_param_mods.
 """
 
-import requests
-import os
+
 from multiprocessing import cpu_count
+import os
+import requests
 from subprocess import check_call
 import validators
-from ..mrt_parser import MRT_Parser
 from ..mrt_file import MRT_File
+from ..mrt_parser import MRT_Parser
 from ..tables import MRT_Announcements_Table
 from ...utils import Database, db_connection, utils
 
-__author__ = "Justin Furuness", "Matt Jaccino"
+__authors__ = ["Justin Furuness", "Matt Jaccino"]
 __credits__ = ["Justin Furuness", "Matt Jaccino"]
 __Lisence__ = "MIT"
 __maintainer__ = "Justin Furuness"
@@ -34,8 +35,8 @@ class Test_MRT_Parser:
 
         # Put here because at some point they will be outdated
         # So here it is a one line fix
-        self._start = 1559394000
-        self._end = 1559397600
+        self._start = 1572613200
+        self._end = 1572616800
         # Two are used to test for multiprocessing
         # Two are also used to limit the number of files and reduce runtime
         self._api_param_mods = {"collectors[]": ["route-views.telxatl",
@@ -53,16 +54,16 @@ class Test_MRT_Parser:
             # Check to make sure the table exists and is empty
             assert db.execute("SELECT * FROM mrt_announcements") == []
 
-    def test_get_mrt_urls(self, parser=None, param_mods=True):
-        """Tests the get_mrt_urls function with api parameters.
+    def test_get_caida_mrt_urls(self, parser=None, param_mods=True):
+        """Tests the get_mrt_urls function with api parameters specifically
+        for the CAIDA URLs, since the other tests will use these to cut
+        runtime.  The Isolario URLs are tested seperately
 
         This makes sure it returns the proper data for the request. This
         is done through first querying the api and getting the debug
         information. That information is later checked against the total
         number urls in the return of the _get_mrt_urls function.
 
-        Note: If this test is failing later, it's possible the dates are
-        outdated, or the api parameter mods.
         """
 
         # Creates parser
@@ -89,13 +90,22 @@ class Test_MRT_Parser:
             assert validators.url(url)
         return mrt_file_urls
 
+    def _get_mrt_urls(self, parser=None, param_mods=True):
+        """Gets all MRT URLs from CAIDA and Isolario."""
+
+        return self.test_get_caida_mrt_urls(parser, param_mods) + \
+            self.test_get_iso_mrt_urls(parser)
+
     def test_get_mrt_urls_no_param_mods(self):
         """Tests the get_mrt_urls function without api parameters.
 
         For a more in depth explanation, see the test_get_mrt_urls func.
         """
 
-        self.test_get_mrt_urls(param_mods=False)
+        num_files = self._get_num_mrt_files(self._start,
+                                            self._end)
+        mrt_file_urls = self._get_mrt_urls(param_mods=False)
+        assert len(mrt_file_urls) == num_files and len(mrt_file_urls) >= 40
 
     def test_get_mrt_urls_iso(self):
         """Tests the get_mrt_urls_iso function which should return a list
@@ -115,7 +125,8 @@ class Test_MRT_Parser:
             assert validators.url(url)
         return mrt_file_urls
 
-    def test_multiprocess_download(self, parser=None,
+    def test_multiprocess_download(self,
+                                   parser=None,
                                    clean=False,
                                    param_mods=True):
         """Tests the _multiprocess_download function.
@@ -216,8 +227,7 @@ class Test_MRT_Parser:
             parser._multiprocess_parse_dls(4, mrt_files, bgpscanner)
             # Makes sure all lines are inserted into the database
             # Also makes sure that the regex is accurate
-            select_all = db.execute("SELECT * FROM mrt_announcements")
-            assert len(select_all) == total_lines
+            assert select_all := db.get_count() == total_lines
             # Checks to make sure that no values are null
             sqls = ["SELECT * FROM mrt_announcements WHERE prefix IS NULL",
                     "SELECT * FROM mrt_announcements WHERE as_path IS NULL",
@@ -225,7 +235,7 @@ class Test_MRT_Parser:
                     "SELECT * FROM mrt_announcements WHERE time IS NULL"]
             for sql in sqls:
                 assert len(db.execute(sql)) == 0
-        return select_all
+            return db.get_all()
 
     def test_multiprocess_parse_dls_no_param_mods(self):
         """Tests the multiprocess_parse_dls with no api parameters.
@@ -279,11 +289,6 @@ class Test_MRT_Parser:
         Just combines all of the tests basically
         """
 
-        # This errors due to the amount of times the mrt parser is initialized
-        # https://github.com/uqfoundation/pathos/issues/111
-        # I tried the fixes suggested but it did not fix the problem
-        # So now I just changed the number of threads every time
-
         api_param_mods = self._api_param_mods if param_mods else {}
         MRT_Parser().parse_files(api_param_mods=api_param_mods,
                                  IPV4=True,
@@ -336,9 +341,7 @@ class Test_MRT_Parser:
             bash_args += '"{"'
             bash_args += ">> {}".format(test_path)
             check_call(bash_args, shell=True)
-        # Gets the number of lines
-        with open(test_path) as test_file:
-            num_lines = sum(1 for line in test_file)
+        num_lines = utils.get_lines_in_file(test_file)
         # Deletes the files that we no longer need
         utils.delete_paths(None, test_path)
         return num_lines

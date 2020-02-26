@@ -66,11 +66,11 @@ class Test_Relationships_File:
 
         # Grep call for finding peer relationships:
         # All lines not containing '-1' or '#', delimited by tabs
-        peers_grep = 'grep -v "\\-1" | grep -F -v "#" | cut -d "|" -f1,2'
+        peers_grep = 'grep -v "\-1" | grep -F -v "#" | cut -d "|" -f1,2'
         peers_grep += ' | sed -e "s/|/\t/g"'
         # Grep call for finding customer-provder relationships:
         # All lines containing '-1' but not '#", delimited by tabs
-        cust_prov_grep = 'grep "\\-1" | grep -F -v "#" | cut -d "|"'
+        cust_prov_grep = 'grep "\-1" | grep -F -v "#" | cut -d "|"'
         cust_prov_grep += ' -f1,2 | sed -e "s/|/\t/g"'
         # Expected return value for 'grep' from this method
         exp_grep = {Rel_Types.CUSTOMER_PROVIDERS: cust_prov_grep,

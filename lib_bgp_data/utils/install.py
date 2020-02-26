@@ -52,6 +52,7 @@ Possible Future Extensions:
 import functools
 import random
 import string
+import pytest
 from getpass import getpass
 from subprocess import check_call, call
 import os
@@ -62,8 +63,8 @@ from .logger import Thread_Safe_Logger as logger, error_catcher
 from .config import Config
 from .utils import delete_paths
 
-__author__ = "Justin Furuness"
-__credits__ = ["Justin Furuness", "Cameron Morris"]
+__authors__ = ["Justin Furuness", "Matt Jaccino"]
+__credits__ = ["Justin Furuness", "Matt Jaccino", "Cameron Morris"]
 __Lisence__ = "MIT"
 __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
@@ -91,10 +92,10 @@ sql_install_file = "/tmp/db_install.sql"
 class Install:
     """Installs and configures the lib_bgp_data package"""
 
-    __slots__ = ['logger', 'db_pass']
+    __slots__ = ['section', 'logger', 'db_pass']
 
     @error_catcher()
-    def __init__(self):
+    def __init__(self, section="bgp"):
         """Makes sure that you are a sudo user"""
 
         class NotSudo(Exception):
@@ -103,6 +104,8 @@ class Install:
         DEBUG = 10  # Cannot import logging due to deadlocks
         # Initializes self.logger
         self.logger = logger({"stream_level": DEBUG})
+        # Store the section header for the config file
+        self.section = section
         # Makes sure that you are a sudo user
         if os.getuid() != 0:
             raise NotSudo("Sudo priveleges are required for install")
@@ -119,7 +122,7 @@ class Install:
                 password_characters = string.ascii_letters + string.digits
                 self.db_pass = ''.join(random.SystemRandom().choice(
                     password_characters) for i in range(24))
-            Config(self.logger).create_config(self.db_pass)
+            Config(self.logger, self.section).create_config(self.db_pass)
             self._create_database()
         # Set unhinged to true to prevent automated writes to disk
         self._modify_database()
@@ -128,6 +131,10 @@ class Install:
         self._install_bgpscanner()
         self._install_bgpdump()
         self._install_rpki_validator()
+        # Install a 'test' section
+        # Use this check to prevent looping calls
+        if self.section != "test":
+            Install("test").install()
 
     # Must remove that file due to password change history
     @error_catcher()
@@ -136,24 +143,30 @@ class Install:
         """Creates the bgp database and bgp_user and extensions."""
 
         # SQL commands to write
-        sqls = ["DROP DATABASE bgp;",
-                "DROP OWNED BY bgp_user;",
-                "DROP USER bgp_user;",
-                "CREATE DATABASE bgp;",
-                "CREATE USER bgp_user;",
-                "REVOKE CONNECT ON DATABASE bgp FROM PUBLIC;"
-                "REVOKE ALL ON ALL TABLES IN SCHEMA public FROM bgp_user;",
-                "GRANT ALL PRIVILEGES ON DATABASE bgp TO bgp_user;",
+        sqls = ["DROP DATABASE {};".format(self.section),
+                "DROP OWNED BY {}_user;".format(self.section),
+                "DROP USER {}_user;".format(self.section),
+                "CREATE DATABASE {};".format(self.section),
+                "CREATE USER {}_user;".format(self.section),
+                "REVOKE CONNECT ON DATABASE "
+                "{} FROM PUBLIC;".format(self.section),
+                "REVOKE ALL ON ALL TABLES IN SCHEMA "
+                "public FROM {}_user;".format(self.section),
+                "GRANT ALL PRIVILEGES ON DATABASE "
+                "{} TO {}_user;".format(self.section, self.section),
                 """GRANT ALL PRIVILEGES ON ALL SEQUENCES
-                IN SCHEMA public TO bgp_user;""",
-                "ALTER USER bgp_user WITH PASSWORD '{}';".format(self.db_pass),
-                "ALTER USER bgp_user WITH SUPERUSER;",
-                "CREATE EXTENSION btree_gist WITH SCHEMA bgp;"]
+                IN SCHEMA public TO {}_user;""".format(self.section),
+                "ALTER USER {}_user WITH PASSWORD '{}';".format(self.section,
+                                                                self.db_pass),
+                "ALTER USER {}_user WITH SUPERUSER;".format(self.section),
+                "CREATE EXTENSION btree_gist "
+                "WITH SCHEMA {};".format(self.section)]
         # Writes sql file
         self._run_sql_file(sqls)
         # Must do this here, nothing else seems to create it
-        create_extension_args = ('sudo -u postgres psql -d bgp'
-                                 ' -c "CREATE EXTENSION btree_gist;"')
+        create_extension_args = ('sudo -u postgres psql -d {}'
+                                 ' -c "CREATE EXTENSION '
+                                 'btree_gist;"'.format(self.section))
         # Allow for failures in case it's already there
         call(create_extension_args, shell=True)
 
@@ -167,18 +180,27 @@ class Install:
         work at a cluster level, so all databases will be changed.
         """
 
-        ram = Config(self.logger).ram
-        usr_input = input("If SSD, enter 1 or enter, else enter 2: ")
-        if str(usr_input) in ["", "1"]:
-            random_page_cost = float(1)
+        ram = Config(self.logger, self.section).ram
+        # Can't take input during tests
+        # Error when Pytest is not running
+        if hasattr(pytest, 'global_running_install_test') \
+           and pytest.global_running_install_test:
+                random_page_cost = float(1)
+                ulimit = 8192
+        # Otherwise get from user
         else:
-            random_page_cost = float(2)
-        ulimit = input("Enter the output of ulimit -s or press enter for 8192: ")
-        if ulimit == "":
-            ulimit = 8192
+            usr_input = input("If SSD, enter 1 or enter, else enter 2: ")
+            if str(usr_input) in ["", "1"]:
+                random_page_cost = float(1)
+            else:
+                random_page_cost = float(2)
+            ulimit = input("Enter the output of ulimit -s or press enter for 8192: ")
+            if ulimit == "":
+                ulimit = 8192
         # Extension neccessary for some postgres scripts
         sqls = ["CREATE EXTENSION btree_gist;",
-                "ALTER DATABASE bgp SET timezone TO 'UTC';",
+                "ALTER DATABASE {} SET timezone "
+                "TO 'UTC';".format(self.section),
                 # These are settings that ensure data isn't corrupted in
                 # the event of a crash. We don't care so...
                 "ALTER SYSTEM SET fsync TO off;",
@@ -399,6 +421,7 @@ class Install:
              check_call("cp bgpscanner/build/bgpscanner /usr/local/bin/bgpscanner", shell=True)
         except:
             pass
+<<<<<<< HEAD
         # Now to install libisocore so BGPScanner works
         cmds = ["cd bgpscanner/subprojects/",
                 "git clone https://gitlab.com/Isolario/isocore.git",
@@ -412,6 +435,9 @@ class Install:
                 "cd ../../",
                 "cp isocore/build/libisocore.so /usr/lib/libisocore.so"]
         check_call("&& ".join(cmds), shell=True)
+=======
+
+>>>>>>> origin/new_changes
         check_call("rm -rf delete_me", shell=True)
 
     @error_catcher()
@@ -422,6 +448,7 @@ class Install:
         Must be installed from source due to bug fixes not in apt repo.
         """
 
+<<<<<<< HEAD
         try:
             # bgpdump is moving to github so it is currently impossible to download
             # It used to be on mercurial but I guess that's gone now
@@ -444,6 +471,55 @@ class Install:
                 pass
         except:
             print("BGPdump failed to install, but this is unnessecary")
+=======
+        return
+        # bgpdump is moving to github so it is currently impossible to download
+        # It used to be on mercurial but I guess that's gone now
+        # Hopefuly this will be fixed soon
+
+        # Commands to install from source
+        cmds = ["sudo apt -y install mercurial",
+                "git clone https://bitbucket.org/ripencc/bgpdump.git",
+                "cd bgpdump",
+                "sudo apt install automake",
+                "./bootstrap.sh",
+                "make",
+                "./bgpdump -T",
+                "sudo cp bgpdump /usr/bin/bgpdump"]
+
+        check_call("&& ".join(cmds), shell=True)
+        try:
+            check_call("sudo cp bgpdump /usr/local/bin/bgpdump", shell=True)
+        except:
+            pass
+
+    @error_catcher()
+    def _erase_all(self):
+        """Deletes config section and drops database from Postgres"""
+
+        # Check user inteded to erase everything
+        ans = input("You are about to erase the config file and drop all "
+                        "Postgres databases.  Enter 'Yes' to confirm.\n")
+        if ans.lower() != "yes":
+            return
+        # Use default path (get from Config?)
+        path = "/etc/bgp/bgp.conf"
+        # First delete the databases
+        _conf = SCP()
+        _conf.read(path)
+        # Database names correspond to section headers
+        # Exclude first since ConfigParser reserves for 'DEFAULT'
+        db_names = [x for x in _conf][1:]
+        cmds = ['sudo -u postgres psql -c "DROP DATABASE {}"'.format(db)
+                for db in db_names]
+        check_call("&& ".join(cmds), shell=True)
+        # Now remove the section from the config file
+        # Fastest way to do this is create a new object
+        # and write to the same location
+        new_conf = SCP()
+        with open(self.path, 'w+') as configfile:
+            new_conf.write(configfile)
+>>>>>>> origin/new_changes
 
 ########################
 ### Helper Functions ###

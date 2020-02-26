@@ -6,11 +6,12 @@
 For specifics on each test, see the docstrings under each function.
 """
 
+
+from subprocess import check_call
 from ..mrt_file import MRT_File
 from ..mrt_parser import MRT_Parser
-from ...utils import utils, db_connection
 from ..tables import MRT_Announcements_Table
-from subprocess import check_call
+from ...utils import utils, db_connection
 
 __author__ = "Matt Jaccino"
 __credits__ = ["Matt Jaccino", "Justin Furuness"]
@@ -18,6 +19,7 @@ __Lisence__ = "MIT"
 __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
+
 
 class Test_MRT_File:
     """This will test methods of the MRT_File class."""
@@ -27,15 +29,17 @@ class Test_MRT_File:
         with using bgpdump.
         """
 
+        start_time = utils.get_default_start(),
+        end_time = utils.get_default_end()
         # Create an MRT_File object and download from the URL above
-        test_file = self._mrt_file_factory()
-        scanner = self._get_entries(test_file, bgpscanner=True)
+        test_file: MRT_File = self._mrt_file_factory(start_time, end_time)
+        _scanner_entries = self._get_entries(test_file, bgpscanner=True)
         # Create another MRT_File object and download
-        test_file2 = self._mrt_file_factory()
+        test_file2 = self._mrt_file_factory(start_time, end_time)
         # Get the number of entries in the table when parsed with BGPDump
-        dump = self._get_entries(test_file2, bgpscanner=False)
+        _dump_entries = self._get_entries(test_file2, bgpscanner=False)
         # Make sure both entries are identical
-        assert scanner == dump
+        assert _scanner_entries == _dump_entries
 
     def test_bgpscanner_regex(self):
         """This will test if the method '_bgpscanner_args' uses correct
@@ -103,7 +107,7 @@ class Test_MRT_File:
         test_file.csv_name = "dump.txt"
         test_file._convert_dump_to_csv(bgpscanner=False)
         # Get the number of lines in this file
-        lines = self._number_of_lines("dump.txt")
+        lines = utils.get_lines_in_file("dump.txt")
         # Delete the file once the lines have been counted
         check_call("rm dump.txt", shell=True)
         # Get the number of entries in the MRT Announcements table
@@ -117,36 +121,33 @@ class Test_MRT_File:
         self._mrt_file_factory().parse_file()
         # Make sure not AS pathes contain sets
         with db_connection() as db:
-            assert len(db.execute("SELECT * FROM mrt_announcements;")) > 0
-            for entry in db.execute("SELECT as_path FROM mrt_announcements;"):
-                # Check for sets by looking for set notation
-                assert "{" not in str(entry)
+            assert db.get_count() > 0
+            sql = "SELECT as_path FROM mrt_announcements;"
+            # Check for sets by looking for the set notation
+            assert "{" not in str(db.execute(sql))
 
-###############
-### Helpers ###
-###############
-
-    def _number_of_lines(self, filename):
-        """Short helper function to get the number of lines in a file"""
-        with open(filename, 'r') as f:
-            for count, line in enumerate(f):
-                pass
-        return count + 1
+########################
+### Helper Functions ###
+########################
 
     def _get_entries(self, mrt_file, bgpscanner=True):
-        """Short helper function to get entries from MRT Announcements"""
+        """Gets entries from MRT Announcements"""
+
         with db_connection(MRT_Announcements_Table, clear=True) as db:
             mrt_file.parse_file(bgpscanner)
-            entries = db.execute("SELECT * FROM mrt_announcements;")
-        return entries
+            return db.get_all()
 
-    def _mrt_file_factory(self):
+    def _mrt_file_factory(self,
+                          start=utils.get_default_start(),
+                          end=utils.get_default_end()):
         """Generates MRT File objects with the same URL for comparison"""
+
         parser = MRT_Parser()
-        file_url = parser._get_mrt_urls(utils.get_default_start(),
-                                        utils.get_default_end())[0]
-        mrt_file = MRT_File(parser.path, parser.csv_dir,
-                            file_url, 1, 1, parser.logger)
-        utils.download_file(mrt_file.logger, mrt_file.url, mrt_file.path,
-                            1, 1, 1)
+        mrt_file = MRT_File(parser.path,
+                            parser.csv_dir,
+                            parser._get_mrt_urls(start, end)[0],
+                            logger=parser.logger)
+        utils.download_file(mrt_file.logger,
+                            mrt_file.url,
+                            mrt_file.path)
         return mrt_file

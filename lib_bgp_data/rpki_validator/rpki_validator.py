@@ -141,11 +141,11 @@ class RPKI_Validator:
                  'rpki_db_paths']
 
     @error_catcher()
-    def __init__(self, args={}):
+    def __init__(self, section="bgp", args={}):
         """Initializes urls, regexes, and path variables"""
 
         # Sets common file paths and logger
-        utils.set_common_init_args(self, args)
+        utils.set_common_init_args(self, args, section)
         rpki_package_path = "/var/lib/rpki-validator-3/"
         self.rpki_path = rpki_package_path + "rpki-validator-3.sh"
         self.rpki_db_paths = [rpki_package_path + x for x in ["db/", "rsync/"]]

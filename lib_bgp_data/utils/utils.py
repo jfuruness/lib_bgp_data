@@ -27,9 +27,10 @@ from contextlib import contextmanager
 from multiprocessing import cpu_count, Queue, Process, Manager
 from .logger import Thread_Safe_Logger as Logger
 from .database import db_connection
+from .config import set_global_section_header
 
-__author__ = "Justin Furuness"
-__credits__ = ["Justin Furuness"]
+__authors__ = ["Justin Furuness", "Matt Jaccino"]
+__credits__ = ["Justin Furuness", "Matt Jaccino"]
 __Lisence__ = "MIT"
 __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
@@ -70,34 +71,11 @@ def progress_bar(logger, msg, toolbar_width):
     if logger.level <= 20:
         sys.stdout.write("]\n")
 
-# This decorator wraps any run parser function
-# This starts the parser, cleans all paths, ends the parser, and records time
-# The point of this decorator is to make sure the parser runs smoothly
-def run_parser(paths=True):
-    def my_decorator(run_parser_func):
-        @functools.wraps(run_parser_func)
-        def function_that_runs_func(self, *args, **kwargs):
-            # Inside the decorator
-
-            # Gets the start time
-            start_time = now()
-            if paths:
-                # Deletes everything from and creates paths
-                clean_paths(self.logger, [self.path, self.csv_dir])
-            try:
-                # Runs the parser
-                return run_parser_func(self, *args, **kwargs)
-            # Upon error, log the exception
-            except Exception as e:
-                self.logger.error(e)
-                raise e
-            # End the parser to delete all files and directories always
-            finally:
-                # Clean up don't be messy yo
-                end_parser(self, start_time, paths)
-                    
-        return function_that_runs_func
-    return my_decorator
+class Enumerable_Enum(Enum):
+    # https://stackoverflow.com/a/54919285
+    @classmethod
+    def list_values():
+        return list(map(lambda c: c.value, cls))
 
 
 def now():
@@ -123,29 +101,6 @@ def get_default_end():
                                              minute=59,
                                              second=59,
                                              microsecond=59).timestamp()
-
-def set_common_init_args(self, args, paths=True):
-    """Sets self attributes for arguments common across many classes"""
-
-    # The class name. This because when parsers are done,
-    # they aggressively clean up. We do not want parser to clean up in
-    # the same directories and delete files that others are using
-    name = self.__class__.__name__
-
-    self.logger = args.get("logger") if args.get("logger") else\
-        Logger(args)
-
-    if paths:
-        # Path to where all files willi go. It does not have to exist
-        self.path = args.get("path") if args.get("path") else\
-            "/tmp/bgp_{}".format(name)
-        self.csv_dir = args.get("csv_dir") if args.get("csv_dir") else\
-            "/dev/shm/bgp_{}".format(name)
-        clean_paths(self.logger, [self.path, self.csv_dir])
-
-    # Deletes and creates dirs from fresh
-    self.logger.debug("Initialized {} at {}".format(name, now()))
-
 
 def download_file(logger,
                   url,
@@ -221,33 +176,28 @@ def delete_paths(logger, paths):
             logger.warning("Permission error when deleting {}".format(path))
 
 
-def clean_paths(logger, paths):
+def clean_paths(logger, paths, recreate=True):
     """If path exists remove it, else create it"""
 
-    assert isinstance(paths, list)
-
-    delete_paths(logger, paths)
+    # If a single path is passed in, convert it to a list
+    if not isinstance(paths, list):
+        paths = [paths]
     for path in paths:
-        # Yes I know this is a security flaw, but
-        # Everything is becoming hacky since we need to demo soon
-        # We can fix it later
-        # No really, I mean it
-        # For real, I will fix it
-        # Hahaha I hate selinux
-        # Where am I?
-        os.makedirs(path, mode=0o777, exist_ok=False)
+        try:
+            remove_func = os.remove if os.path.isfile(path) else shutil.rmtree
+            remove_func(path)
+        # Files are sometimes deleted even though they no longer exist
+        except AttributeError:
+            logger.debug("Attribute error when deleting {}".format(path))
+        except FileNotFoundError:
+            logger.debug("File not found when deleting {}".format(path))
+        except PermissionError:
+            logger.warning("Permission error when deleting {}".format(path))
 
-
-def end_parser(self, start_time, has_paths=True):
-    """To be run at the end of every parser, deletes paths and prints time"""
-
-    if has_paths:
-        delete_paths(self.logger, [self.path, self.csv_dir])
-    name = self.__class__.__name__
-    current = now()
-    # https://www.geeksforgeeks.org/python-difference-between-two-dates-in-minutes-using-datetime-timedelta-method/
-    minutes, seconds = divmod((current - start_time).total_seconds(), 60)
-    self.logger.info("{} ran for {} minutes {} seconds".format(name, minutes, seconds))
+    if recreate:
+        for path in paths:
+            # Fix this later
+            os.makedirs(path, mode=0o777, exist_ok=False)
 
 
 def unzip_bz2(logger, old_path):
@@ -328,3 +278,11 @@ def get_json(url, headers={}):
     with urllib.request.urlopen(req) as url:
         # Gets data from the json in the url
         return json.loads(url.read().decode())
+
+def get_lines_in_file(filename: str) -> int:
+    """Returns the number of lines in a given file"""
+
+        with open(filename, 'r') as f:
+            for count, line in enumerate(f):
+                pass
+        return count + 1

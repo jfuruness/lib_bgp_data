@@ -41,8 +41,8 @@ import os
 import time
 from .logger import error_catcher, Thread_Safe_Logger as Logger
 
-__author__ = "Justin Furuness"
-__credits__ = ["Justin Furuness"]
+__authors__ = ["Justin Furuness", "Matt Jaccino"]
+__credits__ = ["Justin Furuness", "Matt Jaccino"]
 __Lisence__ = "MIT"
 __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
@@ -87,8 +87,11 @@ class Database:
         """Connects to db with default RealDictCursor.
 
         Note that RealDictCursor returns everything as a dictionary."""
-        kwargs = Config(self.logger).get_db_creds()
+
         if _open:
+            from .config import global_section_header
+            # Database needs access to the section header
+            kwargs = Config(self.logger, global_section_header).get_db_creds()
             if cursor_factory:
                 kwargs["cursor_factory"] = cursor_factory
             # In case the database is somehow off we wait
@@ -101,8 +104,7 @@ class Database:
                     self.conn.autocommit = True
                     self.cursor = conn.cursor()
                     break
-                except Exception as e:
-                    self.logger.warning(f"DB conn problem: {e}")
+                except:
                     time.sleep(10)
             if create_tables:
                 # Creates tables if do not exist
@@ -173,7 +175,8 @@ class Database:
         """Enhances database, but doesn't allow for writing to disk."""
 
         self.logger.info("unhinging db")
-        ram = Config(self.logger).ram
+        # access to section header
+        ram = Config(self.logger, global_section_header).ram
         # This will make it so that your database never writes to
         # disk unless you tell it to. It's faster, but harder to use
         sqls = [  # https://www.2ndquadrant.com/en/blog/
@@ -249,7 +252,10 @@ class Database:
         """Restarts postgres and all connections."""
 
         self.close()
-        check_call(Config(self.logger).restart_postgres_cmd, shell=True)
+        # access to section header
+        check_call(Config(self.logger,
+                          global_section_header).restart_postgres_cmd,
+                   shell=True)
         time.sleep(30)
         self._connect(create_tables=False)
 
@@ -287,4 +293,12 @@ class Database:
         used in utils to insert csv into the database"""
 
         # takes out _Table and makes lowercase
-        return self.__class__.__name__[:-6].lower()
+        return self.__class__.__name__.remove("_Table").lower()
+
+    def clear_tables(self):
+        """Clears the table"""
+
+        self.logger.debug(f"Dropping {self.name} Table")
+        self.cursor.execute(f"DROP TABLE IF EXISTS {self.name}")
+        self.logger.debug(f"{self.name} Table dropped")
+

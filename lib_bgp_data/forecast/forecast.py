@@ -29,6 +29,7 @@ Possible Future Extensions:
 -Docs on both
 """
 
+from datetime import timedelta
 from ..relationships_parser import Relationships_Parser
 from ..roas_collector import ROAs_Collector
 from ..bgpstream_website_parser import BGPStream_Website_Parser
@@ -37,7 +38,6 @@ from ..extrapolator import Extrapolator
 from ..rpki_validator import RPKI_Validator
 from ..what_if_analysis import What_If_Analysis
 from ..utils import utils, Database, db_connection, Install, error_catcher
-from .tables import MRT_W_Roas_Table
 
 __author__ = "Justin Furuness"
 __credits__ = ["Justin Furuness"]
@@ -51,10 +51,10 @@ class Forecast:
     """This class contains all the neccessary parsing functions"""
 
     @error_catcher()
-    def __init__(self, forecast_args={}):
+    def __init__(self, section="bgp", forecast_args={}):
         """Initializes paths and logger."""
 
-        utils.set_common_init_args(self, forecast_args),
+        utils.set_common_init_args(self, forecast_args, section),
 
     @utils.run_parser()
     @error_catcher()
@@ -72,7 +72,8 @@ class Forecast:
                      exr_args={},
                      rpki_args={},
                      what_if_args={},
-                     test=False):
+                     test=False,
+                     mrt_w_roas=False):
 
         self.logger.info("Running from {} to {} in UTC".format(start, end))
 
@@ -100,22 +101,31 @@ class Forecast:
             # Cleans up the database
             _db.vacuum_analyze_checkpoint()
 
-        # Only keep announcements covered by a roa
+        # Runs the rpki validator and stores data in db
+        RPKI_Validator(rpki_args).run_validator()
+
+        what_if = What_If_Analysis(what_if_args)
+
+        # Only keep announcements invalid or hijacked
         # drops old table, unhinges db, performs query, rehinges db
-        with db_connection(MRT_W_Roas_Table, self.logger) as _db:
+        with db_connection(Database, self.logger) as _db:
             _db.vacuum_analyze_checkpoint()
 
-            # Runs the extrapolator and creates the neccessary indexes
-            Extrapolator(exr_args).run_forecast(_db.name)
+            seconds_in_a_week = 604800
+            what_if.run_pre_exr(start - seconds_in_a_week)
 
-            # Runs the rpki validator and stores data in db
-            RPKI_Validator(rpki_args).run_validator()
+            input("run depref")
+
+            # Runs the extrapolator and creates the neccessary indexes
+            Extrapolator(exr_args).run_forecast("interesting_ann")
 
             # Cleans up db and performs statistics for what if joins
             _db.vacuum_analyze_checkpoint()
 
+            input("Run what if analysis")
+
             # Runs the what if analysis
-            What_If_Analysis(what_if_args).run_rov_policy()
+            what_if.run_post_exr()
 
             # Rewrites the whole database for storage
             _db.vacuum_analyze_checkpoint(full=True)

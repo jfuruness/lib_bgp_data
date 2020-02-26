@@ -48,11 +48,11 @@ class ROAs_Collector:
     __slots__ = ['path', 'csv_dir', 'logger', 'csv_path']
 
     @error_catcher()
-    def __init__(self, args={}):
+    def __init__(self, section="bgp", args={}):
         """Initializes urls, regexes, and path variables"""
 
         # Sets common file paths and logger
-        utils.set_common_init_args(self, args)
+        utils.set_common_init_args(self, args, section)
         self.csv_path = "{}/roas.csv".format(self.csv_dir)
 
     @error_catcher()

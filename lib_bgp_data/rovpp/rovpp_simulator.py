@@ -20,6 +20,7 @@ from subprocess import check_call
 from copy import deepcopy
 from pprint import pprint
 import json
+<<<<<<< HEAD
 import os
 from tqdm import tqdm
 from .enums import Non_BGP_Policies, Policies, Non_BGP_Policies, Hijack_Types, Conditions
@@ -27,6 +28,12 @@ from .enums import AS_Types, Control_Plane_Conditions as C_Plane_Conds
 from .tables import Subprefix_Hijack_Temp_Table
 from .tables import ROVPP_MRT_Announcements_Table, ROVPP_Top_100_ASes_Table
 from .tables import ROVPP_Edge_ASes_Table, ROVPP_Etc_ASes_Table, ROVPP_All_Trials_Table
+=======
+from .enums import Policies, Non_BGP_Policies, Hijack_Types
+from .tables import Subprefix_Hijack_Temp_Table
+from .tables import ROVPP_MRT_Announcements_Table
+from .graph_data import Graph_Data
+>>>>>>> origin/new_changes
 from ..relationships_parser import Relationships_Parser
 from ..relationships_parser.tables import ROVPP_AS_Connectivity_Table
 from ..bgpstream_website_parser import BGPStream_Website_Parser
@@ -89,14 +96,20 @@ class ROVPP_Simulator:
     """
 
 
-    def __init__(self, args={}):
+    def __init__(self, section="bgp", args={}):
         """Initializes logger and path variables."""
 
         # Sets path vars, logger, config, etc
-        utils.set_common_init_args(self, args, paths=False)
+        utils.set_common_init_args(self, args, section, paths=False)
         self.args = args
+<<<<<<< HEAD
         # Can't import logging, threadsafe, 20=INFO
         self.args["stream_level"] = self.args.get("stream_level", 20)
+=======
+        if not self.args.get("stream_level"):
+            self.args["stream_level"] = 20 # Can't import logging, threadsafe
+
+>>>>>>> origin/new_changes
 
     @utils.run_parser(paths=False)
     def simulate(self,
@@ -113,6 +126,7 @@ class ROVPP_Simulator:
 
         # Sets up all trials and percents
         Relationships_Parser(self.args).parse_files(rovpp=True)
+<<<<<<< HEAD
         with db_connection(ROVPP_All_Trials_Table, self.logger) as db:
             db.clear_table()
 
@@ -610,10 +624,33 @@ class ROVPP_Simulator:
 class Data_Point:
     def __init__(self, total_trials, percent_iter, percent,
                  default_percents, logger, _open=True):
+=======
+
+        data_points = [Data_Point(total_trials, p_i, percent, percents)
+                       for p_i, percent in enumerate(percents)]
+
+        for data_points in data_points:
+            data_point.get_data()
+
+        print(self.toJSON())
+        
+        # Close all tables here!!!
+        # Graph data here!!!
+        # Possibly move back to iterator (below)
+
+    # https://stackoverflow.com/a/15538391
+    def toJSON(self):
+        return json.dumps(self, default=lambda o: o.__dict__, 
+            sort_keys=True, indent=4)
+
+class Data_Point:
+    def __init__(self, total_trials, percent_iter, percent, default_percents):
+>>>>>>> origin/new_changes
         self.total_trials = total_trials
         self.percent_iter = percent_iter
         self.percent = percent
         self.default_percents = default_percents
+<<<<<<< HEAD
         self.logger = logger
         self.stats = dict()
         self.tables = Subtables(self.default_percents, self.logger, _open)
@@ -654,12 +691,51 @@ class Data_Point:
                                            deterministic)
         return hijack
             
+=======
+        self.stats = dict()
+
+    def get_data(self):
+        self.run_tests()
+        self.calculate_statistics()
+
+    def run_tests(self):
+        for trial in range(self.total_trials):
+            self.set_up_trial()
+            for test in get_possible_tests(set_up_hijacks=True):
+                test.run(trial)
+
+    def calculate_statistics(self):
+        for test in get_possible_tests():
+            test.calculate_statistics()
+
+    def get_possible_tests(self, set_up_hijacks=False):
+        for hijack_type in [x.value for x in Hijack_Types.values]:
+            if set_up_hijacks:
+                hijack = self.set_up_hijack_data()
+            else:
+                 hijack = None
+            for adopt_pol in [x.value for x in Non_BGP_Policies.values]:
+                yield Test(self.tables, hijack=hijack,
+                           hijack_type=hijack_type, adopt_pol=adopt_pol)
+
+    def set_up_trial(self):
+        self.tables = Subtables(default_percents)
+        self.tables.set_implimentable_ases()
+            
+    def set_up_hijack_data(self):
+        # sets hijack data
+        # Also return hijack variable
+        with db_connection(Subprefix_Hijack_Temp_Table, self.logger) as db:
+            return db.populate(self._get_possible_hijacker_ases(), hijack_type)
+
+>>>>>>> origin/new_changes
     def toJSON(self):
         return json.dumps(self, default=lambda o: o.__dict__, 
                           sort_keys=True, indent=4)
 
 
 class Test:
+<<<<<<< HEAD
     def __init__(self, logger, tables, **params):
         self.logger = logger
         self.tables = tables
@@ -670,10 +746,18 @@ class Test:
         self.adopt_pol_name = {v.value: k for k, v in
                                Policies.__members__.items()}[self.adopt_pol]
         self.logger.debug("Initialized test")
+=======
+    def __init__(self, tables, **params):
+        self.tables = tables
+        self.hijack = self.params.get("hijack")
+        self.hijack_type = self.params.get("hijack_type")
+        self.adopt_pol = self.params.get("adopt_pol")
+>>>>>>> origin/new_changes
 
     def __repr__(self):
         return (self.hijack, self.hijack_type, self.adopt_pol)
 
+<<<<<<< HEAD
     def run(self, trial_num, exr_args, pbar, percent_iter, exr_bash, exr_test):
         # Runs sim, gets data
         pbar.set_description("{}, {}, atk {}, vic {} ".format(
@@ -698,21 +782,47 @@ class Test:
                                      percent_iter)
 
         pbar.update(1)
+=======
+    def run_sim(self, trial_num):
+        # Runs sim, gets data
+        self.logger.info("Trial {} with test info: {}".format(trial_num, self.params))
+
+        self.tables.change_routing_policy(self.adopt_pol)
+        Extrapolator(self.args).run_rovpp(self.hijack,
+                                          [x.table.name for x in tables])
+        self.tables.get_data(self.hijack, self.adopt_pol)
+
+    def calculate_statistics(self):
+        # Get data from the extrapolator output for the test
+        self.get_data()
+        # Should be a dict of htype: t_obj: adopting_policy: dplane: (conds with list of data) cplane: (conds with data)
+        # Should save this to self.data
+        for data_field in self.data_fields():
+            # Average the list and calculate statistics
+            # Must compare all raw data to the ROV variant
+            # Save all of this to the data thing
+            pass
+>>>>>>> origin/new_changes
 
     def toJSON(self):
         return json.dumps(self, default=lambda o: o.__dict__, 
                           sort_keys=True, indent=4)
 
 class Subtables:
+<<<<<<< HEAD
     def __init__(self, default_percents, logger, _open=True):
 
         self.logger = logger
 
+=======
+    def __init__(self, default_percents):
+>>>>>>> origin/new_changes
         # Add docs on how to add a table to these sims
         # Create these tables and then 
         # Create an everything else table
         self.tables = [Subtable(ROVPP_Top_100_ASes_Table,
                                 self.logger,
+<<<<<<< HEAD
                                 default_percents,
                                 possible_hijacker=False, _open=_open),
                        Subtable(ROVPP_Edge_ASes_Table,
@@ -757,6 +867,24 @@ class Subtables:
 
         for sub_table in self.tables:
             sub_table.set_implimentable_ases(percent_iteration_num, attacker, deterministic)
+=======
+                                [25]*len(default_percents),
+                                possible_hijacker=False),
+                       Subtable(ROVPP_Edge_ASes_Table,
+                                self.logger,
+                                default_percents)]
+        for sub_table in self.tables:
+            sub_table.table.fill_table()
+
+        etc = Subtable(ROVPP_Etc_ASes_Table, self.logger, default_percents)
+        etc.table.fill_table([x.table.name for x in self.tables])
+        self.tables.append(etc)
+
+    def set_implimentable_ases(self, percent_iteration_num, attacker):
+
+        for sub_table in self.tables:
+            sub_table.set_implimentable_ases(percent_iteration_num, attacker)
+>>>>>>> origin/new_changes
 
     def change_routing_policies(self, policy):
         """Changes the routing policy for that percentage of ASes"""
@@ -774,6 +902,7 @@ class Subtables:
         for _table in self.tables:
             if _table.possible_hijacker:
                 results = _table.table.get_all()
+<<<<<<< HEAD
                 for result in results:
                     possible_hijacker_ases.append(result["asn"])
         return possible_hijacker_ases
@@ -794,6 +923,8 @@ class Subtables:
                                    percent_iter)
 
 class Subtable:
+=======
+>>>>>>> origin/new_changes
     """Subtable class for ease of use"""
 
     def __init__(self,
@@ -801,6 +932,7 @@ class Subtable:
                  logger,
                  percents,
                  possible_hijacker=True,
+<<<<<<< HEAD
                  policy_to_impliment=None,
                  _open=True):
         self.logger = logger
@@ -810,21 +942,34 @@ class Subtable:
         self.exr_table_name = "rovpp_exr_{}".format(self.table.name)
         if _open:
             self.count = self.table.get_count()
+=======
+                 policy_to_impliment=None):
+        self.logger = logger
+        self.table = table(logger)
+        self.count = self.table.get_count()
+>>>>>>> origin/new_changes
         self.percents = percents
         self.possible_hijacker = possible_hijacker
         # None for whatever policy is being tested
         self.policy_to_impliment = policy_to_impliment
 
+<<<<<<< HEAD
     def close(self):
         self.table.close()
 
     def set_implimentable_ases(self, iteration_num, attacker, deterministic):
         self.table.set_implimentable_ases(self.percents[iteration_num],
                                           attacker, deterministic)
+=======
+    def set_implimentable_ases(self, iteration_num, attacker):
+        self.table.set_implimentable_ases(self.percents[iteration_num],
+                                          attacker)
+>>>>>>> origin/new_changes
     def change_routing_policies(self, policy):
         if self.policy_to_impliment is not None:
             policy = self.policy_to_impliment
         self.table.change_routing_policies(policy)
+<<<<<<< HEAD
 
     def store_trial_data(self, all_ases, hijack, h_type, adopt_pol_name, tnum, percent_iter):
         sql = """SELECT asn, received_from_asn, prefix, origin, alternate_as, impliment FROM {}""".format(self.exr_table_name)
@@ -942,3 +1087,5 @@ class Subtable:
             self.table.execute(no_rib_sql + ("TRUE" if impliment else "FALSE") + ";")[0]["count"]
 
         return c_plane_data
+=======
+>>>>>>> origin/new_changes

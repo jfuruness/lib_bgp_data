@@ -5,8 +5,8 @@
 see __init__.py for a deeper explanation
 """
 
-from .split_validity_sql import split_validity_table_sql
-from .sql_queries import all_sql_queries
+from .pre_exr_sql import get_pre_exr_sql
+from .post_exr_sql import get_post_exr_sql
 from ..utils import utils, error_catcher, Database, db_connection
 
 __author__ = "Justin Furuness"
@@ -23,17 +23,26 @@ class What_If_Analysis:
     __slots__ = ['path', 'csv_dir', 'logger']
 
     @error_catcher()
-    def __init__(self, args={}):
+    def __init__(self, section="bgp", args={}):
         """Initializes logger and path variables."""
 
         # Sets common file paths and logger
-        utils.set_common_init_args(self, args)
+        utils.set_common_init_args(self, args, section)
 
     @error_catcher()
     @utils.run_parser()
-    def run_rov_policy(self):
-        self.logger.info("Beginning what if analysis")
+    def run_pre_exr(self, valid_before_time):
+        self.logger.info("Beginning what if analysis for pre processing")
         with db_connection(Database, self.logger) as _db:
-            for sql in split_validity_table_sql + all_sql_queries:
+            for sql in get_pre_exr_sql(valid_before_time):
+                self.logger.info("Executing\n{}".format(sql))
+                _db.cursor.execute(sql)
+
+    @error_catcher()
+    @utils.run_parser()
+    def run_post_exr(self):
+        self.logger.info("Beginning what if analysis for post processing")
+        with db_connection(Database, self.logger) as _db:
+            for sql in get_post_exr_sql():
                 self.logger.debug("Executing\n{}".format(sql))
                 _db.cursor.execute(sql)
