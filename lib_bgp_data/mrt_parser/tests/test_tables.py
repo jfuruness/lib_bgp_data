@@ -8,7 +8,7 @@ For specifics on each test, see the docstrings under each function.
 
 from psycopg2.errors import UndefinedTable
 from ..tables import MRT_Announcements_Table
-from ...utils import db_connection
+from ...utils import db_connection, Test_Generic_Table
 
 __author__ = "Justin Furuness", "Matt Jaccino"
 __credits__ = ["Justin Furuness", "Matt Jaccino"]

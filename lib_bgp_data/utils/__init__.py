@@ -9,6 +9,7 @@ from .logger import Thread_Safe_Logger, error_catcher
 from . import utils
 from .install import Install
 from .utils import Enumerable_Enum
+from .tests import Test_Generic_Table
 
 __author__ = "Justin Furuness"
 __credits__ = ["Justin Furuness"]
