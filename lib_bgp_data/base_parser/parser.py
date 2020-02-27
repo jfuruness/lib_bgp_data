@@ -41,8 +41,7 @@ class Parser:
         name = f"{kwargs['section']}_{self.__class__.__name__}"
         # Set global section header varaible in Config's init
         set_global_section_header(kwargs["section"])
-
-        self.logger = kwargs.get("logger", Logger(kwargs))
+        self.logger = kwargs.get("logger", Logger(**kwargs))
 
         # Path to where all files willi go. It does not have to exist
         self.path = kwargs.get("path", f"/tmp/{name}")
@@ -62,10 +61,10 @@ class Parser:
         try:
             self._run(*args, **kwargs)
         except Exception as e:
-            self.end_parser(self, start_time)
+            self.end_parser(start_time)
             self.logger.error(e)
         finally:
-            self.end_parser(self, start_time)
+            self.end_parser(start_time)
 
     def end_parser(self, start_time):
         """Ends parser, prints time and deletes files"""
@@ -75,7 +74,7 @@ class Parser:
                           recreate=False)
         # https://www.geeksforgeeks.org/python-difference-between-two-
         # dates-in-minutes-using-datetime-timedelta-method/
-        _min, _sec = divmod((now() - start_time).total_seconds(), 60)
+        _min, _sec = divmod((utils.now() - start_time).total_seconds(), 60)
         self.logger.info(f"{self.__class__.__name__} took {_min}m {_sec}s")
 
     @classmethod

@@ -1,18 +1,24 @@
 from setuptools import setup, find_packages
-from .lib_bgp_data.__main__ import get_parsers
 
+def get_parsers():
+    """Note: I could try to import this function but...
+
+    Then it gets really messy, and is not longer useful.
+    So we must simple write a new one here. Oh well.
+    """
+
+    return ["mrt_parser"]
 
 def _get_console_scripts():
     """Returns all console scripts"""
 
-    return [f'{cls.__class__.__name__.lower()} = lib_bgp_data.__main__:main'
-            for cls in get_parsers()]
+    return [f'{name} = lib_bgp_data.__main__:main' for name in get_parsers()]
 
 setup(
     name='lib_bgp_data',
     packages=find_packages(),
     version='0.2.4',
-    authors=['Justin Furuness', 'Matt Jaccino']
+    authors=['Justin Furuness', 'Matt Jaccino'],
     author_email='jfuruness@gmail.com',
     url='https://github.com/jfuruness/lib_bgp_data.git',
     download_url='https://github.com/jfuruness/lib_bgp_data.git',

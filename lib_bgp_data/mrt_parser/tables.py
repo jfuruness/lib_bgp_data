@@ -52,7 +52,7 @@ class MRT_Announcements_Table(Database):
 
         self.logger.info("Filtering by IPV family")
         for num, ipv_bool in zip([4, 6], [IPV4, IPV6]):
-            if not ipb_bool:
+            if not ipv_bool:
                 self.logger.debug(f"Deleting IPV{num} from {self.name}")
                 sql = f"DELETE FROM {self.name} WHERE family(prefix) = {num};"
                 self.execute(sql)

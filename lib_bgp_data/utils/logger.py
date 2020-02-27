@@ -159,7 +159,7 @@ class Thread_Safe_Logger:
     deadlocking so I will be using my own crap class from now on.
     """
 
-    def __init__(self, args={}):
+    def __init__(self, **kwargs):
         """Initializes logger
         Logging levels are, in order:
         logging.CRITICAL
@@ -169,9 +169,7 @@ class Thread_Safe_Logger:
         logging.DEBUG
         """
 
-        stream_level = args.get("stream_level")
-        # Sets stream level
-        stream_level = int(stream_level) if stream_level else logging.INFO
+        stream_level = int(kwargs.get("stream_level", logging.INFO.value))
         self.level = stream_level
         self.stream_level = stream_level
         # Sets all the standard logging functions

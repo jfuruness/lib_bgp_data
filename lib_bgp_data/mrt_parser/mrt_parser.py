@@ -37,7 +37,7 @@ class MRT_Parser(Parser):
     def __init__(self, *args, **kwargs):
         """Initializes logger and path variables."""
 
-        if isinstance(args[0], dict):
+        if len(args) > 0 and isinstance(args[0], dict):
             warnings.warn(("Passing in a dict for args is depreciated\n"
                            "\tPlease pass in using keyword arguments"),
                           DeprecationWarning,
@@ -60,7 +60,7 @@ class MRT_Parser(Parser):
              IPV4=True,
              IPV6=False,
              bgpscanner=True,
-             sources=MRT_Sources.list_values()):
+             sources=MRT_Sources.__members__.values()):
         """Downloads and parses files using multiprocessing.
 
         In depth explanation in README.
@@ -96,7 +96,7 @@ class MRT_Parser(Parser):
                       sources=[]):
         """Gets caida and iso URLs, start and end should be epoch"""
 
-        self.logger.info(f"Getting MRT urls for {sources}")
+        self.logger.info(f"Getting MRT urls for {[x.name for x in sources]}")
         caida_urls = self._get_caida_mrt_urls(start,
                                               end,
                                               sources,
@@ -120,13 +120,13 @@ class MRT_Parser(Parser):
                   'types': ['ribs']
                   }
         # Done this way because cannot specify two params with same name
-        if MRT_Sources.RIPE.value in sources and MRT_Sources.ROUTE_VIEWS.value in sources:
+        if MRT_Sources.RIPE in sources and MRT_Sources.ROUTE_VIEWS in sources:
             pass
         # Else just routeviews:
-        elif MRT_Sources.RIPE.value in sources:
+        elif MRT_Sources.RIPE in sources:
             PARAMS["projects[]"] = ["ris"]
         # else just ripe
-        elif MRT_Sources.ROUTE_VIEWS.value in sources:
+        elif MRT_Sources.ROUTE_VIEWS in sources:
             PARAMS["projects[]"] = ["routeviews"]
         # else neither
         else:
@@ -148,7 +148,8 @@ class MRT_Parser(Parser):
 
         Start should be in epoch"""
 
-        if MRT_Sources.ISOLARIO.value not in sources:
+        if MRT_Sources.ISOLARIO not in sources:
+            self.logger.debug("Not getting isolario urls")
             return []
 
         # API URL
