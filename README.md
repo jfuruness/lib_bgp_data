@@ -1,3 +1,4 @@
+
 # lib\_bgp\_data
 This package contains multiple submodules that are used to gather and manipulate real data in order to simulate snapshots of the internet. The purpose of this is to test different security policies to determine their accuracy, and hopefully find ones that will create a safer, more secure, internet as we know it.
 
@@ -57,7 +58,7 @@ Please note: These steps are not necessarily linear, as much of this is done in 
 * [Usage](#forecast-usage)
 * [Table Schema](#forecast-table-schema)
 * [Design Choices](#forecast-design-choices)
-* [Possible Future Improvements](#forecast-possible-future-improvements)
+* [Todo and Possible Future Improvements](#todopossible-future-improvements)
 
 Status: Development
 ### Forecast Short description
@@ -186,16 +187,7 @@ See: [MRT Announcements Table Schema](#mrt-announcements-table-schema)
 	* Nothing is multithreaded for simplicity, and since each parser either takes up all threads or <1 minute. 
 	* The database is vacuum analyzed and checkpointed before big joins to help the query planner choose the right query plan
 	* When testing only one prefix is used to speed up the extrapolator and reduce data size
-### Forecast Possible Future Improvements
-* [lib\_bgp\_data](#lib_bgp_data)
-* [Forecast Submodule](#forecast-submodule)
-* [Todo and Possible Future Improvements](#todopossible-future-improvements)
-	* Unit tests
-	* cmd line args
-	* docs for unit tests and cmd line args
-	* Once in dev push to pypi
-	* Potentially multithread?
-	* Restart at the end of the full run
+
 ## MRT Announcements Submodule
    * [lib\_bgp\_data](#lib_bgp_data)
    * [Short Description](#mrt-announcements-short-description)
@@ -203,9 +195,10 @@ See: [MRT Announcements Table Schema](#mrt-announcements-table-schema)
    * [Usage](#mrt-announcements-usage)
    * [Table Schema](#mrt-announcements-table-schema)
    * [Design Choices](#mrt-announcements-design-choices)
-   * [Possible Future Improvements](#mrt-announcements-possible-future-improvements)
+   * [Todo and Possible Future Improvements](#todopossible-future-improvements)
  
-Status: Development
+Status: Production
+
 ### MRT Announcements Short description
 * [lib\_bgp\_data](#lib_bgp_data)
 * [MRT Announcements Submodule](#mrt-announcements-submodule)
@@ -223,7 +216,10 @@ This submodule downloads and parses MRT Files. This is done through a series of 
     * This only returns the first dump for the time interval given
         * However, we only want one dump, multiple dumps would have data that conflicts with one another
         * For longer intervals use one BGP dump then updates
-2. Then all the mrt files are downloaded in parallel
+2. Get the urls from [https://isolar.io/Isolario_MRT_data/](https://isolar.io/Isolario_MRT_data/)
+    * Handled in _get_mrt_urls function
+    * By using the custom naming scheme we can get all the MRT files for the relevant time period
+3. Then all the mrt files are downloaded in parallel
     * Handled in MRT_Parser class
     * This instantiates the MRT_File class with each url
         * utils.download_file handles downloading each particular file
@@ -231,21 +227,18 @@ This submodule downloads and parses MRT Files. This is done through a series of 
         * Mutlithreading with GIL lock is better than multiprocessing since this is just intensive I/O in this case
     * Downloaded first so that we parse the largest files first
     * In this way, more files are parsed in parallel (since the largest files are not left until the end)
-3. Then all mrt_files are parsed in parallel
+4. Then all mrt_files are parsed in parallel
     * Handled in the MRT_Parser class
     * The mrt_files class handles the actual parsing of the files
     * CPUs - 1 is used for thread count since this is a CPU bound process
     * Largest files are parsed first for faster overall parsing
     * bgpscanner is the fastest BGP dump scanner so it is used for tests
-    * bgpdump used to be the only parser that didn't ignore malformed announcements, but now with a change bgpscanner does this as well
-        * This was a problem because some ASes do not ignore these errors
+    * Note that for our process, bgpscanner is modified to include malformed announcements. We include these because they are present in the actual MRT files so they must be present on the internet
+    * bgpdump is kept for unit testing, and is an optional parameter for this step
     * sed is used because it is cross compatible and fast
         * Must use regex parser that can find/replace for array format
-        * AS Sets are not parsed because they are unreliable
-    * Possible future extensions:
-        * Use a faster regex parser?
-        * Add parsing updates functionality?
-4. Parsed information is stored in csv files, and old files are deleted
+        * AS Sets are not parsed because they are unreliable, these are less than .5% of all announcements
+6. Parsed information is stored in csv files, and old files are deleted
     * This is handled by the MRT_File class
     * This is done because there is thirty to one hundred gigabytes
         * Fast insertion is needed, and bulk insertion is the fastest
@@ -253,7 +246,7 @@ This submodule downloads and parses MRT Files. This is done through a series of 
         * CSVs are more portable and don't rely on postgres versions
         * Binary file insertion relies on specific postgres instance
     * Old files are deleted to free up space
-5. CSV files are inserted into postgres using COPY, and then deleted
+7. CSV files are inserted into postgres using COPY, and then deleted
     * This is handled by MRT_File class
     * COPY is used for speedy bulk insertions
     * Files are deleted to save space
@@ -261,103 +254,148 @@ This submodule downloads and parses MRT Files. This is done through a series of 
         * There are not a lot of duplicates, so it's not worth the time
         * The overall project takes longer if duplicates are deleted
         * A duplicate has the same AS path and prefix
-6. VACUUM ANALYZE is then called to analyze the table for statistics
-    * An index is never created on the mrt announcements because when the announcements table is intersected with roas table, only a parallel sequential scan is used
+8. VACUUM ANALYZE is then called to analyze the table for statistics
 ### MRT Announcements Usage
 * [lib\_bgp\_data](#lib_bgp_data)
 * [MRT Announcements Submodule](#mrt-announcements-submodule)
 
 #### In a Script
 Initializing the MRT Parser:
-> The default params for the mrt parser are:
-> name = self.\_\_class\_\_.\_\_name\_\_  # The purpose of this is to make sure when we clean up paths at the end it doesn't delete files from other parsers.
-> path = "/tmp/bgp_{}".format(name)  # This is for the mrt files
-> CSV directory = "/dev/shm/bgp_{}".format(name) # Path for CSV files, located in RAM
-> logging stream level = logging.INFO  # Logging level for printing
+
+**Please note that for all of these examples - your python env MUST still be activated.**
+
+
+The Defaults for the MRT Parser are:
+
+| Parameter    | Default                             | Description                                                                                                       |
+|--------------|-------------------------------------|-------------------------------------------------------------------------------------------------------------------|
+| name         | ```self.__class__.__name__```     | The purpose of this is to make sure when we clean up paths at the end it doesn't delete files from other parsers. |
+| path         | ```"/tmp/bgp_{}".format(name)```     | Not used                                                                                         |
+| csv_dir      | ```"/dev/shm/bgp_{}".format(name)``` | Path for CSV files, located in RAM                                                                                |
+| stream_level | ```logging.INFO```                        | Logging level for printing                                                                                        |
+
 > Note that any one of the above attributes can be changed or all of them can be changed in any combination
 
 To initialize MRT_Parser with default values:
 ```python
 from lib_bgp_data import MRT_Parser
 mrt_parser = MRT_Parser()
-```                 
+```
+
 To initialize MRT_Parser with custom path, CSV directory, and logging level:
 ```python
 from logging import DEBUG
 from lib_bgp_data import MRT_Parser
-mrt_parser = MRT_Parser({"path": "/my_custom_path",
-                         "csv_dir": "/my_custom_csv_dir",
-                         "stream_level": DEBUG})
+mrt_parser = MRT_Parser(path="/my_custom_path",
+                        csv_dir="/my_custom_csv_dir",
+                        stream_level=DEBUG)
 ```
+
 Running the MRT Parser:
-> The default params for the mrt parser's parse_files are:
-> start = 7 days ago in epoch,  # Start of the received time interval from which to get MRT Announcements
-> end = 6 day ago in epoch,  # End of received time interval from which to get MRT announcements
-> api_params_mods = None  # custom parameters to API for mrt files, by default gets all announcements within a time interval with so: {'human': True,  # This value cannot be changed
+
+Note that only the first MRT file is collected between the start and end times
+
+| Parameter    | Default                             | Description                                                                                                       |
+|--------------|-------------------------------------|-------------------------------------------------------------------------------------------------------------------|
+| start         | ```utils.get_default_start()```     | This is an epoch timestamp specifying the start time for which to collect MRT Files|
+| end         | ```utils.get_default_end()```     |This is the end time for which to stop collecting MRT files                                                            |
+| api_param_mods      | ```{}``` | Optional parameters to pass to Caida API, should be used when trying to limit input. See [https://bgpstream.caida.org/docs/api/broker#Data-API](https://bgpstream.caida.org/docs/api/broker#Data-API) for all possible parameters, and further usage examples below.                                                                               |
+| download_threads | ```None```                        | Number of threads to download files. Later gets changed to cpu_count * 4 since this is mostly an I/O bound process                                                                                       |
+| parse_threads | ```None```                        | Number of threads to parse files. Later gets changed to cpu_count. This is because for each thread, a bgpscanner thread, sed thread, csv writing thread are all spawned. Probably should optimize this.                                                                                        |
+| IPV4 | ```True```                        | Keep IPV4 prefixes                                                                                        |
+| IPV6 | ```False```                        | Keep IPV6 prefixes. False by default since the extrapolator cannot handle them, and discards them anyways.                                                                                        |
+| bgpscanner | ```True```                        | Use bgpscanner for parsing. If false uses bgpdump, which is slower and is only used for unit testing                                            |
+| Sources | ```MRT_Sources.__members__.values()``` | A list of possible sources for MRT Files to be parsed from. Currently listed at the time of writing are MRT_Sources.RIPE, MRT_Sources.ROUTE_VIEWS, and MRT_Sources.ISOLARIO. See example usage below if you'd like to exclude some.
+
+> Note that any one of the above attributes can be changed or all of them can be changed in any combination
+
+API params that cannot be changed:
+
+```python
+{'human': True,  # This value cannot be changed
 'intervals': ["{},{}".format(start, end)],  # This value cannot be changed
 'types': ['ribs']
 }
-> download_threads = Number of CPU cores * 4  # Number of threads used to download MRT Files
-> parse_threads = Number of CPU cores  # Number of threads to parse MRT Files
-> IPV4  = True  # Whether or not to include IPV4 data
-> IPV6 = False  # Whether or not to include IPV6 data
-> bgpscanner = True  # Uses bgpscanner to parse mrt files
-> Note that any one of the above attributes can be changed or all of them can be changed in any combination
+```
 
 To run the MRT Parser with defaults:
 ```python
 from lib_bgp_data import MRT_Parser
-MRT_Parser().parse_files()
+MRT_Parser().run()
 ```
 To run the MRT Parser with specific time intervals:
 ```python
 from lib_bgp_data import MRT_Parser
-MRT_Parser().parse_files(start=1558974033,
-                         end=1558974033)
+MRT_Parser().run(start=1558974033, end=1558974033)
 ```
-To run the MRT Parser with specific time intervals and custom api parameters:
+To run the MRT Parser with custom api parameters:
 
 See: [https://bgpstream.caida.org/docs/api/broker](https://bgpstream.caida.org/docs/api/broker) for full listof API Parameters. Note that these params are only added to a dictionary of:
  {'human': True,  'intervals': ["{},{}".format(start, end)]}
-In this example we get all RIB files from a specific collector, route-views2
+In this example we get all RIB files from a specific collector, route-views2. Note that we will still get all the MRT files from isolario, since we did not exclude them in the sources.
 ```python
 from lib_bgp_data import MRT_Parser
-MRT_Parser().parse_files(start=1558974033,
-                         end=1558974033,
-                         api_param_mods={"collectors[]": ["route-views2", "rrc03"]})
+MRT_Parser().run(api_param_mods={"collectors[]": ["route-views2", "rrc03"]})
 ```
-To run the MRT Parser with specific time intervals and bgpdump:
+
+To run the MRT Parser with custom api parameters, and exclude Isolario collectors:
+
+See: [https://bgpstream.caida.org/docs/api/broker](https://bgpstream.caida.org/docs/api/broker) for full listof API Parameters. Note that these params are only added to a dictionary of:
+ {'human': True,  'intervals': ["{},{}".format(start, end)]}
+In this example we get all RIB files from a specific collector, route-views2. We also only include RIPE and ROUTE_VIEWS (Discluding ISOLARIO)
+
+```python
+from lib_bgp_data import MRT_Parser, MRT_Sources
+MRT_Parser().run(api_param_mods={"collectors[]": ["route-views2", "rrc03"]},
+	             sources=[MRT_Sources.RIPE, MRT_Sources.ROUTE_VIEWS])
+```
+
+To run the MRT Parser with specific time intervals and bgpdump (this will be much slower):
 ```python
 from lib_bgp_data import MRT_Parser
-MRT_Parser().parse_files(start=1558974033,
-                         end=1558974033,
-                         bgpscanner=False)
+MRT_Parser().run(start=1558974033,
+                 end=1558974033,
+                 bgpscanner=False)
 ```
 
 To run the MRT Parser with specific time intervals and IPV4 and IPV6 data:
 ```python
 from lib_bgp_data import MRT_Parser
-MRT_Parser().parse_files(start=1558974033,
-                         end=1558974033,
-                         IPV4=True,
-                         IPV6=True)
+MRT_Parser().run(start=1558974033,
+                 end=1558974033,
+                 IPV4=True,
+                 IPV6=True)
 ```
 To run the MRT Parser with specific time intervals and different number of threads:
 ```python
 from multiprocessing import cpu_count
 from lib_bgp_data import MRT_Parser
-MRT_Parser().parse_files(start=1558974033,
-                         end=1558974033,
-                         download_threads=cpu_count(),
-                         parse_threads=cpu_count()/4)
+MRT_Parser().run(start=1558974033,
+                 end=1558974033,
+                 download_threads=cpu_count(),
+                 parse_threads=cpu_count()//4)
 ```
 #### From the Command Line
-Coming Soon to a theater near you
+
+**Please note that for all of these examples - your python env MUST still be activated.**
+
+There are two ways you can run this parser. It will run with all the defaults. Later in the future it is possible more parameters will be added, but for now this is unnecessary.
+
+Best way:
+```bash
+mrt_parser
+```
+
+This example must be run over the package, so cd into one directory above that package
+```bash
+python3 -m lib_bgp_data --mrt_parser
+```
+
+
 ### MRT Announcements Table Schema
 * [lib\_bgp\_data](#lib_bgp_data)
 * [MRT Announcements Submodule](#mrt-announcements-submodule)
-
-	* This table contains information on the MRT 	Announcements retrieved from the https://bgpstream.caida.org/broker/data
+	* This table contains information on the MRT 	Announcements retrieved from the https://bgpstream.caida.org/broker/data and https://isolar.io/Isolario_MRT_data/
 	* Unlogged tables are used for speed
 	* prefix: The prefix of an AS *(CIDR)*
 	* as\_path: An array of all the AS numbers in the 	AS Path (*bigint ARRAY)*
@@ -373,13 +411,15 @@ Coming Soon to a theater near you
 	            time bigint
 	        );
 	    ```
+
 ### MRT Announcements Design Choices 
 * [lib\_bgp\_data](#lib_bgp_data)
 * [MRT Announcements Submodule](#mrt-announcements-submodule)
 
+
 * We only want the first BGP dump
     * Multiple dumps have conflicting announcements
-    * Instead, for longer intervals use one BGP dump and updates
+    * Instead, for longer intervals use one BGP dump and updates (not yet implimented)
 * Due to I/O bound downloading:
     * Multithreading is used over multiprocessing for less memory
     * Four times CPUs is used for thread count
@@ -401,30 +441,8 @@ Coming Soon to a theater near you
 * bgpdump used to be the only parser that didn't ignore malformed announcements, but now with a change bgpscanner does this as well
     * This was a problem because some ASes do not ignore these errors
 * sed is used for regex parsing because it is fast and portable
-* AS Sets are not parsed because they are unreliable
-### MRT Announcements Possible Future Improvements
-* [lib\_bgp\_data](#lib_bgp_data)
-* [MRT Announcements Submodule](#mrt-announcements-submodule)
-* [Todo and Possible Future Improvements](#todopossible-future-improvements)
-	* Add functionality to download and parse updates?
-	    * This would allow for a longer time interval
-	    * After the first dump it is assumed this would be 	faster?
-	    * Would need to make sure that all updates are gathered, not just the first in the time interval to the api, as is the norm
-	* Test again for different thread numbers now that bgpscanner is used
-	* Test different regex parsers other than sed for speed?
-	* Add test cases
-	* Add cmd line args
-	* Log properly for different levels
-	* Put underscores in front of all private variables
-	* Add: 	[https://www.isolar.io/Isolario_MRT_data/Alderaan/2019_07/](https://www.isolar.io/Isolario_MRT_data/Alderaan/2019_07/)
-	* Update all docs about bgpscanner and fix it
-	* Change parameter docs to be tables
-	* Update docs on cmd line args and unit tests
-	* Include in docs as set percentage is ~.05%
-	* Make regex faster?
-	* Potentially fixed the bug where pools could not be created twice - take this out of unit tests
-	* Once in dev push to pypi
-	* Potentially partition table for speedup??
+* AS Sets are not parsed because they are unreliable, and are only .5% of all announcements
+
 ## Relationships Submodule
    * [lib\_bgp\_data](#lib_bgp_data)
    * [Short Description](#relationships-short-description)
@@ -432,7 +450,7 @@ Coming Soon to a theater near you
    * [Usage](#relationships-usage)
    * [Table Schema](#relationships-table-schema)
    * [Design Choices](#relationships-design-choices)
-   * [Possible Future Improvements](#relationships-possible-future-improvements)
+   * [Todo and Possible Future Improvements](#todopossible-future-improvements)
 
 Status: Development
 ### Relationships Short description
@@ -628,33 +646,6 @@ Coming Soon to a theater near you
 * An enum was used to make the code cleaner in relationship_file
     * Classes are more messy in this case
 
-### Relationships Possible Future Improvements
-* [lib\_bgp\_data](#lib_bgp_data)
-* [Relationships Submodule](#relationships-submodule)
-* [Todo and Possible Future Improvements](#todopossible-future-improvements)
-	* Add test cases
-	* Reach out to Caida say to use RIPE and isolario data
-	* Ask if you can see the code they use to generate the graphs
-	* Missing asn and multihomed preferences improvements
-	* Instead of filling stuff in - use SQL and caida path to replicate and make it better!
-	* get ixps and s to s???
-	* Check if disconnected like rovpp
-	* Optimize for shortest path always?
-	* Use this metric to check for poor graphs
-	* use deep learning to recreate for ourselves
-	* use caida as ground truth???
-		* Then apply to larger sets?
-	* Add cmd line args
-	* Add docs on tests and cmd line args
-	* Change parameter docs to be tables in docs
-	* Possibly take out date checking for cleaner code?
-	    * Saves very little time
-	* Move unzip_bz2 to this file? Nothing else uses it 	anymore
-	* Possibly change the name of the table to 	provider_customers
-	    * That is the order the data is in, it is like that in all files
-	* Post connectivity table in the stack overflow and ask how to combine into a better query
-	* Once in prod push to pypi
-
 ## Roas Submodule
    * [lib\_bgp\_data](#lib_bgp_data)
    * [Short Description](#roas-short-description)
@@ -662,7 +653,7 @@ Coming Soon to a theater near you
    * [Usage](#roas-usage)
    * [Table Schema](#roas-table-schema)
    * [Design Choices](#roas-design-choices)
-   * [Possible Future Improvements](#roas-possible-future-improvements)
+* [Todo and Possible Future Improvements](#todopossible-future-improvements)
 
 Status: Production
 
@@ -757,18 +748,13 @@ The other way you can run it is with:
 * [Roas Submodule](#roas-submodule)
 * CSVs are used for fast database bulk insertion
 * An index on the prefix is created on the roas for fast SQL joins
-### Roas Possible Future Improvements
-* [lib\_bgp\_data](#lib_bgp_data)
-* [Roas Submodule](#roas-submodule)
-* [Todo and Possible Future Improvements](#todopossible-future-improvements)
-	* None as of yet, production code
 
 ## Extrapolator Submodule
    * [lib\_bgp\_data](#lib_bgp_data)
    * [Extrapolator Short Description](#extrapolator-short-description)
    * [Long Description](#extrapolator-long-description)
    * [Usage](#extrapolator-usage)
-   * [Possible Future Improvements](#extrapolator-possible-future-improvements)
+* [Todo and Possible Future Improvements](#todopossible-future-improvements)
 
 Status: Development
 ### Extrapolator Short description
@@ -807,13 +793,8 @@ To initialize Extrapolator and run the rovpp version:
 from lib_bgp_data import Extrapolator
 Extrapolator().run_rovpp(attacker_asn, victim_asn, more_specific_prefix)
 ```
-### Extrapolator Possible Future Improvements
-* [lib\_bgp\_data](#lib_bgp_data)
-* [Extrapolator Submodule](#extrapolator-submodule)
-* [Todo and Possible Future Improvements](#todopossible-future-improvements)
-	* Unit tests
-	* Update docs with unit tests                                                            
-	* Once in prod push to pypi
+
+
 ## BGPStream Website Submodule
    * [lib\_bgp\_data](#lib_bgp_data)
    * [Short Description](#bgpstream-website-short-description)
@@ -821,7 +802,7 @@ Extrapolator().run_rovpp(attacker_asn, victim_asn, more_specific_prefix)
    * [Usage](#bgpstream-website-usage)
    * [Table Schema](#bgpstream-website-table-schema)
    * [Design Choices](#bgpstream-website-design-choices)
-   * [Possible Future Improvements](#bgpstream-website-possible-future-improvements)
+   * [Todo and Possible Future Improvements](#todopossible-future-improvements)
 
 Status: Development
 ### BGPStream Website Short description
@@ -1129,23 +1110,7 @@ Coming Soon to a theater near you
 * Multithreading isn't used because the website blocks the requests                              
 * Parsing is done from the end of the page to the top                                            
     * The start of the page is not always the same                                               
-### BGPStream Website Possible Future Improvements
-* [lib\_bgp\_data](#lib_bgp_data)
-* [BGPStream Website Submodule](#bgpstream-website-submodule)
-* [Todo and Possible Future Improvements](#todopossible-future-improvements)
-	* Remove unnessecary indexes
-	* Should not use bare except in files
-	* Filter bgpstream.com data using hurricane api
-	* Email all asns and ISPs about bgpstream.com data and ask other questions (how long do they last and how often, how important are blocking hijackings to you, use our tool?)
-	* Once we have ground truth use deep learning with historical data to improve upon hijacking dataset
-	* cmd line args
-	* Add test cases
-	* Update docs on cmd line args, test cases, and indexes
-	* Is there a paid version of an API for this?
-	* Multithread the first hundred results?
-	    * If we only parse new info this is the common case
-	    * Maybe this is unnessecary though and would complicate the code
-	* Once in prod push to pypi
+
 ## RPKI Validator Submodule
    * [lib\_bgp\_data](#lib_bgp_data)
    * [Short Description](#rpki-validator-short-description)
@@ -1153,9 +1118,10 @@ Coming Soon to a theater near you
    * [Usage](#rpki-validator-usage)
    * [Table Schema](#rpki-validator-table-schema)
    * [Design Choices](#rpki-validator-design-choices)
-   * [Possible Future Improvements](#rpki-validator-possible-future-improvements)
+   * [Todo and Possible Future Improvements](#todopossible-future-improvements)
 
 Status: Development
+
 ### RPKI Validator Short description
 * [lib\_bgp\_data](#lib_bgp_data)
 * [RPKI Validator Submodule](#rpki-validator-submodule)
@@ -1273,37 +1239,6 @@ Coming Soon to a theater near you
         * Binary files require changes based on each postgres version
         * Not as compatable as CSV files
 
-### RPKI Validator Possible Future Improvements
-* [lib\_bgp\_data](#lib_bgp_data)
-* [RPKI Validator Submodule](#rpki-validator-submodule)
-* [Todo and Possible Future Improvements](#todopossible-future-improvements)
-    * Move the file serving functions into their own class
-        * Improves readability?
-    * Attempt to unhinge the db and get these values with sql queries similar to:
-	    * ```SELECT * FROM mrt INNER JOIN ON m_prefix << roas_prefix AND MASKLEN(m_prefix) <= roas_max_length ```
-	    * ```SELECT * FROM unique_prefix_origins u INNER JOIN roas r ON u.prefix <<= r.prefix AND MASKLEN(u.prefix) > r.max_length;```
-	    * ```SELECT * FROM unique_prefix_origins u INNER JOIN roas r ON u.prefix <<= r.prefix AND u.origin != r.asn;```
-	    * Update rpki docs and stuff
-
-    * Add test cases
-    * Reduce total information in the headers
-    * Change paramaters to be tables in README
-    * Allow validator to be able to take non mrt_w_roas table
-    * put underscores in front of all private variables
-    * Add command line args
-    * Reduce total amount of information in headers
-    * Take out hardcoded file paths
-    * refactor
-    * Update file comments and docs on changes
-        * Such as killing port 8080, deleting dirs, Popen vs check_call, etc
-    * Move file serving functions to their own class?
-	    * Improves readability?
-	* Update docs for cmd line args, tests, etc.
-	* Once in prod push to pypi
-	* Have this just output roas since we have our own db??
-		* Eventually do this ourselves? simply sign and validate roas?
-    * 
-
 ## What if Analysis Submodule
    * [lib\_bgp\_data](#lib_bgp_data)
    * [Short Description](#what-if-analysis-short-description)
@@ -1311,7 +1246,7 @@ Coming Soon to a theater near you
    * [Usage](#what-if-analysis-usage)
    * [Table Schema](#what-if-analysis-table-schema)
    * [Design Choices](#what-if-analysis-design-choices)
-   * [Possible Future Improvements](#what-if-analysis-possible-future-improvements)
+   * [Todo and Possible Future Improvements](#todopossible-future-improvements)
 
 Status: Development
 ### What if Analysis  Short description
@@ -1400,32 +1335,12 @@ Coming Soon to a theater near you
      of the announcements sent out over the internet.
     * If an index is not included it is because it was never used
 
-### What if Analysis Possible Future Improvements
-* [lib\_bgp\_data](#lib_bgp_data)
-* [What if Analysis Submodule](#what-if-analysis-submodule)
-* [Todo and Possible Future Improvements](#todopossible-future-improvements)
-    * Aggregate what if analysis:
-        * what if analysis for treating multiple asns as a single AS
-    * Add test cases
-    * Multithreading
-    * Make the sql queries into sql files
-    * unhinge db for this, test speedup
-    * Add command line args
-    * Add docs on cmd line args and testing
-    * split data into hijacks and subprefix hijacks
-    * simple time heuristic!! (update api as well)
-    * Allow for storage of multiple days worth of announcements
-    * Unhinge the database for these queries?
-	* Once in prod push to pypi
-    * Must fix problem when performing statistics on inverted results
-        * Turns out that the extrapolation inverse results table has zero entries if it keeps all of it's announcements recieved. This is a problem because we do not perform statistics on these.
-        * Probably doesn't affect normally - only when running smaller subsets
 ## API Submodule
    * [lib\_bgp\_data](#lib_bgp_data)
    * [Short Description](#api-short-description)
    * [Usage](#api-usage)
    * [Design Choices](#api-design-choices)
-   * [Possible Future Improvements](#api-possible-future-improvements)
+   * [Todo and Possible Future Improvements](#todopossible-future-improvements)
 
 Status: Development
 ### API Short Description
@@ -1467,22 +1382,6 @@ Coming soon to a theater near you
 	* All relationship data was not returned due to time constraints
 	* Separate blueprints are used for code readability
 
-### API Possible Future Improvements
-* [lib\_bgp\_data](#lib_bgp_data)
-* [API Submodule](#api-submodule)
-* [Todo and Possible Future Improvements](#todopossible-future-improvements)
-	* Have better logging - record all queries and alert all errors
-	* Convert all stubs to parent ASNs at once
-	* Add cmd line args
-	* Add unit tests
-	* Update docs about cmd line args and unit tests
-	* Move the API to the sidr website
-	* Add documentation on how to add a new API endpoint
-	* Add api endpoints for not hijacked but blocked
-	* Create indexes for api stuff and record and have a list of them
-	* Add historical data
-	* Once in prod push to pypi
-
 ## ROVPP Submodule
    * [lib\_bgp\_data](#lib_bgp_data)
    * [Short Description](#rovpp-short-description)
@@ -1490,7 +1389,7 @@ Coming soon to a theater near you
    * [Usage](#rovppusage)
    * [Table Schema](#rovpp-table-schema)
    * [Design Choices](#rovpp-design-choices)
-   * [Possible Future Improvements](#rovpp-possible-future-improvements)
+   * [Todo and Possible Future Improvements](#todopossible-future-improvements)
 
 Status: Development
 ### ROVPP Short description
@@ -1519,31 +1418,10 @@ This module was created to simulate ROV++ over the topology of the internet for 
 * [lib\_bgp\_data](#lib_bgp_data)
 * [ROVPP Submodule](#rovpp-submodule)
 
-
-### ROVPP Possible Future Improvements
-* [lib\_bgp\_data](#lib_bgp_data)
-* [ROVPP Submodule](#rovpp-submodule)
-* [Todo and Possible Future Improvements](#todopossible-future-improvements)
-	* Aside from rewriting the script:
-		* Making multiple tiers of ASNs and percent adoptions
-		* geographical adoption
-		* Split up results between each tier of ASes
-		* Due to new ROVPP policy, must traceback to known AS, blackhole, hijacker, or victim
-		* Deadline for paper in january
-		* Link to paper here
-		* geographical adoption
-		* Real data with bgpstream.com
-		* unit tests
-		* cmd line args
-		* take out version metadata
-		* add python metadata/headers
-		* write documentation
-	* Once in prod push to pypi
-
 ## Utils
    * [lib\_bgp\_data](#lib_bgp_data)
    * [Description](#utils-description)
-   * [Possible Future Improvements](#utils-possible-future-improvements)
+   * [Todo and Possible Future Improvements](#todopossible-future-improvements)
 
 Status: Development
 ### Utils Description
@@ -1571,22 +1449,11 @@ Below is a quick list of functions that might be helpful. For more in depth expl
 * get_tags: Gets html tags
 * get_json: Gets json with url and headers specified
 
-### Utils Possible Future Improvements
-* [lib\_bgp\_data](#lib_bgp_data)
-* [Utils](#utils)
-* [Todo and Possible Future Improvements](#todopossible-future-improvements)
-	* Possibly move functions that are only used in one file out of the utils folder - find out what these are
-	* Refactor - shouldn't need much though
-	* Unit tests for some functions
-	* Put underscores in front of private variables
-	* Write docs on unit tests
-	* Once in prod push to pypi
-
 ## Config Submodule
    * [lib\_bgp\_data](#lib_bgp_data)
    * [Description](#config-submodule-description)
    * [Design Choices](#config-submodule-design-choices)
-   * [Possible Future Improvements](#config-submodule-possible-future-improvements)
+   * [Todo and Possible Future Improvements](#todopossible-future-improvements)
 
 Status: Development
 ### Config Submodule Description
@@ -1595,22 +1462,15 @@ Status: Development
 
 This module contains a config class that creates and parses a config file. To avoid outdated documentation to see the config format, please view the create_config function in utils/config.py
 
-### Config Submodule Possible Future Improvements
-* [lib\_bgp\_data](#lib_bgp_data)
-* [Config Submodule](#config-submodule)
-* [Todo and Possible Future Improvements](#todopossible-future-improvements)
-	* Unit tests
-	* Add docs on unit tests
-	* Once in prod push to pypi
-
 ## Database Submodule
    * [lib\_bgp\_data](#lib_bgp_data)
    * [Description](#database-description)
    * [Usage](#database-usage)
    * [Design Choices](#database-design-choices)
-   * [Possible Future Improvements](#database-possible-future-improvements)
+   * [Todo and Possible Future Improvements](#todopossible-future-improvements)
 
 Status: Development
+
 ### Database Description
 * [lib\_bgp\_data](#lib_bgp_data)
 * [Database Submodule](#database-submodule)
@@ -1701,19 +1561,6 @@ Coming Soon to a theater near you
 	* Unlogged tables are used for speed
 	* Most safety measures for corruption and logging are disabled to get a speedup since our database is so heavily used with such massive amounts of data
 
-### Database Possible Future Improvements
-* [lib\_bgp\_data](#lib_bgp_data)
-* [Database Submodule](#database-submodule)
-* [Todo and Possible Future Improvements](#todopossible-future-improvements)
-	* Move unhinge and rehinge db to different SQL files
-	* Perform unit tests
-	* Add cmd line args
-	* Add docs on unit tests and cmd line args
-	* Fix bare except on line 101
-	* Move the _run_sql file from install.py to a utils folder and use it for unhinge and rehinge db along with the delete_files decorator
-	* Take away the unhinging thing for db
-	* Once in prod push to pypi
-
 ### Database Installation
 * [lib\_bgp\_data](#lib_bgp_data)
 * [Database Submodule](#database-submodule)
@@ -1725,9 +1572,10 @@ See: [Installation Instructions](#installation-instructions)
    * [Description](#logging-description)
    * [Error Catcher](#error-catcher)
    * [Design Choices](#logging-design-choices)
-   * [Possible Future Improvements](#logging-possible-future-improvements)
+   * [Todo and Possible Future Improvements](#todopossible-future-improvements)
 
 Status: Development
+
 ### Logging Description
 * [lib\_bgp\_data](#lib_bgp_data)
 * [Logger Submodule](#logger-submodule)
@@ -1770,18 +1618,6 @@ A decorator to be used in all class functions that catches errors and fails nice
 	* Logger class is not used because logging deadlocks just on import
 	* Thread_Safe_Logger is used because it does not deadlock
 	* error_catcher is used so that functions fail nicely
-
-### Logging Possible Future Improvements
-* [lib\_bgp\_data](#lib_bgp_data)
-* [Logger Submodule](#logger-submodule)
-* [Todo and Possible Future Improvements](#todopossible-future-improvements)
-	* Fix the error catcher
-	* Possibly use the Logger class to log all things in the API?
-	* Figure out how to use this class while multithreading
-	* Figure out how to exit nicely and not ruin my unit tests
-	* Put underscores in front of private vars/funcs
-	* Fix to never be printing function that runs func
-	* Once in prod push to pypi
 
 ## Installation
    * [lib\_bgp\_data](#lib_bgp_data)
@@ -1920,7 +1756,7 @@ For the amount of RAM, I think this also largely depends on the extrapolator, wh
 * [Installation Submodule](#installation-submodule)
 * [Installation Submodule Description](#installation-submodule-description)
 * [Installation Submodule Design Choices](#installation-submodule-design-choices)
-* [Installation Submodule Possible Future Extensions](#installation-submodule-possible-future-extensions)
+* [Todo and Possible Future Improvements](#todopossible-future-improvements)
 
 #### Installation Submodule Description
 * [lib\_bgp\_data](#lib_bgp_data)
@@ -1969,20 +1805,6 @@ This is done through a series of steps.
             * (Some changes affect all databases)
     * bgpdump must be installed from source due to bug fixes
 
-
-#### Installation Submodule Possible Future Extensions
-* [lib\_bgp\_data](#lib_bgp_data)
-* [Installation Instructions](#installation-instructions)
-* [Installation Submodule](#installation-submodule)
-* [Todo and Possible Future Improvements](#todopossible-future-improvements)
-	* Add test cases
-    * Move install scripts to different files, or SQL files, or to their respective submodules
-    * I shouldn't have to change lines in the extrapolator to get it to run
-    * Add cmd line args
-    * Add docs on cmd line args and tests
-    * Make install script have less output for different tasks and have this as an option for initing in docs
-    * Add to docs how to use your own password for the install script
-	* Once in prod push to pypi
 ## Testing
    * [lib\_bgp\_data](#lib_bgp_data)
 
@@ -2130,84 +1952,11 @@ MIT License
 ## TODO/Possible Future Improvements
    * [lib\_bgp\_data](#lib_bgp_data)
 
-Working on at the moment:
-* ROVPP project
-* Game theory economics paper
-* Time heuristic
-* Caida relationship improvements
-* Verification if necessary
-* Unit tests
-* Email Tony when big submodules are stable
-	* Offer assistance when installing
 
+	See Jira Board
 
-* Configure database on website server to be faster
+[https://wkkbgp.atlassian.net/jira/software/projects/FORECAST/boards/1](https://wkkbgp.atlassian.net/jira/software/projects/FORECAST/boards/1)
 
-Medium Term:
-* [Forecast TODO](#forecast-possible-future-improvements)
-* [MRT Submodule TODO](#mrt-announcements-possible-future-improvements)
-* [Relationships Submodule TODO](#relationships-possible-future-improvements)
-* [ROAs Submodule TODO](#roas-possible-future-improvements)
-* [Extrapolator Submodule TODO](#extrapolator-possible-future-improvements)
-* [BGPStream Website Submodule TODO](#bgpstream-website-possible-future-improvements)
-* [RPKI Validator Submodule TODO](#rpki-validator-possible-future-improvements)
-* [What If Analysis Submodule TODO](#what-if-analysis-possible-future-improvements)
-* [API Submodule TODO](#api-possible-future-improvements)
-* [ROVPP Submodule TODO](#rovpp-possible-future-improvements)
-* [Utils TODO](#utils-possible-future-improvements)
-* [Config TODO](#config-submodule-possible-future-improvements)
-* [Database TODO](#database-possible-future-improvements)
-* [Logging TODO](#logging-possible-future-improvements)
-* [Installation Submodule TODO](#installation-submodule-possible-future-extensions)
-* Add the simple time heuristic
-* Add \_\_slots\_\_ if they do not exist in certain classes
-* Change all SQL queries to use string formatting to be more dynamic
-* Format all SQL queries properly
-* Make readme an html page or something with dropdowns for easier use
-* time heuristic
-* optimizations
-	* Only include prefixes that are hijacked or invalid
-	* Use this to run bgp forecaster
-	* create extra columns (covered and not covered by roas)
-	* Non roas: successful hijacks and 
-* Message limit has been reached in slack - make a tool to delete messages using api and get everyone to delete all old messages but say last couple of hundred
-* Change everything that has ```__eq__(self, other)``` to have: ```return isinstance(other, self.__class__) and self.a == other.a and self.b == other.b```
-* See if can utilize mydict.get(1) to mydict.get(1, something else)
-* Look into parser class that has an init to replace inits
-	* Move some stuff from utils into this?
-* include in docs legacy funcs such as rpki val and bgpdump (user for test cases)
-* Update docs to pull ripe data closer to current time
-* New source of MRT Announcements (inherit from mrt parser)
-
-Long term:
-* Automate a script to dump tables that the API uses to the forecast website server
-	* Add indexes on all of these tables for the API
-* Add a chron job and run this everyday
-* Add ability to have multiple days worth of data
-* Email statistics automatically?
-* For each part modify the work mem and other db confs
-* Add history generator to the massive package
-* Have a graph viz func that would return an AS and all of it's peers, customers, and providers, and all of their peers, customers, and providers out to a certain level
-* Potentially make other submodules for relationship data for the different sources, and compare them to Cadia?
-	* Write a paper about this?
-* Check out [https://github.com/FORTH-ICS-INSPIRE/artemis](https://github.com/FORTH-ICS-INSPIRE/artemis)
-	* Possible alternate source of hiajcks?
-	* Reynaldo took a look and said it uses bgpstream.com
-* Another graphviz script for propogation visualizations for extrapolator or rovpp?
-* Fix BGP leaks problem and publish a paper on this
-	* incentivized due to more customers wanting your AS
-* Fix origin hijackings and publish a paper on this
-	* Path end validation - read Dr. Herzbergs paper
-* Extend forecast project to be for all announcements
-* Deep learning with bgp leaks and everything else?
-	* Not sure if this makes sense since this would be opaque
-* Publish a paper on statistical analysis on the selection of nodes for the deployment of ROV, etc.
-	* Revisit old works and perform statistical analysis on them
-	* 75% of the nodes are transit nodes
-	* Should be selected in such a way to have little variance for less testing
-	* Determing the weightings on each kind of as (num peers, customers, providers, overall connectivity, etc)
-* Extend forecast to run on updates?
-	* incrimental updates for the mrt parser and why we decided not to do it – about 60k announcements per update vs 5 million for rib. that’s 80x speedup but cannot do in parallel – that’s now a 7x speedup – but if we consider that it must only take the thing where certain things equal other things, then it becomes negligable. However, the rest of our code must run this way.
 ## FAQ
    * [lib\_bgp\_data](#lib_bgp_data)
 
