@@ -3,8 +3,10 @@
 
 """This submodule contains the base class for all parsers"""
 
-from .parser import Parser
+from .enumerable_enum import Enumerable_Enum
+from .file import File
 from .decometa import DecoMeta
+from .parser import Parser
 
 __author__ = "Justin Furuness"
 __credits__ = ["Justin Furuness"]

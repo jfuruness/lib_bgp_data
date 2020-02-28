@@ -231,7 +231,7 @@ class Test_MRT_Parser:
             parser._multiprocess_parse_dls(4, mrt_files, bgpscanner)
             # Makes sure all lines are inserted into the database
             # Also makes sure that the regex is accurate
-            assert select_all := db.get_count() == total_lines
+            assert (select_all := db.get_count()) == total_lines
             # Checks to make sure that no values are null
             sqls = ["SELECT * FROM mrt_announcements WHERE prefix IS NULL",
                     "SELECT * FROM mrt_announcements WHERE as_path IS NULL",

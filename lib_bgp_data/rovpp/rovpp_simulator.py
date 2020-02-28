@@ -28,7 +28,7 @@ from .tables import Subprefix_Hijack_Temp_Table
 from .tables import ROVPP_MRT_Announcements_Table, ROVPP_Top_100_ASes_Table
 from .tables import ROVPP_Edge_ASes_Table, ROVPP_Etc_ASes_Table, ROVPP_All_Trials_Table
 from ..relationships_parser import Relationships_Parser
-from ..relationships_parser.tables import ROVPP_AS_Connectivity_Table
+from ..relationships_parser.tables import AS_Connectivity_Table
 from ..bgpstream_website_parser import BGPStream_Website_Parser
 from ..extrapolator import Extrapolator
 from ..utils import utils, Database, Config, error_catcher, db_connection
@@ -97,6 +97,8 @@ class ROVPP_Simulator:
         self.args = args
         # Can't import logging, threadsafe, 20=INFO
         self.args["stream_level"] = self.args.get("stream_level", 20)
+        assert False, "In the query below default is bgp. I don't think that's the case any longer. Should be in the files in the relationship_parser/tables.py"
+        
 
 #    @utils.run_parser(paths=False)
     def simulate(self,

@@ -23,7 +23,7 @@ __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
 
-def set_global_section_header(section):
+def set_global_section_header(section="bgp"):
     global global_section_header
     if hasattr(pytest, 'global_running_test') and pytest.global_running_test:
         global_section_header = "test"

@@ -22,18 +22,9 @@ rovpp_ases_table can clear the table it creates at initialization,
 fill itself with data from the rovpp_peers and rovpp_customer_providers
 table, and has the name and column properties that are used in the
 utils function to insert CSVs into the database.
-
-Design choices:
-    -There is no index creation function since indexes are never used
-     for the typical purpose of the relationship data
-
-Possible future improvements:
-    -Add test cases
-    -The data is actualy provider customers, change the name to
-     provider_customers in this file and all others
 """
 
-from ..utils import error_catcher, Database
+from ..utils import Database, db_connection
 
 __author__ = "Justin Furuness"
 __credits__ = ["Justin Furuness", "James Breslin"]
@@ -43,33 +34,42 @@ __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
 
-class Customer_Providers_Table(Database):
+def make_sure_tables_exist(table_classes: list):
+    """Makes sure tables exist before continuing.
+
+    If they don't runs parser to create them. This is just in
+    case certain tables are not filled already like ASes and
+    AS_Connectivity need peers and customers
+    """
+
+    try:
+        for Table_Class in table_classes:
+            with db_connection(Table_Class) as _db:
+                assert _db.get_count() > 0
+    except AssertionError:
+        # Needed here to avoid cirular imports
+        from ..relationships_parser import Relationships_Parser
+        Relationships_Parser().run()
+
+
+
+class Provider_Customers_Table(Database):
     """Class with database functionality.
 
     In depth explanation at the top of the file."""
 
     __slots__ = []
 
-    @error_catcher()
     def _create_tables(self):
         """Creates tables if they do not exist.
 
         Called during initialization of the database class."""
 
-        sql = """CREATE UNLOGGED TABLE IF NOT EXISTS {} (
+        sql = """CREATE UNLOGGED TABLE IF NOT EXISTS provider_customers (
               provider_as bigint,
               customer_as bigint
-              );""".format(self.name)
-        self.cursor.execute(sql)
-
-    def clear_table(self):
-        """Drops tables if exist"""
-
-        self.logger.debug("Dropping: {}".format(self.name))
-        self.cursor.execute("DROP TABLE IF EXISTS {};".format(self.name))
-        self.logger.debug("Dropped: {}".format(self.name))
-        self._create_tables()
-
+              );"""
+        self.execute(sql)
 
 class Peers_Table(Database):
     """Class with database functionality.
@@ -78,97 +78,59 @@ class Peers_Table(Database):
 
     __slots__ = []
 
-    @error_catcher()
     def _create_tables(self):
         """Creates tables if they do not exist.
 
         Called during initialization of the database class."""
 
-        # Drops the table if it exists
-        sql = """CREATE UNLOGGED TABLE IF NOT EXISTS {} (
+        sql = """CREATE UNLOGGED TABLE IF NOT EXISTS peers (
               peer_as_1 bigint,
               peer_as_2 bigint
-              );""".format(self.name)
-        self.cursor.execute(sql)
+              );"""
+        self.execute(sql)
 
-    def clear_table(self):
-        """Drops tables if exist"""
-
-        self.logger.debug("Dropping: {}".format(self.name))
-        self.cursor.execute("DROP TABLE IF EXISTS {};".format(self.name))
-        self.logger.debug("Dropped: {}".format(self.name))
-        self._create_tables()
-
-
-class ROVPP_Customer_Providers_Table(Customer_Providers_Table):
-    """Class with database functionality. self.name overridden
-
-    In depth explanation at the top of the file."""
-
-    __slots__ = []
-
-    pass
-
-
-class ROVPP_Peers_Table(Peers_Table):
-    """Class with database functionality. self.name overridden
-
-    In depth explanation at the top of the file."""
-
-    __slots__ = []
-
-    pass
-
-
-class ROVPP_ASes_Table(Database):
+class ASes_Table(Database):
     """Class with database functionality.
 
     In depth explanation at the top of the file."""
 
     __slots__ = []
 
-    @error_catcher()
     def _create_tables(self):
         """Creates tables if they do not exists.
 
         Called during intialization of the database class.
         """
 
-        sql = """CREATE UNLOGGED TABLE IF NOT EXISTS rovpp_ases (
+        sql = """CREATE UNLOGGED TABLE IF NOT EXISTS ases (
                  asn bigint,
                  as_type smallint,
                  impliment BOOLEAN
                  );"""
         self.cursor.execute(sql)
 
-    def clear_table(self):
-        """Clears the rovpp_ases table.
-
-        Should be called at the start of every run.
-        """
-
-        self.logger.debug("Dropping ROVPP_ASes")
-        self.cursor.execute("DROP TABLE IF EXISTS rovpp_ases")
-        self.logger.debug("ROVPP_ASes Table dropped")
-
     def fill_table(self):
-        """Populates the rovpp_ases table with data from the tables
-        rovpp_peers and rovpp_customer_providers.
+        """Populates the ases table with data from the tables
+        peers and provider_customers.
         """
+
+
+        make_sure_tables_exist([Peers_Table, Provider_Customers_Table])
+
         self.clear_table()
-        self.logger.debug("Initializing rovpp_as_table")
-        sql = """CREATE UNLOGGED TABLE IF NOT EXISTS rovpp_ases AS (
+        self.logger.debug("Initializing ases table")
+        sql = """CREATE UNLOGGED TABLE IF NOT EXISTS ases AS (
                  SELECT customer_as AS asn, 'bgp' AS as_type,
                     FALSE AS impliment FROM (
-                     SELECT DISTINCT customer_as FROM rovpp_customer_providers
-                     UNION SELECT DISTINCT provider_as FROM rovpp_customer_providers
-                     UNION SELECT DISTINCT peer_as_1 FROM rovpp_peers
-                     UNION SELECT DISTINCT peer_as_2 FROM rovpp_peers) union_temp
+                     SELECT DISTINCT customer_as FROM provider_customers
+                     UNION SELECT DISTINCT provider_as FROM provider_customers
+                     UNION SELECT DISTINCT peer_as_1 FROM peers
+                     UNION SELECT DISTINCT peer_as_2 FROM peers) union_temp
                  );"""
-        self.cursor.execute(sql)
+        self.execute(sql)
 
 
-class ROVPP_AS_Connectivity_Table(Database):
+class AS_Connectivity_Table(Database):
     """Class with database functionality.
 
     This table contains each ASN and it's associated connectivity.
@@ -176,59 +138,38 @@ class ROVPP_AS_Connectivity_Table(Database):
 
     __slots__ = []
 
-    @error_catcher()
     def _create_tables(self):
         """Creates tables if they do not exist.
 
         Called during initialization of the database class."""
 
+        make_sure_tables_exist([ASes_Table])
+
         # Drops the table if it exists
-        self.cursor.execute("DROP TABLE IF EXISTS rovpp_as_connectivity;")
+        self.clear_table()
         # I know there is a better way to do this, but due to this deadline
         # I must press forward. Apologies for the bad code.
         sql = """CREATE UNLOGGED TABLE IF NOT EXISTS
-              rovpp_as_connectivity AS (
+              as_connectivity AS (
               SELECT ases.asn AS asn,
               COALESCE(cp.connectivity, 0) +
                 COALESCE(p1.connectivity, 0) +
                 COALESCE(p2.connectivity, 0)
                   AS connectivity
-              FROM rovpp_ases ases
+              FROM ases
               LEFT JOIN (SELECT cp.provider_as AS asn,
                          COUNT(cp.provider_as) AS connectivity
-                         FROM rovpp_customer_providers cp
+                         FROM provider_customers cp
                          GROUP BY cp.provider_as) cp
               ON ases.asn = cp.asn
               LEFT JOIN (SELECT p.peer_as_1 AS asn,
                          COUNT(p.peer_as_1) AS connectivity
-                         FROM rovpp_peers p GROUP BY p.peer_as_1) p1
+                         FROM peers p GROUP BY p.peer_as_1) p1
               ON ases.asn = p1.asn
               LEFT JOIN (SELECT p.peer_as_2 AS asn,
                          COUNT(p.peer_as_2) AS connectivity
-                         FROM rovpp_peers p GROUP BY p.peer_as_2) p2
+                         FROM peers p GROUP BY p.peer_as_2) p2
               ON ases.asn = p2.asn
               );"""
 
-        self.cursor.execute(sql)
-
-    @error_catcher()
-    def get_ases_by_transitivity(self):
-        sql = """SELECT * FROM rovpp_as_connectivity
-              WHERE connectivity = 0;"""
-        non_transit_ases = [x["asn"] for x in self.execute(sql)]
-        sql = """SELECT * FROM rovpp_as_connectivity
-              WHERE connectivity > 0;"""
-        transit_ases = [x["asn"] for x in self.execute(sql)]
-        return transit_ases, non_transit_ases
-
-    @error_catcher()
-    def get_top_100_ases(self):
-        sql = """SELECT * FROM rovpp_as_connectivity
-              ORDER BY connectivity DESC LIMIT 100;"""
-        return [x["asn"] for x in self.execute(sql)]
-
-    @error_catcher()
-    def get_not_top_100_ases(self):
-        sql = """SELECT * FROM rovpp_as_connectivity
-              ORDER BY connectivity DESC OFFSET 100;"""
-        return [x["asn"] for x in self.execute(sql)]
+        self.execute(sql)

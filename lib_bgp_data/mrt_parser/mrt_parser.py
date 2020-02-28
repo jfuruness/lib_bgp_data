@@ -22,7 +22,7 @@ import warnings
 from .mrt_file import MRT_File
 from .mrt_sources import MRT_Sources
 from .tables import MRT_Announcements_Table
-from ..base_parser import Parser
+from ..base_classes import Parser
 from ..utils import utils, db_connection
 from ..utils.utils import progress_bar
 
@@ -46,7 +46,7 @@ class MRT_Parser(Parser):
         super(MRT_Parser, self).__init__(**kwargs)
         with db_connection(MRT_Announcements_Table, self.logger) as _ann_table:
             # Clears the table for insertion
-            _ann_table.clear_tables()
+            _ann_table.clear_table()
             # Tables can't be created in multithreading so it's done now
             _ann_table._create_tables()
 
@@ -93,7 +93,7 @@ class MRT_Parser(Parser):
                       start: int,
                       end: int,
                       PARAMS_modification={},
-                      sources=[]):
+                      sources=MRT_Sources.__members__.values()):
         """Gets caida and iso URLs, start and end should be epoch"""
 
         self.logger.info(f"Getting MRT urls for {[x.name for x in sources]}")
@@ -236,5 +236,5 @@ class MRT_Parser(Parser):
         warnings.warn(("MRT_Parser.parse_files is depreciated. "
                        "Use MRT_Parser.run instead"),
                       DeprecationWarning,
-                      stacklevel=1)
-        self._run(self, **kwargs)
+                      stacklevel=2)
+        self.run(self, **kwargs)

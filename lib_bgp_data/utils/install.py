@@ -59,7 +59,7 @@ import os
 from multiprocess import cpu_count
 import fileinput
 import sys
-from .logger import Thread_Safe_Logger as logger, error_catcher
+from .logger import Thread_Safe_Logger as Logger, error_catcher
 from .config import Config
 from .utils import delete_paths
 
@@ -103,7 +103,7 @@ class Install:
 
         DEBUG = 10  # Cannot import logging due to deadlocks
         # Initializes self.logger
-        self.logger = logger({"stream_level": DEBUG})
+        self.logger = Logger(stream_level=DEBUG)
         # Store the section header for the config file
         self.section = section
         # Makes sure that you are a sudo user

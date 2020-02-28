@@ -91,20 +91,20 @@ def now():
 def get_default_start():
     """Gets default start time, used in multiple places."""
 
-    return (now()-timedelta(days=2)).replace(hour=0,
+    return int((now()-timedelta(days=2)).replace(hour=0,
                                              minute=0,
                                              second=0,
-                                             microsecond=0).timestamp() - 5
+                                             microsecond=0).timestamp() - 5)
 
 
 def get_default_end():
     """Gets default end time, used in multiple places."""
 
     # NOTE: Should use the default start for this method
-    return (now()-timedelta(days=2)).replace(hour=23,
+    return int((now()-timedelta(days=2)).replace(hour=23,
                                              minute=59,
                                              second=59,
-                                             microsecond=59).timestamp()
+                                             microsecond=59).timestamp())
 
 def download_file(logger,
                   url,
@@ -137,7 +137,7 @@ def download_file(logger,
         except Exception as e:
             retries -= 1
             time.sleep(5)
-            if retries <= 0:
+            if retries <= 0 or "No such file" in str(e):
                 logger.error("Failed download {}\nDue to: {}".format(url, e))
                 sys.exit(1)
 

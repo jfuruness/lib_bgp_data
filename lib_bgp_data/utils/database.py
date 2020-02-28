@@ -41,6 +41,7 @@ import os
 import time
 from .logger import error_catcher, Thread_Safe_Logger as Logger
 
+
 __authors__ = ["Justin Furuness", "Matt Jaccino"]
 __credits__ = ["Justin Furuness", "Matt Jaccino"]
 __Lisence__ = "MIT"
@@ -59,7 +60,7 @@ def db_connection(table=None,
     else:
         t = Database(logger, cursor_factory=cursor_factory)
     if clear:
-        t.clear_tables()
+        t.clear_table()
         t._create_tables()
     yield t
     t.close()
@@ -74,6 +75,9 @@ class Database:
 
     __slots__ = ['logger', 'conn', 'cursor']
 
+    # NOTE: SHOULD INHERIT DECOMETA HERE!!!
+
+    
     @error_catcher()
     def __init__(self, logger=Logger(), cursor_factory=RealDictCursor, _open=True):
         """Create a new connection with the database"""
@@ -266,10 +270,10 @@ class Database:
         return self.execute("SELECT * FROM {}".format(self.name))
 
     @error_catcher()
-    def get_count(self):
+    def get_count(self, sql=None):
         """Gets count from table"""
 
-        sql = "SELECT COUNT(*) FROM {}".format(self.name)
+        sql = sql if sql else "SELECT COUNT(*) FROM {}".format(self.name)
         return self.execute(sql)[0]["count"]
 
     @property
@@ -295,7 +299,7 @@ class Database:
         # takes out _Table and makes lowercase
         return self.__class__.__name__.replace("_Table", "").lower()
 
-    def clear_tables(self):
+    def clear_table(self):
         """Clears the table"""
 
         self.logger.debug(f"Dropping {self.name} Table")

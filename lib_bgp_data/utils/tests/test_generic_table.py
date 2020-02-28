@@ -38,7 +38,7 @@ class Test_Generic_Table:
         # Initializes the table if it doesn't exist
         with db_connection(self.table_class) as db:
             # Makes sure that the mrt table is deleted
-            db.clear_tables()
+            db.clear_table()
             try:
                 # This should fail
                 db.execute("SELECT * FROM mrt_announcements")
@@ -60,7 +60,7 @@ class Test_Generic_Table:
         # Initializes the table if it doesn't exist
         with db_connection(self.table_class) as db:
             # Makes sure that the mrt table is deleted
-            db.clear_tables()
+            db.clear_table()
             # Inits the table when it does not exist
             db._create_tables()
             # Table should exist and have no resuts

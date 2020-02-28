@@ -14,8 +14,12 @@ __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
 from .decometa import DecoMeta
+import pytest
+from ..utils import utils
+from ..utils import set_global_section_header
 from ..utils import Thread_Safe_Logger as Logger
-from ..utils import utils, set_global_section_header
+
+
 
 class Parser:
     """This class is the base class for all parsers.
@@ -33,7 +37,11 @@ class Parser:
         Section is the arg for the config. You can run on entirely
         separate databases with different sections."""
 
-        kwargs["section"] = kwargs.get("section", "bgp")
+        if hasattr(pytest, "global_running_test") and pytest.global_running_test:
+            default_section = "test"
+        else:
+            default_section = "bgp"
+        kwargs["section"] = kwargs.get("section", default_section)
 
         # The class name. This because when parsers are done,
         # they aggressively clean up. We do not want parser to clean up in

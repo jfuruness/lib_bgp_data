@@ -7,14 +7,14 @@ For specifics on each test, see the docstrings under each function.
 """
 
 
+import datetime
 import pytest
 import validators
 from ..relationships_parser import Relationships_Parser
 from ...utils import utils, db_connection, Config
-import datetime
 
 
-__author__ = "Matt Jaccino", "Justin Furuness"
+__authors__ = ["Matt Jaccino", "Justin Furuness"]
 __credits__ = ["Matt Jaccino", "Justin Furuness"]
 __Lisence__ = "MIT"
 __maintainer__ = "Justin Furuness"
@@ -37,30 +37,17 @@ class Test_Relationships_Parser:
         # Delete tables from database
         with db_connection() as db:
             db.execute("DROP TABLE IF EXISTS peers")
-            db.execute("DROP TABLE IF EXISTS customer_providers")
+            db.execute("DROP TABLE IF EXISTS provider_customers")
             # Parses latest file
-            self.parser.parse_files(agg_months)
+            self.parser.run(agg_months)
             # Get number of entries in table 'peers'
-            peers = db.execute("SELECT * FROM peers")
-            # Get number of entries in table 'customer_providers'
-            cust_prov = db.execute("SELECT * FROM customer_providers")
-        # Make sure peers table is larger than customer_providers
-        assert len(peers) > 0 and len(cust_prov) > 0
+            _peers: list = db.execute("SELECT * FROM peers")
+            # Get number of entries in table 'provider_customers'
+            _cust_prov: list = db.execute("SELECT * FROM provider_customers")
+        # Make sure peers table is larger than provider_customers
+        assert len(_peers) > 0 and len(_cust_prov) > 0
         # Return these entry counts for other tests
-        return len(peers), len(cust_prov)
-
-    def test_parse_files_agg(self):
-        """Tests the parse_files_agg function which is used to aggregate
-        relationships data across multiple months.
-        """
-
-        # Get a value for the number of entries on the peers and
-        # customer_providers table for comparison
-        peers, cust_prov = self.test_parse_files()
-        # Get aggregate months
-        peers_agg, cust_provi_agg = self.test_parse_files(agg_months=2)
-        # Make sure parsing multiple months gives more entries than just one
-        assert peers_agg > peers and cust_prov_agg > cust_prov
+        return len(_peers), len(_cust_prov)
 
     def test__get_urls(self):
         """Tests the _get_url helper function"""

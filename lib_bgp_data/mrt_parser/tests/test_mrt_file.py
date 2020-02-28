@@ -29,7 +29,7 @@ class Test_MRT_File:
         with using bgpdump.
         """
 
-        start_time = utils.get_default_start(),
+        start_time = utils.get_default_start()
         end_time = utils.get_default_end()
         # Create an MRT_File object and download from the URL above
         test_file: MRT_File = self._mrt_file_factory(start_time, end_time)
@@ -71,7 +71,7 @@ class Test_MRT_File:
         test_file.csv_name = "scanner.txt"
         test_file._convert_dump_to_csv(bgpscanner=True)
         # Get the number of lines in this file
-        lines = self._number_of_lines("scanner.txt")
+        lines = utils._number_of_lines("scanner.txt")
         # Delete the file once the lines have been counted
         check_call("rm scanner.txt", shell=True)
         # Get the number of entries in the MRT Announcements table
@@ -142,10 +142,10 @@ class Test_MRT_File:
                           end=utils.get_default_end()):
         """Generates MRT File objects with the same URL for comparison"""
 
-        parser = MRT_Parser()
+        parser = MRT_Parser(stream_level=10)
         mrt_file = MRT_File(parser.path,
                             parser.csv_dir,
-                            parser._get_mrt_urls(start, end)[0],
+                            parser._get_mrt_urls(start, end)[5],
                             logger=parser.logger)
         utils.download_file(mrt_file.logger,
                             mrt_file.url,

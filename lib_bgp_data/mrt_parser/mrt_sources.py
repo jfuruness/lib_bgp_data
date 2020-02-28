@@ -3,7 +3,7 @@
 
 """This module contains enums for possible sources of MRT Files"""
 
-from ..utils import Enumerable_Enum
+from ..base_classes import Enumerable_Enum
 
 __author__ = "Justin Furuness"
 __credits__ = ["Justin Furuness"]

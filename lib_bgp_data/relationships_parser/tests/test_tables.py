@@ -1,16 +1,17 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from ..tables import Customer_Providers_Table, Peers_Table
-from ..tables import ROVPP_Customer_Providers_Table, ROVPP_Peers_Table
-from ..tables import ROVPP_ASes_Table, ROVPP_AS_Connectivity_Table
-from ...utils import db_connection, utils
+
+from psycopg2.errors import UndefinedTable
+from ..tables import Provider_Customers_Table, Peers_Table
+from ..tables import ASes_Table, AS_Connectivity_Table
 from ..relationships_file import Rel_File
 from ..relationships_parser import Relationships_Parser
-from psycopg2.errors import UndefinedTable
+from ...utils import db_connection, utils
+from ...utils import Test_Generic_Table
 
 
-__author__ = "Matt Jaccino", "Justin Furuness"
+__authors__ = ["Matt Jaccino", "Justin Furuness"]
 __credits__ = ["Matt Jaccino", "Justin Furuness"]
 __Lisence__ = "MIT"
 __maintainer__ = "Justin Furuness"
@@ -18,58 +19,35 @@ __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
 
-class Create_Tables:
-    """This will test the '_create_tables' method for all Table classes
-    that inherit from Database"""
+class Test_Provider_Customers_Table(Test_Generic_Table):
 
-    def teardown(self):
-        self.table.close()
+    table_class = Provider_Customers_Table
 
 
-class Test_ROVPP_Customer_Providers_Table(Create_Tables):
+class Test_Peers_Table(Test_Generic_Table):
 
-    def setup(self):
-        self.table = ROVPP_Customer_Providers_Table()
-
-    def test_ROVPP_CPT_name(self):
-        """This will test the name property of the class"""
-
-        assert self.table.name == "rovpp_customer_providers"
+    table_class = Peers_Table
 
 
-class Test_ROVPP_Peers_Table(Create_Tables):
+class Test_ASes_Table(Test_Generic_Table):
+    """This will test all methods within the ASes_Table class."""
 
-    def setup(self):
-        self.table = ROVPP_Peers_Table()
-
-    def test_ROVPP_PT_name(self):
-        """This will test the name propery of the class"""
-
-        assert self.table.name == "rovpp_peers"
-
-
-class Test_ROVPP_ASes_Table(Create_Tables):
-    """This will test all methods within the ROVPP_ASes_Table class."""
-
-    def setup(self):
-        """Prepartion work for each test."""
-
-        # Initialize the ROVPP_ASes_Table object
-        self.table = ROVPP_ASes_Table()
+    table_class = ASes_Table
 
     def test_clear_table(self):
         """This will test the 'clear_table' method."""
 
+        
         # Communicate with database
-        with db_connection() as db:
+        with db_connection(ASes_Table) as _db:
             # Make sure the table exists before testing the method
-            db.execute("SELECT 1 FROM rovpp_ases;")
+            _db.get_count()
             # Use the method 'clear_table' to remove the rovpp_ases table
-            self.table.clear_table()
+            _db.clear_table()
             # Attempt to query the now non-existent table
             try:
                 # Try to raise error by querying the table
-                db.execute("SELECT 1 FROM rovpp_ases;")
+                _db.get_count()
                 assert False
             except UndefinedTable:
                 # Otherwise, it was cleared
@@ -78,21 +56,17 @@ class Test_ROVPP_ASes_Table(Create_Tables):
     def test_fill_table(self):
         """This will test the 'fill_table' method."""
 
-        # Make sure rovpp_peers & rovpp_customer_providers tables are not
-        # empty before testing by parsing files with rovpp == True
-        parser = Relationships_Parser()
-        url = parser._get_urls()[0]
-        parser.parse_files(rovpp=True, url=url)
-        with db_connection() as db:
+        with db_connection(ASes_Table) as _db:
+            _parser = Relationships_Parser()
+            url = _parser._get_urls()[0]
+            _parser.parse_files(url=url)
             # Use the 'fill_table' method to populate the table with data
-            self.table.fill_table()
+            _db.fill_table()
             # Get the count of rovpp_ases after filling
-            post = db.execute("SELECT COUNT(*) FROM rovpp_ases;")[0]['count']
-        # Make sure the count was 0 before filling
-        assert post > 0
+            _post = _db.get_count()
         # Use the Rel_File class and Relationships_Parser class to find
         # number of unique ASes in file manually
-        assert post == self._get_unique_ases_count()
+        assert _post == self._get_unique_ases_count()
 
     def _get_unique_ases_count(self):
         """Helper function to unique number of ases in file"""
@@ -105,12 +79,12 @@ class Test_ROVPP_ASes_Table(Create_Tables):
 
         # Use a set to hold ASes
         ases = set()
-        with open(path) as sample:
-            for line in sample:
+        with open(path) as _sample:
+            for _line in _sample:
                 # Skip all commented lines
-                if '#' not in line:
+                if '#' not in _line:
                     # Format is as1 | as2 | things we don't need
-                    for _as in line.split('|')[:2]:
+                    for _as in _line.split('|')[:2]:
                         # Add to the set of all ases
                         ases.add(_as)
 
@@ -119,73 +93,27 @@ class Test_ROVPP_ASes_Table(Create_Tables):
         return len(ases)
 
 
-class Test_ROVPP_AS_Connectivity_Table(Create_Tables):
+class Test_AS_Connectivity_Table(Test_Generic_Table):
     """This will test all methods within the ROVPP_AS_Connectivity_Table
     class.
 
     For better explanations of the tests, see the docstrings under each test.
     """
-    def setup(self):
-        """Preparation work for testing the ROVPP_AS_Connectivity_Table
-        class."""
 
-        # Initialize an ROVPP_AS_Connectivity_Table object
-        self.table = ROVPP_AS_Connectivity_Table()
+    table_class = AS_Connectivity_Table
 
     def test__create_tables(self):
         """This will test the '_create_tables' method of the class"""
 
+
         # Make sure count is accurate
-        with db_connection() as db:
-            conn_count = db.execute("""SELECT COUNT(*) FROM
-                                           rovpp_as_connectivity;"""
-                                    )[0]['count']
-            as_count = db.execute("SELECT COUNT(*) FROM " +
-                                  "rovpp_ases;")[0]['count']
+        with db_connection(ASes_Table) as _ases_db:
+            _ases_db.fill_table()
+            with db_connection(self.table_class) as _conn_db:
+                _conn_count = _conn_db.get_count("""SELECT COUNT(*)
+                                                     FROM as_connectivity
+                                                 WHERE connectivity = 0;""")
+                _conn_as_count = _conn_db.get_count()
+                _as_count = _ases_db.get_count()
         # Make sure every AS from rovpp_ases is in this table
-        assert conn_count == as_count
-
-    def test_get_ases_by_transitivity(self):
-        """This will test the 'get_ases_by_transitivity' method"""
-
-        # Communicate with database
-        with db_connection() as db:
-            # Get list of all ASes with zero connectivity
-            zero_conn = db.execute("""SELECT * FROM rovpp_as_connectivity
-                                      WHERE connectivity = 0;"""
-                                   )[0]['asn']
-            # Get list of all ASes with non-zero connectivity
-            non_zero_conn = db.execute("""SELECT * FROM rovpp_as_connectivity
-                                          WHERE connectivity > 0;"""
-                                       )[0]['asn']
-        # Make sure these two lists are the same as those returned by method
-        assert zero_conn, non_zero_conn \
-            == self.table.get_ases_by_transitivity()
-
-    def test_get_top_100_ases(self):
-        """ This will test the 'get_top_100_ases' method"""
-
-        # Manually query database for first 100 ASes in descending order
-        with db_connection() as db:
-            man_top = [x['asn'] for x in
-                       db.execute("""SELECT * FROM rovpp_as_connectivity
-                                     ORDER BY connectivity DESC LIMIT 100""")]
-        # Use the 'get_top_100_ases' method to compare
-        method_top = self.table.get_top_100_ases()
-        # Make sure these two lists are the same
-        assert man_top == method_top
-
-    def test_get_not_top_100_ases(self):
-        """This will test the 'get_not_top_100_ases' method"""
-
-        # Manually query database for the 'not top 100' ASes in descending
-        # order
-        with db_connection() as db:
-            man_not_top = [x['asn'] for x in
-                           db.execute("""SELECT * FROM rovpp_as_connectivity
-                                         ORDER BY connectivity DESC OFFSET
-                                         100""")]
-        # Use the 'get_not_top_100_ases' method to compare
-        method_not_top = self.table.get_not_top_100_ases()
-        # Make sure these two lists are the same
-        assert man_not_top == method_not_top
+        assert _conn_count > 45000 and _conn_as_count == _as_count

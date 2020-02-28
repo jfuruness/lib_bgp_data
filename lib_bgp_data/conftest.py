@@ -5,6 +5,7 @@
 
 import pytest
 from subprocess import check_call
+from .utils.config import set_global_section_header
 
 __author__ = "Justin Furuness"
 __credits__ = ["Justin Furuness"]
@@ -15,6 +16,7 @@ __status__ = "Development"
 
 def pytest_runtest_setup():
     pytest.global_running_test = True
+    set_global_section_header()
     bash = "sudo -i -u postgres psql -d test -c "
     bash += "'CREATE SCHEMA IF NOT EXISTS public;'"
     check_call(bash, shell=True)
