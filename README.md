@@ -9,14 +9,15 @@ This package contains multiple submodules that are used to gather and manipulate
 * [lib\_bgp\_data](#lib_bgp_data)
 * [Description](#package-description)
 * Submodules:
-	* [Forecast Submodule](#forecast-submodule)
-	* [MRT Announcements Submodule](#mrt-announcements-submodule)
-	* [Relationships Submodule](#relationships-submodule)
-	* [Roas Submodule](#roas-submodule)
-	* [Extrapolator Submodule](#extrapolator-submodule)
-	* [BGPStream Website Submodule](#bgpstream-website-submodule)
-	* [RPKI Validator Submodule](#rpki-validator-submodule)
-	* [What if Analysis Submodule](#what-if-analysis-submodule)
+	* [Forecast Parser](#forecast-submodule)
+	* [Base Parser](#base-parser)
+	* [MRT Announcements Parser](#mrt-announcements-submodule)
+	* [Relationships Parser](#relationships-submodule)
+	* [Roas Parser](#roas-submodule)
+	* [Extrapolator Parser](#extrapolator-submodule)
+	* [BGPStream Website Parser](#bgpstream-website-submodule)
+	* [RPKI Validator Parser](#rpki-validator-submodule)
+	* [What if Analysis Parser](#what-if-analysis-submodule)
 	* [API Submodule](#api-submodule)
 	* [ROVPP Submodule](#rovpp-submodule)
 	* [Utils](#utils)
@@ -188,6 +189,118 @@ See: [MRT Announcements Table Schema](#mrt-announcements-table-schema)
 	* The database is vacuum analyzed and checkpointed before big joins to help the query planner choose the right query plan
 	* When testing only one prefix is used to speed up the extrapolator and reduce data size
 
+## Base Parser
+   * [lib\_bgp\_data](#lib_bgp_data)
+   * [Short Description](#base-parser-short-description)
+   * [Long Description](#base-parser-long-description)
+   * [Usage](#base-parser-usage)
+   * [Design Choices](#base-parser-design-choices)
+
+status = development
+
+### Base Parser Short description
+* [lib\_bgp\_data](#lib_bgp_data)
+* [Base Parser](#base-parser)
+
+The purpose of this parser is to template all the other parsers, for faster code writing, and so that others can use the library easier. 
+
+### Base Parser Long description
+* [lib\_bgp\_data](#lib_bgp_data)
+* [Base Parser](#base-parser)
+
+The purpose of this parser is to template all the other parsers, for faster code writing, and so that others can use the library easier. 
+
+To start with we have \_\_slots\_\_. This is a python way of confining the classes attributes to just those mentioned here, which allows for faster access and imo more readability. 
+
+This class also uses a metaclass called DecoMeta, which decorates all functions within the class and all subclasses to have the error_catcher decorator. This decorator will encapsulate any programming errors and log them properly. 
+
+You'll also notice in the init section we must set the section variable. This is the section from the config file that your code will run in. This controls the database, and other config settings. Basically it is so that multiple people can work on the same machine, and not conflict with one another.
+
+You'll notice that the path and csv directories that are created depend on the name of your class. That is  because we don't want multiple classes conflicting with one another if they are running side by side. In other words, with different names, they will be parsed into different path and csv directories.
+
+Then there is the run function. All parsers should have a _run function, which this function calls. It simply records the time the parser takes to complete, and captures errors nicely. The reason this is enforced is so that the base parser can delete the path and csv directory, no matter what errors occur during the subclass._run method.
+
+The argparse call method isn't something you need to worry about. If you really want to know, that is the method argparse will call when you pass in the name of this class as a command line argument. It is done here so that all parsers have that functionality.
+
+### Base Parser Usage
+* [lib\_bgp\_data](#lib_bgp_data)
+* [Base Parser](#base-parser)
+
+#### In a Script
+To create other parsers, simply inherit this class, and make sure the parser has a _run method (essentially, the main method of the parser).
+
+```python
+# Assuming you are in lib_bgp_data.lib_bgp_data.my_new_parser:
+
+from ..base_classes import Parser
+class My_New_Parser(Parser):
+	# Note that you do not need **kwargs, but you always need self and args
+	def _run(self, *args, **kwargs):
+		pass  # My function stuff here
+```
+
+##### Parser Initialization:
+To initialize any parser that inherits this class:
+
+**Please note that for all of these examples - your python env MUST still be activated.**
+
+| Parameter    | Default                             | Description                                                                                                       |
+|--------------|-------------------------------------|-------------------------------------------------------------------------------------------------------------------|
+| name         | ```self.__class__.__name__```     | The purpose of this is to make sure when we clean up paths at the end it doesn't delete files from other parsers. |
+| path         | ```"/tmp/bgp_{}".format(name)```     | Not used                                                                                         |
+| csv_dir      | ```"/dev/shm/bgp_{}".format(name)``` | Path for CSV files, located in RAM                                                                                |
+| stream_level | ```logging.INFO```                        | Logging level for printing                                                                                        |
+
+> Note that any one of the above attributes can be changed or all of them can be changed in any combination
+
+**Note that for all examples below, we use the MRT_Parser, but you could do this the same way with any class that inherits the base parser**
+
+NOTE: Later this should be changed in the html, so that whenever someone redirects from another url, that parser will be the default.
+
+To initialize MRT_Parser with default values:
+```python
+from lib_bgp_data import MRT_Parser
+mrt_parser = MRT_Parser()
+```
+
+To initialize MRT_Parser with custom path, CSV directory, and logging level:
+```python
+from logging import DEBUG
+from lib_bgp_data import MRT_Parser
+mrt_parser = MRT_Parser(path="/my_custom_path",
+                        csv_dir="/my_custom_csv_dir",
+                        stream_level=DEBUG)
+```
+
+To run the MRT Parser with defaults:
+```python
+from lib_bgp_data import MRT_Parser
+MRT_Parser().run()
+```
+#### From the Command Line
+
+**Please note that for all of these examples - your python env MUST still be activated.**
+
+There are two ways you can run this parser. It will run with all the defaults. Later in the future it is possible more parameters will be added, but for now this is unnecessary. This will call the run method.
+
+**Note that for all examples below, we use the MRT_Parser, but you could do this the same way with any class that inherits the base parser. Simply change the name of the parser, to be the lowercase version of the class name of your parser.**
+
+Best way:
+```bash
+mrt_parser
+```
+
+This example must be run over the package, so cd into one directory above that package
+```bash
+python3 -m lib_bgp_data --mrt_parser
+```
+
+### Base Parser Design Choices 
+* [lib\_bgp\_data](#lib_bgp_data)
+* [Base Parser](#base-parser)
+
+Design choices are explained in the [Long Description](#base-parser-long-description). The template of this class was for easy extendability of this python package. Before without this, it was much harder to create parser classes in a template like fashion.
+
 ## MRT Announcements Submodule
    * [lib\_bgp\_data](#lib_bgp_data)
    * [Short Description](#mrt-announcements-short-description)
@@ -265,7 +378,7 @@ Initializing the MRT Parser:
 **Please note that for all of these examples - your python env MUST still be activated.**
 
 
-The Defaults for the MRT Parser are:
+The Defaults for the MRT Parser are the same as the [base parser's](base-parser-usage) it inherits:
 
 | Parameter    | Default                             | Description                                                                                                       |
 |--------------|-------------------------------------|-------------------------------------------------------------------------------------------------------------------|
@@ -452,7 +565,8 @@ python3 -m lib_bgp_data --mrt_parser
    * [Design Choices](#relationships-design-choices)
    * [Todo and Possible Future Improvements](#todopossible-future-improvements)
 
-Status: Development
+Status: Production
+
 ### Relationships Short description
 * [lib\_bgp\_data](#lib_bgp_data)
 * [Relationships Submodule](#relationships-submodule)
@@ -466,33 +580,27 @@ The purpose of this class is to download relationship files and insert the data 
 
 1. Make an API call to:
     * http://data.caida.org/datasets/as-relationships/serial-2/
-    * Handled in _get_url function
+    * Handled in _get_urls function
     * This will return the URL of the file that we need to download
     * In that URL we have the date of the file, which is also parsed out
     * The serial 2 data set is used because it has multilateral peering
     * which appears to be the more complete data set
-2. Then check if the file has already been parsed before
-    * Handled in parse_files function
-    * If the URL date is less than the config file date do nothing
-    * Else, parse
-    * This is done to avoid unneccesarily parsing files
-4. Then the Relationships_File class is then instantiated
-5. The relationship file is then downloaded
+2. Then the Relationships_File class is then instantiated
+3. The relationship file is then downloaded
     * This is handled in the utils.download_file function
-6. Then the file is unzipped
+4. Then the file is unzipped
     * handled by utils _unzip_bz2
-7. The relationship file is then split into two
+5. The relationship file is then split into two
     * Handled in the Relationships_File class
     * This is done because the file contains both peers and customer_provider data.
     * The file itself is a formatted CSV with "|" delimiters
     * Using grep and cut the relationships file is split and formatted
     * This is done instead of regex because it is faster and simpler
-8. Then each CSV is inserted into the database
+6. Then each CSV is inserted into the database
     * The old table gets destroyed first
     * This is handleded in the utils.csv_to_db function
     * This is done because the file comes in CSV format
     * Optionally data can be inserted into ROVPP tables for the ROVPP simulation
-9. The config is updated with the last date a file was parsed
 
 ### Relationships Usage
 * [lib\_bgp\_data](#lib_bgp_data)
@@ -501,12 +609,17 @@ The purpose of this class is to download relationship files and insert the data 
 #### In a Script
 
 Initializing the Relationships Parser:
-> The default params for the Relationships parser are:
-> name = self.\_\_class\_\_.\_\_name\_\_  # The purpose of this is to make sure when we clean up paths at the end it doesn't delete files from other parsers.
-> path = "/tmp/bgp_{}".format(name)  # This is for the relationship files
-> CSV directory = "/dev/shm/bgp_{}".format(name) # Path for CSV files, located in RAM
-> logging stream level = logging.INFO  # Logging level for printing
+The Defaults for the Relationships Parser are:
+
+| Parameter    | Default                             | Description                                                                                                       |
+|--------------|-------------------------------------|-------------------------------------------------------------------------------------------------------------------|
+| name         | ```self.__class__.__name__```     | The purpose of this is to make sure when we clean up paths at the end it doesn't delete files from other parsers. |
+| path         | ```"/tmp/bgp_{}".format(name)```     | Not used                                                                                         |
+| csv_dir      | ```"/dev/shm/bgp_{}".format(name)``` | Path for CSV files, located in RAM                                                                                |
+| stream_level | ```logging.INFO```                        | Logging level for printing                                                                                        |
+
 > Note that any one of the above attributes can be changed or all of them can be changed in any combination
+
 
 To initialize Relationships_Parser with default values:
 ```python
@@ -517,40 +630,49 @@ To initialize Relationships_Parser with custom path, CSV directory, and logging 
 ```python
 from logging import DEBUG
 from lib_bgp_data import Relationships_Parser
-relationships_parser = Relationships_Parser({"path": "/my_custom_path",
-                                             "csv_dir": "/my_custom_csv_dir",
-                                             "stream_level": DEBUG})
+relationships_parser = Relationships_Parser(path="/my_custom_path",
+                                            csv_dir="/my_custom_csv_dir",
+                                            stream_level=DEBUG)
 ```
 Running the Relationships_Parser:
-> The default params for the relationships parser's parse_files are:
-> rovpp = False #  By default store in the normal tables
-> url = None  # If rovpp is set to true, the specified URL will be used for downloads
 
 To run the Relationships Parser with defaults:
 ```python
 from lib_bgp_data import Relationships_Parser
-Relationships_Parser().parse_files()
+Relationships_Parser().run()
 ```
-To run the Relationships Parser for ROVPP with a specific URL:
+To run the Relationships Parser for with a specific URL:
 ```python
 from lib_bgp_data import Relationships_Parser
-Relationships_Parser().parse_files(rovpp=True,
-                                   url="my_specific_url")
+Relationships_Parser().run(url="my_specific_url")
 ```
 #### From the Command Line
-Coming Soon to a theater near you
+
+**Please note that for all of these examples - your python env MUST still be activated.**
+
+There are two ways you can run this parser. It will run with all the defaults. Later in the future it is possible more parameters will be added, but for now this is unnecessary.
+
+Best way:
+```bash
+relationships_parser
+```
+
+This example must be run over the package, so cd into one directory above that package
+```bash
+python3 -m lib_bgp_data --relationships_parser
+```
+
 ### Relationships Table Schema
 * [lib\_bgp\_data](#lib_bgp_data)
 * [Relationships Submodule](#relationships-submodule)
-* [customer_providers Table Schema](#customer_providers-table-schema)
+* [providers customer_Table Schema](#provider_customers-table-schema)
 * [peers Table Schema](#peers-table-schema)
-* [rovpp_customer_providers Table Schema](#rovpp_customer_providers-table-schema)
-* [rovpp_peers Table Schema](#rovpp_peers-table-schema)
-* [rovpp_as_connectivity Table Schema](#rovpp_as_connectivity-table-schema)
+* [ases Table Schema](#ases-table-schema)
+* [as_connectivity Table Schema](#as_connectivity-table-schema)
 
 * These tables contains information on the relationship data retrieved from http://data.caida.org/datasets/as-relationships/serial-2/
 * Unlogged tables are used for speed
-#### customer_providers Table Schema:
+#### provider_customers Table Schema:
 * [Relationships Table Schema](#relationships-table-schema)
 
 * Contains data for customer provider pairs
@@ -559,7 +681,7 @@ Coming Soon to a theater near you
 * Create Table SQL:
     ```
     CREATE UNLOGGED TABLE IF NOT EXISTS
-        customer_providers (
+        provider_customers (
             provider_as bigint,
             customer_as bigint
         );
@@ -578,36 +700,24 @@ Coming Soon to a theater near you
             peer_as_2 bigint
         );
     ```
-##### ROVPP Tables:
-###### rovpp_customer_providers Table Schema:
-* [Relationships Table Schema](#relationships-table-schema)
-
-* Contains data for customer provider pairs
-* provider_as: Provider ASN *(bigint)*
-* customer_as: Customer ASN (*bigint)*
-* Create Table SQL:
-    ```
-    CREATE UNLOGGED TABLE IF NOT EXISTS
-        rovpp_customer_providers (
-            provider_as bigint,
-            customer_as bigint
-        );
-    ```
-###### rovpp_peers Table Schema:
+#### ASes Table Schema:
 * [Relationships Table Schema](#relationships-table-schema)
 
 * Contains data for peer pairs
-* peer_as_1: An ASN that is a peer *(bigint)*
-* peer_as_2: An ASN that is another peer *(bigint)*
+* asn: An ASN *(bigint)*
+* as_type: An AS type to indicate policy it adopts, such as ROV, ROV++, etc. Used for ROV++. Numbers are from an enum called Policies. Numbers are used for faster SQL joins *(bigint)*
 * Create Table SQL:
     ```
-    CREATE UNLOGGED TABLE IF NOT EXISTS
-        rovpp_peers (
-            peer_as_1 bigint,
-            peer_as_2 bigint
-        );
+		CREATE UNLOGGED TABLE IF NOT EXISTS ases AS (
+                 SELECT customer_as AS asn, 'bgp' AS as_type,
+                    FALSE AS impliment FROM (
+                     SELECT DISTINCT customer_as FROM provider_customers
+                     UNION SELECT DISTINCT provider_as FROM provider_customers
+                     UNION SELECT DISTINCT peer_as_1 FROM peers
+                     UNION SELECT DISTINCT peer_as_2 FROM peers) union_temp
+                 );
     ```
-###### rovpp_as_connectivity Table Schema:
+##### as_connectivity Table Schema:
 * [Relationships Table Schema](#relationships-table-schema)
 
 * Contains connectivity information for all ASes
