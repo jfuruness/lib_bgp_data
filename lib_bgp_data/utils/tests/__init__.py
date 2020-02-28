@@ -8,4 +8,4 @@ __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
-from .test_generic_table import Test_Generic_Table
+from .generic_table_test import Generic_Table_Test

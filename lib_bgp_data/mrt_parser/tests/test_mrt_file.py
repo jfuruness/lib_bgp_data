@@ -27,19 +27,28 @@ class Test_MRT_File:
     def test_bgpscanner_vs_bgpdump(self):
         """Compares the outputs of parsing an MRT file using bgpscanner
         with using bgpdump.
+
+        NOTE: We actually need to do this for all of them. Why? Because
+        incidentally bgpscanner is by defualt different than bgpdump. 
+        bgpscanner does not include malformed announcements, bgpdump
+        does. When we install it, we change this feature. However,
+        few files will have this problem, so we need to run it over all
+        of them. You can prob have a shorter version of this test.
+
+        Also note that the other reason we do this is to check between
+        RIPE, Route-views, and ISOLARIO data
         """
 
-        start_time = utils.get_default_start()
-        end_time = utils.get_default_end()
-        # Create an MRT_File object and download from the URL above
-        test_file: MRT_File = self._mrt_file_factory(start_time, end_time)
-        _scanner_entries = self._get_entries(test_file, bgpscanner=True)
-        # Create another MRT_File object and download
-        test_file2 = self._mrt_file_factory(start_time, end_time)
-        # Get the number of entries in the table when parsed with BGPDump
-        _dump_entries = self._get_entries(test_file2, bgpscanner=False)
-        # Make sure both entries are identical
-        assert _scanner_entries == _dump_entries
+        for url in [MRT_Parser()._get_mrt_urls()[5]]:
+            # Create an MRT_File object and download from the URL above
+            test_file: MRT_File = self._mrt_file_factory(url=url)
+            _scanner_entries = self._get_entries(test_file, bgpscanner=True)
+            # Create another MRT_File object and download
+            test_file2: MRT_File = self._mrt_file_factory(url=url)
+            # Get the number of entries in the table when parsed with BGPDump
+            _dump_entries = self._get_entries(test_file2, bgpscanner=False)
+            # Make sure both entries are identical
+            assert _scanner_entries == _dump_entries
 
     def test_bgpscanner_regex(self):
         """This will test if the method '_bgpscanner_args' uses correct
@@ -71,7 +80,7 @@ class Test_MRT_File:
         test_file.csv_name = "scanner.txt"
         test_file._convert_dump_to_csv(bgpscanner=True)
         # Get the number of lines in this file
-        lines = utils._number_of_lines("scanner.txt")
+        lines = utils.get_lines_in_file("scanner.txt")
         # Delete the file once the lines have been counted
         check_call("rm scanner.txt", shell=True)
         # Get the number of entries in the MRT Announcements table
@@ -125,6 +134,7 @@ class Test_MRT_File:
             sql = "SELECT as_path FROM mrt_announcements;"
             # Check for sets by looking for the set notation
             assert "{" not in str(db.execute(sql))
+        assert False, "All tests pass, delete just one mrt_file, do them all"
 
 ########################
 ### Helper Functions ###
@@ -139,13 +149,15 @@ class Test_MRT_File:
 
     def _mrt_file_factory(self,
                           start=utils.get_default_start(),
-                          end=utils.get_default_end()):
+                          end=utils.get_default_end(),
+                          url=None):
         """Generates MRT File objects with the same URL for comparison"""
 
-        parser = MRT_Parser(stream_level=10)
+        parser = MRT_Parser()
+        url = parser._get_mrt_urls(start, end)[5] if not url else url
         mrt_file = MRT_File(parser.path,
                             parser.csv_dir,
-                            parser._get_mrt_urls(start, end)[5],
+                            url,
                             logger=parser.logger)
         utils.download_file(mrt_file.logger,
                             mrt_file.url,

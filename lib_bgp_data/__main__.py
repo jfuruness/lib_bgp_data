@@ -6,6 +6,7 @@
 from argparse import ArgumentParser, Action
 from sys import argv
 from .mrt_parser import MRT_Parser
+from .relationships_parser import Relationships_Parser
 
 __authors__ = ["Justin Furuness", "Matt Jaccino"]
 __credits__ = ["Justin Furuness", "Matt Jaccino"]
@@ -60,7 +61,7 @@ def change_sys_args():
                 argv[0] = "dummy arg"
 
 def get_parsers() -> list:
-    return [MRT_Parser]
+    return [MRT_Parser, Relationships_Parser]
 
 
 if __name__ == "__main__":

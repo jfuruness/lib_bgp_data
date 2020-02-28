@@ -69,6 +69,14 @@ def db_connection(table=None,
 from .config import Config
 from .utils import Pool, delete_paths
 
+# NOTE FOR ADDING TO DOCS:
+# All tables should have
+# _create_tables (creates an empty table with no data)
+# fill_table(fills table with data)
+# clear_table (from db class)
+# NOTE: Maybe worthy of it's own submodule? Include Test_Generic_table?
+#   Might avoid some of these circular import issues
+
 
 class Database:
     """Interact with the database"""
@@ -110,14 +118,9 @@ class Database:
                     break
                 except:
                     time.sleep(10)
-            if create_tables:
+            if create_tables and hasattr(self, "_create_tables"):
                 # Creates tables if do not exist
                 self._create_tables()
-
-    def _create_tables(self):
-        """Method that is overwritten when inherited"""
-
-        pass
 
     def execute(self, sql, data=None):
         """Executes a query. Returns [] if no results."""

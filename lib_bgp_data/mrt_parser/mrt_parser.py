@@ -90,10 +90,10 @@ class MRT_Parser(Parser):
 ########################
 
     def _get_mrt_urls(self,
-                      start: int,
-                      end: int,
+                      start: int = utils.get_default_start(),   # For unit test
+                      end: int = utils.get_default_end(),  # For unit testing
                       PARAMS_modification={},
-                      sources=MRT_Sources.__members__.values()):
+                      sources=MRT_Sources.__members__.values()) -> list:
         """Gets caida and iso URLs, start and end should be epoch"""
 
         self.logger.info(f"Getting MRT urls for {[x.name for x in sources]}")

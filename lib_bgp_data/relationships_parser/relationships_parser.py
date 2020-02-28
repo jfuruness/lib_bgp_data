@@ -40,10 +40,11 @@ class Relationships_Parser(Parser):
         utils.delete_paths(self.logger, [self.csv_dir, self.path])
 
         # Fills these rov++ specific tables
-        with db_connection(ASes_Table, self.logger) as as_table:
-            as_table.fill_table()
+        with db_connection(ASes_Table, self.logger) as _as_table:
+            _as_table.fill_table()
         # creates and closes table
-        AS_Connectivity_Table(self.logger).close()
+        with db_connection(AS_Connectivity_Table, self.logger) as _conn_table:
+            _conn_table.fill_table()
 
 
 ########################

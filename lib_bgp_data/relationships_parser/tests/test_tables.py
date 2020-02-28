@@ -8,7 +8,7 @@ from ..tables import ASes_Table, AS_Connectivity_Table
 from ..relationships_file import Rel_File
 from ..relationships_parser import Relationships_Parser
 from ...utils import db_connection, utils
-from ...utils import Test_Generic_Table
+from ...utils import Generic_Table_Test
 
 
 __authors__ = ["Matt Jaccino", "Justin Furuness"]
@@ -19,17 +19,17 @@ __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
 
-class Test_Provider_Customers_Table(Test_Generic_Table):
+class Test_Provider_Customers_Table(Generic_Table_Test):
 
     table_class = Provider_Customers_Table
 
 
-class Test_Peers_Table(Test_Generic_Table):
+class Test_Peers_Table(Generic_Table_Test):
 
     table_class = Peers_Table
 
 
-class Test_ASes_Table(Test_Generic_Table):
+class Test_ASes_Table(Generic_Table_Test):
     """This will test all methods within the ASes_Table class."""
 
     table_class = ASes_Table
@@ -59,7 +59,7 @@ class Test_ASes_Table(Test_Generic_Table):
         with db_connection(ASes_Table) as _db:
             _parser = Relationships_Parser()
             url = _parser._get_urls()[0]
-            _parser.parse_files(url=url)
+            _parser.run(url=url)
             # Use the 'fill_table' method to populate the table with data
             _db.fill_table()
             # Get the count of rovpp_ases after filling
@@ -93,7 +93,7 @@ class Test_ASes_Table(Test_Generic_Table):
         return len(ases)
 
 
-class Test_AS_Connectivity_Table(Test_Generic_Table):
+class Test_AS_Connectivity_Table(Generic_Table_Test):
     """This will test all methods within the ROVPP_AS_Connectivity_Table
     class.
 
@@ -102,18 +102,21 @@ class Test_AS_Connectivity_Table(Test_Generic_Table):
 
     table_class = AS_Connectivity_Table
 
-    def test__create_tables(self):
-        """This will test the '_create_tables' method of the class"""
+    def test_fill_table(self):
+        """This will test the fill_table method of the class"""
 
 
         # Make sure count is accurate
         with db_connection(ASes_Table) as _ases_db:
             _ases_db.fill_table()
             with db_connection(self.table_class) as _conn_db:
-                _conn_count = _conn_db.get_count("""SELECT COUNT(*)
-                                                     FROM as_connectivity
-                                                 WHERE connectivity = 0;""")
-                _conn_as_count = _conn_db.get_count()
-                _as_count = _ases_db.get_count()
-        # Make sure every AS from rovpp_ases is in this table
-        assert _conn_count > 45000 and _conn_as_count == _as_count
+                _conn_db.fill_table()
+                count_sql = """SELECT COUNT(*)
+                            FROM as_connectivity
+                            WHERE connectivity = 0;"""
+                # Should be more than 45k edge ASes
+                assert _conn_db.get_count(count_sql) > 45000
+                # Should be more then 65k ASes
+                assert (_conn_as_count := _conn_db.get_count()) > 65000
+                # Should be the same number of ases in both tables
+                assert _ases_db.get_count() == _conn_as_count

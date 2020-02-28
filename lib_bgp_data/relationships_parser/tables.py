@@ -138,7 +138,7 @@ class AS_Connectivity_Table(Database):
 
     __slots__ = []
 
-    def _create_tables(self):
+    def fill_table(self):
         """Creates tables if they do not exist.
 
         Called during initialization of the database class."""

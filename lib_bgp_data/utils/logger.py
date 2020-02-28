@@ -169,7 +169,12 @@ class Thread_Safe_Logger:
         logging.DEBUG
         """
 
-        stream_level = int(kwargs.get("stream_level", logging.INFO.value))
+        if hasattr(pytest, "global_running_test") and\
+            pytest.global_running_test is True:
+            default = logging.DEBUG.value
+        else:
+            default = logging.INFO.value
+        stream_level = int(kwargs.get("stream_level", default))
         self.level = stream_level
         self.stream_level = stream_level
         # Sets all the standard logging functions

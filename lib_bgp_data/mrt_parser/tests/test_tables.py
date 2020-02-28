@@ -8,7 +8,7 @@ For specifics on each test, see the docstrings under each function.
 
 from psycopg2.errors import UndefinedTable
 from ..tables import MRT_Announcements_Table
-from ...utils import db_connection, Test_Generic_Table
+from ...utils import db_connection, Generic_Table_Test
 
 __author__ = "Justin Furuness", "Matt Jaccino"
 __credits__ = ["Justin Furuness", "Matt Jaccino"]
@@ -18,7 +18,7 @@ __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
 
-class Test_MRT_Announcements_Table(Test_Generic_Table):
+class Test_MRT_Announcements_Table(Generic_Table_Test):
     """Tests all functions within the mrt announcements class.
 
     Inherits from the test_generic_table class, which will test
@@ -46,7 +46,7 @@ class Test_MRT_Announcements_Table(Test_Generic_Table):
         # Initializes the table if it doesn't exist
         with db_connection(MRT_Announcements_Table) as db:
             # Makes sure that the mrt table is deleted
-            db.clear_tables()
+            db.clear_table()
             # Creates the tables from scratch
             db._create_tables()
             # Insert one IPV4 and one IPV6 prefix
@@ -61,12 +61,10 @@ class Test_MRT_Announcements_Table(Test_Generic_Table):
             db.filter_by_IPV_family(IPV4=True, IPV6=False)
             prefixes = db.execute("SELECT prefix FROM mrt_announcements")
             # There should only be the IPV4 prefix left
-            assert len(prefixes) == 1
-            # There should only be the IPV4 prefix left
             assert prefixes[0]["prefix"] == "1.2.3.0/24"
 
             # Reset with new fake data
-            db.clear_tables()
+            db.clear_table()
             db._create_tables()
             self._insert_fake_data(db)
 
@@ -74,18 +72,17 @@ class Test_MRT_Announcements_Table(Test_Generic_Table):
             db.filter_by_IPV_family(IPV4=False, IPV6=True)
             prefixes = db.execute("SELECT prefix FROM mrt_announcements")
             # We should only have one IPV6 prefix
-            assert len(prefixes) == 1
             assert prefixes[0]["prefix"] == "2001:db8::/32"
 
             # Gets ride of test table
-            db.clear_tables()
+            db.clear_table()
 
     def _insert_fake_data(self, db):
         """Inserts one IPV4 and one IPV6 prefix into the MRT table"""
 
-        sqls = ["""INSERT INTO mrt_announcements(prefix)
-                   VALUES ('1.2.3.0/24')""",
-                """INSERT INTO mrt_announcements(prefix)
-                   VALUES ('2001:db8::/32')"""]
-        for sql in sqls:
+        _sqls = ["""INSERT INTO mrt_announcements(prefix)
+                    VALUES ('1.2.3.0/24')""",
+                 """INSERT INTO mrt_announcements(prefix)
+                    VALUES ('2001:db8::/32')"""]
+        for sql in _sqls:
             db.execute(sql)
