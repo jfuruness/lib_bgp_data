@@ -9,7 +9,7 @@ essentially a database operation and is checked in another file
 """
 
 import pytest
-from ..roas_collector import ROAs_Collector
+from ..roas_parser import ROAs_Parser
 from ...utils import db_connection
 
 __author__ = "Justin Furuness"
@@ -20,14 +20,14 @@ __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
 
-class Test_ROAs_Collector:
-    """Tests all functions within the ROAs Collector class."""
+class Test_ROAs_Parser:
+    """Tests all functions within the ROAs Parser class."""
 
     @pytest.fixture(autouse=True)
     def setup(self):
         """Parser setup and table deleted before every test"""
 
-        self.parser = ROAs_Collector()
+        self.parser = ROAs_Parser()
         with db_connection() as db:
             db.execute("DROP TABLE IF EXISTS roas;")
 
@@ -35,7 +35,7 @@ class Test_ROAs_Collector:
         """Tests the parse roas function"""
 
         # Parses the roas
-        self.parser.parse_roas()
+        self.parser.run()
         # Checks that all formatted roas were entered into the db
         with db_connection() as db:
             roas = db.execute("SELECT * FROM roas")

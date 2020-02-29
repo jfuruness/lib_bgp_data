@@ -36,7 +36,7 @@ Possible Future Extensions:
 
 from datetime import timedelta
 from ..relationships_parser import Relationships_Parser
-from ..roas_collector import ROAs_Collector
+from ..roas_parser import ROAs_Parser
 from ..bgpstream_website_parser import BGPStream_Website_Parser
 from ..mrt_parser import MRT_Parser
 from ..extrapolator import Extrapolator

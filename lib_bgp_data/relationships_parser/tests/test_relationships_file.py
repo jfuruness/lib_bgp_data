@@ -6,6 +6,7 @@
 For specifics on each test, see docstrings under each function.
 """
 
+import pytest
 from ..relationships_file import Rel_File, Rel_Types
 from ..relationships_parser import Relationships_Parser
 from ..tables import Provider_Customers_Table, Peers_Table
@@ -64,6 +65,7 @@ class Test_Relationships_File:
                 assert _peer_count == _peers.get_count()
                 assert _cust_prov_count == _cust_provs.get_count()
 
+    @pytest.mark.filterwarnings("ignore::DeprecationWarning")
     def test__get_rel_attributes(self):
         """Tests the _get_rel_attributes function"""
 
