@@ -795,7 +795,7 @@ The purpose of this parser is to download ROAs from rpki and insert them into a 
 * [lib\_bgp\_data](#lib_bgp_data)
 * [Roas Submodule](#roas-submodule)
 #### In a Script
-Initializing the Roas Collector:
+Initializing the ROAs_Parser:
 
 
 | Parameter    | Default                             | Description                                                                                                       |
@@ -806,45 +806,44 @@ Initializing the Roas Collector:
 | stream_level | ```logging.INFO```                        | Logging level for printing                                                                                        |
 > Note that any one of the above attributes can be changed or all of them can be changed in any combination
 
-To initialize ROAs_Collector with default values:
+To initialize ROAs_Parser with default values:
 ```python
-from lib_bgp_data import ROAs_Collector
-roas_parser = ROAs_Collector()
+from lib_bgp_data import ROAs_Parser
+roas_parser = ROAs_Parser()
 ```                 
-To initialize ROAs_Collector with custom path, CSV directory, and logging level:
+To initialize ROAs_Parser with custom path, CSV directory, and logging level:
 ```python
 from logging import DEBUG
-from lib_bgp_data import ROAs_Collector
-roas_parser = ROAs_Collector({"path": "/my_custom_path",
-                              "csv_dir": "/my_custom_csv_dir",
-                              "stream_level": DEBUG})
+from lib_bgp_data import ROAs_Parser
+roas_parser = ROAs_Parser(path="/my_custom_path",
+                          csv_dir="/my_custom_csv_dir",
+                          stream_level=DEBUG})
 ```
-To run the ROAs_Collector with defaults (there are no optional parameters):
+To run the ROAs_Parser with defaults (there are no optional parameters):
 ```python
-from lib_bgp_data import ROAs_Collector
-ROAs_Collector().parse_roas()
+from lib_bgp_data import ROAs_Parser
+ROAs_Parser().parse_roas()
 ```
 
 #### From the Command Line
 Depending on the permissions of your system, and whether or not you pip installed the package with sudo, you might be able to run the ROAs Parser with:
 
-```roas_collector```
+```roas_parser```
 
 or a variety of other possible commands, I've tried to make it fairly idiot proof with the capitalization and such.
 
 The other way you can run it is with:
-```python3 -m lib_bgp_data --roas_collector```
+```python3 -m lib_bgp_data --roas_parser```
 
 ### Roas Table Schema
 * [lib\_bgp\_data](#lib_bgp_data)
 * [Roas Submodule](#roas-submodule)
-* This table contains information on the ROAs retrieved from the https://rpki-validator.ripe.net/api/export.json
-* Unlogged tables are used for speed
-* asn: The ASN of an AS *(bigint)*
-* prefix: The prefix of an AS *(CIDR)*
-* max_length: Max length specified by roa (*bigint)*
-
-* Create Table SQL:
+	* This table contains information on the ROAs retrieved from the https://rpki-validator.ripe.net/api/export.json
+	* Unlogged tables are used for speed
+	* asn: The ASN of an AS *(bigint)*
+	* prefix: The prefix of an AS *(CIDR)*
+	* max_length: Max length specified by roa (*bigint)*
+	* Create Table SQL:
     ```
     CREATE UNLOGGED TABLE IF NOT EXISTS
         roas (
@@ -856,8 +855,8 @@ The other way you can run it is with:
 ### Roas Design Choices
 * [lib\_bgp\_data](#lib_bgp_data)
 * [Roas Submodule](#roas-submodule)
-* CSVs are used for fast database bulk insertion
-* An index on the prefix is created on the roas for fast SQL joins
+	* CSVs are used for fast database bulk insertion
+	* An index on the prefix is created on the roas for fast SQL joins
 
 ## Extrapolator Submodule
    * [lib\_bgp\_data](#lib_bgp_data)
