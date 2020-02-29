@@ -32,7 +32,7 @@ def get_parsers():
     So we must simple write a new one here. Oh well.
     """
 
-    return ["mrt_parser", "relationships_parser"]
+    return ["mrt_parser", "relationships_parser", "roas_parser"]
 
 def _get_console_scripts():
     """Returns all console scripts"""
