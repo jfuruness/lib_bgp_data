@@ -33,14 +33,13 @@ Possible Future improvements:
 
 # Due to circular imports this must be here
 from contextlib import contextmanager
-import warnings
 import psycopg2
 from psycopg2.extras import RealDictCursor
 from multiprocessing import cpu_count
 from subprocess import check_call
 import os
 import time
-from .logger import error_catcher, Thread_Safe_Logger as Logger
+from ..utils import Config, utils, Thread_Safe_Logger as Logger
 
 
 __authors__ = ["Justin Furuness", "Matt Jaccino"]
@@ -51,39 +50,6 @@ __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
 
-@contextmanager
-def db_connection(table=None,
-                  logger=Logger(),
-                  clear=False,
-                  cursor_factory=RealDictCursor):
-    warnings.warn(("db_connection() is depreciated. "
-                   f"Use {'Database()' if not table else table.__name__} instead"),
-                   DeprecationWarning,
-                   stacklevel=2)
-
-    if table:
-        t = table(logger, cursor_factory=cursor_factory)
-    else:
-        t = Database(logger, cursor_factory=cursor_factory)
-    if clear:
-        t.clear_table()
-        t._create_tables()
-    yield t
-    t.close()
-
-# Must be done to avoid circular imports
-from .config import Config
-from .utils import Pool, delete_paths
-
-# NOTE FOR ADDING TO DOCS:
-# All tables should have
-# _create_tables (creates an empty table with no data)
-# fill_table(fills table with data)
-# clear_table (from db class)
-# NOTE: Maybe worthy of it's own submodule? Include Test_Generic_table?
-#   Might avoid some of these circular import issues
-
-
 class Database:
     """Interact with the database"""
 
@@ -92,17 +58,16 @@ class Database:
     # NOTE: SHOULD INHERIT DECOMETA HERE!!!
 
     
-    @error_catcher()
-    def __init__(self, logger=Logger(), cursor_factory=RealDictCursor, _open=True, clear=False):
+    def __init__(self, logger=Logger(), cursor_factory=RealDictCursor, clear=False):
         """Create a new connection with the database"""
 
         # Initializes self.logger
         self.logger = logger
-        self._connect(cursor_factory, _open=_open)
+        self._connect(cursor_factory)
         self.clear=clear
 
     def __enter__(self):
-        if self.clear and self.__class__ != Database:
+        if self.clear and type(self) != Database:
             self.clear_table()
             if hasattr(self, "_create_tables"):
                 self._create_tables()
@@ -111,37 +76,36 @@ class Database:
     def __exit__(self, type, value, traceback):
         self.close()
         
-    @error_catcher()
-    def _connect(self, cursor_factory=RealDictCursor, create_tables=True, _open=True):
+    def _connect(self, cursor_factory=RealDictCursor):
         """Connects to db with default RealDictCursor.
 
         Note that RealDictCursor returns everything as a dictionary."""
 
-        if _open:
-            from .config import global_section_header
-            # Database needs access to the section header
-            kwargs = Config(self.logger, global_section_header).get_db_creds()
-            if cursor_factory:
-                kwargs["cursor_factory"] = cursor_factory
-            # In case the database is somehow off we wait
-            for i in range(10):
-                try:
-                    conn = psycopg2.connect(**kwargs)
-                    self.logger.debug("Database Connected")
-                    self.conn = conn
-                    # Automatically execute queries
-                    self.conn.autocommit = True
-                    self.cursor = conn.cursor()
-                    break
-                except:
-                    time.sleep(10)
-            if create_tables and hasattr(self, "_create_tables"):
-                # Creates tables if do not exist
-                self._create_tables()
+        from .config import global_section_header
+        # Database needs access to the section header
+        kwargs = Config(self.logger, global_section_header).get_db_creds()
+        if cursor_factory:
+            kwargs["cursor_factory"] = cursor_factory
+        # In case the database is somehow off we wait
+        for i in range(10):
+            try:
+                conn = psycopg2.connect(**kwargs)
+                self.logger.debug("Database Connected")
+                self.conn = conn
+                # Automatically execute queries
+                self.conn.autocommit = True
+                self.cursor = conn.cursor()
+                break
+            except:
+                time.sleep(10)
+        if hasattr(self, "_create_tables"):
+            # Creates tables if do not exist
+            self._create_tables()
 
     def execute(self, sql, data=None):
         """Executes a query. Returns [] if no results."""
 
+        assert isinstance(data, list) or isinstance(data, tuple), "Data must be list/tuple"
         if data is None:
             self.cursor.execute(sql)
         else:
@@ -156,7 +120,7 @@ class Database:
         """Executes sql statements in parallel"""
 
         self.close()
-        with Pool(self.logger, None, 1, "database execute") as db_pool:
+        with utils.Pool(self.logger, None, 1, "database execute") as db_pool:
             db_pool.map(lambda self, sql: self._reconnect_execute(sql),
                         [self]*len(sqls),
                         sqls)
@@ -172,7 +136,6 @@ class Database:
         self.execute(sql)
         self.close()
 
-    @error_catcher()
     def close(self):
         """Closes the database connection correctly"""
 
@@ -194,7 +157,6 @@ class Database:
         if full:
             self.execute("VACUUM FULL ANALYZE;")
 
-    @error_catcher()
     def unhinge_db(self):
         """Enhances database, but doesn't allow for writing to disk."""
 
@@ -223,7 +185,7 @@ class Database:
                 "ALTER SYSTEM SET maintenance_work_mem TO '{}MB';".format(
                     int(ram/5))]
 
-        delete_paths(self.logger, "/tmp/db_modify.sql")
+        utils.delete_paths(self.logger, "/tmp/db_modify.sql")
         # Writes sql file
         with open("/tmp/db_modify.sql", "w+") as db_mod_file:
             for sql in sqls:
@@ -235,7 +197,6 @@ class Database:
         os.remove("/tmp/db_modify.sql")
         self.logger.debug("unhinged db")
 
-    @error_catcher()
     def rehinge_db(self):
         """Restores postgres 11 defaults"""
 
@@ -259,7 +220,7 @@ class Database:
                 # Since its manual it can be higher
                 "ALTER SYSTEM SET max_parallel_maintenance_workers TO 2;",
                 "ALTER SYSTEM SET maintenance_work_mem TO '64MB';"]
-        delete_paths(self.logger, "/tmp/db_modify.sql")
+        utils.delete_paths(self.logger, "/tmp/db_modify.sql")
         # Writes sql file
         with open("/tmp/db_modify.sql", "w+") as db_mod_file:
             for sql in sqls:
@@ -271,7 +232,6 @@ class Database:
         os.remove("/tmp/db_modify.sql")
         self.logger.debug("rehinged db")
 
-    @error_catcher()
     def _restart_postgres(self):
         """Restarts postgres and all connections."""
 
@@ -282,53 +242,3 @@ class Database:
                    shell=True)
         time.sleep(30)
         self._connect(create_tables=False)
-
-    @error_catcher()
-    def get_all(self):
-        """Gets all rows from table"""
-
-        return self.execute("SELECT * FROM {}".format(self.name))
-
-    @error_catcher()
-    def get_count(self, sql=None):
-        """Gets count from table"""
-
-        sql = sql if sql else "SELECT COUNT(*) FROM {}".format(self.name)
-        return self.execute(sql)[0]["count"]
-
-    @property
-    def columns(self):
-        """Returns the columns of the table
-
-        used in utils to insert csv into the database"""
-
-        sql = """SELECT column_name FROM information_schema.columns
-              WHERE table_schema = 'public' AND table_name = %s;
-              """
-        self.cursor.execute(sql, [self.name])
-        # Make sure that we don't get the _id columns
-        return [x['column_name'] for x in self.cursor.fetchall()
-                if "_id" not in x['column_name']]
-
-    @property
-    def name(self):
-        """Returns the table name
-
-        used in utils to insert csv into the database"""
-
-        # takes out _Table and makes lowercase
-        return self.__class__.__name__.replace("_Table", "").lower()
-
-    def clear_table(self):
-        """Clears the table"""
-
-        self.logger.debug(f"Dropping {self.name} Table")
-        self.cursor.execute(f"DROP TABLE IF EXISTS {self.name}")
-        self.logger.debug(f"{self.name} Table dropped")
-
-    def copy_table(self, path: str):
-        """Copies table to a specified path"""
-
-        self.logger.debug(f"Copying file from {self.name} to {path}")
-        self.execute(f"COPY {self.name} TO %s DELIMITER '\t';", [path])
-        self.logger.debug("Copy complete")

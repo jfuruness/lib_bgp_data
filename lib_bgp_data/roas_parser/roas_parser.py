@@ -12,7 +12,7 @@ import re
 import warnings
 from .tables import ROAs_Table
 from ..base_classes import Parser
-from ..utils import db_connection, utils
+from ..utils import utils
 
 __author__ = "Justin Furuness"
 __credits__ = ["Justin Furuness"]
@@ -32,7 +32,7 @@ class ROAs_Parser(Parser):
 
         For more in depth explanation see README"""
 
-        with db_connection(ROAs_Table, self.logger, clear=True) as _roas_table:
+        with ROAs_Table(self.logger, clear=True) as _roas_table:
             roas = self._format_roas(self._get_json_roas())
             # Inserts the data into a CSV and then the database
             _csv_dir = f"{self.csv_dir}/roas.csv"

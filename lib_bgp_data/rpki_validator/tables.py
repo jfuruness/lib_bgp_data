@@ -33,7 +33,7 @@ Possible future improvements:
 """
 
 
-from ..utils import Database
+from ..database import Generic_Table
 
 __author__ = "Justin Furuness", "Cameron Morris"
 __credits__ = ["Justin Furuness", "Cameron Morris"]
@@ -43,7 +43,7 @@ __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
 
-class Unique_Prefix_Origins_Table(Database):
+class Unique_Prefix_Origins_Table(Generic_Table):
     """Announcements table class"""
 
     __slots__ = []
@@ -58,7 +58,7 @@ class Unique_Prefix_Origins_Table(Database):
         self.execute(sql)
         self.logger.debug("Created unique prefix origins table")
 
-class ROV_Validity_Table(Database):
+class ROV_Validity_Table(Generic_Table):
     """ROV Validity Table class"""
 
     __slots__ = []

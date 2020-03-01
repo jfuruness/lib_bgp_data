@@ -7,7 +7,8 @@ from ..tables import Provider_Customers_Table, Peers_Table
 from ..tables import ASes_Table, AS_Connectivity_Table
 from ..relationships_file import Rel_File
 from ..relationships_parser import Relationships_Parser
-from ...utils import utils, Generic_Table_Test
+from ...utils import utils
+from ...database import Generic_Table_Test
 
 
 __authors__ = ["Matt Jaccino", "Justin Furuness"]
@@ -95,7 +96,6 @@ class Test_ASes_Table(Generic_Table_Test):
 class Test_AS_Connectivity_Table(Generic_Table_Test):
     """This will test all methods within the ROVPP_AS_Connectivity_Table
     class.
-
     For better explanations of the tests, see the docstrings under each test.
     """
 

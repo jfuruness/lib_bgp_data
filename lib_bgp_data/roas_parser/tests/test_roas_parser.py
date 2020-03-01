@@ -10,7 +10,7 @@ essentially a database operation and is checked in another file
 
 import pytest
 from ..roas_parser import ROAs_Parser
-from ...utils import db_connection
+from ...database import Database
 
 __author__ = "Justin Furuness"
 __credits__ = ["Justin Furuness"]
@@ -37,7 +37,7 @@ class Test_ROAs_Parser:
         # Parses the roas
         self.parser.run()
         # Checks that all formatted roas were entered into the db
-        with db_connection() as db:
+        with Database() as db:
             roas = db.execute("SELECT * FROM roas")
         json_roas = self.parser._get_json_roas()
         # Zip checks for same length
@@ -52,7 +52,7 @@ class Test_ROAs_Parser:
                 if key == "maxLength":
                     assert str(roa["max_length"]) == str(json_roa[key])
         # Checks that there is an index on the ROAs Table
-        with db_connection() as db:
+        with Database() as db:
             sql = "SELECT * FROM pg_indexes WHERE tablename = 'roas'"
             indexes = db.execute(sql)
             # Makes sure that there is an index

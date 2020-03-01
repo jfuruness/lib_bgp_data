@@ -10,7 +10,7 @@ Possible future improvements:
     -Add test cases, docs, everything
 """
 
-from ..utils import Database, error_catcher
+from ..database import Generic_Table
 
 __author__ = "Justin Furuness"
 __credits__ = ["Justin Furuness"]
@@ -20,14 +20,13 @@ __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
 
-class MRT_Subtable_Table(Database):
+class MRT_Subtable_Table(Generic_Table):
     """Class with database functionality.
 
     In depth explanation at the top of the file."""
 
     __slots__ = []
 
-    @error_catcher()
     def _create_tables(self):
         self.cursor.execute("""ALTER TABLE mrt_announcements
                             RENAME TO {}""".format(self.name))
@@ -36,18 +35,18 @@ class MRT_Subtable_Table(Database):
         self.cursor.execute("DROP TABLE {} IF EXSTS".format(self.name))
 
 
-class Route_Views_Table(MRT_Subtable_Table):
+class Route_Views_Table(Generic_Table):
     """Inherits MRT_Subtable and overrides name"""
 
     pass
 
-class RIPE_Table(MRT_Subtable_Table):
+class RIPE_Table(Generic_Table):
     """Inherits MRT_Subtable and overrides name"""
 
     pass
 
 
-class Isolario_Table(MRT_Subtable_Table):
+class Isolario_Table(Generic_Table):
     """Inherits MRT_Subtable and overrides name"""
 
     pass

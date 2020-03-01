@@ -7,7 +7,6 @@ For specifics on each test, see the docstrings under each function.
 """
 
 from psycopg2.errors import UndefinedTable
-from ...utils import db_connection
 
 __author__ = "Justin Furuness", "Matt Jaccino"
 __credits__ = ["Justin Furuness", "Matt Jaccino"]
@@ -50,7 +49,7 @@ class Generic_Table_Test:
             _db.clear_table()
             try:
                 # This should fail
-                _db.execute(f"SELECT * FROM {db.name}")
+                _db.get_all()
                 # If we reach this line it's a failure
                 assert False
             # Table should be undefined since it was dropped

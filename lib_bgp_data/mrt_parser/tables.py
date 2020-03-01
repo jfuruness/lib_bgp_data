@@ -16,7 +16,7 @@ follows the table name followed by a _Table since it inherits from the
 database class.
 """
 
-from ..utils import Database
+
 
 __author__ = "Justin Furuness"
 __credits__ = ["Justin Furuness"]

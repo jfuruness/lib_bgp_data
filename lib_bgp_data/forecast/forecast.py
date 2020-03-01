@@ -37,7 +37,8 @@ from ..mrt_parser import MRT_Parser
 from ..extrapolator import Extrapolator
 from ..rpki_validator import RPKI_Validator_Parser
 from ..what_if_analysis import What_If_Analysis
-from ..utils import utils, Database, db_connection, Install, error_catcher
+from ..utils import utils, Install, error_catcher
+from ..database import Database
 
 __author__ = "Justin Furuness"
 __credits__ = ["Justin Furuness"]

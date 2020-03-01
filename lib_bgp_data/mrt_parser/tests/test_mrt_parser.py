@@ -18,7 +18,8 @@ from ..mrt_file import MRT_File
 from ..mrt_parser import MRT_Parser
 from ..mrt_sources import MRT_Sources
 from ..tables import MRT_Announcements_Table
-from ...utils import Database, db_connection, utils
+from ...utils import utils
+from ...database import Database
 
 __authors__ = ["Justin Furuness", "Matt Jaccino"]
 __credits__ = ["Justin Furuness", "Matt Jaccino"]

@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 """This module contains class MRT_W_ROAs_Table
@@ -19,7 +19,7 @@ Possible future improvements:
     -Add test cases
 """
 
-from ..utils import Database, error_catcher
+from ..database import Database
 
 __author__ = "Justin Furuness"
 __credits__ = ["Justin Furuness"]

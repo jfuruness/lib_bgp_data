@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 """This file contains tests for the relationships_file.py file.
-
 For specifics on each test, see docstrings under each function.
 """
 
@@ -26,7 +25,6 @@ class Test_Relationships_File:
 
     def setup(self):
         """Set up a Relationships File object with the Relationships Parser.
-
         This is to get the necessary arguments to intialize the File object.
         """
 

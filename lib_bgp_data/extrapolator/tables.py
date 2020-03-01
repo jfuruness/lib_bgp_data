@@ -11,7 +11,7 @@ Possible future improvements:
     -Add test cases
 """
 
-from ..utils import Database, error_catcher
+from ..database import Database
 
 __author__ = "Justin Furuness"
 __credits__ = ["Justin Furuness"]
@@ -45,7 +45,7 @@ class Extrapolator_Inverse_Results_Table(Database):
 
     __slots__ = []
 
-    @error_catcher()
+    
     def create_index(self):
         """Creates index."""
 

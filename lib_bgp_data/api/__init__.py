@@ -29,7 +29,8 @@ from flask import Flask
 from werkzeug.contrib.fixers import ProxyFix
 from werkzeug.routing import BaseConverter
 from flasgger import Swagger
-from ..utils import Database, Thread_Safe_Logger as Logger
+from ..utils import Thread_Safe_Logger as Logger
+from ..database import Database
 
 __author__ = "Justin Furuness"
 __credits__ = ["Justin Furuness", "Reynaldo Morillo"]

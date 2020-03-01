@@ -8,7 +8,7 @@ For specifics on each test, see the docstrings under each function.
 
 from psycopg2.errors import UndefinedTable
 from ..tables import MRT_Announcements_Table
-from ...utils import db_connection, Generic_Table_Test
+from ...database import Generic_Table_Test
 
 __author__ = "Justin Furuness", "Matt Jaccino"
 __credits__ = ["Justin Furuness", "Matt Jaccino"]
@@ -44,7 +44,7 @@ class Test_MRT_Announcements_Table(Generic_Table_Test):
         """
 
         # Initializes the table if it doesn't exist
-        with db_connection(MRT_Announcements_Table) as db:
+        with MRT_Announcements_Table() as db:
             # Makes sure that the mrt table is deleted
             db.clear_table()
             # Creates the tables from scratch

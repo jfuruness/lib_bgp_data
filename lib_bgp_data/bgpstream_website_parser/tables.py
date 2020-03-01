@@ -24,7 +24,7 @@ Possible future improvements:
 
 from psycopg2.extras import RealDictCursor
 from time import strftime, gmtime
-from ..utils import Database, error_catcher
+from ..database import Database
 
 __author__ = "Justin Furuness"
 __credits__ = ["Justin Furuness"]
@@ -42,7 +42,6 @@ class Hijack_Table(Database):
 
     __slots__ = []
 
-    @error_catcher()
     def _create_tables(self):
         """Creates tables if they do not exist"""
 
@@ -65,7 +64,7 @@ class Hijack_Table(Database):
               );"""
         self.cursor.execute(sql)
 
-    @error_catcher()
+    
     def create_index(self):
         """Creates an index on the times for later table creations"""
 
@@ -73,7 +72,7 @@ class Hijack_Table(Database):
                   USING BTREE(start_time, end_time);"""
         self.cursor.execute(sql)
 
-    @error_catcher()
+    
     def create_temp_table(self, start, end):
         """Creates a hijack table for all hijacks within a time frame.
 
@@ -124,7 +123,7 @@ class Hijack_Table(Database):
         # Gets all subprefix hijacks
         self._create_subprefix_hijack_table()
 
-    @error_catcher()
+    
     def _create_subprefix_hijack_table(self):
         """Creates a subprefix hijack tablei. Used in ROVPP sims."""
 
@@ -142,7 +141,7 @@ class Hijack_Table(Database):
         self.cursor.execute(sql)
         self.logger.info("Created subprefix hijack table")
 
-    @error_catcher()
+    
     def delete_duplicates(self):
         """Deletes all duplicates from the table."""
 
@@ -154,7 +153,7 @@ class Hijack_Table(Database):
         self.cursor.execute(sql)
         self.logger.debug("Duplicates deleted in hijack")
 
-    @error_catcher()
+    
     def filter(self, IPV4=True, IPV6=False):
         """Filters by IPV4 and IPV6."""
 
@@ -175,7 +174,7 @@ class Leak_Table(Database):
 
     __slots__ = []
 
-    @error_catcher()
+    
     def _create_tables(self):
         """Creates tables if they do not exist."""
 
@@ -199,7 +198,7 @@ class Leak_Table(Database):
               );"""
         self.cursor.execute(sql)
 
-    @error_catcher()
+    
     def delete_duplicates(self):
         """Deletes all duplicates from the table."""
 
@@ -210,7 +209,7 @@ class Leak_Table(Database):
         self.cursor.execute(sql)
         self.logger.debug("Deleted duplicates from leak")
 
-    @error_catcher()
+    
     def filter(self, IPV4=True, IPV6=False):
         """Filters by IPV4 and IPV6"""
 
@@ -222,7 +221,7 @@ class Leak_Table(Database):
             self.cursor.execute(sql)
         self.logger.debug("Filtered by IPV4 and IPV6")
 
-    @error_catcher()
+    
     def create_index(self):
         """Creates indexes on the table for later use."""
 
@@ -230,7 +229,7 @@ class Leak_Table(Database):
                   USING BTREE(start_time, end_time);"""
         self.cursor.execute(sql)
 
-    @error_catcher()
+    
     def create_temp_table(self, start, end):
         """We don't deal with this data yet."""
 
@@ -245,7 +244,7 @@ class Outage_Table(Database):
 
     __slots__ = []
 
-    @error_catcher()
+    
     def _create_tables(self):
         """Creates tables if they do not exist"""
 
@@ -264,7 +263,7 @@ class Outage_Table(Database):
               );"""
         self.cursor.execute(sql)
 
-    @error_catcher()
+    
     def delete_duplicates(self):
         """Deletes all duplicates from the table"""
 
@@ -276,13 +275,13 @@ class Outage_Table(Database):
         self.cursor.execute(sql)
         self.logger.debug("Deleted duplicates from outage")
 
-    @error_catcher()
+    
     def filter(self, IPV4=True, IPV6=False):
         """This function is called, but ASes don't have prefixes"""
 
         pass
 
-    @error_catcher()
+    
     def create_index(self):
         """Creates index for later use."""
 
@@ -290,7 +289,7 @@ class Outage_Table(Database):
                   USING BTREE(start_time, end_time);"""
         self.cursor.execute(sql)
 
-    @error_catcher()
+    
     def create_temp_table(self, start, end):
         """We don't deal with this data yet."""
 

@@ -21,7 +21,7 @@ Possible future improvements:
 """
 
 from psycopg2.extras import RealDictCursor
-from ..utils import error_catcher, Database
+from ..database import Generic_Table
 
 __author__ = "Justin Furuness"
 __credits__ = ["Justin Furuness"]
@@ -31,7 +31,7 @@ __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
 
-class ROAs_Table(Database):
+class ROAs_Table(Generic_Table):
     """Announcements table class"""
 
     __slots__ = []

@@ -12,7 +12,8 @@ from .rpki_validator import RPKI_Validator_Wrapper, RPKI_Validator_Parser
 from .api import create_app
 from .extrapolator import Extrapolator
 from .rovpp import ROVPP_Simulator
-from .utils import Install, Database, db_connection, Thread_Safe_Logger
+from .utils import Install, Thread_Safe_Logger
+from .database import Database, Generic_Table
 from .forecast import Forecast
 from .verification_parser import Verification_Parser
 

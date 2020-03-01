@@ -3,7 +3,7 @@
 
 """This module contains classes for relationship data tables
 
-The relationship classes inherits from the Database class. The Database
+The relationship classes inherits from the Generic_Table class. The Generic_Table
 class allows for the conection to a database upon initialization. Also
 upon initialization the _create_tables function is called to initialize
 any tables if they do not yet exist. Beyond that the class can clear the
@@ -11,7 +11,7 @@ table, create an index, and has the name and columns properties that are
 used in utils function to insert CSVs into the database. This class does
 not contain an index creation function since this data is only used by
 the extrapolator, which does not use indexes. Each table follows the
-table name followed by a _Table since it inherits from the Database
+table name followed by a _Table since it inherits from the Generic_Table
 class. In addition, since this data is used for the rovpp simulation,
 there are also rovpp tables
 
@@ -24,7 +24,7 @@ table, and has the name and column properties that are used in the
 utils function to insert CSVs into the database.
 """
 
-from ..utils import Database
+from ..database import Generic_Table
 
 __author__ = "Justin Furuness"
 __credits__ = ["Justin Furuness", "James Breslin"]
@@ -53,12 +53,14 @@ def make_sure_tables_exist(table_classes: list):
 
 
 
-class Provider_Customers_Table(Database):
+class Provider_Customers_Table(Generic_Table):
     """Class with database functionality.
 
     In depth explanation at the top of the file."""
 
     __slots__ = []
+
+    name = "provider_customers"
 
     def _create_tables(self):
         """Creates tables if they do not exist.
@@ -71,12 +73,14 @@ class Provider_Customers_Table(Database):
               );"""
         self.execute(sql)
 
-class Peers_Table(Database):
+class Peers_Table(Generic_Table):
     """Class with database functionality.
 
     In depth explanation at the top of the file."""
 
     __slots__ = []
+
+    name = "peers"
 
     def _create_tables(self):
         """Creates tables if they do not exist.
@@ -89,12 +93,14 @@ class Peers_Table(Database):
               );"""
         self.execute(sql)
 
-class ASes_Table(Database):
+class ASes_Table(Generic_Table):
     """Class with database functionality.
 
     In depth explanation at the top of the file."""
 
     __slots__ = []
+
+    name = "ases"
 
     def _create_tables(self):
         """Creates tables if they do not exists.
@@ -130,13 +136,15 @@ class ASes_Table(Database):
         self.execute(sql)
 
 
-class AS_Connectivity_Table(Database):
+class AS_Connectivity_Table(Generic_Table):
     """Class with database functionality.
 
     This table contains each ASN and it's associated connectivity.
     Connectivity = # customers + # peers"""
 
     __slots__ = []
+
+    name = "as_connectivity"
 
     def fill_table(self):
         """Creates tables if they do not exist.

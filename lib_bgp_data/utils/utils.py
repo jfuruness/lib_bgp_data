@@ -28,7 +28,6 @@ from contextlib import contextmanager
 from multiprocessing import cpu_count, Queue, Process, Manager
 from subprocess import check_call, DEVNULL
 from .logger import Thread_Safe_Logger as Logger
-from .database import db_connection
 from .config import set_global_section_header
 
 __authors__ = ["Justin Furuness", "Matt Jaccino"]
@@ -242,7 +241,7 @@ def csv_to_db(logger, Table, csv_path, clear_table=False):
     Table should inherit from Database class and have name attribute and
     columns attribute"""
 
-    with db_connection(Table, logger) as t:
+    with Table(logger) as t:
         if clear_table:
             t.clear_table()
             t._create_tables()

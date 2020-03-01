@@ -10,7 +10,7 @@ For the specifics on how the extrapolator is run see each function
 
 from subprocess import check_call, DEVNULL
 from .tables import Extrapolator_Inverse_Results_Table
-from ..utils import error_catcher, utils, db_connection
+from ..utils import error_catcher, utils
 # Justin globals are bad yah you know what else is bad? the logging
 # module that deadlocks upon import
 DEBUG = 10
