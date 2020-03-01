@@ -8,12 +8,13 @@ _config dictionary.
 """
 
 import os
-import pytest
 from datetime import datetime
+import logging
+
+import pytest
 from configparser import ConfigParser as SCP
 from configparser import NoSectionError
 from psutil import virtual_memory
-from .logger import error_catcher
 
 __authors__ = ["Justin Furuness", "Matt Jaccino"]
 __credits__ = ["Justin Furuness", "Matt Jaccino"]
@@ -23,7 +24,7 @@ __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
 
-def set_global_section_header(section="bgp"):
+def set_global_section_header(section):
     global global_section_header
     if hasattr(pytest, 'global_running_test') and pytest.global_running_test:
         global_section_header = "test"
@@ -36,12 +37,11 @@ class Config:
 
     __slots__ = ["path", "logger", "section"]
 
-    @error_catcher()
-    def __init__(self, logger, section="bgp", path="/etc/bgp/bgp.conf"):
+    
+    def __init__(self, section, path="/etc/bgp/bgp.conf"):
         """Initializes path for config file."""
 
         self.path = path
-        self.logger = logger
         self.section = section
         # Declare the section header to be global so Database can refer to it
         set_global_section_header(section)
@@ -64,7 +64,7 @@ class Config:
         self._remove_old_config_section(self.section)
         # Gets ram on the machine
         _ram = int((virtual_memory().available/1000/1000)*.9)
-        self.logger.info("Setting ram to {}".format(_ram))
+        logging.info("Setting ram to {}".format(_ram))
 
         # Conf info
         _config = SCP()
@@ -79,17 +79,17 @@ class Config:
         with open(self.path, "w+") as config_file:
             _config.write(config_file)
 
-    @error_catcher()
+    
     def _create_config_dir(self):
         """Creates the /etc/bgp directory."""
 
         try:
             os.makedirs(os.path.split(self.path)[0])
         except FileExistsError:
-            self.logger.debug("{} exists, not creating new directory".format(
+            logging.debug("{} exists, not creating new directory".format(
                 os.path.split(self.path)[0]))
 
-    @error_catcher()
+    
     def _remove_old_config_section(self, section):
         """Removes the old config file if it exists."""
 
@@ -118,7 +118,7 @@ class Config:
         except ValueError:
             return string
 
-    @error_catcher()
+    
     def get_db_creds(self):
         """Returns database credentials from the config file."""
 

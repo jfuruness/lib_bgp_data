@@ -23,6 +23,7 @@ There are also some convenience funcs, documented below
 
 
 import warnings
+import logging
 from multiprocessing import cpu_count
 from subprocess import check_call
 import os
@@ -66,16 +67,16 @@ class Generic_Table(Database):
     def clear_table(self):
         """Clears the table"""
 
-        self.logger.debug(f"Dropping {self.name} Table")
+        logging.debug(f"Dropping {self.name} Table")
         self.cursor.execute(f"DROP TABLE IF EXISTS {self.name}")
-        self.logger.debug(f"{self.name} Table dropped")
+        logging.debug(f"{self.name} Table dropped")
 
     def copy_table(self, path: str):
         """Copies table to a specified path"""
 
-        self.logger.debug(f"Copying file from {self.name} to {path}")
+        logging.debug(f"Copying file from {self.name} to {path}")
         self.execute(f"COPY {self.name} TO %s DELIMITER '\t';", [path])
-        self.logger.debug("Copy complete")
+        logging.debug("Copy complete")
 
     @property
     def columns(self):

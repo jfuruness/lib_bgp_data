@@ -4,7 +4,7 @@
 """This package contains utlity functions"""
 
 from .config import Config, set_global_section_header
-from .logger import Thread_Safe_Logger, error_catcher
+from .logger import config_logging
 from . import utils
 from .install import Install
 from .utils import Enumerable_Enum

@@ -52,7 +52,7 @@ Possible Future Extensions:
 
 
 import re
-from ..utils import utils, error_catcher, db_connection
+from ..utils import utils
 from .tables import Hijack_Table, Outage_Table, Leak_Table
 
 __author__ = "Justin Furuness"

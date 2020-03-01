@@ -9,6 +9,8 @@ Possible future improvements:
 -Unit tests
 """
 
+
+import logging
 from enum import Enum
 import requests
 import time
@@ -27,7 +29,6 @@ from pathos.multiprocessing import ProcessingPool
 from contextlib import contextmanager
 from multiprocessing import cpu_count, Queue, Process, Manager
 from subprocess import check_call, DEVNULL
-from .logger import Thread_Safe_Logger as Logger
 from .config import set_global_section_header
 
 __authors__ = ["Justin Furuness", "Matt Jaccino"]
@@ -39,12 +40,12 @@ __status__ = "Development"
 
 # to prevent circular depencies
 @contextmanager
-def Pool(logger, threads, multiplier, name):
+def Pool(threads, multiplier, name):
     """Context manager for pathos ProcessingPool"""
 
     # Creates a pool with threads else cpu_count * multiplier
     p = ProcessingPool(threads if threads else cpu_count() * multiplier)
-    logger.debug("Created {} pool".format(name))
+    logging.debug("Created {} pool".format(name))
     yield p
     # Need to clear due to:
     # https://github.com/uqfoundation/pathos/issues/111
@@ -52,8 +53,8 @@ def Pool(logger, threads, multiplier, name):
     p.join()
     p.clear()
 
-def write_to_stdout(logger, msg, flush=True):
-    if logger.level <= 20:
+def write_to_stdout(logging, msg, flush=True):
+    if logging.level <= 20:
         sys.stdout.write(msg)
         sys.stdout.flush()
 
@@ -64,12 +65,12 @@ def write_to_stdout(logger, msg, flush=True):
 # This works well with multiprocessing for our applications
 # https://stackoverflow.com/a/3160819/8903959
 @contextmanager
-def progress_bar(logger, msg, width):
-    write_to_stdout(logger, f"{datetime.now()}: {msg} X/{width}", flush=False)
-    write_to_stdout(logger, "[%s]" % (" " * toolbar_width))
-    write_to_stdout(logger, "\b" * (toolbar_width+1))
+def progress_bar(msg, width):
+    write_to_stdout(f"{datetime.now()}: {msg} X/{width}", flush=False)
+    write_to_stdout("[%s]" % (" " * toolbar_width))
+    write_to_stdout("\b" * (toolbar_width+1))
     yield
-    write_to_stdout(logger, "]\n")
+    write_to_stdout("]\n")
 
 class Enumerable_Enum(Enum):
     # https://stackoverflow.com/a/54919285
@@ -105,8 +106,7 @@ def get_default_end():
                                              second=59,
                                              microsecond=59).timestamp())
 
-def download_file(logger,
-                  url,
+def download_file(url,
                   path,
                   file_num=1,
                   total_files=1,
@@ -114,7 +114,7 @@ def download_file(logger,
                   progress_bar=False):
     """Downloads a file from a url into a path."""
 
-    logger.debug("Downloading a file.\n    Path: {}\n    Link: {}\n"
+    logging.debug("Downloading a file.\n    Path: {}\n    Link: {}\n"
                  .format(path, url))
     # This is to make sure that the network is not bombarded with requests
     time.sleep(sleep_time)
@@ -127,9 +127,9 @@ def download_file(logger,
                     as response, open(path, 'wb') as out_file:
                 # Copy the file into the specified file_path
                 shutil.copyfileobj(response, out_file)
-                logger.debug("{} / {} downloaded".format(file_num, total_files))
+                logging.debug("{} / {} downloaded".format(file_num, total_files))
                 if progress_bar:
-                    incriment_bar(logger)
+                    incriment_bar()
                 return
         # If there is an error in the download this will be called
         # And the download will be retried
@@ -137,22 +137,18 @@ def download_file(logger,
             retries -= 1
             time.sleep(5)
             if retries <= 0 or "No such file" in str(e):
-                logger.error("Failed download {}\nDue to: {}".format(url, e))
+                logging.error("Failed download {}\nDue to: {}".format(url, e))
                 sys.exit(1)
 
-def incriment_bar(logger):
-    if logger.level <= 20:  # INFO
+def incriment_bar():
+    if logging.level <= 20:  # INFO
         sys.stdout.write("#")
         sys.stdout.flush()
     else:
         sys.stdout.flush()
 
-def delete_paths(logger, paths):
+def delete_paths(paths):
     """Removes directory if directory, or removes path if path"""
-
-    # For unit tests
-    if logger is None:
-        logger = Logger()
 
     if not paths:
         paths = []
@@ -172,14 +168,14 @@ def delete_paths(logger, paths):
         # Just in case we always delete everything at the end of a run
         # So some files may not exist anymore
         except AttributeError:
-            logger.debug("Attribute error when deleting {}".format(path))
+            logging.debug("Attribute error when deleting {}".format(path))
         except FileNotFoundError:
-            logger.debug("File not found when deleting {}".format(path))
+            logging.debug("File not found when deleting {}".format(path))
         except PermissionError:
-            logger.warning("Permission error when deleting {}".format(path))
+            logging.warning("Permission error when deleting {}".format(path))
 
 
-def clean_paths(logger, paths, recreate=True):
+def clean_paths(paths, recreate=True):
     """If path exists remove it, else create it"""
 
     # If a single path is passed in, convert it to a list
@@ -191,11 +187,11 @@ def clean_paths(logger, paths, recreate=True):
             remove_func(path)
         # Files are sometimes deleted even though they no longer exist
         except AttributeError:
-            logger.debug("Attribute error when deleting {}".format(path))
+            logging.debug("Attribute error when deleting {}".format(path))
         except FileNotFoundError:
-            logger.debug("File not found when deleting {}".format(path))
+            logging.debug("File not found when deleting {}".format(path))
         except PermissionError:
-            logger.warning("Permission error when deleting {}".format(path))
+            logging.warning("Permission error when deleting {}".format(path))
 
     if recreate:
         for path in paths:
@@ -203,7 +199,7 @@ def clean_paths(logger, paths, recreate=True):
             os.makedirs(path, mode=0o777, exist_ok=False)
 
 
-def unzip_bz2(logger, old_path):
+def unzip_bz2(old_path):
     """Unzips a bz2 file from old_path into new_path and deletes old file"""
 
     new_path = "{}.decompressed".format(old_path[:-4])
@@ -212,15 +208,15 @@ def unzip_bz2(logger, old_path):
         for data in iter(lambda: file.read(100 * 1024), b''):
             new_file.write(decompressor.decompress(data))
 
-    logger.debug("Unzipped a file: {}".format(old_path))
-    delete_paths(logger, old_path)
+    logging.debug("Unzipped a file: {}".format(old_path))
+    delete_paths(old_path)
     return new_path
 
 
-def write_csv(logger, rows, csv_path):
+def write_csv(rows, csv_path):
     """Writes rows into csv_path, a tab delimited csv"""
 
-    logger.debug("Writing to {}".format(csv_path))
+    logging.debug("Writing to {}".format(csv_path))
     delete_paths(logger, csv_path)
 
     with open(csv_path, mode='w') as temp_csv:
@@ -234,32 +230,32 @@ def write_csv(logger, rows, csv_path):
         csv_writer.writerows(rows)
 
 
-def csv_to_db(logger, Table, csv_path, clear_table=False):
+def csv_to_db(Table, csv_path, clear_table=False):
     """Copies csv into table and deletes csv_path
 
     Copies tab delimited csv into table and deletes csv_path
     Table should inherit from Database class and have name attribute and
     columns attribute"""
 
-    with Table(logger) as t:
+    with Table() as t:
         if clear_table:
             t.clear_table()
             t._create_tables()
-        logger.debug("Copying {} into the database".format(csv_path))
+        logging.debug("Copying {} into the database".format(csv_path))
         # Opens temporary file
         with open(r'{}'.format(csv_path), 'r') as f:
             # Copies data from the csv to the db, this is the fastest way
             t.cursor.copy_from(f, t.name, sep='\t', columns=t.columns, null="")
             t.cursor.execute("CHECKPOINT;")
-    logger.debug("Done inserting {} into the database".format(csv_path))
-    delete_paths(logger, csv_path)
+    logging.debug("Done inserting {} into the database".format(csv_path))
+    delete_paths(csv_path)
 
 
-def rows_to_db(logger, rows, csv_path, Table, clear_table=True):
+def rows_to_db(rows, csv_path, Table, clear_table=True):
     """Writes rows to csv and from csv to database"""
 
-    write_csv(logger, rows, csv_path)
-    csv_to_db(logger, Table, csv_path, clear_table)
+    write_csv(rows, csv_path)
+    csv_to_db(Table, csv_path, clear_table)
 
 
 def get_tags(url, tag):
@@ -290,9 +286,9 @@ def get_lines_in_file(filename: str) -> int:
             pass
     return count + 1
 
-def run_cmd(logger, cmd):
+def run_cmd(cmd):
     # If less than logging.info
-    if logger.level < 20:
+    if logging.level < 20:
         check_call(cmd, shell=True)
     else:
         check_call(cmd, stdout=DEVNULL, stderr=DEVNULL, shell=True)

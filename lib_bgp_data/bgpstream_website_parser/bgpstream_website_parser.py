@@ -43,7 +43,7 @@ Possible Future Extensions:
 """
 
 from enum import Enum
-from ..utils import error_catcher, utils, db_connection
+from ..utils import utils
 from .tables import Hijack_Table, Leak_Table, Outage_Table
 from .data_classes import Leak, Hijack, Outage
 

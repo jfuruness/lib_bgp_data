@@ -14,3 +14,4 @@ beautifulsoup4>=4.8.1
 psycopg2>=2.8.4
 jsonschema==2.6.0  # required for flasgger
 matplotlib
+multiprocessing_logging

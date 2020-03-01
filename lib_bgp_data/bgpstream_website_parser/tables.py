@@ -24,7 +24,7 @@ Possible future improvements:
 
 from psycopg2.extras import RealDictCursor
 from time import strftime, gmtime
-from ..database import Database
+from ..database import Generic_Table
 
 __author__ = "Justin Furuness"
 __credits__ = ["Justin Furuness"]

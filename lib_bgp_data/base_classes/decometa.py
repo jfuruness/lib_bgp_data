@@ -14,6 +14,7 @@ __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
+import logging
 import types
 
 # https://stackoverflow.com/a/3468410
@@ -47,7 +48,7 @@ class DecoMeta(type):
                 # Makes sure it's not a system exit call
                 if not str(error_desc) == '1':
                     for msg in traceback.format_tb(tb):
-                        self.logger.debug(msg)
+                        logging.debug(msg)
                     # Gets last call from program
                     tb_to_re = [x for x in str(traceback.format_tb(tb))
                                 .split("File") if "lib_bgp_data" in x][-1]
@@ -71,7 +72,7 @@ class DecoMeta(type):
                                         capture.group("function"),
                                         capture.group("line_num"),
                                         capture.group("line"))
-                    self.logger.error(err_str)
+                    logging.error(err_str)
                     # hahaha so professional
                     print('\a')
                 # Exit program and also kills all parents/ancestors

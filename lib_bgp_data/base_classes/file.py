@@ -13,7 +13,9 @@ __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
+import logging
 import os
+
 from .decometa import DecoMeta
 from ..utils import Thread_Safe_Logger as Logger
 
@@ -24,7 +26,7 @@ class File:
     In depth explanation in README.
     """
 
-    __slots__ = ['logger', 'csv_dir', 'url', 'num', 'path', 'csv_name']
+    __slots__ = ['csv_dir', 'url', 'num', 'path', 'csv_name']
 
     __metaclass__ = DecoMeta
 
@@ -32,16 +34,14 @@ class File:
                  path: str,
                  csv_dir: str,
                  url: str,
-                 num: int = 1,
-                 logger=Logger()):
+                 num: int = 1):
         """Initializes file instance and determine info about it"""
 
-        self.logger = logger
         self.csv_dir = csv_dir
         self.url = url
         self.num = num
         self.path = f"{path}/{num}{os.path.splitext(url)[1]}"
-        self.logger.debug("Initialized file instance")
+        logging.debug("Initialized file instance")
 
     def __lt__(self, other):
         """less than attribute for sorting files, sorts based on size

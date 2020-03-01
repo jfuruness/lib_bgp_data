@@ -73,9 +73,9 @@ class Test_ASes_Table(Generic_Table_Test):
 
         parser = Relationships_Parser()
         url = parser._get_urls()[0]
-        rel_file = Rel_File(parser.path, parser.csv_dir, url, parser.logger)
-        utils.download_file(rel_file.logger, rel_file.url, rel_file.path)
-        path = utils.unzip_bz2(rel_file.logger, rel_file.path)
+        rel_file = Rel_File(parser.path, parser.csv_dir, url)
+        utils.download_file(rel_file.url, rel_file.path)
+        path = utils.unzip_bz2(rel_file.path)
 
         # Use a set to hold ASes
         ases = set()
@@ -89,7 +89,7 @@ class Test_ASes_Table(Generic_Table_Test):
                         ases.add(_as)
 
         # Clean up with utils
-        utils.delete_paths(rel_file.logger, [rel_file.csv_dir, rel_file.path])
+        utils.delete_paths([rel_file.csv_dir, rel_file.path])
         return len(ases)
 
 

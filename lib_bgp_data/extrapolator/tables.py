@@ -11,7 +11,7 @@ Possible future improvements:
     -Add test cases
 """
 
-from ..database import Database
+from ..database import Generic_Table
 
 __author__ = "Justin Furuness"
 __credits__ = ["Justin Furuness"]

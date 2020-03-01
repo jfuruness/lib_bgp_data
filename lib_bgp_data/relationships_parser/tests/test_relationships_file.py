@@ -33,27 +33,22 @@ class Test_Relationships_File:
         # Initialize Relationships File object
         self.rel_file = Rel_File(self.rel_par.path,
                                  self.rel_par.csv_dir,
-                                 self.rel_par._get_urls()[0],  # Gets URL
-                                 num=1,
-                                 logger=self.rel_par.logger)
+                                 self.rel_par._get_urls()[0])  # Gets URL
 
     def test__db_insert(self):
         """Tests the _db_insert function"""
 
         # Download a file to use as a test
-        utils.download_file(self.rel_file.logger,
-                            self.rel_file.url,
+        utils.download_file(self.rel_file.url,
                             self.rel_file.path)
 
         # Unzip this file and assign its new path
-        self.rel_file.path = utils.unzip_bz2(self.rel_file.logger,
-                                             self.rel_file.path)
+        self.rel_file.path = utils.unzip_bz2(self.rel_file.path)
 
         _peer_count, _cust_prov_count = self._get_lines(self.rel_file.path)
 
         # Clean up with utils so as not to contaminate test
-        utils.delete_paths(self.rel_file.logger,
-                           [self.rel_file.csv_dir, self.rel_file.path])
+        utils.delete_paths([self.rel_file.csv_dir, self.rel_file.path])
 
         # Make sure the counts are accurate
         with Peers_Table(clear=True) as _peers:

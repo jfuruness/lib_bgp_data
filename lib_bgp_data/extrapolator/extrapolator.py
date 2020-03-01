@@ -10,7 +10,7 @@ For the specifics on how the extrapolator is run see each function
 
 from subprocess import check_call, DEVNULL
 from .tables import Extrapolator_Inverse_Results_Table
-from ..utils import error_catcher, utils
+from ..utils import utils
 # Justin globals are bad yah you know what else is bad? the logging
 # module that deadlocks upon import
 DEBUG = 10
@@ -31,14 +31,14 @@ class Extrapolator:
 
     __slots__ = ['path', 'csv_dir', 'logger']
 
-    @error_catcher()
+    
     def __init__(self, section="bgp", args={}):
         """Initializes logger and path variables."""
 
         # Sets path vars, logger, config, etc
         utils.set_common_init_args(self, args, section)
 
-#    @error_catcher()
+#    
 #    @utils.run_parser()
     def run_forecast(self, input_table):
         self.logger.info("About to run the forecast extrapolator")
@@ -54,7 +54,7 @@ class Extrapolator:
             check_call(bash_args, stdout=DEVNULL, stderr=DEVNULL, shell=True)
 
 
-#    @error_catcher()
+#    
 #    @utils.run_parser()
     def run_rovpp(self, hijack, table_names, exr_bash=None, test=False, adopt_pol=None):
         """Runs extrapolator with a subprefix hijack."""

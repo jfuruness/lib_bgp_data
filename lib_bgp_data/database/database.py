@@ -39,7 +39,7 @@ from multiprocessing import cpu_count
 from subprocess import check_call
 import os
 import time
-from ..utils import Config, utils, Thread_Safe_Logger as Logger
+from ..utils import Config, utils, config_logging
 
 
 __authors__ = ["Justin Furuness", "Matt Jaccino"]
@@ -53,16 +53,16 @@ __status__ = "Development"
 class Database:
     """Interact with the database"""
 
-    __slots__ = ['logger', 'conn', 'cursor', 'clear']
+    __slots__ = ['conn', 'cursor', 'clear']
 
     # NOTE: SHOULD INHERIT DECOMETA HERE!!!
 
     
-    def __init__(self, logger=Logger(), cursor_factory=RealDictCursor, clear=False):
+    def __init__(self, cursor_factory=RealDictCursor, clear=False):
         """Create a new connection with the database"""
 
         # Initializes self.logger
-        self.logger = logger
+        config_logging()
         self._connect(cursor_factory)
         self.clear=clear
 
@@ -83,14 +83,14 @@ class Database:
 
         from .config import global_section_header
         # Database needs access to the section header
-        kwargs = Config(self.logger, global_section_header).get_db_creds()
+        kwargs = Config(global_section_header).get_db_creds()
         if cursor_factory:
             kwargs["cursor_factory"] = cursor_factory
         # In case the database is somehow off we wait
         for i in range(10):
             try:
                 conn = psycopg2.connect(**kwargs)
-                self.logger.debug("Database Connected")
+                logging.debug("Database Connected")
                 self.conn = conn
                 # Automatically execute queries
                 self.conn.autocommit = True
@@ -113,18 +113,18 @@ class Database:
         try:
             return self.cursor.fetchall()
         except psycopg2.ProgrammingError as e:
-            self.logger.debug(f"No results to fetch: {e}")
+            logging.debug(f"No results to fetch: {e}")
             return []
 
     def multiprocess_execute(self, sqls):
         """Executes sql statements in parallel"""
 
         self.close()
-        with utils.Pool(self.logger, None, 1, "database execute") as db_pool:
+        with utils.Pool(None, 1, "database execute") as db_pool:
             db_pool.map(lambda self, sql: self._reconnect_execute(sql),
                         [self]*len(sqls),
                         sqls)
-        self.__init__(self.logger)
+        self.__init__()
 
     def _reconnect_execute(self, sql):
         """To be used for parellel queries.
@@ -132,7 +132,7 @@ class Database:
         In parallel queries, one connection between multiple processes
         is not allowed."""
 
-        self.__init__(self.logger)
+        self.__init__(logging)
         self.execute(sql)
         self.close()
 
@@ -151,7 +151,7 @@ class Database:
         A full vacuum rewrites entire db to save space.
         """
 
-        self.logger.info("Vacuum analyzing db now")
+        logging.info("Vacuum analyzing db now")
         self.execute("VACUUM ANALYZE;")
         self.execute("CHECKPOINT;")
         if full:
@@ -160,9 +160,9 @@ class Database:
     def unhinge_db(self):
         """Enhances database, but doesn't allow for writing to disk."""
 
-        self.logger.info("unhinging db")
+        logging.info("unhinging db")
         # access to section header
-        ram = Config(self.logger, global_section_header).ram
+        ram = Config(global_section_header).ram
         # This will make it so that your database never writes to
         # disk unless you tell it to. It's faster, but harder to use
         sqls = [  # https://www.2ndquadrant.com/en/blog/
@@ -185,7 +185,7 @@ class Database:
                 "ALTER SYSTEM SET maintenance_work_mem TO '{}MB';".format(
                     int(ram/5))]
 
-        utils.delete_paths(self.logger, "/tmp/db_modify.sql")
+        utils.delete_paths("/tmp/db_modify.sql")
         # Writes sql file
         with open("/tmp/db_modify.sql", "w+") as db_mod_file:
             for sql in sqls:
@@ -195,13 +195,13 @@ class Database:
         self._restart_postgres()
         # Removes sql file to clean up
         os.remove("/tmp/db_modify.sql")
-        self.logger.debug("unhinged db")
+        logging.debug("unhinged db")
 
     def rehinge_db(self):
         """Restores postgres 11 defaults"""
 
 
-        self.logger.info("rehinging db")
+        logging.info("rehinging db")
         # This will make it so that your database never writes to
         # disk unless you tell it to. It's faster, but harder to use
         sqls = [  # https://www.2ndquadrant.com/en/blog/
@@ -220,7 +220,7 @@ class Database:
                 # Since its manual it can be higher
                 "ALTER SYSTEM SET max_parallel_maintenance_workers TO 2;",
                 "ALTER SYSTEM SET maintenance_work_mem TO '64MB';"]
-        utils.delete_paths(self.logger, "/tmp/db_modify.sql")
+        utils.delete_paths("/tmp/db_modify.sql")
         # Writes sql file
         with open("/tmp/db_modify.sql", "w+") as db_mod_file:
             for sql in sqls:
@@ -230,15 +230,14 @@ class Database:
         self._restart_postgres()
         # Removes sql file to clean up
         os.remove("/tmp/db_modify.sql")
-        self.logger.debug("rehinged db")
+        logging.debug("rehinged db")
 
     def _restart_postgres(self):
         """Restarts postgres and all connections."""
 
         self.close()
         # access to section header
-        check_call(Config(self.logger,
-                          global_section_header).restart_postgres_cmd,
+        check_call(Config(global_section_header).restart_postgres_cmd,
                    shell=True)
         time.sleep(30)
         self._connect(create_tables=False)

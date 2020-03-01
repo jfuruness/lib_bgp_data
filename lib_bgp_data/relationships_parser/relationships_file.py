@@ -8,8 +8,10 @@ insert the data into a database. For a more detailed explanation see README.
 """
 
 from enum import Enum
+import logging
 import os
 from subprocess import call
+
 from .tables import Provider_Customers_Table, Peers_Table
 from ..base_classes import DecoMeta, File
 from ..utils import utils
@@ -43,9 +45,9 @@ class Rel_File(File):
         For more in depth explanation see top of file."""
 
         # Downloads the file
-        utils.download_file(self.logger, self.url, self.path)
+        utils.download_file(self.url, self.path)
         # Unzips file and assigns new path
-        self.path: str = utils.unzip_bz2(self.logger, self.path)
+        self.path: str = utils.unzip_bz2(self.path)
         # Gets data and writes it to the csvs
         self._db_insert()
 
@@ -72,9 +74,9 @@ class Rel_File(File):
             # Grep the CSV based on relationship information into a CSV
             call(f"cat {self.path} | {grep[key]} > {csvs[key]}", shell=True)
             # Inserts the CSV into the database
-            utils.csv_to_db(self.logger, tables[key], csvs[key], clear_table=True)
+            utils.csv_to_db(tables[key], csvs[key], clear_table=True)
         # Deletes the old paths
-        utils.delete_paths(self.logger, [self.path, self.csv_dir])
+        utils.delete_paths([self.path, self.csv_dir])
 
     def _get_rel_attributes(self):
         """Returns the grep string, csv path, and table attributes.

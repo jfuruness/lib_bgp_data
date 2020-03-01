@@ -15,9 +15,10 @@ __status__ = "Development"
 
 from .decometa import DecoMeta
 import pytest
+import logging
 from ..utils import utils
 from ..utils import set_global_section_header
-from ..utils import Thread_Safe_Logger as Logger
+from ..utils import config_logging
 
 
 
@@ -27,7 +28,7 @@ class Parser:
     See README for in depth explanation.
     """
 
-    __slots__ = ['path', 'csv_dir', 'logger']
+    __slots__ = ['path', 'csv_dir']
     # This will add an error_catcher decorator to all methods
     __metaclass__ = DecoMeta
 
@@ -49,14 +50,14 @@ class Parser:
         name = f"{kwargs['section']}_{self.__class__.__name__}"
         # Set global section header varaible in Config's init
         set_global_section_header(kwargs["section"])
-        self.logger = kwargs.get("logger", Logger(**kwargs))
+        config_logging(kwargs.get("level", logging.INFO), kwargs["section"])
 
         # Path to where all files willi go. It does not have to exist
         self.path = kwargs.get("path", f"/tmp/{name}")
         self.csv_dir = kwargs.get("csv_dir", f"/dev/shm/{name}")
         # Recreates empty directories
-        utils.clean_paths(self.logger, [self.path, self.csv_dir])
-        self.logger.debug(f"Initialized {name} at {utils.now()}")
+        utils.clean_paths([self.path, self.csv_dir])
+        logging.debug(f"Initialized {name} at {utils.now()}")
         assert hasattr(self, "_run"), ("Needs _run, see Parser.py's run func "
                                        "Note that this is also used by default"
                                        " for running argparse. The main method"
@@ -70,20 +71,19 @@ class Parser:
             self._run(*args, **kwargs)
         except Exception as e:
             self.end_parser(start_time)
-            self.logger.error(e)
+            logging.error(e)
         finally:
             self.end_parser(start_time)
 
     def end_parser(self, start_time):
         """Ends parser, prints time and deletes files"""
 
-        utils.clean_paths(self.logger,
-                          [self.path, self.csv_dir],
+        utils.clean_paths([self.path, self.csv_dir],
                           recreate=False)
         # https://www.geeksforgeeks.org/python-difference-between-two-
         # dates-in-minutes-using-datetime-timedelta-method/
         _min, _sec = divmod((utils.now() - start_time).total_seconds(), 60)
-        self.logger.info(f"{self.__class__.__name__} took {_min}m {_sec}s")
+        logging.info(f"{self.__class__.__name__} took {_min}m {_sec}s")
 
     @classmethod
     def argparse_call(cls):

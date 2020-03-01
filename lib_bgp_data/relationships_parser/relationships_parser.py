@@ -35,15 +35,14 @@ class Relationships_Parser(Parser):
         """
 
         url = url if url else self._get_urls()[0]
-        Rel_File(self.path, self.csv_dir, url, num=1, logger=self.logger
-                 ).parse_file()
-        utils.delete_paths(self.logger, [self.csv_dir, self.path])
+        Rel_File(self.path, self.csv_dir, url).parse_file()
+        utils.delete_paths([self.csv_dir, self.path])
 
         # Fills these rov++ specific tables
-        with ASes_Table(self.logger, clear=True) as _as_table:
+        with ASes_Table(clear=True) as _as_table:
             _as_table.fill_table()
         # creates and closes table
-        with AS_Connectivity_Table(self.logger, clear=True) as _conn_table:
+        with AS_Connectivity_Table(clear=True) as _conn_table:
             _conn_table.fill_table()
 
 
