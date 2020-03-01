@@ -26,6 +26,7 @@ from bs4 import BeautifulSoup as Soup
 from pathos.multiprocessing import ProcessingPool
 from contextlib import contextmanager
 from multiprocessing import cpu_count, Queue, Process, Manager
+from subprocess import check_call, DEVNULL
 from .logger import Thread_Safe_Logger as Logger
 from .database import db_connection
 from .config import set_global_section_header
@@ -52,6 +53,11 @@ def Pool(logger, threads, multiplier, name):
     p.join()
     p.clear()
 
+def write_to_stdout(logger, msg, flush=True):
+    if logger.level <= 20:
+        sys.stdout.write(msg)
+        sys.stdout.flush()
+
 # tqdm fails whenever large multiprocess operations take place
 # We don't want 60 print statements every time we run multiprocess things
 # So instead I wrote my own progress bar
@@ -59,18 +65,12 @@ def Pool(logger, threads, multiplier, name):
 # This works well with multiprocessing for our applications
 # https://stackoverflow.com/a/3160819/8903959
 @contextmanager
-def progress_bar(logger, msg, toolbar_width):
-    if logger.level <= 20:  # logging.INFO
-        sys.stdout.write("{}: {} X/{}".format(datetime.now(),
-                                               msg,
-                                               toolbar_width))
-        sys.stdout.write("[%s]" % (" " * toolbar_width))
-        sys.stdout.flush()
-        # return to start of line, after '['
-        sys.stdout.write("\b" * (toolbar_width+1))
+def progress_bar(logger, msg, width):
+    write_to_stdout(logger, f"{datetime.now()}: {msg} X/{width}", flush=False)
+    write_to_stdout(logger, "[%s]" % (" " * toolbar_width))
+    write_to_stdout(logger, "\b" * (toolbar_width+1))
     yield
-    if logger.level <= 20:
-        sys.stdout.write("]\n")
+    write_to_stdout(logger, "]\n")
 
 class Enumerable_Enum(Enum):
     # https://stackoverflow.com/a/54919285
@@ -290,3 +290,10 @@ def get_lines_in_file(filename: str) -> int:
         for count, line in enumerate(f):
             pass
     return count + 1
+
+def run_cmd(logger, cmd):
+    # If less than logging.info
+    if logger.level < 20:
+        check_call(cmd, shell=True)
+    else:
+        check_call(cmd, stdout=DEVNULL, stderr=DEVNULL, shell=True)

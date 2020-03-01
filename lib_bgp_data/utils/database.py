@@ -33,6 +33,7 @@ Possible Future improvements:
 
 # Due to circular imports this must be here
 from contextlib import contextmanager
+import warnings
 import psycopg2
 from psycopg2.extras import RealDictCursor
 from multiprocessing import cpu_count
@@ -55,6 +56,11 @@ def db_connection(table=None,
                   logger=Logger(),
                   clear=False,
                   cursor_factory=RealDictCursor):
+    warnings.warn(("db_connection() is depreciated. "
+                   f"Use {'Database()' if not table else table.__name__} instead"),
+                   DeprecationWarning,
+                   stacklevel=2)
+
     if table:
         t = table(logger, cursor_factory=cursor_factory)
     else:
@@ -81,19 +87,30 @@ from .utils import Pool, delete_paths
 class Database:
     """Interact with the database"""
 
-    __slots__ = ['logger', 'conn', 'cursor']
+    __slots__ = ['logger', 'conn', 'cursor', 'clear']
 
     # NOTE: SHOULD INHERIT DECOMETA HERE!!!
 
     
     @error_catcher()
-    def __init__(self, logger=Logger(), cursor_factory=RealDictCursor, _open=True):
+    def __init__(self, logger=Logger(), cursor_factory=RealDictCursor, _open=True, clear=False):
         """Create a new connection with the database"""
 
         # Initializes self.logger
         self.logger = logger
         self._connect(cursor_factory, _open=_open)
+        self.clear=clear
 
+    def __enter__(self):
+        if self.clear and self.__class__ != Database:
+            self.clear_table()
+            if hasattr(self, "_create_tables"):
+                self._create_tables()
+        return self
+
+    def __exit__(self, type, value, traceback):
+        self.close()
+        
     @error_catcher()
     def _connect(self, cursor_factory=RealDictCursor, create_tables=True, _open=True):
         """Connects to db with default RealDictCursor.
@@ -309,3 +326,9 @@ class Database:
         self.cursor.execute(f"DROP TABLE IF EXISTS {self.name}")
         self.logger.debug(f"{self.name} Table dropped")
 
+    def copy_table(self, path: str):
+        """Copies table to a specified path"""
+
+        self.logger.debug(f"Copying file from {self.name} to {path}")
+        self.execute(f"COPY {self.name} TO %s DELIMITER '\t';", [path])
+        self.logger.debug("Copy complete")

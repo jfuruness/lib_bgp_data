@@ -11,7 +11,7 @@ import warnings
 from .relationships_file import Rel_File
 from .tables import ASes_Table, AS_Connectivity_Table
 from ..base_classes import Parser
-from ..utils import utils, db_connection
+from ..utils import utils
 
 __authors__ = ["Justin Furuness", "Matt Jaccino"]
 __credits__ = ["Justin Furuness", "Matt Jaccino"]
@@ -40,10 +40,10 @@ class Relationships_Parser(Parser):
         utils.delete_paths(self.logger, [self.csv_dir, self.path])
 
         # Fills these rov++ specific tables
-        with db_connection(ASes_Table, self.logger) as _as_table:
+        with ASes_Table(self.logger, clear=True) as _as_table:
             _as_table.fill_table()
         # creates and closes table
-        with db_connection(AS_Connectivity_Table, self.logger) as _conn_table:
+        with AS_Connectivity_Table(self.logger, clear=True) as _conn_table:
             _conn_table.fill_table()
 
 

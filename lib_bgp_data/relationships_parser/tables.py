@@ -24,7 +24,7 @@ table, and has the name and column properties that are used in the
 utils function to insert CSVs into the database.
 """
 
-from ..utils import Database, db_connection
+from ..utils import Database
 
 __author__ = "Justin Furuness"
 __credits__ = ["Justin Furuness", "James Breslin"]
@@ -44,7 +44,7 @@ def make_sure_tables_exist(table_classes: list):
 
     try:
         for Table_Class in table_classes:
-            with db_connection(Table_Class) as _db:
+            with Table_Class() as _db:
                 assert _db.get_count() > 0
     except AssertionError:
         # Needed here to avoid cirular imports

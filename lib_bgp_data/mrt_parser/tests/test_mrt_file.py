@@ -50,9 +50,6 @@ class Test_MRT_File:
             # Make sure both entries are identical
             assert _scanner_entries == _dump_entries
 
-    # Apparently the way we formatted the strings is deprecated.
-    # I remember this being such a problem, no way I'm changing it now
-    @pytest.mark.filterwarnings("ignore::DeprecationWarning")
     def test_bgpscanner_regex(self):
         """This will test if the method '_bgpscanner_args' uses correct
         regex to get desired output from a file.
@@ -91,9 +88,6 @@ class Test_MRT_File:
         # Make sure these values match
         assert lines == entries
 
-    # Apparently the way we formatted the strings is deprecated.
-    # I remember this being such a problem, no way I'm changing it now
-    @pytest.mark.filterwarnings("ignore::DeprecationWarning")
     def test_bgpdump_regex(self):
         """This will test if the method '_bgpdump_args' uses correct regex
         to get desired output from a file.
@@ -140,7 +134,6 @@ class Test_MRT_File:
             sql = "SELECT as_path FROM mrt_announcements;"
             # Check for sets by looking for the set notation
             assert "{" not in str(db.execute(sql))
-        assert False, "All tests pass, delete just one mrt_file, do them all"
 
 ########################
 ### Helper Functions ###

@@ -57,7 +57,8 @@ Possible Future Extensions:
     -Reduce total information in the headers
 """
 
-from .rpki_validator import RPKI_Validator
+from .rpki_validator_parser import RPKI_Validator_Parser
+from .rpki_validator_wrapper import RPKI_Validator_Wrapper
 
 __author__ = "Justin Furuness", "Cameron Morris"
 __credits__ = ["Cameron Morris", "Justin Furuness"]

@@ -34,7 +34,7 @@ class Generic_Table_Test:
         """
 
         # Initializes the table if it doesn't exist
-        with db_connection(self.table_class) as db:
+        with self.table_class() as _:
             pass
 
     def test_table_drop(self):
@@ -45,12 +45,12 @@ class Generic_Table_Test:
         """
 
         # Initializes the table if it doesn't exist
-        with db_connection(self.table_class) as db:
+        with self.table_class() as _db:
             # Makes sure that the mrt table is deleted
-            db.clear_table()
+            _db.clear_table()
             try:
                 # This should fail
-                db.execute(f"SELECT * FROM {db.name}")
+                _db.execute(f"SELECT * FROM {db.name}")
                 # If we reach this line it's a failure
                 assert False
             # Table should be undefined since it was dropped
@@ -67,14 +67,14 @@ class Generic_Table_Test:
         """
 
         # Initializes the table if it doesn't exist
-        with db_connection(self.table_class) as db:
+        with self.table_class() as _db:
             # Makes sure that the mrt table is deleted
-            db.clear_table()
+            _db.clear_table()
             # Inits the table when it does not exist
-            if hasattr(db, "_create_tables"):
-                db._create_tables()
+            if hasattr(_db, "_create_tables"):
+                _db._create_tables()
                 # Table should exist and have no resuts
-                assert db.get_count() == 0
+                assert _db.get_count() == 0
 
     def test_table_fill(self):
         """Tests the fill_tables function.
@@ -86,15 +86,15 @@ class Generic_Table_Test:
         """
 
         # Initializes the table if it doesn't exist
-        with db_connection(self.table_class) as db:
+        with self.table_class() as _db:
             # Makes sure that the mrt table is deleted
-            db.clear_table()
+            _db.clear_table()
             # Inits the table when it does not exist
-            if hasattr(db, "_create_tables"):
-                db._create_tables()
+            if hasattr(_db, "_create_tables"):
+                _db._create_tables()
                 # Table should exist and have no resuts
-                assert db.get_count() == 0
+                assert _db.get_count() == 0
 
-            if hasattr(db, "fill_table"):
-                db.fill_table()
-                assert db.get_count() > 0        
+            if hasattr(_db, "fill_table"):
+                _db.fill_table()
+                assert _db.get_count() > 0        

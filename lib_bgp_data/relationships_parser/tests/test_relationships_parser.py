@@ -11,7 +11,7 @@ import datetime
 import pytest
 import validators
 from ..relationships_parser import Relationships_Parser
-from ...utils import utils, db_connection, Config
+from ...utils import utils, Database, Config
 
 
 __authors__ = ["Matt Jaccino", "Justin Furuness"]
@@ -35,16 +35,16 @@ class Test_Relationships_Parser:
         """Tests the parse files function"""
 
         # Delete tables from database
-        with db_connection() as db:
+        with Database() as db:
             db.execute("DROP TABLE IF EXISTS peers")
             db.execute("DROP TABLE IF EXISTS provider_customers")
             # Parses latest file
             self.parser.run(agg_months)
             # Get number of entries in table 'peers'
-            _peers: list = db.execute("SELECT * FROM peers")
+            _peers = db.execute("SELECT * FROM peers")
             # Get number of entries in table 'provider_customers'
-            _cust_prov: list = db.execute("SELECT * FROM provider_customers")
-        # Make sure peers table is larger than provider_customers
+            _cust_prov = db.execute("SELECT * FROM provider_customers")
+            # Make sure peers table is larger than provider_customers
         assert len(_peers) > 0 and len(_cust_prov) > 0
         # Return these entry counts for other tests
         return len(_peers), len(_cust_prov)

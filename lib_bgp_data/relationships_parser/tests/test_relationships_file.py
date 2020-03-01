@@ -10,7 +10,7 @@ import pytest
 from ..relationships_file import Rel_File, Rel_Types
 from ..relationships_parser import Relationships_Parser
 from ..tables import Provider_Customers_Table, Peers_Table
-from ...utils import utils, db_connection
+from ...utils import utils
 
 
 __authors__ = ["Matt Jaccino", "Justin Furuness"]
@@ -38,7 +38,6 @@ class Test_Relationships_File:
                                  self.rel_par._get_urls()[0],  # Gets URL
                                  num=1,
                                  logger=self.rel_par.logger)
-        print("!!!!!!!!!!!! SET UP!!!!!!!!!!!!!!!")
 
     def test__db_insert(self):
         """Tests the _db_insert function"""
@@ -59,13 +58,12 @@ class Test_Relationships_File:
                            [self.rel_file.csv_dir, self.rel_file.path])
 
         # Make sure the counts are accurate
-        with db_connection(Peers_Table) as _peers:
-            with db_connection(Provider_Customers_Table) as _cust_provs:
+        with Peers_Table(clear=True) as _peers:
+            with Provider_Customers_Table(clear=True) as _cust_provs:
                 Relationships_Parser().run()
                 assert _peer_count == _peers.get_count()
                 assert _cust_prov_count == _cust_provs.get_count()
 
-    @pytest.mark.filterwarnings("ignore::DeprecationWarning")
     def test__get_rel_attributes(self):
         """Tests the _get_rel_attributes function"""
 

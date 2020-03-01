@@ -76,13 +76,13 @@ class Test_MRT_Parser:
                                             self._end,
                                             api_param_mods)
         # Everything but isolario
-        sources = [x.value for x in MRT_Sources.__members__.values()
+        sources = [x for x in MRT_Sources.__members__.values()
                    if x != MRT_Sources.ISOLARIO]
         # Gets all the mrt file urls
         mrt_file_urls = parser._get_mrt_urls(self._start,
                                              self._end,
                                              api_param_mods,
-                                             sources=source)
+                                             sources=sources)
         # Checks that the number of urls is correct
         assert len(mrt_file_urls) == num_files
         # Now compare when including Isolario URLs
@@ -98,7 +98,7 @@ class Test_MRT_Parser:
         """Gets all MRT URLs from CAIDA and Isolario."""
 
         return self.test_get_caida_mrt_urls(parser, param_mods) + \
-            self.test_get_iso_mrt_urls(parser)
+            self.test_get_mrt_urls_iso()
 
     def test_get_mrt_urls_no_param_mods(self):
         """Tests the get_mrt_urls function without api parameters.
@@ -119,7 +119,7 @@ class Test_MRT_Parser:
         # Initialize a parser object
         parser = MRT_Parser()
         # Get MRT Files
-        mrt_file_urls = parser._get_mrt_urls_iso(self._start, self._end)
+        mrt_file_urls = parser._get_mrt_urls(self._start, self._end, sources=[MRT_Sources.ISOLARIO])
         # Each of the 5 subdirectories contain a folder for the each month
         # and from each folder we only want one rib closest to the start
         # of the time interval but not if it is after the end

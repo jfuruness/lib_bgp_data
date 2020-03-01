@@ -7,8 +7,7 @@ from ..tables import Provider_Customers_Table, Peers_Table
 from ..tables import ASes_Table, AS_Connectivity_Table
 from ..relationships_file import Rel_File
 from ..relationships_parser import Relationships_Parser
-from ...utils import db_connection, utils
-from ...utils import Generic_Table_Test
+from ...utils import utils, Generic_Table_Test
 
 
 __authors__ = ["Matt Jaccino", "Justin Furuness"]
@@ -39,7 +38,7 @@ class Test_ASes_Table(Generic_Table_Test):
 
         
         # Communicate with database
-        with db_connection(ASes_Table) as _db:
+        with ASes_Table() as _db:
             # Make sure the table exists before testing the method
             _db.get_count()
             # Use the method 'clear_table' to remove the rovpp_ases table
@@ -56,7 +55,7 @@ class Test_ASes_Table(Generic_Table_Test):
     def test_fill_table(self):
         """This will test the 'fill_table' method."""
 
-        with db_connection(ASes_Table) as _db:
+        with ASes_Table() as _db:
             _parser = Relationships_Parser()
             url = _parser._get_urls()[0]
             _parser.run(url=url)
@@ -107,9 +106,9 @@ class Test_AS_Connectivity_Table(Generic_Table_Test):
 
 
         # Make sure count is accurate
-        with db_connection(ASes_Table) as _ases_db:
+        with ASes_Table() as _ases_db:
             _ases_db.fill_table()
-            with db_connection(self.table_class) as _conn_db:
+            with self.table_class() as _conn_db:
                 _conn_db.fill_table()
                 count_sql = """SELECT COUNT(*)
                             FROM as_connectivity

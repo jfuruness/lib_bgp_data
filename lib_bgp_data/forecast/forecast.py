@@ -35,7 +35,7 @@ from ..roas_parser import ROAs_Parser
 from ..bgpstream_website_parser import BGPStream_Website_Parser
 from ..mrt_parser import MRT_Parser
 from ..extrapolator import Extrapolator
-from ..rpki_validator import RPKI_Validator
+from ..rpki_validator import RPKI_Validator_Parser
 from ..what_if_analysis import What_If_Analysis
 from ..utils import utils, Database, db_connection, Install, error_catcher
 
