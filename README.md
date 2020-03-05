@@ -4,7 +4,6 @@ This package contains multiple submodules that are used to gather and manipulate
 
 *disclaimer: If a submodule is in development, that means that it unit tests are in the process of being written*
 
-*Another disclaimer: Long story short, our system has a lot of weird permissions, so I've made a lot of commits to this repo as root. They are all me, Justin Furuness. Oops.*
 
 * [lib\_bgp\_data](#lib_bgp_data)
 * [Description](#package-description)
