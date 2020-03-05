@@ -19,7 +19,7 @@ __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
-
+@pytest.mark.relationships_parser
 class Test_Relationships_File:
     """Tests all local functions within the Relationships File class."""
 
@@ -90,6 +90,16 @@ class Test_Relationships_File:
                   Rel_Types.PEERS: Peers_Table}
         # Make sure calls give expected output.
         assert self.rel_file._get_table_attributes() == output
+
+    @pytest.mark.skip(reason="New hire will work on this")
+    def test_parse_file(self):
+        """This uses a hidden relationship file to test the grep commands
+
+        We use a small example relationship file, for which we know the
+        expected output. We check that the data in the db is equivalent to
+        what we expect."""
+
+        pass
 
 ########################
 ### Helper Functions ###

@@ -8,6 +8,7 @@ from sys import argv
 from .mrt_parser import MRT_Parser
 from .relationships_parser import Relationships_Parser
 from .roas_parser import ROAs_Parser
+from .rpki_validator import RPKI_Validator_Parser, RPKI_Validator_Wrapper
 
 __authors__ = ["Justin Furuness", "Matt Jaccino"]
 __credits__ = ["Justin Furuness", "Matt Jaccino"]
@@ -62,7 +63,10 @@ def change_sys_args():
                 argv[0] = "dummy arg"
 
 def get_parsers() -> list:
-    return [MRT_Parser, Relationships_Parser, ROAs_Parser]
+    return [MRT_Parser,
+            Relationships_Parser,
+            ROAs_Parser,
+            RPKI_Validator_Parser]
 
 
 if __name__ == "__main__":

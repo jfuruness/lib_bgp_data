@@ -32,6 +32,7 @@ Possible future improvements:
     -Add test cases
 """
 
+import logging
 
 from ..database import Generic_Table
 
@@ -48,24 +49,28 @@ class Unique_Prefix_Origins_Table(Generic_Table):
 
     __slots__ = []
 
+    name = "unique_prefix_origins"
+
     def fill_table(self):
         """ Creates tables if they do not exist."""
 
-        self.logger.info("Creating/writing file for RPKI Validator")
+        logging.info("Creating/writing file for RPKI Validator")
         sql = """CREATE UNLOGGED TABLE unique_prefix_origins AS
                  SELECT DISTINCT origin, prefix, 100 as placeholder
                  FROM mrt_announcements ORDER BY prefix ASC;"""
         self.execute(sql)
-        self.logger.debug("Created unique prefix origins table")
+        logging.debug("Created unique prefix origins table")
 
 class ROV_Validity_Table(Generic_Table):
     """ROV Validity Table class"""
 
     __slots__ = []
 
+    name = "rov_validity"
+
     def _create_tables(self):
         sql = """CREATE UNLOGGED TABLE IF NOT EXISTS rov_validity (
                  origin bigint,
                  prefix cidr,
                  validity smallint);"""
-        self.cursor.execute(sql)
+        self.execute(sql)

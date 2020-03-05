@@ -3,6 +3,8 @@
 
 
 from psycopg2.errors import UndefinedTable
+import pytest
+
 from ..tables import Provider_Customers_Table, Peers_Table
 from ..tables import ASes_Table, AS_Connectivity_Table
 from ..relationships_file import Rel_File
@@ -19,16 +21,18 @@ __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
 
+@pytest.mark.relationships_parser
 class Test_Provider_Customers_Table(Generic_Table_Test):
 
     table_class = Provider_Customers_Table
 
 
+@pytest.mark.relationships_parser
 class Test_Peers_Table(Generic_Table_Test):
 
     table_class = Peers_Table
 
-
+@pytest.mark.relationships_parser
 class Test_ASes_Table(Generic_Table_Test):
     """This will test all methods within the ASes_Table class."""
 
@@ -92,7 +96,7 @@ class Test_ASes_Table(Generic_Table_Test):
         utils.delete_paths([rel_file.csv_dir, rel_file.path])
         return len(ases)
 
-
+@pytest.mark.relationships_parser
 class Test_AS_Connectivity_Table(Generic_Table_Test):
     """This will test all methods within the ROVPP_AS_Connectivity_Table
     class.

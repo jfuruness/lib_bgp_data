@@ -5,64 +5,22 @@
 
 The purpose of this class is to obtain the validity data for all of the
 prefix origin pairs in our announcements data, and insert it into a
-database. This is done through a series of steps.
-
-1. Write the validator file.
-    -Handled in the _write_validator_file function
-    -Normally the RPKI Validator pulls all prefix origin pairs from the
-     internet, but those will not match old datasets
-    -Instead, our own validator file is written
-2. Host validator file
-    -Handled in _serve_file decorator
-    -Again, this is a file of all prefix origin pairs from our MRT
-     announcements table
-3. Run the RPKI Validator
-    -Handled in run_validator function
-4. Wait for the RPKI Validator to load the whole file
-    -Handled in the _wait_for_validator_load function
-    -This usually takes about 10 minutes
-5. Get the json for the prefix origin pairs and their validity
-    -Handled in the _get_ripe_data function
-    -Need to query IPV6 port because that's what it runs on
-6. Convert all strings to int's
-    -Handled in the format_asn function
-    -Done to save space and time when joining with later tables
-7. Parsed information is stored in csv files, and old files are deleted
-    -CSVs are chosen over binaries even though they are slightly slower
-        -CSVs are more portable and don't rely on postgres versions
-        -Binary file insertion relies on specific postgres instance
-    -Old files are deleted to free up space
-8. CSV files are inserted into postgres using COPY, and then deleted
-    -COPY is used for speedy bulk insertions
-    -Files are deleted to save space
-
-Design choices (summarizing from above):
-    -We serve our own file for the RPKI Validator to be able to use
-     old prefix origin pairs
-    -Data is bulk inserted into postgres
-        -Bulk insertion using COPY is the fastest way to insert data
-         into postgres and is neccessary due to massive data size
-    -Parsed information is stored in CSV files
-        -Binary files require changes based on each postgres version
-        -Not as compatable as CSV files
-
-Possible Future Extensions:
-    -Move the file serving functions into their own class
-        -Improves readability?
-    -Add test cases
-    -Reduce total information in the headers
+database. This is done through a series of detailed on README.
 """
 
+import logging
 from multiprocess import Process
 import os
+from subprocess import check_call
 import time
 
 from psutil import process_iter
 from signal import SIGTERM
 import urllib
 
+from .rpki_file import RPKI_File
 from .tables import Unique_Prefix_Origins_Table, ROV_Validity_Table
-from ..utils import utils
+from ..utils import utils, config_logging
 
 __author__ = "Justin Furuness", "Cameron Morris"
 __credits__ = ["Cameron Morris", "Justin Furuness"]
@@ -87,7 +45,12 @@ class RPKI_Validator_Wrapper:
     rpki_run_name = RPKI_RUN_NAME
     rpki_run_path = RPKI_PACKAGE_PATH + RPKI_RUN_NAME
     rpki_db_paths = [RPKI_PACKAGE_PATH + x for x in ["db/", "rsync/"]]
+    port = 8080
     api_url = "http://[::1]:8080/api/"
+
+    def __init__(self, **kwargs):
+        config_logging(kwargs.get("stream_level", logging.INFO),
+                       kwargs.get("section"))
 
 #################################
 ### Context Manager Functions ###
@@ -98,7 +61,7 @@ class RPKI_Validator_Wrapper:
 
         self._kill_8080()
         # Must remove these to ensure a clean run
-        utils.clean_paths(self.logger, self.rpki_db_paths)
+        utils.clean_paths(self.rpki_db_paths)
         cmds = [f"cd {self.rpki_package_path}",
                 f"chown -R root:root {self.rpki_package_path}"]
         check_call(" && ".join(cmds), shell=True)
@@ -113,28 +76,27 @@ class RPKI_Validator_Wrapper:
 
         self._process.terminate()
         self._process.join()
-        self.kill_8080(wait=False)
-        self.logger.debug("Closed rpki validator")
-        return True
+        self._kill_8080(wait=False)
+        logging.debug("Closed rpki validator")
 
     # https://stackoverflow.com/a/20691431
     def _kill_8080(self, wait=True):
         """Kills all processes on port 8080"""
 
-        self.logger.info("Make way for the rpki validator!!!")
-        self.logger.debug("Killing all port 8080 processes, cause idc")
+        logging.debug("Make way for the rpki validator!!!")
+        logging.debug("Killing all port 8080 processes, cause idc")
         for proc in process_iter():
             for conns in proc.connections(kind='inet'):
-                if conns.laddr.port == 8080:
+                if conns.laddr.port == RPKI_Validator_Wrapper.port:
                     proc.send_signal(SIGTERM) # or SIGKILL
                     if wait:
-                        self._wait(120, "Waiting for ports to be reclaimed")
+                        self._wait(120, "Waiting for reclaimed ports")
 #        check_call("sudo kill -9 $(lsof -t -i:8080)", shell=True)
 
     def _start_validator(self):
         """Sends start cmd to RPKI Validator"""
 
-        self.logger.info("Starting RPKI Validator")
+        logging.info("Starting RPKI Validator")
         utils.run_cmd(("cd {self.rpki_package_path} && "
                        "./{self.rpki_run_name}"))
 
@@ -145,12 +107,12 @@ class RPKI_Validator_Wrapper:
     def load_trust_anchors(self):
         """Loads all trust anchors"""
 
-        utils.write_to_stdout(self.logger,
-                              "{datetime.now()}: Loading RPKI Validator")
+        utils.write_to_stdout("{datetime.now()}: Loading RPKI Validator",
+                              logging.root.level)
         time.sleep(60)
         while self._get_validation_status() is False:
-            utils.write_to_stdout(self.logger, ".")
-        utils.write_to_stdout(self.logger, "\n")
+            utils.write_to_stdout(".", logging.root.level)
+        utils.write_to_stdout("\n", logging.root.level)
         self._wait(30, "Waiting for upload to bgp preview")
 
     def make_query(self, api_endpoint: str, data=True) -> dict:
@@ -160,10 +122,10 @@ class RPKI_Validator_Wrapper:
                                 RPKI_Validator.get_headers())
         return result["data"] if data else result
 
-    def get_validity_data(self):
+    def get_validity_data(self) -> dict:
         """Gets the data from ripe and formats it for csv insertions"""
 
-        self.logger.info("Getting data from ripe")
+        logging.info("Getting data from ripe")
         # Then we get the data from the ripe RPKI validator
         # Todo for later, change 10mil to be total count
         return self.make_query("bgp/?pageSize=10000000")
@@ -172,7 +134,7 @@ class RPKI_Validator_Wrapper:
 ### Helper Functions ###
 ########################
 
-    def _get_validation_status(self):
+    def _get_validation_status(self) -> bool:
         """Returns row count of json object for waiting"""
 
         try:
@@ -187,7 +149,7 @@ class RPKI_Validator_Wrapper:
             return False
 
     @staticmethod
-    def get_validity_dict():
+    def get_validity_dict() -> dict:
         """Returns the validity dict for the RPKI Validator to decode results
 
         I could have this as a class attribute but too messy I think.
@@ -199,7 +161,7 @@ class RPKI_Validator_Wrapper:
                 "INVALID_ASN": -2}
 
     @staticmethod
-    def get_headers():
+    def get_headers() -> dict:
         """Gets the headers for all url queries to the validator"""
 
         return {"Connection": "keep-alive",
@@ -214,4 +176,3 @@ class RPKI_Validator_Wrapper:
                            "application/signed-exchange;v=b3"),
                 "Accept-Encoding": "gzip, deflate, br",
                 "Accept-Language": "en-US,en;q=0.9"}
-

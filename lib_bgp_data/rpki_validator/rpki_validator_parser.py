@@ -31,18 +31,17 @@ class RPKI_Validator_Parser(Parser):
     def _run(self):
         """Downloads and stores roas from a json"""
 
-        with RPKI_Validator() as rpki_validator:
+        with RPKI_Validator_Wrapper() as _rpki_validator:
             # First we wait for the validator to load the data
-            rpki_validator.load_trust_anchors()
+            _rpki_validator.load_trust_anchors()
             # Writes validator to database
-            self.logger.debug("validator load completed")
-            rpki_data = rpki_validator.get_validity_data()
-            utils.rows_to_db(self.logger,
-                             [self._format_asn_dict(x) for x in rpki_data],
+            logging.debug("validator load completed")
+            rpki_data = _rpki_validator.get_validity_data()
+            utils.rows_to_db([self._format_asn_dict(x) for x in rpki_data],
                              f"{self.csv_dir}/validity.csv",  # CSV
                              ROV_Validity_Table)
 
-    def _format_asn_dict(self, asn):
+    def _format_asn_dict(self, asn: dict) -> list:
         """Formats json objects for csv rows"""
 
         valid = RPKI_Validator.validity_dict

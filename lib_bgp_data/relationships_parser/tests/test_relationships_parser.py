@@ -25,6 +25,7 @@ __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
 
+@pytest.mark.relationships_parser
 class Test_Relationships_Parser:
     """Tests all functions within the Relationships Parser class."""
 
