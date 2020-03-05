@@ -19,8 +19,8 @@ Design choices:
 Possible future improvements:
     -Add test cases
 """
+import logging
 
-from psycopg2.extras import RealDictCursor
 from ..database import Generic_Table
 
 __author__ = "Justin Furuness"
@@ -36,6 +36,8 @@ class ROAs_Table(Generic_Table):
 
     __slots__ = []
 
+    name = "roas"
+
     def _create_tables(self):
         """ Creates tables if they do not exist"""
 
@@ -49,7 +51,7 @@ class ROAs_Table(Generic_Table):
     def create_index(self):
         """Creates a bunch of indexes to be used on the table"""
 
-        self.logger.debug("Creating index on roas")
+        logging.debug("Creating index on roas")
         sql = """CREATE INDEX IF NOT EXISTS roas_index
               ON roas USING GIST(prefix inet_ops)"""
         self.execute(sql)

@@ -16,9 +16,10 @@ __status__ = "Development"
 
 import os
 from subprocess import check_call
+import logging
 from .tables import MRT_Announcements_Table
 from ..base_classes import DecoMeta, File
-from ..utils import utils, error_catcher
+from ..utils import utils
 
 
 class MRT_File(File):
@@ -38,6 +39,9 @@ class MRT_File(File):
         does not ignore them and should be used for full data runs. For
         testing however, bgpscanner is much faster and has almost all
         data required. More in depth explanation at the top of the file
+
+        Note that when tested for speed, logging doesn't slow down parse_files
+        Or it does, and I just turned it off wrong.
         """
 
         # Sets CSV path
@@ -45,10 +49,10 @@ class MRT_File(File):
         # Parses the MRT file into a csv file
         self._convert_dump_to_csv(bgpscanner)
         # Inserts the csv file into the MRT_Announcements Table
-        utils.csv_to_db(self.logger, MRT_Announcements_Table, self.csv_name)
+        utils.csv_to_db(MRT_Announcements_Table, self.csv_name)
         # Deletes all old files
-        utils.delete_paths(self.logger, [self.path, self.csv_name])
-        utils.incriment_bar(self.logger)
+        utils.delete_paths([self.path, self.csv_name])
+        utils.incriment_bar(logging.root.level)
 
 
 ########################
@@ -74,8 +78,9 @@ class MRT_File(File):
         # writes to a csv
         args += '> ' + self.csv_name
         check_call(args, shell=True)
-        self.logger.debug(f"Wrote {self.csv_name}\n\tFrom {self.url}")
-        utils.delete_paths(self.logger, self.path)
+        # Removed to reduce logging overhead
+        logging.debug(f"Wrote {self.csv_name}\n\tFrom {self.url}")
+        utils.delete_paths(self.path)
 
     def _bgpscanner_args(self):
         """Parses MRT file into a CSV using bgpscanner

@@ -14,9 +14,9 @@ __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
-def pytest_runtest_setup():
+def pytest_runtest_setup(section="test"):
     pytest.global_running_test = True
-    set_global_section_header()
+    set_global_section_header(section)
     bash = "sudo -i -u postgres psql -d test -c "
     bash += "'CREATE SCHEMA IF NOT EXISTS public;'"
     check_call(bash, shell=True)

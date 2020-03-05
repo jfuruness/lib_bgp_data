@@ -96,4 +96,17 @@ class Generic_Table_Test:
 
             if hasattr(_db, "fill_table"):
                 _db.fill_table()
-                assert _db.get_count() > 0        
+                assert _db.get_count() > 0
+
+    def test_create_index(self):
+        """Tests index creation"""
+
+        with self.table_class() as _db:
+            if hasattr(_db, "create_index"):
+                _db.clear_table()
+                _db._create_tables()
+                _db.create_index()
+                sql = f"""SELECT * FROM pg_indexes
+                      WHERE tablename = '{_db.name}'"""
+                indexes = _db.execute(sql)
+                assert len(indexes) > 0

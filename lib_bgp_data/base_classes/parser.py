@@ -17,7 +17,7 @@ from .decometa import DecoMeta
 import pytest
 import logging
 from ..utils import utils
-from ..utils import set_global_section_header
+from ..utils.config import set_global_section_header
 from ..utils import config_logging
 
 
@@ -38,12 +38,9 @@ class Parser:
         Section is the arg for the config. You can run on entirely
         separate databases with different sections."""
 
-        if hasattr(pytest, "global_running_test") and pytest.global_running_test:
-            default_section = "test"
-        else:
-            default_section = "bgp"
-        kwargs["section"] = kwargs.get("section", default_section)
-
+        set_global_section_header(kwargs.get("section"))
+        from ..utils.config import global_section_header
+        kwargs["section"] = kwargs.get("section", global_section_header)
         # The class name. This because when parsers are done,
         # they aggressively clean up. We do not want parser to clean up in
         # the same directories and delete files that others are using
@@ -71,15 +68,14 @@ class Parser:
             self._run(*args, **kwargs)
         except Exception as e:
             self.end_parser(start_time)
-            logging.error(e)
+            logging.exception(e)
         finally:
             self.end_parser(start_time)
 
     def end_parser(self, start_time):
         """Ends parser, prints time and deletes files"""
 
-        utils.clean_paths([self.path, self.csv_dir],
-                          recreate=False)
+        utils.delete_paths([self.path, self.csv_dir])
         # https://www.geeksforgeeks.org/python-difference-between-two-
         # dates-in-minutes-using-datetime-timedelta-method/
         _min, _sec = divmod((utils.now() - start_time).total_seconds(), 60)

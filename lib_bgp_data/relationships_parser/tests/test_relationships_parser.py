@@ -7,10 +7,14 @@ For specifics on each test, see the docstrings under each function.
 
 
 import datetime
+
 import pytest
 import validators
+
 from ..relationships_parser import Relationships_Parser
-from ...utils import utils, Database, Config
+from ...database import Database
+from ...utils import utils, Config
+
 
 
 __authors__ = ["Matt Jaccino", "Justin Furuness"]

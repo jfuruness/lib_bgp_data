@@ -59,7 +59,6 @@ import os
 from multiprocess import cpu_count
 import fileinput
 import sys
-from .logger import Thread_Safe_Logger as Logger, error_catcher
 from .config import Config
 from .utils import delete_paths
 
@@ -94,7 +93,7 @@ class Install:
 
     __slots__ = ['section', 'logger', 'db_pass']
 
-    @error_catcher()
+    
     def __init__(self, section="bgp"):
         """Makes sure that you are a sudo user"""
 
@@ -110,7 +109,7 @@ class Install:
         if os.getuid() != 0:
             raise NotSudo("Sudo priveleges are required for install")
 
-    @error_catcher()
+    
     def install(self, fresh_install=True, password=False):
         """Installs everything"""
 
@@ -137,7 +136,7 @@ class Install:
             Install("test").install()
 
     # Must remove that file due to password change history
-    @error_catcher()
+    
     @delete_files([sql_install_file, "/var/lib/postgresql/.psql_history"])
     def _create_database(self):
         """Creates the bgp database and bgp_user and extensions."""
@@ -170,7 +169,7 @@ class Install:
         # Allow for failures in case it's already there
         call(create_extension_args, shell=True)
 
-    @error_catcher()
+    
     @delete_files(sql_install_file)
     def _modify_database(self):
         """Modifies the database for speed.
@@ -247,7 +246,7 @@ class Install:
 
         self._run_sql_file(sqls)
 
-    @error_catcher()
+    
     @delete_files("BGPExtrapolator/")
     def _install_forecast_extrapolator(self):
         """Installs forecast-extrapolator.
@@ -266,7 +265,7 @@ class Install:
                 "sudo cp bgp-extrapolator /usr/local/bin/forecast-extrapolator"]
         check_call("&& ".join(cmds), shell=True)
 
-    @error_catcher()
+    
     @delete_files("BGPExtrapolator/")
     def _install_rovpp_extrapolator(self):
         """Installs rovpp-extrapolator.
@@ -301,7 +300,7 @@ class Install:
 
         check_call("&& ".join(cmds), shell=True)
 
-    @error_catcher()
+    
     @delete_files()
     def _install_rpki_validator(self):
         """Installs RPKI validator with our configs.
@@ -360,7 +359,7 @@ class Install:
         replace_with = "/var/lib/rpki-validator-3/rsync"
         self._replace_line(path, prepend, replace, replace_with)
 
-    @error_catcher()
+    
     @delete_files("lzma-dev/")
     def _install_lzma(self):
         """Installs the lzma-dev library which you need for bgpscanner"""
@@ -376,7 +375,7 @@ class Install:
 
         check_call("&& ".join(cmds), shell=True)
 
-    @error_catcher()
+    
     @delete_files("bgpscanner/")
     def _install_bgpscanner(self):
         """Installs bgpscanner and moves to /usr/bin/bgpscanner"""
@@ -436,7 +435,7 @@ class Install:
         check_call("&& ".join(cmds), shell=True)
         check_call("rm -rf delete_me", shell=True)
 
-    @error_catcher()
+    
     @delete_files("bgpdump/")
     def _install_bgpdump(self):
         """Installs bgpdump and moves it to /usr/bin/bgpdump.
@@ -467,7 +466,7 @@ class Install:
         except:
             print("BGPdump failed to install, but this is unnessecary")
 
-    @error_catcher()
+    
     def _erase_all(self):
         """Deletes config section and drops database from Postgres"""
 
@@ -498,7 +497,7 @@ class Install:
 ### Helper Functions ###
 ########################
 
-    @error_catcher()
+    
     @delete_files(sql_install_file)
     def _run_sql_file(self, sqls):
         """Writes sql file"""
@@ -509,7 +508,7 @@ class Install:
         bash = "sudo -u postgres psql -f {}".format(sql_install_file)
         check_call(bash, shell=True)
 
-    @error_catcher()
+    
     def _replace_line(self, path, prepend, line_to_replace, replace_with):
         """Replaces a line withing a file that has the path path"""
 

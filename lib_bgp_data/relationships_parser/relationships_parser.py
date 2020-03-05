@@ -9,7 +9,7 @@ insert the data into a database. See README for detailed steps.
 
 import warnings
 from .relationships_file import Rel_File
-from .tables import ASes_Table, AS_Connectivity_Table
+from .tables import ASes_Table, AS_Connectivity_Table, Provider_Customers_Table
 from ..base_classes import Parser
 from ..utils import utils
 
@@ -34,6 +34,7 @@ class Relationships_Parser(Parser):
         relationship data from x months ago into the same table
         """
 
+        Provider_Customers_Table()
         url = url if url else self._get_urls()[0]
         Rel_File(self.path, self.csv_dir, url).parse_file()
         utils.delete_paths([self.csv_dir, self.path])

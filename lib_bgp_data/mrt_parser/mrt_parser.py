@@ -19,11 +19,12 @@ __status__ = "Development"
 import datetime
 import requests
 import warnings
+import logging
 from .mrt_file import MRT_File
 from .mrt_sources import MRT_Sources
 from .tables import MRT_Announcements_Table
 from ..base_classes import Parser
-from ..utils import utils, db_connection
+from ..utils import utils
 from ..utils.utils import progress_bar
 
 class MRT_Parser(Parser):
@@ -34,17 +35,11 @@ class MRT_Parser(Parser):
 
     __slots__ = []
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, **kwargs):
         """Initializes logger and path variables."""
 
-        if len(args) > 0 and isinstance(args[0], dict):
-            warnings.warn(("Passing in a dict for args is depreciated\n"
-                           "\tPlease pass in using keyword arguments"),
-                          DeprecationWarning,
-                          stacklevel=1)
-            kwargs = args[0]
         super(MRT_Parser, self).__init__(**kwargs)
-        with db_connection(MRT_Announcements_Table, self.logger) as _ann_table:
+        with MRT_Announcements_Table() as _ann_table:
             # Clears the table for insertion
             _ann_table.clear_table()
             # Tables can't be created in multithreading so it's done now
@@ -78,7 +73,7 @@ class MRT_Parser(Parser):
 
         # Gets urls of all mrt files needed
         urls = self._get_mrt_urls(start, end, api_param_mods, sources)
-        self.logger.debug(f"Total files {len(urls)}")
+        logging.debug(f"Total files {len(urls)}")
         # Get downloaded instances of mrt files using multithreading
         mrt_files = self._multiprocess_download(download_threads, urls)
         # Parses files using multiprocessing in descending order by size
@@ -96,7 +91,7 @@ class MRT_Parser(Parser):
                       sources=MRT_Sources.__members__.values()) -> list:
         """Gets caida and iso URLs, start and end should be epoch"""
 
-        self.logger.info(f"Getting MRT urls for {[x.name for x in sources]}")
+        logging.info(f"Getting MRT urls for {[x.name for x in sources]}")
         caida_urls = self._get_caida_mrt_urls(start,
                                               end,
                                               sources,
@@ -137,7 +132,7 @@ class MRT_Parser(Parser):
         # URL to make the api call to
         URL = 'https://bgpstream.caida.org/broker/data'
         # Request for data and conversion to json
-        self.logger.debug(requests.get(url=URL, params=PARAMS).url)
+        logging.debug(requests.get(url=URL, params=PARAMS).url)
         data = requests.get(url=URL, params=PARAMS).json()
 
         # Returns the urls from the json
@@ -149,7 +144,7 @@ class MRT_Parser(Parser):
         Start should be in epoch"""
 
         if MRT_Sources.ISOLARIO not in sources:
-            self.logger.debug("Not getting isolario urls")
+            logging.debug("Not getting isolario urls")
             return []
 
         # API URL
@@ -180,20 +175,16 @@ class MRT_Parser(Parser):
         """
 
         # Creates an mrt file for each url
-        mrt_files = [MRT_File(self.path,
-                              self.csv_dir,
-                              url,
-                              i + 1,
-                              self.logger)
+        mrt_files = [MRT_File(self.path, self.csv_dir, url, i + 1)
                      for i, url in enumerate(urls)]
 
-        with progress_bar(self.logger, "Downloading MRTs, ", len(mrt_files)):
+        with progress_bar("Downloading MRTs, ", len(mrt_files)):
             # Creates a dl pool with 4xCPUs since it is I/O based
-            with utils.Pool(self.logger, dl_threads, 4, "download") as dl_pool:
+            with utils.Pool(dl_threads, 4, "download") as dl_pool:
                 
                 # Download files in parallel
                 dl_pool.map(lambda f: utils.download_file(
-                        f.logger, f.url, f.path, f.num, len(urls),
+                        f.url, f.path, f.num, len(urls),
                         f.num/5, progress_bar=True), mrt_files)
         return mrt_files
 
@@ -208,8 +199,8 @@ class MRT_Parser(Parser):
         """
 
 
-        with progress_bar(self.logger, "Parsing MRT Files,", len(mrt_files)):
-            with utils.Pool(self.logger, p_threads, 1, "parsing") as p_pool:
+        with progress_bar("Parsing MRT Files,", len(mrt_files)):
+            with utils.Pool(p_threads, 1, "parsing") as p_pool:
                 # Runs the parsing of files in parallel, largest first
                 p_pool.map(lambda f: f.parse_file(bgpscanner),
                            sorted(mrt_files, reverse=True))
@@ -223,7 +214,7 @@ class MRT_Parser(Parser):
         called so as not to lose RAM.
         """
 
-        with db_connection(MRT_Announcements_Table, self.logger) as _ann_table:
+        with MRT_Announcements_Table() as _ann_table:
             # First we filter by IPV4 and IPV6:
             _ann_table.filter_by_IPV_family(IPV4, IPV6)
             # VACUUM ANALYZE to clean up data and create statistics on table

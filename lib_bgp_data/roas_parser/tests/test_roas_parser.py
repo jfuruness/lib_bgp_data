@@ -28,8 +28,8 @@ class Test_ROAs_Parser:
         """Parser setup and table deleted before every test"""
 
         self.parser = ROAs_Parser()
-        with db_connection() as db:
-            db.execute("DROP TABLE IF EXISTS roas;")
+        with Database() as _db:
+            _db.execute("DROP TABLE IF EXISTS roas;")
 
     def test_parse_roas(self):
         """Tests the parse roas function"""

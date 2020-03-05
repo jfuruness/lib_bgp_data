@@ -17,7 +17,6 @@ import logging
 import os
 
 from .decometa import DecoMeta
-from ..utils import Thread_Safe_Logger as Logger
 
 
 class File:

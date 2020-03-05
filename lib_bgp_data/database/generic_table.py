@@ -13,6 +13,7 @@ add a submodule.
 
 Note that all tables should have:
 _create_tables - this creates empty tables. Sometimes unessecary, don't always need
+create_index - creates an index on the table
 fill_table - fills table with data, sometimes unessecary
 clear_table - inherited, clears table
 
@@ -21,7 +22,7 @@ There are also some convenience funcs, documented below
 
 # Document the convenience funcs in readme!
 
-
+import inspect
 import warnings
 import logging
 from multiprocessing import cpu_count
@@ -44,13 +45,20 @@ __status__ = "Development"
 class Generic_Table(Database):
     """Interact with the database"""
 
-    __slots__ = []
+    __slots__ = ["name"]
 
     def __init__(self, *args, **kwargs):
         """Asserts that name is set"""
 
         assert hasattr(self, "name"), "Inherited class MUST have a table name attr"
-        super(Generic_Table, self).__init__(self, *args, **kwargs)
+        unlogged_err = ("Create unlogged tables for speed.\n Ex:"
+                        "CREATE UNLOGGED TABLE IF NOT EXISTS {self.name}...")
+        # https://stackoverflow.com/a/427533/8903959
+        if "create table" in inspect.getsource(self.__class__):
+            raise Exception(unlogged_err + "\n And also capitalize SQL")
+        if "CREATE TABLE" in inspect.getsource(self.__class__):
+            raise Exception(unlogged_err)
+        super(Generic_Table, self).__init__(*args, **kwargs)
 
     def get_all(self):
         """Gets all rows from table"""

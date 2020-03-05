@@ -24,6 +24,8 @@ table, and has the name and column properties that are used in the
 utils function to insert CSVs into the database.
 """
 
+import logging
+
 from ..database import Generic_Table
 
 __author__ = "Justin Furuness"
@@ -124,7 +126,7 @@ class ASes_Table(Generic_Table):
         make_sure_tables_exist([Peers_Table, Provider_Customers_Table])
 
         self.clear_table()
-        self.logger.debug("Initializing ases table")
+        logging.debug("Initializing ases table")
         sql = """CREATE UNLOGGED TABLE IF NOT EXISTS ases AS (
                  SELECT customer_as AS asn, 'bgp' AS as_type,
                     FALSE AS impliment FROM (

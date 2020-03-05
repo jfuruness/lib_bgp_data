@@ -3,7 +3,7 @@
 
 """This module contains class MRT_Announcements_Table
 
-Announcements_Table inherits from the Database class. The Database
+Announcements_Table inherits from the Generic_Table class. The Generic_Table
 class allows for the conection to a database upon initialization. Also
 upon initialization the _create_tables function is called to initialize
 any tables if they do not yet exist. Beyond that the class can clear the
@@ -16,7 +16,8 @@ follows the table name followed by a _Table since it inherits from the
 database class.
 """
 
-
+import logging
+from ..database import Generic_Table
 
 __author__ = "Justin Furuness"
 __credits__ = ["Justin Furuness"]
@@ -26,12 +27,14 @@ __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
 
-class MRT_Announcements_Table(Database):
+class MRT_Announcements_Table(Generic_Table):
     """Class with database functionality.
 
     In depth explanation at the top of the file."""
 
     __slots__ = []
+
+    name = "mrt_announcements"
 
     def _create_tables(self):
         """Creates tables if they do not exist.
@@ -50,10 +53,10 @@ class MRT_Announcements_Table(Database):
     def filter_by_IPV_family(self, IPV4: bool, IPV6: bool):
         """Filters the data by IPV family"""
 
-        self.logger.info("Filtering by IPV family")
+        logging.info("Filtering by IPV family")
         for num, ipv_bool in zip([4, 6], [IPV4, IPV6]):
             if not ipv_bool:
-                self.logger.debug(f"Deleting IPV{num} from {self.name}")
+                logging.debug(f"Deleting IPV{num} from {self.name}")
                 sql = f"DELETE FROM {self.name} WHERE family(prefix) = {num};"
                 self.execute(sql)
-                self.logger.debug(f"IPV{num} deleted from mrt_announcements")
+                logging.debug(f"IPV{num} deleted from mrt_announcements")

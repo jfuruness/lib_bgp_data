@@ -37,6 +37,7 @@ import psycopg2
 from psycopg2.extras import RealDictCursor
 from multiprocessing import cpu_count
 from subprocess import check_call
+import logging
 import os
 import time
 from ..utils import Config, utils, config_logging
@@ -81,7 +82,7 @@ class Database:
 
         Note that RealDictCursor returns everything as a dictionary."""
 
-        from .config import global_section_header
+        from ..utils.config import global_section_header
         # Database needs access to the section header
         kwargs = Config(global_section_header).get_db_creds()
         if cursor_factory:
@@ -90,13 +91,15 @@ class Database:
         for i in range(10):
             try:
                 conn = psycopg2.connect(**kwargs)
+
                 logging.debug("Database Connected")
                 self.conn = conn
                 # Automatically execute queries
                 self.conn.autocommit = True
                 self.cursor = conn.cursor()
                 break
-            except:
+            except psycopg2.OperationalError as e:
+                logging.warning("Couldn't connect to db {e}")
                 time.sleep(10)
         if hasattr(self, "_create_tables"):
             # Creates tables if do not exist
@@ -105,7 +108,7 @@ class Database:
     def execute(self, sql, data=None):
         """Executes a query. Returns [] if no results."""
 
-        assert isinstance(data, list) or isinstance(data, tuple), "Data must be list/tuple"
+        assert data is None or isinstance(data, list) or isinstance(data, tuple), "Data must be list/tuple"
         if data is None:
             self.cursor.execute(sql)
         else:

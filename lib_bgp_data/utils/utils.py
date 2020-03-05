@@ -53,8 +53,29 @@ def Pool(threads, multiplier, name):
     p.join()
     p.clear()
 
-def write_to_stdout(logging, msg, flush=True):
-    if logging.level <= 20:
+def low_overhead_log(msg, level):
+    """Heavy multiprocessed stuff should not log...
+
+    This is because the overhead is too great, even with
+    rotating handlers and so on. To fix this, we impliment this func
+    This func by default has level set to None. If level is not None
+    we know a heavy multiprocess func is running. If level is debug, we
+    print. Otherwise we do not.
+    """
+
+    # Not running heavy parallel processes
+    if level is None:
+        logging.debug(msg)
+    # logging.DEBUG is 10, but I can't write that because then
+    # it might restart logging again and deadlock
+    elif level == 10:
+        print(msg)
+
+def write_to_stdout(msg, log_level, flush=True):
+    # Note that we need log level here, since if we are doing
+    # This only in heaavily parallel processes
+    # For which we do not want the overhead of logging
+    if log_level <= 20:
         sys.stdout.write(msg)
         sys.stdout.flush()
 
@@ -66,11 +87,12 @@ def write_to_stdout(logging, msg, flush=True):
 # https://stackoverflow.com/a/3160819/8903959
 @contextmanager
 def progress_bar(msg, width):
-    write_to_stdout(f"{datetime.now()}: {msg} X/{width}", flush=False)
-    write_to_stdout("[%s]" % (" " * toolbar_width))
-    write_to_stdout("\b" * (toolbar_width+1))
+    log_level = logging.root.level
+    write_to_stdout(f"{datetime.now()}: {msg} X/{width}", log_level, flush=False)
+    write_to_stdout("[%s]" % (" " * width), log_level)
+    write_to_stdout("\b" * (width+1), log_level)
     yield
-    write_to_stdout("]\n")
+    write_to_stdout("]\n", log_level)
 
 class Enumerable_Enum(Enum):
     # https://stackoverflow.com/a/54919285
@@ -114,8 +136,12 @@ def download_file(url,
                   progress_bar=False):
     """Downloads a file from a url into a path."""
 
-    logging.debug("Downloading a file.\n    Path: {}\n    Link: {}\n"
-                 .format(path, url))
+    log_level = logging.root.level
+    if progress_bar:  # mrt_parser or multithreaded app running, disable logging cause in child
+        logging.root.handlers.clear()
+        logging.shutdown()
+    low_overhead_log("Downloading a file.\n    Path: {}\n    Link: {}\n"
+                     .format(path, url), log_level)
     # This is to make sure that the network is not bombarded with requests
     time.sleep(sleep_time)
     retries = 10
@@ -127,9 +153,9 @@ def download_file(url,
                     as response, open(path, 'wb') as out_file:
                 # Copy the file into the specified file_path
                 shutil.copyfileobj(response, out_file)
-                logging.debug("{} / {} downloaded".format(file_num, total_files))
+                low_overhead_log("{} / {} downloaded".format(file_num, total_files), log_level)
                 if progress_bar:
-                    incriment_bar()
+                    incriment_bar(log_level)
                 return
         # If there is an error in the download this will be called
         # And the download will be retried
@@ -140,8 +166,9 @@ def download_file(url,
                 logging.error("Failed download {}\nDue to: {}".format(url, e))
                 sys.exit(1)
 
-def incriment_bar():
-    if logging.level <= 20:  # INFO
+def incriment_bar(log_level):
+    # Needed here because mrt_parser can't log
+    if log_level <= 20:  # INFO
         sys.stdout.write("#")
         sys.stdout.flush()
     else:
@@ -157,6 +184,8 @@ def delete_paths(paths):
         paths = [paths]
     for path in paths:
         try:
+            remove_func = os.remove if os.path.isfile(path) else shutil.rmtree
+            remove_func(path)
             # If the path is a file
             if os.path.isfile(path):
                 # Delete the file
@@ -175,28 +204,16 @@ def delete_paths(paths):
             logging.warning("Permission error when deleting {}".format(path))
 
 
-def clean_paths(paths, recreate=True):
+def clean_paths(paths):
     """If path exists remove it, else create it"""
 
     # If a single path is passed in, convert it to a list
     if not isinstance(paths, list):
         paths = [paths]
+    delete_paths(paths)
     for path in paths:
-        try:
-            remove_func = os.remove if os.path.isfile(path) else shutil.rmtree
-            remove_func(path)
-        # Files are sometimes deleted even though they no longer exist
-        except AttributeError:
-            logging.debug("Attribute error when deleting {}".format(path))
-        except FileNotFoundError:
-            logging.debug("File not found when deleting {}".format(path))
-        except PermissionError:
-            logging.warning("Permission error when deleting {}".format(path))
-
-    if recreate:
-        for path in paths:
-            # Fix this later
-            os.makedirs(path, mode=0o777, exist_ok=False)
+        # Fix this later
+        os.makedirs(path, mode=0o777, exist_ok=False)
 
 
 def unzip_bz2(old_path):
@@ -217,7 +234,7 @@ def write_csv(rows, csv_path):
     """Writes rows into csv_path, a tab delimited csv"""
 
     logging.debug("Writing to {}".format(csv_path))
-    delete_paths(logger, csv_path)
+    delete_paths(csv_path)
 
     with open(csv_path, mode='w') as temp_csv:
         csv_writer = csv.writer(temp_csv,
@@ -235,19 +252,26 @@ def csv_to_db(Table, csv_path, clear_table=False):
 
     Copies tab delimited csv into table and deletes csv_path
     Table should inherit from Database class and have name attribute and
-    columns attribute"""
+    columns attribute
+
+    NOTE: I know there is a csv_dict_writer or something like that. However
+    I think because we do this on such a massive scale, this will surely be
+    slower, and the columns should always remain the same. So for speed,
+    we just use list of lists of rows to copy, not list of dicts of rows."""
 
     with Table() as t:
         if clear_table:
             t.clear_table()
             t._create_tables()
+        # No logging for mrt_announcements, overhead slows it down too much
         logging.debug("Copying {} into the database".format(csv_path))
         # Opens temporary file
         with open(r'{}'.format(csv_path), 'r') as f:
             # Copies data from the csv to the db, this is the fastest way
             t.cursor.copy_from(f, t.name, sep='\t', columns=t.columns, null="")
             t.cursor.execute("CHECKPOINT;")
-    logging.debug("Done inserting {} into the database".format(csv_path))
+        # No logging for mrt_announcements, overhead slows it down too much
+        logging.debug("Done inserting {} into the database".format(csv_path))
     delete_paths(csv_path)
 
 
