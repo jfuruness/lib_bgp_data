@@ -37,7 +37,7 @@ RPKI_RUN_NAME = "rpki-validator-3.sh"
 class RPKI_Validator_Wrapper:
     """This class gets validity data from ripe"""
 
-    __slots__ = ['total_announcements', "_process", "_table_input",
+    __slots__ = ['total_prefix_origin_pairs', "_process", "_table_input",
                  "_rpki_file"]
 
     # Sorry for the crazy naming scheme, must be done to avoid
@@ -77,7 +77,7 @@ class RPKI_Validator_Wrapper:
         self._rpki_file.spawn_process()
         self._process = ProcessingPool()
         self._process.apipe(self._start_validator)
-        self.total_announcements = self._rpki_file.total_lines
+        self.total_prefix_origin_pairs = self._rpki_file.total_lines
         return self
 
     def __exit__(self, type, value, traceback):
@@ -141,7 +141,7 @@ class RPKI_Validator_Wrapper:
         """Gets the data from ripe and formats it for csv insertions"""
 
         logging.info("Getting data from ripe")
-        assert self.total_announcements < 10000000, "page size too small"
+        assert self.total_prefix_origin_pairs < 10000000, "page size too small"
         # Then we get the data from the ripe RPKI validator
         # Todo for later, change 10mil to be total count
         return self.make_query("bgp/?pageSize=10000000")
@@ -255,7 +255,7 @@ class RPKI_Validator_Wrapper:
         replace = ("https://www.ris.ripe.net/dumps/riswhoisdump.IPv4.gz,"
                    "https://www.ris.ripe.net/dumps/riswhoisdump.IPv6.gz")
         replace_with = (f"http://localhost:{RPKI_File.port}"
-                        "/{RPKI_File.hosted_name}")
+                        f"/{RPKI_File.hosted_name}")
         utils.replace_line(path, prepend, replace, replace_with)
 
     @staticmethod

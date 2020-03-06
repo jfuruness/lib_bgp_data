@@ -46,5 +46,5 @@ class RPKI_Validator_Parser(Parser):
     def _format_asn_dict(self, asn: dict) -> list:
         """Formats json objects for csv rows"""
 
-        valid = RPKI_Validator_Wrapper.validity_dict
+        valid = RPKI_Validator_Wrapper.get_validity_dict()
         return [int(asn["asn"][2:]), asn["prefix"], valid.get(asn["validity"])]

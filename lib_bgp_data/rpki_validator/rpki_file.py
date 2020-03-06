@@ -10,7 +10,6 @@ For a more in depth explanation see README.
 """
 
 import logging
-#from multiprocess import Process
 import os
 import time
 
@@ -45,7 +44,7 @@ class RPKI_File:
     def __init__(self, table_input):
         """Downloads and stores roas from a json"""
 
-        self.path = "/tmp/unique_prefix_origins.csv"
+        self.path = self._dir + self.hosted_name.replace(".gz", "")
         with Unique_Prefix_Origins_Table(clear=True) as _db:
             _db.fill_table(table_input)
             _db.copy_table(self.path)
@@ -61,7 +60,7 @@ class RPKI_File:
 
         Starts the process for serving the file"""
 
-        self.spwan_process()
+        self.spawn_process()
         return self
 
 

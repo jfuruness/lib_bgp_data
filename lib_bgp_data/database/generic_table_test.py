@@ -7,6 +7,7 @@ For specifics on each test, see the docstrings under each function.
 """
 
 from psycopg2.errors import UndefinedTable
+import pytest
 
 __author__ = "Justin Furuness", "Matt Jaccino"
 __credits__ = ["Justin Furuness", "Matt Jaccino"]
@@ -75,6 +76,8 @@ class Generic_Table_Test:
                 # Table should exist and have no resuts
                 assert _db.get_count() == 0
 
+    # Marked slow because sometimes it will be
+    @pytest.mark.slow
     def test_table_fill(self):
         """Tests the fill_tables function.
 
@@ -98,6 +101,8 @@ class Generic_Table_Test:
                 _db.fill_table()
                 assert _db.get_count() > 0
 
+    # Marked slow because sometimes it will be
+    @pytest.mark.slow
     def test_create_index(self):
         """Tests index creation"""
 

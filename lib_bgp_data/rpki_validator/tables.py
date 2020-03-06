@@ -51,9 +51,11 @@ class Unique_Prefix_Origins_Table(Generic_Table):
 
     name = "unique_prefix_origins"
 
-    def fill_table(self, table_input):
+    def fill_table(self, table_input="mrt_rpki"):
         """ Creates tables if they do not exist."""
 
+        assert self.get_count(f"SELECT COUNT(*) FROM {table_input}") > 0,\
+            "Input table has nothing in it"
         logging.info(f"Creating file for RPKI Validator from {table_input}")
         sql = f"""CREATE UNLOGGED TABLE unique_prefix_origins AS
                   SELECT DISTINCT origin, prefix, 100 as placeholder
