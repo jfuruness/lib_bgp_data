@@ -51,13 +51,13 @@ class Unique_Prefix_Origins_Table(Generic_Table):
 
     name = "unique_prefix_origins"
 
-    def fill_table(self):
+    def fill_table(self, table_input):
         """ Creates tables if they do not exist."""
 
-        logging.info("Creating/writing file for RPKI Validator")
-        sql = """CREATE UNLOGGED TABLE unique_prefix_origins AS
-                 SELECT DISTINCT origin, prefix, 100 as placeholder
-                 FROM mrt_announcements ORDER BY prefix ASC;"""
+        logging.info(f"Creating file for RPKI Validator from {table_input}")
+        sql = f"""CREATE UNLOGGED TABLE unique_prefix_origins AS
+                  SELECT DISTINCT origin, prefix, 100 as placeholder
+                  FROM {table_input} ORDER BY prefix ASC;"""
         self.execute(sql)
         logging.debug("Created unique prefix origins table")
 

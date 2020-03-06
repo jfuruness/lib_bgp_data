@@ -10,7 +10,6 @@ insert the data into a database. For a more detailed explanation see README.
 from enum import Enum
 import logging
 import os
-from subprocess import call
 
 from .tables import Provider_Customers_Table, Peers_Table
 from ..base_classes import DecoMeta, File
@@ -72,7 +71,7 @@ class Rel_File(File):
         # For each type of csv:
         for key in Rel_Types.__members__.values():
             # Grep the CSV based on relationship information into a CSV
-            call(f"cat {self.path} | {grep[key]} > {csvs[key]}", shell=True)
+            utils.run_cmds(f"cat {self.path} | {grep[key]} > {csvs[key]}")
             # Inserts the CSV into the database
             utils.csv_to_db(tables[key], csvs[key], clear_table=True)
         # Deletes the old paths

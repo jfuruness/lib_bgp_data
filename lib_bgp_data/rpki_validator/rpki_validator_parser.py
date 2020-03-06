@@ -7,17 +7,19 @@ This class parses info from the RPKI_Validator_Wrapper.
 See README for more in depth details.
 """
 
-from .rpki_validator_wrapper import RPKI_Validator_Wrapper
-from .tables import ROV_Validity_Table
-from ..base_classes import Parser
-from ..utils import utils
-
 __author__ = "Justin Furuness", "Cameron Morris"
 __credits__ = ["Cameron Morris", "Justin Furuness"]
 __Lisence__ = "MIT"
 __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
+
+import logging
+
+from .rpki_validator_wrapper import RPKI_Validator_Wrapper
+from .tables import ROV_Validity_Table
+from ..base_classes import Parser
+from ..utils import utils
 
 
 class RPKI_Validator_Parser(Parser):
@@ -44,5 +46,5 @@ class RPKI_Validator_Parser(Parser):
     def _format_asn_dict(self, asn: dict) -> list:
         """Formats json objects for csv rows"""
 
-        valid = RPKI_Validator.validity_dict
+        valid = RPKI_Validator_Wrapper.validity_dict
         return [int(asn["asn"][2:]), asn["prefix"], valid.get(asn["validity"])]

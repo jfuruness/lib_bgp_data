@@ -10,12 +10,13 @@ For a more in depth explanation see README.
 """
 
 import logging
-from multiprocess import Process
+#from multiprocess import Process
 import os
-from subprocess import Popen, PIPE, check_call, DEVNULL
 import time
 
+import gzip
 import http.server
+from pathos.multiprocessing import ProcessingPool
 from psutil import process_iter
 from signal import SIGTERM
 import socketserver
@@ -41,14 +42,14 @@ class RPKI_File:
     hosted_name = "upo_csv_path.csv.gz"
     port = 8000
 
-    def __init__(self):
+    def __init__(self, table_input):
         """Downloads and stores roas from a json"""
 
         self.path = "/tmp/unique_prefix_origins.csv"
         with Unique_Prefix_Origins_Table(clear=True) as _db:
-            _db.fill_table()
+            _db.fill_table(table_input)
             _db.copy_table(self.path)
-            self.total_lines = utils.get_lines(self.path)
+            self.total_lines = utils.get_lines_in_file(self.path)
             self._gzip_file()
 
 #################################
@@ -60,15 +61,35 @@ class RPKI_File:
 
         Starts the process for serving the file"""
 
-        self._process = Process(target=self._serve_file)
-        self._process.start()
-        logging.debug("Serving file")
+        self.spwan_process()
         return self
 
+
     def __exit__(self, type, value, traceback):
+        """Closes the file process"""
+
+        self.close()
+
+############################
+### Serve File Functions ###
+############################
+
+    def spawn_process(self):
+        """Spawns file serving process"""
+
+        self._process = ProcessingPool()
+        self._process.apipe(self._serve_file)
+        logging.debug("Served RPKI File")
+
+    def close(self):
+        """Closes file process"""
+
+        self._process.close()
         self._process.terminate()
         self._process.join()
-        utils.delete_paths[RPKI_File.hosted_name]
+        self._process.clear()
+        utils.delete_paths(RPKI_File.hosted_name)
+        logging.debug("Closed RPKI File")
         
 ########################
 ### Helper Functions ###
@@ -79,9 +100,9 @@ class RPKI_File:
 
         with open(self.path, 'rb') as f_in, gzip.open(
             os.path.join(self._dir,
-                         self.file_name, 'wb')) as f_out:
+                         self.hosted_name), 'wb') as f_out:
 
-            f_out.write_lines(f_in)
+            f_out.writelines(f_in)
 
         utils.delete_paths(self.path)
 
@@ -94,4 +115,4 @@ class RPKI_File:
         # Changes directory to be in /tmp
         os.chdir(self._dir)
         # Serve the file on port 8000
-        socketserver.TCPServer(("", self.port), Handler).serve_forever()
+        socketserver.TCPServer(("", RPKI_File.port), Handler).serve_forever()

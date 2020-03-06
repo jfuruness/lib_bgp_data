@@ -20,6 +20,7 @@ import os
 import sys
 import functools
 from datetime import datetime, timedelta
+import fileinput
 import csv
 import json
 import pytz
@@ -310,9 +311,23 @@ def get_lines_in_file(filename: str) -> int:
             pass
     return count + 1
 
-def run_cmd(cmd):
+def run_cmds(cmds):
+
+    cmd = " && ".join(cmds) if isinstance(cmds, list) else cmds
+
     # If less than logging.info
-    if logging.level < 20:
+    if logging.root.level < 20:
+        logging.debug(f"Running: {cmd}")
         check_call(cmd, shell=True)
     else:
+        logging.debug(f"Running: {cmd}")
         check_call(cmd, stdout=DEVNULL, stderr=DEVNULL, shell=True)
+
+def replace_line(path, prepend, line_to_replace, replace_with):
+    """Replaces a line withing a file that has the path path"""
+
+    lines = [prepend + x for x in [line_to_replace, replace_with]]
+    for line in fileinput.input(path, inplace=1):
+        line = line.replace(*lines)
+        sys.stdout.write(line)
+
