@@ -1,4 +1,3 @@
-
 # lib\_bgp\_data
 This package contains multiple submodules that are used to gather and manipulate real data in order to simulate snapshots of the internet. The purpose of this is to test different security policies to determine their accuracy, and hopefully find ones that will create a safer, more secure, internet as we know it.
 
@@ -8,21 +7,21 @@ This package contains multiple submodules that are used to gather and manipulate
 * [lib\_bgp\_data](#lib_bgp_data)
 * [Description](#package-description)
 * Submodules:
-	* [Forecast Parser](#forecast-submodule)
-	* [Base Parser](#base-parser)
-	* [MRT Announcements Parser](#mrt-announcements-submodule)
-	* [Relationships Parser](#relationships-submodule)
-	* [Roas Parser](#roas-submodule)
-	* [Extrapolator Parser](#extrapolator-submodule)
-	* [BGPStream Website Parser](#bgpstream-website-submodule)
-	* [RPKI Validator Parser](#rpki-validator-submodule)
-	* [What if Analysis Parser](#what-if-analysis-submodule)
-	* [API Submodule](#api-submodule)
-	* [ROVPP Submodule](#rovpp-submodule)
-	* [Utils](#utils)
-	* [Config](#config-submodule)
-	* [Database](#database-submodule)
-	* [Logging](#logging-submodule)
+    * [Forecast Parser](#forecast-submodule)
+    * [Base Parser](#base-parser)
+    * [MRT Announcements Parser](#mrt-announcements-submodule)
+    * [Relationships Parser](#relationships-submodule)
+    * [Roas Parser](#roas-submodule)
+    * [Extrapolator Parser](#extrapolator-submodule)
+    * [BGPStream Website Parser](#bgpstream-website-submodule)
+    * [RPKI Validator Parser](#rpki-validator-submodule)
+    * [What if Analysis Parser](#what-if-analysis-submodule)
+    * [API Submodule](#api-submodule)
+    * [ROVPP Submodule](#rovpp-submodule)
+    * [Utils](#utils)
+    * [Config](#config-submodule)
+    * [Database](#database-submodule)
+    * [Logging](#logging-submodule)
 * [Installation](#installation)
 * [Testing](#testing)
 * [Adding a Submodule](#adding-a-submodule)
@@ -168,25 +167,25 @@ Coming soon to a theater near you
 * [Forecast Submodule](#forecast-submodule)
 
 See: [MRT Announcements Table Schema](#mrt-announcements-table-schema)
-	* Create Table SQL: 
+    * Create Table SQL: 
 
-	```
-	    CREATE UNLOGGED TABLE IF NOT EXISTS
-	        mrt_announcements (
-	            prefix cidr,
-	            as_path bigint ARRAY,
-	            origin bigint,
-	            time bigint
-	        );```
+    ```
+        CREATE UNLOGGED TABLE IF NOT EXISTS
+            mrt_announcements (
+                prefix cidr,
+                as_path bigint ARRAY,
+                origin bigint,
+                time bigint
+            );```
 
 
 ### Forecast Design Choices
 * [lib\_bgp\_data](#lib_bgp_data)
 * [Forecast Submodule](#forecast-submodule)
-	* There are no indexes on the mrt_w_roas table because they are never used
-	* Nothing is multithreaded for simplicity, and since each parser either takes up all threads or <1 minute. 
-	* The database is vacuum analyzed and checkpointed before big joins to help the query planner choose the right query plan
-	* When testing only one prefix is used to speed up the extrapolator and reduce data size
+    * There are no indexes on the mrt_w_roas table because they are never used
+    * Nothing is multithreaded for simplicity, and since each parser either takes up all threads or <1 minute. 
+    * The database is vacuum analyzed and checkpointed before big joins to help the query planner choose the right query plan
+    * When testing only one prefix is used to speed up the extrapolator and reduce data size
 
 ## Base Parser
    * [lib\_bgp\_data](#lib_bgp_data)
@@ -233,9 +232,9 @@ To create other parsers, simply inherit this class, and make sure the parser has
 
 from ..base_classes import Parser
 class My_New_Parser(Parser):
-	# Note that you do not need **kwargs, but you always need self and args
-	def _run(self, *args, **kwargs):
-		pass  # My function stuff here
+    # Note that you do not need **kwargs, but you always need self and args
+    def _run(self, *args, **kwargs):
+        pass  # My function stuff here
 ```
 
 ##### Parser Initialization:
@@ -459,7 +458,7 @@ In this example we get all RIB files from a specific collector, route-views2. We
 ```python
 from lib_bgp_data import MRT_Parser, MRT_Sources
 MRT_Parser().run(api_param_mods={"collectors[]": ["route-views2", "rrc03"]},
-	             sources=[MRT_Sources.RIPE, MRT_Sources.ROUTE_VIEWS])
+                 sources=[MRT_Sources.RIPE, MRT_Sources.ROUTE_VIEWS])
 ```
 
 To run the MRT Parser with specific time intervals and bgpdump (this will be much slower):
@@ -507,22 +506,22 @@ python3 -m lib_bgp_data --mrt_parser
 ### MRT Announcements Table Schema
 * [lib\_bgp\_data](#lib_bgp_data)
 * [MRT Announcements Submodule](#mrt-announcements-submodule)
-	* This table contains information on the MRT 	Announcements retrieved from the https://bgpstream.caida.org/broker/data and https://isolar.io/Isolario_MRT_data/
-	* Unlogged tables are used for speed
-	* prefix: The prefix of an AS *(CIDR)*
-	* as\_path: An array of all the AS numbers in the 	AS Path (*bigint ARRAY)*
-	* origin: The origin AS *(bigint)*
-	* time: Epoch Time that the announcement was first seen *(bigint)*
-	* Create Table SQL:
-	    ```
-	    CREATE UNLOGGED TABLE IF NOT EXISTS
-	        mrt_announcements (
-	            prefix cidr,
-	            as_path bigint ARRAY,
-	            origin bigint,
-	            time bigint
-	        );
-	    ```
+    * This table contains information on the MRT    Announcements retrieved from the https://bgpstream.caida.org/broker/data and https://isolar.io/Isolario_MRT_data/
+    * Unlogged tables are used for speed
+    * prefix: The prefix of an AS *(CIDR)*
+    * as\_path: An array of all the AS numbers in the   AS Path (*bigint ARRAY)*
+    * origin: The origin AS *(bigint)*
+    * time: Epoch Time that the announcement was first seen *(bigint)*
+    * Create Table SQL:
+        ```
+        CREATE UNLOGGED TABLE IF NOT EXISTS
+            mrt_announcements (
+                prefix cidr,
+                as_path bigint ARRAY,
+                origin bigint,
+                time bigint
+            );
+        ```
 
 ### MRT Announcements Design Choices 
 * [lib\_bgp\_data](#lib_bgp_data)
@@ -707,7 +706,7 @@ python3 -m lib_bgp_data --relationships_parser
 * as_type: An AS type to indicate policy it adopts, such as ROV, ROV++, etc. Used for ROV++. Numbers are from an enum called Policies. Numbers are used for faster SQL joins *(bigint)*
 * Create Table SQL:
     ```
-		CREATE UNLOGGED TABLE IF NOT EXISTS ases AS (
+        CREATE UNLOGGED TABLE IF NOT EXISTS ases AS (
                  SELECT customer_as AS asn, 'bgp' AS as_type,
                     FALSE AS impliment FROM (
                      SELECT DISTINCT customer_as FROM provider_customers
@@ -837,12 +836,12 @@ The other way you can run it is with:
 ### Roas Table Schema
 * [lib\_bgp\_data](#lib_bgp_data)
 * [Roas Submodule](#roas-submodule)
-	* This table contains information on the ROAs retrieved from the https://rpki-validator.ripe.net/api/export.json
-	* Unlogged tables are used for speed
-	* asn: The ASN of an AS *(bigint)*
-	* prefix: The prefix of an AS *(CIDR)*
-	* max_length: Max length specified by roa (*bigint)*
-	* Create Table SQL:
+    * This table contains information on the ROAs retrieved from the https://rpki-validator.ripe.net/api/export.json
+    * Unlogged tables are used for speed
+    * asn: The ASN of an AS *(bigint)*
+    * prefix: The prefix of an AS *(CIDR)*
+    * max_length: Max length specified by roa (*bigint)*
+    * Create Table SQL:
     ```
     CREATE UNLOGGED TABLE IF NOT EXISTS
         roas (
@@ -854,8 +853,8 @@ The other way you can run it is with:
 ### Roas Design Choices
 * [lib\_bgp\_data](#lib_bgp_data)
 * [Roas Submodule](#roas-submodule)
-	* CSVs are used for fast database bulk insertion
-	* An index on the prefix is created on the roas for fast SQL joins
+    * CSVs are used for fast database bulk insertion
+    * An index on the prefix is created on the roas for fast SQL joins
 
 ## Extrapolator Submodule
    * [lib\_bgp\_data](#lib_bgp_data)
@@ -1228,54 +1227,59 @@ Coming Soon to a theater near you
    * [Design Choices](#rpki-validator-design-choices)
    * [Todo and Possible Future Improvements](#todopossible-future-improvements)
 
-Status: Development
+Status: Production
 
 ### RPKI Validator Short description
 * [lib\_bgp\_data](#lib_bgp_data)
 * [RPKI Validator Submodule](#rpki-validator-submodule)
-The purpose of this class is to obtain the validity data for all of the prefix origin pairs in our announcements data, and insert it into a database.
+
+This submodule contains both a wrapper around the RPKI Validator and a Parser that parsers data from it. The purpose of this module is to get any necessary data from the RPKI Validator and insert it into the database, or to simply run the rpki validator.
 
 ### RPKI Validator Long description
 * [lib\_bgp\_data](#lib_bgp_data)
 * [RPKI Validator Submodule](#rpki-validator-submodule)
 The purpose of this class is to obtain the validity data for all of the
 prefix origin pairs in our announcements data, and insert it into a
-database. This is done through a series of steps.
+database. This is done using the RPKI Validator. 
 
-1. Write the validator file.
-   * Handled in the _write_validator_file function
-   * Normally the RPKI Validator pulls all prefix origin pairs from the internet, but those will not match old datasets
-    * Instead, our own validator file is written
-    * This file contains a placeholder of 100
-        * The RPKI Validator does not observe anything seen by 5 or less
-         peers
-2. Host validator file
-    * Handled in _serve_file decorator
-    * Again, this is a file of all prefix origin pairs from our MRT announcements table
-3. Run the RPKI Validator
-    * Handled in run_validator function
-4. Wait for the RPKI Validator to load the whole file
-    * Handled in the _wait_for_validator_load function
-    * This usually takes about 10 minutes
-5. Get the json for the prefix origin pairs and their validity
-    * Handled in the _get_ripe_data function
-    * Need to query IPV6 port because that's what it runs on
-6. Convert all strings to int's
-    * Handled in the format_asn function
-    * Done to save space and time when joining with later tables
-7. Parsed information is stored in csv files, and old files are deleted
-    * CSVs are chosen over binaries even though they are slightly slower
-        * CSVs are more portable and don't rely on postgres versions
-        * Binary file insertion relies on specific postgres instance
-    * Old files are deleted to free up space
-9. CSV files are inserted into postgres using COPY, and then deleted
-    * COPY is used for speedy bulk insertions
-    * Files are deleted to save space
+To start with, the module is installed by default if it is not already. The installation defaults must be changed because we have reconfigured the RPKI Validator. Instead of pulling from an online file of all distinct prefix origin pairs, we instead use our own file with our own announcements data. To install correctly, we (in the RPKI_Validator_Wrapper's Installation Function Section):
 
+1. Install the Validator, and move it to /var/lib/rpki-validator-3. We do this also so that no matter the version the naming scheme will be the same (unless they move to RPKI validator -4, in which case we would want it to break
+2. Then we download Arins Tal. This is not included by default due to legal issues.
+3. Then we change the location of the hosted file the RPKI validator pulls from to pull from our own file that is locally hosted
+4. We change the server address from localhost to 0.0.0.0 for proxy reasons on our server
+5. Then we configure absolute paths in order to be able to run the validator from any directory
+
+After we have installed the validator, but before we can run it, we first need to create our own locally hosted file. To do this, we use the RPKI_File class. We give it a table as input. This table will be copied into a csv, and it will spawn another thread that will host the file until the RPKI_Validator_Wrapper dies. This file will take a table similar to the format of the mrt_announcements table, and it must be gzipped to satisfy the RPKI Validator. It must also have distinct prefix origin pairs. The placeholder value in this table doesn't matter, I don't even remember what it is anymore other than that the RPKI Validator only sees values over 5, so we have a placeholder of 100. Note that the file class can be used as a context manager
+
+Then there is the RPKI_Validator_Wrapper itself. This wrapper class is also a context manager to ensure proper opening and closing of different processes. (in the RPKI_Validator_Wrapper's Context Manager Function Section)
+
+1. First this wrapper checks if the RPKI Validator is installed, and if not it installs it
+2. Then it kills all processes running on port 8080. This is because sometimes the RPKI Validator doesn't die properly, or other processes block it from running.
+3. Then it removed the database directories in the validator. This is because the validator's database directories get corrupted if it dies, and will never turn back on again.
+4. Then the RPKI_File process is spawned, as described above.
+5. Then the start validator function is started in another process. This just runs the file in the RPKI Validator that starts the validator.
+6. The context manager returns the RPKI_Validator_Wrapper object.
+
+The RPKI_Validator_Wrapper has many useful wrapper functions, including waiting until trust anchors are loaded, making queries the the API, and also getting the validity data. All will be shown in the examples usage section.
+
+The RPKI_Validator_Parser simply runs the RPKI_Validator_Wrapper and calls it's methods.
+(in the RPKI_Validator_Wrapper's Wrapper Function Section)
+1. First we load the trust anchors. There is a function that the RPKI Validator API has that will return a JSON of the trust anchors loading status. We call this endlessly until all trust anchors loading status is True. NOTE that this will usually take around 20 minutes at least even for a small data set.
+2. Once these are loaded, you can then query the results with get_validity_data. This will return a JSON of the validity data of all the prefix origin pairs. This can be decoded using the RPKI_Validitator_Wrapper.get_validity_dict. 
+3. This information is then formatted in the RPKI_Validator_Parser._format_asn and the information is copied to a CSV and then inserted into the ROV_Validity table.
 
 ### RPKI Validator Usage
 * [lib\_bgp\_data](#lib_bgp_data)
 * [RPKI Validator Submodule](#rpki-validator-submodule)
+
+Note that if you want to access the validator on our machine ahlocal, here is how you would ssh tunnel into the gateway (this can be extremely useful for debugging):
+```bash
+ssh -L localhost:8080:localhost:8080 jmf@csi-lab-ssh.engr.uconn.edu
+ssh -L localhost:8080:localhost:8080 ahlocal
+```
+Then simply swap out your username with jmf.
+
 
 Initializing the RPKI Validator:
 > The default params for the RPKI Validator are:
@@ -1318,9 +1322,9 @@ Coming Soon to a theater near you
 
 * Create Table SQL:
     ```
-	CREATE UNLOGGED TABLE unique_prefix_origins AS
+    CREATE UNLOGGED TABLE unique_prefix_origins AS
                  SELECT DISTINCT origin, prefix, 100 as placeholder
-                 FROM mrt_w_roas ORDER BY prefix ASC;
+                 FROM input_table ORDER BY prefix ASC;
     ```
 #### ROV_Validity Table Schema
 * This table contains the validity of all prefix origin pairs according to ROV
@@ -1331,7 +1335,7 @@ Coming Soon to a theater near you
 
 * Create Table SQL:
     ```
-	CREATE UNLOGGED TABLE IF NOT EXISTS rov_validity (
+    CREATE UNLOGGED TABLE IF NOT EXISTS rov_validity (
                  origin bigint,
                  prefix cidr,
                  validity smallint);
@@ -1341,6 +1345,9 @@ Coming Soon to a theater near you
 * [RPKI Validator Submodule](#rpki-validator-submodule)
     * Indexes are not created because they are not ever used
     * We serve our own file for the RPKI Validator to be able to use old prefix origin pairs
+    * Everything is kept as a contextmanager so that everything closes properly
+    * The massive pile of class attributes is saved so that the install and everywhere relies on a single string
+    * The RPKI file, wrapper, and parser are kept separate to make it easier to modify and use them in other applications
     * Data is bulk inserted into postgres
         * Bulk insertion using COPY is the fastest way to insert data into postgres and is neccessary due to massive data size
     * Parsed information is stored in CSV files
@@ -1455,14 +1462,14 @@ Status: Development
 * [lib\_bgp\_data](#lib_bgp_data)
 * [API Submodule](#api-submodule)
 The API includes endpoints for:
-	* Every variation of hijack data
-	* ROAs data
-	* Relationship data for specific ASNs
-	* Extrapolator data for specific ASNs
-	* Policy statistics for specific ASNs and policies
-		* Includes aggregate averages for ASNs
-	* Average policy statistics
-	* RPKI Validity results
+    * Every variation of hijack data
+    * ROAs data
+    * Relationship data for specific ASNs
+    * Extrapolator data for specific ASNs
+    * Policy statistics for specific ASNs and policies
+        * Includes aggregate averages for ASNs
+    * Average policy statistics
+    * RPKI Validity results
 
 NOTE: These might still not yet be up on the website, in order to be compatible with the UI it takes a bit longer
 
@@ -1485,10 +1492,10 @@ Coming soon to a theater near you
 ### API Design Choices
 * [lib\_bgp\_data](#lib_bgp_data)
 * [API Submodule](#api-submodule)
-	* Some API endpoints are not done for all ASes in advance because it would take a significant amount of time and add a significant amount of data.
-	* Flasgger docs are used to provide an easy web interface
-	* All relationship data was not returned due to time constraints
-	* Separate blueprints are used for code readability
+    * Some API endpoints are not done for all ASes in advance because it would take a significant amount of time and add a significant amount of data.
+    * Flasgger docs are used to provide an easy web interface
+    * All relationship data was not returned due to time constraints
+    * Separate blueprints are used for code readability
 
 ## ROVPP Submodule
    * [lib\_bgp\_data](#lib_bgp_data)
@@ -1649,25 +1656,25 @@ To execute multiple sql queries at once:
 ```python
 from lib_bgp_data import Database, db_connection
 with db_connection(Database) as db:
-	sqls = ["SELECT * FROM my_table", "SELECT * FROM my_table2"]
+    sqls = ["SELECT * FROM my_table", "SELECT * FROM my_table2"]
     data = db.multiprocess_execute(sqls)
 ```
 To unhinge/rehinge database (disable writing to disk, then reenable it):
 ```python
 from lib_bgp_data import Database, db_connection
 with db_connection(Database) as db:
-	db.unhinge_db()
-	# do intensive queries
-	db.rehinge_db()
+    db.unhinge_db()
+    # do intensive queries
+    db.rehinge_db()
 ```
 #### From the Command Line
 Coming Soon to a theater near you
 ### Database Design Choices
 * [lib\_bgp\_data](#lib_bgp_data)
 * [Database Submodule](#database-submodule)
-	* RealDictCursor is used as the default cursor factory because it is more OO and using a dictionary is very intuitive.
-	* Unlogged tables are used for speed
-	* Most safety measures for corruption and logging are disabled to get a speedup since our database is so heavily used with such massive amounts of data
+    * RealDictCursor is used as the default cursor factory because it is more OO and using a dictionary is very intuitive.
+    * Unlogged tables are used for speed
+    * Most safety measures for corruption and logging are disabled to get a speedup since our database is so heavily used with such massive amounts of data
 
 ### Database Installation
 * [lib\_bgp\_data](#lib_bgp_data)
@@ -1723,9 +1730,9 @@ A decorator to be used in all class functions that catches errors and fails nice
 ### Logging Design Choices
 * [lib\_bgp\_data](#lib_bgp_data)
 * [Logger Submodule](#logger-submodule)
-	* Logger class is not used because logging deadlocks just on import
-	* Thread_Safe_Logger is used because it does not deadlock
-	* error_catcher is used so that functions fail nicely
+    * Logger class is not used because logging deadlocks just on import
+    * Thread_Safe_Logger is used because it does not deadlock
+    * error_catcher is used so that functions fail nicely
 
 ## Installation
    * [lib\_bgp\_data](#lib_bgp_data)
@@ -1877,7 +1884,7 @@ everything that is needed to be used for the program to run properly.
 This is done through a series of steps.
 
 1. Create the config file. This is optional in case a config was created
-	* This is handled by the config class
+    * This is handled by the config class
     * The fresh_install arg is by default set to true for a new config
 2. Install the new database and database users. This is optional.
     * This is handled by _create_database
@@ -2061,7 +2068,7 @@ MIT License
    * [lib\_bgp\_data](#lib_bgp_data)
 
 
-	See Jira Board: https://wkkbgp.atlassian.net/jira/software/projects/FORECAST/boards/1
+    See Jira Board: https://wkkbgp.atlassian.net/jira/software/projects/FORECAST/boards/1
 
 [https://wkkbgp.atlassian.net/jira/software/projects/FORECAST/boards/1](https://wkkbgp.atlassian.net/jira/software/projects/FORECAST/boards/1)
 
@@ -2073,7 +2080,7 @@ Q: More links to some research
 A: Read these:
 * [https://www.cs.bu.edu/~goldbe/papers/survey.pdf](https://www.cs.bu.edu/~goldbe/papers/survey.pdf)
 * [https://www.nsf.gov/awardsearch/showAward?AWD_ID=1840041&HistoricalAwards=false](https://www.nsf.gov/awardsearch/showAward?AWD_ID=1840041&HistoricalAwards=false)
-	* Feel free to email Dr. Amir Herzberg for this paper
+    * Feel free to email Dr. Amir Herzberg for this paper
 * [https://www.cs.princeton.edu/~jrex/papers/sigmetrics00.pdf](https://www.cs.princeton.edu/~jrex/papers/sigmetrics00.pdf)
 * [https://www.ideals.illinois.edu/bitstream/handle/2142/103896/Deployable%20Internet%20Routing%20Security%20-%20Trusted%20CI%20Webinar.pdf?sequence=2&isAllowed=y](https://www.ideals.illinois.edu/bitstream/handle/2142/103896/Deployable%20Internet%20Routing%20Security%20-%20Trusted%20CI%20Webinar.pdf?sequence=2&isAllowed=y)
 * RPKI/ROV Forecast web proposal - email Dr. Amir Herzberg for this paper
@@ -2082,3 +2089,4 @@ A: Read these:
 Q: What is the fastest way to dump these tables?
 
 A: ```pgdump bgp | pigz -p <numthreads> > jdump.sql.gz``` I have tested all of the different possibilities, and this is the fastest for dumping and reuploading for our tables. Note that indexes do not get dumped and must be recreated.
+
