@@ -10,12 +10,13 @@ database. This is done through a series of detailed on README.
 
 from datetime import datetime
 import logging
-from pathos.multiprocessing import ProcessingPool
 import os
 import time
 
+from pathos.multiprocessing import ProcessingPool
 from psutil import process_iter
 from signal import SIGTERM
+from tqdm import trange
 import urllib
 
 from .rpki_file import RPKI_File
@@ -153,8 +154,13 @@ class RPKI_Validator_Wrapper:
     def _wait(self, time_to_sleep: int, msg: str):
         """logs a message and waits"""
 
-        logging.info(msg)
-        time.sleep(time_to_sleep)
+        logging.debug(msg)
+        if logging.root.level == logging.INFO:
+            # Number of times per second to update tqdm
+            divisor = 100
+            for _ in trange(time_to_sleep * divisor,
+                            desc=msg):
+                time.sleep(1 / divisor)
 
     def _get_validation_status(self) -> bool:
         """Returns row count of json object for waiting"""
