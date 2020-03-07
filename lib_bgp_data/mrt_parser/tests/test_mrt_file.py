@@ -8,12 +8,15 @@ For specifics on each test, see the docstrings under each function.
 
 
 from subprocess import check_call
+
+import pytest
+
 from ..mrt_file import MRT_File
 from ..mrt_parser import MRT_Parser
 from ..tables import MRT_Announcements_Table
 from ...utils import utils, db_connection
 
-__author__ = "Matt Jaccino"
+__authors__ = ["Matt Jaccino", "Justin Furuness"]
 __credits__ = ["Matt Jaccino", "Justin Furuness"]
 __Lisence__ = "MIT"
 __maintainer__ = "Justin Furuness"
@@ -21,6 +24,7 @@ __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
 
+@pytest.mark.mrt_parser
 class Test_MRT_File:
     """This will test methods of the MRT_File class."""
 
@@ -39,16 +43,18 @@ class Test_MRT_File:
         RIPE, Route-views, and ISOLARIO data
         """
 
-        for url in [MRT_Parser()._get_mrt_urls()[5]]:
-            # Create an MRT_File object and download from the URL above
-            test_file: MRT_File = self._mrt_file_factory(url=url)
-            _scanner_entries = self._get_entries(test_file, bgpscanner=True)
-            # Create another MRT_File object and download
-            test_file2: MRT_File = self._mrt_file_factory(url=url)
-            # Get the number of entries in the table when parsed with BGPDump
-            _dump_entries = self._get_entries(test_file2, bgpscanner=False)
-            # Make sure both entries are identical
-            assert _scanner_entries == _dump_entries
+        # A more comprehensive test over all URLs in test_mrt_parser
+        # We get the sixth one for speed. The rest are isolario
+        url = MRT_Parser()._get_mrt_urls()[5]
+        # Create an MRT_File object and download from the URL above
+        test_file: MRT_File = self._mrt_file_factory(url=url)
+        _scanner_entries = self._get_entries(test_file, bgpscanner=True)
+        # Create another MRT_File object and download
+        test_file2: MRT_File = self._mrt_file_factory(url=url)
+        # Get the number of entries in the table when parsed with BGPDump
+        _dump_entries = self._get_entries(test_file2, bgpscanner=False)
+        # Make sure both entries are identical
+        assert _scanner_entries == _dump_entries
 
     def test_bgpscanner_regex(self):
         """This will test if the method '_bgpscanner_args' uses correct

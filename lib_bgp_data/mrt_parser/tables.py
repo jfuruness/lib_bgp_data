@@ -16,15 +16,16 @@ follows the table name followed by a _Table since it inherits from the
 database class.
 """
 
-import logging
-from ..database import Generic_Table
-
 __author__ = "Justin Furuness"
 __credits__ = ["Justin Furuness"]
 __Lisence__ = "MIT"
 __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
+
+import logging
+
+from ..database import Generic_Table
 
 
 class MRT_Announcements_Table(Generic_Table):
@@ -48,7 +49,7 @@ class MRT_Announcements_Table(Generic_Table):
                  origin bigint,
                  time bigint
                  );"""
-        self.cursor.execute(sql)
+        self.execute(sql)
 
     def filter_by_IPV_family(self, IPV4: bool, IPV6: bool):
         """Filters the data by IPV family"""

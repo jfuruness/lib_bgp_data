@@ -15,10 +15,10 @@ __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
 import os
-from subprocess import check_call
 import logging
+
+from ..base_classes import File
 from .tables import MRT_Announcements_Table
-from ..base_classes import DecoMeta, File
 from ..utils import utils
 
 
@@ -77,8 +77,7 @@ class MRT_File(File):
         args = self._bgpscanner_args() if bgpscanner else self._bgpdump_args()
         # writes to a csv
         args += '> ' + self.csv_name
-        check_call(args, shell=True)
-        # Removed to reduce logging overhead
+        utils.run_cmds(args)
         logging.debug(f"Wrote {self.csv_name}\n\tFrom {self.url}")
         utils.delete_paths(self.path)
 

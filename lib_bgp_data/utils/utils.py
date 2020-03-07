@@ -39,6 +39,27 @@ __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
+
+# This decorator deletes paths before and after func is called
+def delete_files(files=[]):
+    """This decorator deletes files before and after a function.
+
+    This is very useful for installation procedures.
+    """
+    def my_decorator(func):
+        @functools.wraps(func)
+        def function_that_runs_func(self, *args, **kwargs):
+            # Inside the decorator
+            # Delete the files - prob don't exist yet
+            delete_paths(files)
+            # Run the function
+            stuff = func(self, *args, **kwargs)
+            # Delete the files if they do exist
+            delete_paths(files)
+            return stuff
+        return function_that_runs_func
+    return my_decorator
+
 # to prevent circular depencies
 @contextmanager
 def Pool(threads, multiplier, name):

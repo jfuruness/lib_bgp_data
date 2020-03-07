@@ -17,15 +17,18 @@ __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
 import datetime
-import requests
-import warnings
 import logging
+import warnings
+
+import requests
+
+from ..base_classes import Parser
 from .mrt_file import MRT_File
+from .mrt_installer import MRT_Installer
 from .mrt_sources import MRT_Sources
 from .tables import MRT_Announcements_Table
-from ..base_classes import Parser
 from ..utils import utils
-from ..utils.utils import progress_bar
+
 
 class MRT_Parser(Parser):
     """This class downloads, parses, and deletes files from Caida.
@@ -44,6 +47,9 @@ class MRT_Parser(Parser):
             _ann_table.clear_table()
             # Tables can't be created in multithreading so it's done now
             _ann_table._create_tables()
+        if not os.path.exists("/usr/bin/bgpscanner"):
+            logging.warning("Dependencies are not installed. Installing now.")
+            MRT_Installer.install_dependencies()
 
     def _run(self,
              *args,
@@ -111,7 +117,7 @@ class MRT_Parser(Parser):
         # Parameters for the get request, look at caida for more in depth info
         # This must be included in every API query
         PARAMS = {'human': True,
-                  'intervals': ["{},{}".format(start, end)],
+                  'intervals': [f"{start},{end}"],
                   'types': ['ribs']
                   }
         # Done this way because cannot specify two params with same name
@@ -178,7 +184,7 @@ class MRT_Parser(Parser):
         mrt_files = [MRT_File(self.path, self.csv_dir, url, i + 1)
                      for i, url in enumerate(urls)]
 
-        with progress_bar("Downloading MRTs, ", len(mrt_files)):
+        with utils.progress_bar("Downloading MRTs, ", len(mrt_files)):
             # Creates a dl pool with 4xCPUs since it is I/O based
             with utils.Pool(dl_threads, 4, "download") as dl_pool:
                 
@@ -199,7 +205,7 @@ class MRT_Parser(Parser):
         """
 
 
-        with progress_bar("Parsing MRT Files,", len(mrt_files)):
+        with utils.progress_bar("Parsing MRT Files,", len(mrt_files)):
             with utils.Pool(p_threads, 1, "parsing") as p_pool:
                 # Runs the parsing of files in parallel, largest first
                 p_pool.map(lambda f: f.parse_file(bgpscanner),
