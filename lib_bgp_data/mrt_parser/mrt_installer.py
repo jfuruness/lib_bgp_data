@@ -29,7 +29,7 @@ class MRT_Installer:
     def __init__(self, **kwargs):
         """Initializes logger and path variables."""
 
-        config_logging(kwargs.get("stream_level"), kwargs.get("section")
+        config_logging(kwargs.get("stream_level"), kwargs.get("section"))
 
     def install_dependencies(self):
         """Downloads all dependencies required
@@ -62,7 +62,7 @@ class MRT_Installer:
     def _install_bgpdump(self):
         """Installs bgpdump and all dependencies"""
 
-       cmds = ["git clone https://github.com/RIPE-NCC/bgpdump.git",
+        cmds = ["git clone https://github.com/RIPE-NCC/bgpdump.git",
                "cd bgpdump/",
                "sh ./bootstrap.sh",
                "./bgpdump -T",

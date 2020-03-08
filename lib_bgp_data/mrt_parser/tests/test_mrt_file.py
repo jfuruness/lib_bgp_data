@@ -14,7 +14,8 @@ import pytest
 from ..mrt_file import MRT_File
 from ..mrt_parser import MRT_Parser
 from ..tables import MRT_Announcements_Table
-from ...utils import utils, db_connection
+from ...database import Database
+from ...utils import utils
 
 __authors__ = ["Matt Jaccino", "Justin Furuness"]
 __credits__ = ["Matt Jaccino", "Justin Furuness"]
@@ -135,8 +136,9 @@ class Test_MRT_File:
         # Populate the database before testing
         self._mrt_file_factory().parse_file()
         # Make sure not AS pathes contain sets
-        with db_connection() as db:
-            assert db.get_count("SELECT COUNT(*) FROM mrt_announcements") > 0
+        with Database() as db:
+            assert db.execute("SELECT COUNT(*) FROM mrt_announcements"
+                )[0]["count"] > 0
             sql = "SELECT as_path FROM mrt_announcements;"
             # Check for sets by looking for the set notation
             assert "{" not in str(db.execute(sql))
@@ -148,7 +150,7 @@ class Test_MRT_File:
     def _get_entries(self, mrt_file, bgpscanner=True):
         """Gets entries from MRT Announcements"""
 
-        with db_connection(MRT_Announcements_Table, clear=True) as db:
+        with MRT_Announcements_Table(clear=True) as db:
             mrt_file.parse_file(bgpscanner)
             return db.get_all()
 
@@ -162,9 +164,6 @@ class Test_MRT_File:
         url = parser._get_mrt_urls(start, end)[5] if not url else url
         mrt_file = MRT_File(parser.path,
                             parser.csv_dir,
-                            url,
-                            logger=parser.logger)
-        utils.download_file(mrt_file.logger,
-                            mrt_file.url,
-                            mrt_file.path)
+                            url)
+        utils.download_file(mrt_file.url, mrt_file.path)
         return mrt_file

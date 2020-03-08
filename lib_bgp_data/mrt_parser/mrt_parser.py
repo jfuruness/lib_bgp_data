@@ -18,6 +18,7 @@ __status__ = "Development"
 
 import datetime
 import logging
+import os
 import warnings
 
 import requests

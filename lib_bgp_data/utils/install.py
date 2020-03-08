@@ -60,7 +60,7 @@ from multiprocess import cpu_count
 import fileinput
 import sys
 from .config import Config
-from .utils import delete_paths
+from .utils import delete_paths, delete_files
 
 __authors__ = ["Justin Furuness", "Matt Jaccino"]
 __credits__ = ["Justin Furuness", "Matt Jaccino", "Cameron Morris"]

@@ -7,6 +7,8 @@ For specifics on each test, see the docstrings under each function.
 """
 
 from psycopg2.errors import UndefinedTable
+import pytest
+
 from ..tables import MRT_Announcements_Table
 from ...database import Generic_Table_Test
 
@@ -18,6 +20,7 @@ __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
 
+@pytest.mark.mrt_parser
 class Test_MRT_Announcements_Table(Generic_Table_Test):
     """Tests all functions within the mrt announcements class.
 
