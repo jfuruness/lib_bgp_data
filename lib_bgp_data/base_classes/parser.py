@@ -27,7 +27,7 @@ class Parser:
     See README for in depth explanation.
     """
 
-    __slots__ = ['path', 'csv_dir']
+    __slots__ = ['path', 'csv_dir', 'kwargs']
     # This will add an error_catcher decorator to all methods
 
     parsers = []
@@ -59,13 +59,15 @@ class Parser:
         name = f"{kwargs['section']}_{self.__class__.__name__}"
         # Set global section header varaible in Config's init
         set_global_section_header(kwargs["section"])
-        config_logging(kwargs.get("level", logging.INFO), kwargs["section"])
+        config_logging(kwargs.get("stream_level", logging.INFO),
+                       kwargs["section"])
 
         # Path to where all files willi go. It does not have to exist
         self.path = kwargs.get("path", f"/tmp/{name}")
         self.csv_dir = kwargs.get("csv_dir", f"/dev/shm/{name}")
         # Recreates empty directories
         utils.clean_paths([self.path, self.csv_dir])
+        self.kwargs = kwargs
         logging.debug(f"Initialized {name} at {utils.now()}")
         assert hasattr(self, "_run"), ("Needs _run, see Parser.py's run func "
                                        "Note that this is also used by default"

@@ -10,5 +10,3 @@ __Lisence__ = "MIT"
 __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
-
-from .extrapolator_parser import Extrapolator_Parser
