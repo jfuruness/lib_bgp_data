@@ -218,7 +218,11 @@ You'll notice that the path and csv directories that are created depend on the n
 
 Then there is the run function. All parsers should have a _run function, which this function calls. It simply records the time the parser takes to complete, and captures errors nicely. The reason this is enforced is so that the base parser can delete the path and csv directory, no matter what errors occur during the subclass._run method.
 
-The argparse call method isn't something you need to worry about. If you really want to know, that is the method argparse will call when you pass in the name of this class as a command line argument. It is done here so that all parsers have that functionality.
+The argparse call method isn't something you need to worry about. If you really want to know, that is the method argparse will call when you pass in the name of this class as a command line argument. It is done here so that all parsers have that functionality. By default the run method will be called for the class.
+
+If you were privy to previous versions you may notice that the decorated features were removed. Previously we would use metaclasses to decorate all functions to log errors in a specific way. I decided this was unnecessary since the only time we will ever need this is when we call the run method, for which we already have logging, and overriding the default traceback seems unnecessary. So to avoid complications with logging this was removed. 
+
+Also you do not need to worry about it, but we override the \_\_init\_subclass\_\_ in the Parser class. This is a new method in python 3.6, from which we can control inheritance. With this method we can add all subclasses that inherit the Parser class to a list called parsers, and store it as a class attribute. Later, we use this list in \_\_main\_\_.py to store all the parsers as command line arguments. In this way, anyone that simply inherits the Parser class will automatically have their parser added to the command line arguments.
 
 ### Base Parser Usage
 * [lib\_bgp\_data](#lib_bgp_data)
@@ -494,7 +498,7 @@ There are two ways you can run this parser. It will run with all the defaults. L
 
 Best way:
 ```bash
-mrt_parser
+lib_bgp_data --mrt_parser
 ```
 
 This example must be run over the package, so cd into one directory above that package
@@ -652,7 +656,7 @@ There are two ways you can run this parser. It will run with all the defaults. L
 
 Best way:
 ```bash
-relationships_parser
+lib_bgp_data --relationships_parser
 ```
 
 This example must be run over the package, so cd into one directory above that package
@@ -826,7 +830,7 @@ ROAs_Parser().parse_roas()
 #### From the Command Line
 Depending on the permissions of your system, and whether or not you pip installed the package with sudo, you might be able to run the ROAs Parser with:
 
-```roas_parser```
+```lib_bgp_data --roas_parser```
 
 or a variety of other possible commands, I've tried to make it fairly idiot proof with the capitalization and such.
 
@@ -1336,7 +1340,7 @@ There are two ways you can run this parser. It will run with all the defaults. L
 
 Best way:
 ```bash
-rpki_validator_parser
+lib_bgp_data --rpki_validator_parser
 ```
 
 This example must be run over the package, so cd into one directory above that package
@@ -2154,6 +2158,7 @@ Thanks to all of these blogs, stack overflow posts, etc. for their help in solvi
 * https://stackoverflow.com/questions/14441955/how-to-perform-custom-build-steps-in-setup-py
 * [https://stackoverflow.com/questions/6943208/](https://stackoverflow.com/questions/6943208/)
 * [https://stackoverflow.com/a/20691431](https://stackoverflow.com/a/20691431)
+* [https://stackoverflow.com/a/43057166/8903959](https://stackoverflow.com/a/43057166/8903959)
 * https://www.geeksforgeeks.org/python-difference-between-two-dates-in-minutes-using-datetime-timedelta-method/
 * 
 
@@ -2185,3 +2190,4 @@ A: Read these:
 Q: What is the fastest way to dump these tables?
 
 A: ```pgdump bgp | pigz -p <numthreads> > jdump.sql.gz``` I have tested all of the different possibilities, and this is the fastest for dumping and reuploading for our tables. Note that indexes do not get dumped and must be recreated.
+

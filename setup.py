@@ -25,24 +25,6 @@ if sys.version_info < (3, 8):
     sys.exit(1)
 
 
-def get_parsers():
-    """Note: I could try to import this function but...
-
-    Then it gets really messy, and is not longer useful.
-    So we must simple write a new one here. Oh well.
-    """
-
-    return ["mrt_parser",
-            "relationships_parser",
-            "roas_parser",
-            "rpki_validator_parser"]
-
-def _get_console_scripts():
-    """Returns all console scripts"""
-
-    # .format is used so that script will error properly upon python 3.6
-    return ['{} = lib_bgp_data.__main__:main'.format(x) for x in get_parsers()]
-
 setup(
     name='lib_bgp_data',
     packages=find_packages(),
@@ -79,7 +61,7 @@ setup(
         'License :: OSI Approved :: MIT License',
         'Programming Language :: Python :: 3'],
     entry_points={
-        'console_scripts': _get_console_scripts()},
+        'console_scripts': 'lib_bgp_data = lib_bgp_data.__main__:main'},
     setup_requires=['pytest-runner'],
     tests_require=['pytest'],
 )

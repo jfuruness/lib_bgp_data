@@ -8,13 +8,13 @@ prefix origin pairs in our announcements data, and insert it into a
 database. This is done through a series of steps, detailed on README.
 """
 
-from .rpki_validator_parser import RPKI_Validator_Parser
-from .rpki_validator_wrapper import RPKI_Validator_Wrapper
 
-__author__ = "Justin Furuness", "Cameron Morris"
+__authors__ = ["Justin Furuness", "Cameron Morris"]
 __credits__ = ["Cameron Morris", "Justin Furuness"]
 __Lisence__ = "MIT"
 __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
+from .rpki_validator_parser import RPKI_Validator_Parser
+from .rpki_validator_wrapper import RPKI_Validator_Wrapper

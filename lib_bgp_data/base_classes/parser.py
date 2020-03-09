@@ -13,13 +13,12 @@ __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
-from .decometa import DecoMeta
-import pytest
 import logging
-from ..utils import utils
-from ..utils.config import set_global_section_header
-from ..utils import config_logging
 
+import pytest
+
+from ..utils import utils, config_logging
+from ..utils.config import set_global_section_header
 
 
 class Parser:
@@ -30,7 +29,20 @@ class Parser:
 
     __slots__ = ['path', 'csv_dir']
     # This will add an error_catcher decorator to all methods
-    __metaclass__ = DecoMeta
+
+    parsers = []
+    # https://stackoverflow.com/a/43057166/8903959
+    def __init_subclass__(cls, **kwargs):
+        """This method essentially creates a list of all subclasses
+
+        This is incredibly useful for a few reasons. Mainly, you can
+        strictly enforce proper templating with this. And also, you can
+        automatically add all of these things to things like argparse
+        calls and such. Very powerful tool.
+        """
+
+        super().__init_subclass__(**kwargs)
+        cls.parsers.append(cls)
 
     def __init__(self, **kwargs):
         """Initializes logger and path variables.

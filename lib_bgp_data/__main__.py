@@ -1,14 +1,22 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-"""This module runs all command line arguments"""
+"""This module runs all command line arguments.
 
-from argparse import ArgumentParser, Action
-from sys import argv
-from .mrt_parser import MRT_Parser
-from .relationships_parser import Relationships_Parser
-from .roas_parser import ROAs_Parser
-from .rpki_validator import RPKI_Validator_Parser, RPKI_Validator_Wrapper
+There is no real good place to include this documentation in the readme
+so I will include it here. First see the main function, We override
+__init_subclass__ in the Parser class to essentially just create a list
+of all parsers as a class attribute called parsers. This is just
+essentially just a list of all objects that inherited the Parser
+class. All Parser classes have a method called argparse_call, which
+if used in argparse will call the run method on the class. Then the
+argparse call, in association with the lowercase name of the class,
+are added to the argparse method. Essentially, you can type in any
+lib_bgp_data with --{lowercase name of a parser class}, and the run
+method will be called. The reason it was done this way was to make the
+module extendable, so that anyone could simply inherit the Parser class
+and have all of this taken care of behind the scenes.
+"""
 
 __authors__ = ["Justin Furuness", "Matt Jaccino"]
 __credits__ = ["Justin Furuness", "Matt Jaccino"]
@@ -17,15 +25,19 @@ __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
+from argparse import ArgumentParser, Action
+from sys import argv
+
+from .base_classes import Parser
+
 
 def main():
-    """Does all the command line options available"""
+    """Does all the command line options available
 
-    # See function documention
-    change_sys_args()
+    See top of file for in depth description"""
 
     parser = ArgumentParser(description="lib_bgp_data, see github")
-    for cls in get_parsers():
+    for cls in Parser.parsers:
         # This will override the argparse action class
         # Now when the arg is passed, the func __call__ will be called
         # In this case, __call__ is set to the parsers run method
@@ -39,34 +51,6 @@ def main():
                             nargs=0,
                             action=argparse_action_cls)
     parser.parse_args()
-
-
-def change_sys_args():
-    """This function changes the sys args to be recognizable by argparse
-
-    The reason we do this is so that we can dynamically add the parser
-    classes names to the setup.py file as entry_points, and instead
-    of adding a __main__ file to each submodule, we can instead direct
-    all of those calls to this singular file, and parse in the same we
-    we would with argparse.
-
-    https://stackoverflow.com/a/55961848/8903959
-    """
-
-    names = [x.__name__.lower() for x in get_parsers()]
-    # This means we must be calling it from the command line
-    # without python3 -m lib_bgp_data --parser
-    if "lib_bgp_data" not in argv[0] and len(argv) == 1:
-        for name in names:  
-            if name in argv[0]:
-                argv.append("--" + name)
-                argv[0] = "dummy arg"
-
-def get_parsers() -> list:
-    return [MRT_Parser,
-            Relationships_Parser,
-            ROAs_Parser,
-            RPKI_Validator_Parser]
 
 
 if __name__ == "__main__":

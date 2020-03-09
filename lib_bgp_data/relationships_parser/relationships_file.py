@@ -12,7 +12,7 @@ import logging
 import os
 
 from .tables import Provider_Customers_Table, Peers_Table
-from ..base_classes import DecoMeta, File
+from ..base_classes import File
 from ..utils import utils
 
 __authors__ = ["Justin Furuness", "Matt Jaccino"]

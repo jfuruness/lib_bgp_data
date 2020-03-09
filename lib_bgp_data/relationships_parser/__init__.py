@@ -6,11 +6,11 @@
 For in depth instructions, see README.
 """
 
-from .relationships_parser import Relationships_Parser
-
 __author__ = "Justin Furuness"
 __credits__ = ["Justin Furuness"]
 __Lisence__ = "MIT"
 __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
+
+from .relationships_parser import Relationships_Parser

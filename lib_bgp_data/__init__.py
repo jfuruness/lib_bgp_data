@@ -7,9 +7,9 @@ This is also where the logging is taken care of. That is because this
 """
 
 from .relationships_parser import Relationships_Parser
-from .roas_parser import ROAs_Parser, ROAs_Collector
+#from .roas_parser import ROAs_Parser, ROAs_Collector
 #from .bgpstream_website_parser import BGPStream_Website_Parser
-#from .mrt_parser import MRT_Parser, MRT_Sources
+from .mrt_parser import MRT_Parser, MRT_Sources
 #from .what_if_analysis import What_If_Analysis
 from .rpki_validator import RPKI_Validator_Wrapper, RPKI_Validator_Parser
 #from .api import create_app
