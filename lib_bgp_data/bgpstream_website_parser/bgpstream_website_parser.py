@@ -15,10 +15,14 @@ __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
+import logging
+
+import bs4
+from tqdm import tqdm
 
 from .data_classes import Leak, Hijack, Outage
 from .event_types import Event_Types
-from .tables import Hijack_Table, Leak_Table, Outage_Table
+from .tables import Hijacks_Table, Leaks_Table, Outages_Table
 from ..base_classes import Parser
 from ..utils import utils
 
@@ -29,7 +33,7 @@ class BGPStream_Website_Parser(Parser):
     For a more in depth explanation, read the top of the file.
     """
 
-    __slots__ = ['_data', '_data_types']
+    __slots__ = ['_data']
 
     
     def _run(self,
@@ -55,17 +59,15 @@ class BGPStream_Website_Parser(Parser):
         _data = {Event_Types.HIJACK.value: Hijack(self.csv_dir),
                  Event_Types.LEAK.value: Leak(self.csv_dir),
                  Event_Types.OUTAGE.value: Outage(self.csv_dir)}
-        self._data = {k.value: v for k, v in _data.items()
-                      if k.value in data_types}
+        self._data = {k: v for k, v in _data.items()
+                      if k in data_types}
 
         known_events = self._generate_known_events()
 
         # Parses rows if they are the event types desired
-        rows = self._get_rows(row_limit)
+        rows: list = self._get_rows(row_limit)
         for row in tqdm(rows, desc="Parsing rows", total=len(rows)):
             # Parses the row
-            print(type(row))
-            print("python type all funcs")
             self._parse_row(row, known_events, refresh)
 
         # Writes to csvs and dbs, deletes duplicatesm and creates indexes
@@ -85,7 +87,10 @@ class BGPStream_Website_Parser(Parser):
 
         return rows[:row_limit]
 
-    def _parse_row(self, row, known_events: dict, refresh: bool):
+    def _parse_row(self,
+                   row: bs4.element.Tag,
+                   known_events: dict,
+                   refresh: bool):
         """Parses all rows that fit certain requirements.
 
         Each row must have a type withing self.data_types.
@@ -98,13 +103,14 @@ class BGPStream_Website_Parser(Parser):
         # If the event_type is in the list of types we are parsing
         # If we've seen the event before, and the start and end haven't changed
         # then ignore the event entirely
-        if _type in self._data.values():
+        if _type in self._data:
             # Can't fit all on one line whatevs man idc
             if known_events.get(int(event_num)) != (start, end) or refresh:
                 # Note that the append method is overriden
                 # This will parse the row and then append the parsed
                 # information in a list inside self.data[_type]
-                _data_class.append(row)
+                self._data[_type].append(row)
+                logging.debug("Appending")
 
     def _get_row_front_page_info(self, row) -> tuple:
         """Returns type of event, start, end, url, event num.
@@ -113,12 +119,12 @@ class BGPStream_Website_Parser(Parser):
         """
 
         # Gets the type of event (in the events enum) for the row
-        _type = [x for x in row.children][1].string.strip()
+        _type: str = [x for x in row.children][1].string.strip()
 
-        start = [x for x in row.children][7].string.strip() + '+00:00'
-        end = [x for x in row.children][9].string.strip() + '+00:00'
-        url = [x for x in row.children][11].a["href"]
-        event_num = url.split("/")[-1]
+        start: str = [x for x in row.children][7].string.strip() + '+00:00'
+        end: str = [x for x in row.children][9].string.strip() + '+00:00'
+        url: str = [x for x in row.children][11].a["href"]
+        event_num: str = url.split("/")[-1]
         if end == "+00:00":
             end = 'None'
 
@@ -134,7 +140,7 @@ class BGPStream_Website_Parser(Parser):
         """
 
         events = {}
-        for _Table_Class in [Hijack_Table, Leak_Table, Outage_table]:
+        for _Table_Class in [Hijacks_Table, Leaks_Table, Outages_Table]:
             # Gets known events from table
             with _Table_Class() as _db:
                 sql = f"""SELECT start_time, end_time, event_number

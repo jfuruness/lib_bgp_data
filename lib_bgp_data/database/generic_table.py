@@ -86,6 +86,17 @@ class Generic_Table(Database):
         self.execute(f"COPY {self.name} TO %s DELIMITER '\t';", [path])
         logging.debug("Copy complete")
 
+    def filter_by_IPV_family(self, IPV4: bool, IPV6: bool, col="prefix"):
+        """Filters the data by IPV family"""
+
+        logging.info("Filtering by IPV family")
+        for num, ipv_bool in zip([4, 6], [IPV4, IPV6]):
+            if not ipv_bool:
+                logging.debug(f"Deleting IPV{num} from {self.name}")
+                sql = f"DELETE FROM {self.name} WHERE family({col}) = {num};"
+                self.execute(sql)
+                logging.debug(f"IPV{num} deleted from mrt_announcements")
+
     @property
     def columns(self):
         """Returns the columns of the table

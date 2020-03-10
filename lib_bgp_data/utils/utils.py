@@ -289,8 +289,9 @@ def csv_to_db(Table, csv_path, clear_table=False):
         logging.debug("Copying {} into the database".format(csv_path))
         # Opens temporary file
         with open(r'{}'.format(csv_path), 'r') as f:
+            columns = [x for x in t.columns if x != "id"]
             # Copies data from the csv to the db, this is the fastest way
-            t.cursor.copy_from(f, t.name, sep='\t', columns=t.columns, null="")
+            t.cursor.copy_from(f, t.name, sep='\t', columns=columns, null="")
             t.cursor.execute("CHECKPOINT;")
         # No logging for mrt_announcements, overhead slows it down too much
         logging.debug("Done inserting {} into the database".format(csv_path))

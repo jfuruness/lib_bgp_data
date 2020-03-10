@@ -50,14 +50,3 @@ class MRT_Announcements_Table(Generic_Table):
                  time bigint
                  );"""
         self.execute(sql)
-
-    def filter_by_IPV_family(self, IPV4: bool, IPV6: bool):
-        """Filters the data by IPV family"""
-
-        logging.info("Filtering by IPV family")
-        for num, ipv_bool in zip([4, 6], [IPV4, IPV6]):
-            if not ipv_bool:
-                logging.debug(f"Deleting IPV{num} from {self.name}")
-                sql = f"DELETE FROM {self.name} WHERE family(prefix) = {num};"
-                self.execute(sql)
-                logging.debug(f"IPV{num} deleted from mrt_announcements")

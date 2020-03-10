@@ -19,7 +19,9 @@ __status__ = "Development"
 import logging
 import re
 
-from .tables import Hijack_Table, Outage_Table, Leak_Table
+import bs4
+
+from .tables import Hijacks_Table, Outages_Table, Leaks_Table
 from ..utils import utils
 
 
@@ -30,10 +32,10 @@ class Data:
     """
 
     __slots__ = ['_as_regex', '_nums_regex', '_ip_regex',
-                 '_temp_row', 'data', '_columns']
+                 '_temp_row', 'data', '_columns', 'csv_path']
 
     
-    def __init__(self, csv_dir):
+    def __init__(self, csv_dir: str):
         """Initializes regexes and other important info."""
 
         logging.debug("Initialized row")
@@ -59,7 +61,7 @@ class Data:
             self._columns = t.columns
 
     
-    def append(self, row):
+    def append(self, row: bs4.element.Tag):
         """Parses, formats, and appends a row of data from bgpstream.com.
 
         For a more in depth explanation see the top of the file."""
@@ -90,7 +92,10 @@ class Data:
 
         with self.table() as db_table:
             # Removes unwanted prefixes
-            db_table.filter(IPV4, IPV6)
+            if hasattr(db_table, "prefix_colum"):
+                db_table.filter_by_IPV_family(IPV4,
+                                              IPV6,
+                                              db_table.prefix_column)
             # Creates indexes
             db_table.create_index()
             # Deletes duplicates in the table
@@ -102,7 +107,7 @@ class Data:
 ########################
 
     
-    def _parse_common_elements(self, row):
+    def _parse_common_elements(self, row: bs4.element.Tag):
         """Parses common tags and adds data to temp_row.
 
         All common elements on the initial page are parsed, then the
@@ -120,9 +125,7 @@ class Data:
         try:
             # If there is just one string this will work
             as_info = children[5].string.strip()
-        except Exception as e:  # Should not use bare except
-            print(e)
-            1/0
+        except AttributeError:
             # If there is more than one AS this will work
             stripped = children[5].stripped_strings
             as_info = [x for x in stripped]
@@ -137,7 +140,7 @@ class Data:
         return as_info, utils.get_tags(url, "td")[0]
 
     
-    def _parse_as_info(self, as_info):
+    def _parse_as_info(self, as_info: str):
         """Performs regex on as_info to return AS number and AS name.
 
         This is a mess, but that's because parsing html is a mess.
@@ -149,9 +152,7 @@ class Data:
             try:
                 return None, re.findall(r'\d+', as_info)[0]
             # Sometimes not
-            except Exception as e:  # Should not use bare except
-                print(e)
-                1/0
+            except IndexError:  # Should not use bare except
                 return None, None
         else:
             # This is the first way the string can be formatted:
@@ -163,7 +164,7 @@ class Data:
                     as_parsed.group("as_number2")
 
     
-    def _format_temp_row(self):
+    def _format_temp_row(self) -> list:
         """Formats row vals for input into the csv files.
 
         _id columns are excluded from the columns.
@@ -173,10 +174,12 @@ class Data:
         # for like that one stupid AS that has a quote in it's name
         return_list = []
         for column in self._columns:
-            if (val := self._temp_row.get(column)) is None:
-                return_list.append(None)
-            else:
-                return_list.append(val.replace('"', ""))
+            if column != "id":
+                if (val := self._temp_row.get(column)) is None:
+                    return_list.append(None)
+                else:
+                    return_list.append(val.replace('"', ""))
+        # Excludes id column
         return return_list
 
 
@@ -188,10 +191,10 @@ class Hijack(Data):
 
     __slots__ = []
 
-    table = Hijack_Table
+    table = Hijacks_Table
 
     
-    def _parse_uncommon_info(self, as_info, extended_children):
+    def _parse_uncommon_info(self, as_info: str, extended_children: list):
         """Parses misc hijack row info."""
 
         self._temp_row["expected_origin_name"],\
@@ -230,9 +233,9 @@ class Leak(Data):
 
     __slots__ = []
 
-    table = Leak_Table
+    table = Leaks_Table
     
-    def _parse_uncommon_info(self, as_info, extended_children):
+    def _parse_uncommon_info(self, as_info: str, extended_children: list):
         """Parses misc leak row info."""
 
         self._temp_row["origin_as_name"], self._temp_row["origin_as_number"] =\
@@ -281,9 +284,9 @@ class Outage(Data):
 
     __slots__ = []
 
-    table = Outage_Table
+    table = Outages_Table
  
-    def _parse_uncommon_info(self, as_info, extended_children):
+    def _parse_uncommon_info(self, as_info: str, extended_children: list):
         """Parses misc outage row info."""
 
         self._temp_row["as_name"], self._temp_row["as_number"] =\
@@ -294,7 +297,7 @@ class Outage(Data):
         prefix_string = extended_children[
             len(extended_children) - 1].string.strip()
         # Finds all the numbers within a string
-        prefix_info = self.nums_regex.findall(prefix_string)
+        prefix_info = self._nums_regex.findall(prefix_string)
         self._temp_row["number_prefixes_affected"] = prefix_info[0]
         self._temp_row["percent_prefixes_affected"] = prefix_info[1]
         logging.debug("Parsed Outage")

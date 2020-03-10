@@ -29,14 +29,17 @@ __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
+import logging
 from time import strftime, gmtime
-
-from psycopg2.extras import RealDictCursor
 
 from ..database import Generic_Table
 
-class Hijack_Table(Generic_Table):
-    """Hijack table class, inherits from database.
+
+class Data_Table(Generic_Table):
+    """Data table class, inherits from database.
+
+    This is supposed to have general functions for other
+    bgpstream.com tables.
 
     For a more in depth explanation see the top of the file.
     """
@@ -44,14 +47,42 @@ class Hijack_Table(Generic_Table):
     __slots__ = []
 
 
-    1/0 Fix this thing, should inherit tables and etc.
-        filter should be in generic_table, same with mrt_parser
+    def create_index(self):
+        """Creates an index on the times for later table creations"""
+
+        sql = f"""CREATE INDEX IF NOT EXISTS {self.name}_index ON {self.name}
+                USING BTREE(start_time, end_time);"""
+        self.execute(sql)
+
+    def delete_duplicates(self):
+        """Deletes all duplicates from the table."""
+
+        logging.debug(f"About to delete duplicates in {self.name}")
+        sql = f"""DELETE FROM {self.name} a USING {self.name} b
+              WHERE a.id < b.id
+              AND a.event_number = b.event_number
+              ;"""
+        logging.debug(sql)
+        self.execute(sql)
+        logging.debug(f"Duplicates deleted in {self.name}")
+
+
+class Hijacks_Table(Data_Table):
+    """Hijack table class, inherits from database.
+
+    For a more in depth explanation see the top of the file.
+    """
+
+    __slots__ = []
+
+    name = "hijacks"
+    prefix_column = "expected_prefix"
 
     def _create_tables(self):
         """Creates tables if they do not exist"""
 
-        sql = """CREATE UNLOGGED TABLE IF NOT EXISTS hijack (
-              hijack_id serial PRIMARY KEY,
+        sql = """CREATE UNLOGGED TABLE IF NOT EXISTS hijacks (
+              id serial PRIMARY KEY,
               country varchar (50),
               detected_as_path bigint ARRAY,
               detected_by_bgpmon_peers integer,
@@ -70,37 +101,7 @@ class Hijack_Table(Generic_Table):
         self.cursor.execute(sql)
 
     
-    def create_index(self):
-        """Creates an index on the times for later table creations"""
-
-        sql = """CREATE INDEX IF NOT EXISTS hijack_index ON hijack
-                  USING BTREE(start_time, end_time);"""
-        self.cursor.execute(sql)
-
-    def delete_duplicates(self):
-        """Deletes all duplicates from the table."""
-
-        self.logger.info("About to delete duplicates in hijack")
-        sql = """DELETE FROM hijack a USING hijack b
-              WHERE a.hijack_id < b.hijack_id
-              AND a.event_number = b.event_number
-              ;"""
-        self.cursor.execute(sql)
-        self.logger.debug("Duplicates deleted in hijack")
-
-    def filter(self, IPV4=True, IPV6=False):
-        """Filters by IPV4 and IPV6."""
-
-        if not IPV6:
-            sql = "DELETE FROM hijack WHERE family(expected_prefix) = 6;"
-            self.cursor.execute(sql)
-        if not IPV4:
-            sql = "DELETE FROM hijack WHERE family(expected_prefix) = 4;"
-            self.cursor.execute(sql)
-        self.logger.debug("Filtered by IPV4 and IPV6")
-
-
-class Leak_Table(Generic_Table):
+class Leaks_Table(Data_Table):
     """Leak Table class, inherits from Database.
 
     For a more in depth explanation see the top of the file.
@@ -108,12 +109,14 @@ class Leak_Table(Generic_Table):
 
     __slots__ = []
 
-    
+    name = "leaks"    
+    prefix_column = "leaked_prefix"
+
     def _create_tables(self):
         """Creates tables if they do not exist."""
 
-        sql = """CREATE UNLOGGED TABLE IF NOT EXISTS Leak (
-              leak_id serial PRIMARY KEY,
+        sql = """CREATE UNLOGGED TABLE IF NOT EXISTS leaks (
+              id serial PRIMARY KEY,
               country varchar (50),
               detected_by_bgpmon_peers integer,
               start_time timestamp with time zone,
@@ -132,45 +135,7 @@ class Leak_Table(Generic_Table):
               );"""
         self.cursor.execute(sql)
 
-    
-    def delete_duplicates(self):
-        """Deletes all duplicates from the table."""
-
-        self.logger.info("About to delete duplicates from leak")
-        sql = """DELETE FROM leak a USING leak b
-              WHERE a.leak_id < b.leak_id AND a.event_number = b.event_number
-              ;"""
-        self.cursor.execute(sql)
-        self.logger.debug("Deleted duplicates from leak")
-
-    
-    def filter(self, IPV4=True, IPV6=False):
-        """Filters by IPV4 and IPV6"""
-
-        if not IPV6:
-            sql = "DELETE FROM leak WHERE family(leaked_prefix) = 6;"
-            self.cursor.execute(sql)
-        if not IPV4:
-            sql = "DELETE FROM leak WHERE family(leaked_prefix) = 4;"
-            self.cursor.execute(sql)
-        self.logger.debug("Filtered by IPV4 and IPV6")
-
-    
-    def create_index(self):
-        """Creates indexes on the table for later use."""
-
-        sql = """CREATE INDEX IF NOT EXISTS leak_index ON leak
-                  USING BTREE(start_time, end_time);"""
-        self.cursor.execute(sql)
-
-    
-    def create_temp_table(self, start, end):
-        """We don't deal with this data yet."""
-
-        pass  # Unnessecary at this time
-
-
-class Outage_Table(Generic_Table):
+class Outages_Table(Data_Table):
     """Outage Table class, inherits from Database.
 
     For a more in depth explanation see the top of the file.
@@ -178,12 +143,13 @@ class Outage_Table(Generic_Table):
 
     __slots__ = []
 
+    name = "outages"
     
     def _create_tables(self):
         """Creates tables if they do not exist"""
 
-        sql = """CREATE UNLOGGED TABLE IF NOT EXISTS outage (
-              outage_id serial PRIMARY KEY,
+        sql = """CREATE UNLOGGED TABLE IF NOT EXISTS outages (
+              id serial PRIMARY KEY,
               as_name varchar (200),
               as_number bigint,
               country varchar (25),
@@ -196,35 +162,3 @@ class Outage_Table(Generic_Table):
               url varchar(150)
               );"""
         self.cursor.execute(sql)
-
-    
-    def delete_duplicates(self):
-        """Deletes all duplicates from the table"""
-
-        self.logger.info("About to delete duplicates from outage")
-        sql = """DELETE FROM outage a USING outage b
-              WHERE a.outage_id < b.outage_id
-              AND a.event_number = b.event_number
-              ;"""
-        self.cursor.execute(sql)
-        self.logger.debug("Deleted duplicates from outage")
-
-    
-    def filter(self, IPV4=True, IPV6=False):
-        """This function is called, but ASes don't have prefixes"""
-
-        pass
-
-    
-    def create_index(self):
-        """Creates index for later use."""
-
-        sql = """CREATE INDEX IF NOT EXISTS outage_index ON outage
-                  USING BTREE(start_time, end_time);"""
-        self.cursor.execute(sql)
-
-    
-    def create_temp_table(self, start, end):
-        """We don't deal with this data yet."""
-
-        pass  # unnessecary at this time
