@@ -30,8 +30,6 @@ from .tables import ROVPP_Edge_ASes_Table, ROVPP_Etc_ASes_Table, ROVPP_All_Trial
 from ..relationships_parser import Relationships_Parser
 from ..relationships_parser.tables import AS_Connectivity_Table
 from ..bgpstream_website_parser import BGPStream_Website_Parser
-from ..extrapolator import Extrapolator
-from ..utils import utils, Database, Config, error_catcher, db_connection
 
 __author__ = "Justin Furuness"
 __credits__ = ["Justin Furuness"]

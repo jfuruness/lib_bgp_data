@@ -15,7 +15,7 @@ __status__ = "Development"
 
 import pytest
 
-from ..extrapolator import Extrapolator
+from ..extrapolator_parser import Extrapolator_Parser
 
 
 @pytest.mark.extrapolator

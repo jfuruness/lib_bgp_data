@@ -6,10 +6,6 @@
 For specifics on each test, see the docstrings under each function.
 """
 
-from psycopg2.errors import UndefinedTable
-from ..tables import ROAs_Table
-from ...database import Generic_Table_Test
-
 __author__ = "Justin Furuness"
 __credits__ = ["Justin Furuness"]
 __Lisence__ = "MIT"
@@ -18,6 +14,12 @@ __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
 
+from psycopg2.errors import UndefinedTable
+
+from ..tables import ROAs_Table
+from ...database import Generic_Table_Test
+
+@pytest.mark_roas_parser
 class Test_ROAs_Table(Generic_Table_Test):
     """Tests all functions within the mrt announcements class."""
 

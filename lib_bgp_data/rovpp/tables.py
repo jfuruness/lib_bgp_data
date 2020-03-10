@@ -23,7 +23,7 @@ from random import sample
 from .enums import Policies, Hijack_Types
 from .enums import AS_Types, Conditions as Conds
 from .enums import Control_Plane_Conditions as C_Plane_Conds
-from ..utils import Database, error_catcher, db_connection
+from ..database import Database
 
 __author__ = "Justin Furuness"
 __credits__ = ["Justin Furuness"]

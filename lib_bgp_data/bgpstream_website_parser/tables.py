@@ -22,10 +22,6 @@ Possible future improvements:
     -Add test cases
 """
 
-from psycopg2.extras import RealDictCursor
-from time import strftime, gmtime
-from ..database import Generic_Table
-
 __author__ = "Justin Furuness"
 __credits__ = ["Justin Furuness"]
 __Lisence__ = "MIT"
@@ -33,14 +29,23 @@ __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
+from time import strftime, gmtime
 
-class Hijack_Table(Database):
+from psycopg2.extras import RealDictCursor
+
+from ..database import Generic_Table
+
+class Hijack_Table(Generic_Table):
     """Hijack table class, inherits from database.
 
     For a more in depth explanation see the top of the file.
     """
 
     __slots__ = []
+
+
+    1/0 Fix this thing, should inherit tables and etc.
+        filter should be in generic_table, same with mrt_parser
 
     def _create_tables(self):
         """Creates tables if they do not exist"""
@@ -72,76 +77,6 @@ class Hijack_Table(Database):
                   USING BTREE(start_time, end_time);"""
         self.cursor.execute(sql)
 
-    
-    def create_temp_table(self, start, end):
-        """Creates a hijack table for all hijacks within a time frame.
-
-        Also creates a subprefix hijack table, used in rovpp sims.
-        """
-
-        if None in [start, end]:
-            self.logger.debug("Not creating temporary tables")
-            return
-
-        self.logger.debug("About to create temporary hijack table")
-        self.logger.debug("About to drop hijack temp")
-        self.cursor.execute("DROP TABLE IF EXISTS hijack_temp;")
-        self.logger.debug("Dropped hijack temp")
-
-        # Converts epoch times to utc
-        start = strftime('%Y-%m-%d %H:%M:%S', gmtime(start))
-        end = strftime('%Y-%m-%d %H:%M:%S', gmtime(end))
-
-        # Create table for all hijacks that overlap with the time frame
-        sql = """CREATE UNLOGGED TABLE hijack_temp AS
-                    (SELECT h.more_specific_prefix AS prefix,
-                    h.detected_origin_number AS origin,
-                    h.start_time,
-                    COALESCE(h.end_time, now()) AS end_time,
-                    h.url,
-                    h.expected_prefix,
-                    h.expected_origin_number
-                      FROM hijack h
-                      LEFT JOIN roas r
-                        ON r.prefix >>= h.more_specific_prefix AND r.asn = h.detected_origin_number
-                            AND MASKLEN(h.more_specific_prefix) <= r.max_length
-                      WHERE
-                        (h.start_time, COALESCE(h.end_time, now())) OVERLAPS
-                        (%s::timestamp with time zone, %s::timestamp with time zone)
-                        AND r.asn IS NULL
-              );"""
-        self.cursor.execute(sql, [start, end])
-
-        # Creates indexes on the hijack temp table for what if analysis
-        sqls = ["""CREATE INDEX ON hijack_temp
-                USING GIST (prefix inet_ops, origin);""",
-                "CREATE INDEX ON hijack_temp USING GIST (prefix inet_ops);"]
-        for sql in sqls:
-            self.cursor.execute(sql)
-        self.logger.info("Created temporary hijack table")
-
-        # Gets all subprefix hijacks
-        self._create_subprefix_hijack_table()
-
-    
-    def _create_subprefix_hijack_table(self):
-        """Creates a subprefix hijack tablei. Used in ROVPP sims."""
-
-        # This will get all of the subprefix hijackings within the temp table
-        self.cursor.execute("DROP TABLE IF EXISTS subprefix_hijack_temp ;")
-        sql = """CREATE UNLOGGED TABLE subprefix_hijack_temp AS
-                    (SELECT h.prefix AS more_specific_prefix,
-                    h.origin AS attacker,
-                    h.url,
-                    h.expected_prefix,
-                    h.expected_origin_number AS victim
-                FROM hijack_temp h
-                WHERE h.prefix << h.expected_prefix
-                );"""
-        self.cursor.execute(sql)
-        self.logger.info("Created subprefix hijack table")
-
-    
     def delete_duplicates(self):
         """Deletes all duplicates from the table."""
 
@@ -153,7 +88,6 @@ class Hijack_Table(Database):
         self.cursor.execute(sql)
         self.logger.debug("Duplicates deleted in hijack")
 
-    
     def filter(self, IPV4=True, IPV6=False):
         """Filters by IPV4 and IPV6."""
 
@@ -166,7 +100,7 @@ class Hijack_Table(Database):
         self.logger.debug("Filtered by IPV4 and IPV6")
 
 
-class Leak_Table(Database):
+class Leak_Table(Generic_Table):
     """Leak Table class, inherits from Database.
 
     For a more in depth explanation see the top of the file.
@@ -236,7 +170,7 @@ class Leak_Table(Database):
         pass  # Unnessecary at this time
 
 
-class Outage_Table(Database):
+class Outage_Table(Generic_Table):
     """Outage Table class, inherits from Database.
 
     For a more in depth explanation see the top of the file.

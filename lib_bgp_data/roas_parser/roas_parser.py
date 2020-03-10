@@ -7,19 +7,20 @@ The purpose of this class is to download ROAs from rpki and insert them
 into a database. See README for in depth explanation
 """
 
+__author__ = "Justin Furuness"
+__credits__ = ["Justin Furuness", "Xinyu"]
+__Lisence__ = "MIT"
+__maintainer__ = "Justin Furuness"
+__email__ = "jfuruness@gmail.com"
+__status__ = "Development"
+
+
 from copy import deepcopy
 import re
 import warnings
 from .tables import ROAs_Table
 from ..base_classes import Parser
 from ..utils import utils
-
-__author__ = "Justin Furuness"
-__credits__ = ["Justin Furuness"]
-__Lisence__ = "MIT"
-__maintainer__ = "Justin Furuness"
-__email__ = "jfuruness@gmail.com"
-__status__ = "Development"
 
 
 class ROAs_Parser(Parser):

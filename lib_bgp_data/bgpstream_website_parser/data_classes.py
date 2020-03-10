@@ -6,54 +6,8 @@
 The purpose of these classes is to parse information for BGP hijacks,
 leaks, and outages from bgpstream.com. This information is then stored
 in the database. Please note that each data class inherits from the
-Data class. For each data class, This is done through a series of steps.
-
-1. Initialize the class
-    -Handled in the __init__ function
-    -Sets the table and the csv_path, and then calls __init__ on Data
-2. Call __init__ on the parent class Data.
-    -This initializes all regexes
-    -The data list of all events of that type is also initialized
-3. Rows are appended to each data class
-    -This is handled by the BGPStream_Website_Parser class
-    -The append function is overwritten in the parent Data class
-4. For each row, parse the common elements
-    -Handled by the append _parse_common_elements in the Data class
-    -Gets all information that is generic to all events
-5. Pass extra information to the _parse_uncommon_elements function
-    -This is a function specified by each subclass
-    -This function parses elements that are specific to that event type
-6. Then the row is formatted for csv insertion and appended to self.data
-    -Formatting is handled by the _format_temp_row() in the Data Class
-7. Later the BGPStream_Website_Parser will call the db_insert function
-    -This is handled in the parent Data class
-    -This will insert all rows into a CSV
-        -This is done because CSVs have fast bulk insertion time
-    -The CSV will then be copied into the database
-8. After the data is in the database, the tables will be formatted
-    -First the tables remove unwanted IPV4 and IPV6 values
-    -Then an index is created if it doesn't exist
-    -Then duplicates are deleted if they exist
-    -Then temporary tables are created
-        -These are tables that are subsets of the overall data
-
-Design Choices (summarizing from above):
-    -A parent data class is used because many functions are the same
-     for all data types
-    -This is a mess, parsing this website is messy so I will leave it
-    -Parsing is done from the last element to the first element
-        -This is done because not all pages start the same way
-
-Possible Future Extensions:
-    -Add test cases
-    -Ask bgpstream.com for an api?
-        -It would cause less querying of their site
+Data class. For each data class, see README for in depth anything lol.
 """
-
-
-import re
-from ..utils import utils
-from .tables import Hijack_Table, Outage_Table, Leak_Table
 
 __author__ = "Justin Furuness"
 __credits__ = ["Justin Furuness"]
@@ -62,6 +16,12 @@ __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
+import logging
+import re
+
+from .tables import Hijack_Table, Outage_Table, Leak_Table
+from ..utils import utils
+
 
 class Data:
     """Parent Class for parsing rows of bgpstream.com.
@@ -69,15 +29,14 @@ class Data:
     For a more in depth explanation see the top of the file.
     """
 
-    __slots__ = ['logger', '_as_regex', '_nums_regex', '_ip_regex',
+    __slots__ = ['_as_regex', '_nums_regex', '_ip_regex',
                  '_temp_row', 'data', '_columns']
 
-    @error_catcher()
-    def __init__(self, logger):
+    
+    def __init__(self, csv_dir):
         """Initializes regexes and other important info."""
 
-        self.logger = logger
-        self.logger.debug("Initialized row")
+        logging.debug("Initialized row")
         # This regex parses out the AS number and name from a string of both
         self._as_regex = re.compile(r'''
                                     (?P<as_name>.+?)\s\(
@@ -92,11 +51,14 @@ class Data:
         self._ip_regex = re.compile(r'.+?:(.+)')
         # This is a list of parsed event information
         self.data = []
+
+        self.csv_path = f"{csv_dir}/{self.__class__.__name__.lower()}.csv"
+
         # This gets the columns of the event type for the table
-        with db_connection(self.table, self.logger) as t:
+        with self.table() as t:
             self._columns = t.columns
 
-    @error_catcher()
+    
     def append(self, row):
         """Parses, formats, and appends a row of data from bgpstream.com.
 
@@ -112,8 +74,8 @@ class Data:
         # Formats the temp_row and appends it to the list of events
         self.data.append(self._format_temp_row())
 
-    @error_catcher()
-    def db_insert(self, start, end, IPV4=True, IPV6=False):
+    
+    def db_insert(self, IPV4=True, IPV6=False):
         """Inserts the data into the database and formats it.
 
         Start and end should be in epoch. The data is inserted into the
@@ -123,25 +85,23 @@ class Data:
         """
 
         # Inserts data into the database
-        utils.rows_to_db(self.logger, self.data, self.csv_path, self.table,
+        utils.rows_to_db(self.data, self.csv_path, self.table,
                          clear_table=False)
 
-        with db_connection(self.table, self.logger) as db_table:
+        with self.table() as db_table:
             # Removes unwanted prefixes
             db_table.filter(IPV4, IPV6)
             # Creates indexes
             db_table.create_index()
             # Deletes duplicates in the table
             db_table.delete_duplicates()
-            # Creates all subtables
-            db_table.create_temp_table(start, end)
 
 
 ########################
 ### Helper Functions ###
 ########################
 
-    @error_catcher()
+    
     def _parse_common_elements(self, row):
         """Parses common tags and adds data to temp_row.
 
@@ -160,7 +120,9 @@ class Data:
         try:
             # If there is just one string this will work
             as_info = children[5].string.strip()
-        except:  # Should not use bare except
+        except Exception as e:  # Should not use bare except
+            print(e)
+            1/0
             # If there is more than one AS this will work
             stripped = children[5].stripped_strings
             as_info = [x for x in stripped]
@@ -174,22 +136,22 @@ class Data:
         # Returns the as info and html for the page with more info
         return as_info, utils.get_tags(url, "td")[0]
 
-    @error_catcher()
+    
     def _parse_as_info(self, as_info):
         """Performs regex on as_info to return AS number and AS name.
 
         This is a mess, but that's because parsing html is a mess.
         """
 
-        # Get group objects from a regex search
-        as_parsed = self._as_regex.search(as_info)
         # If the as_info is "N/A" and the regex returns nothing
-        if as_parsed is None:
+        if (as_parsed := self._as_regex.search(as_info)) is None:
             # Sometimes we can get this
             try:
                 return None, re.findall(r'\d+', as_info)[0]
             # Sometimes not
-            except:  # Should not use bare except
+            except Exception as e:  # Should not use bare except
+                print(e)
+                1/0
                 return None, None
         else:
             # This is the first way the string can be formatted:
@@ -200,7 +162,7 @@ class Data:
                 return as_parsed.group("as_name2"),\
                     as_parsed.group("as_number2")
 
-    @error_catcher()
+    
     def _format_temp_row(self):
         """Formats row vals for input into the csv files.
 
@@ -211,11 +173,10 @@ class Data:
         # for like that one stupid AS that has a quote in it's name
         return_list = []
         for column in self._columns:
-            val = self._temp_row.get(column)
-            if val is not None:
-                return_list.append(val.replace('"', ""))
+            if (val := self._temp_row.get(column)) is None:
+                return_list.append(None)
             else:
-                return_list.append(val)
+                return_list.append(val.replace('"', ""))
         return return_list
 
 
@@ -225,19 +186,11 @@ class Hijack(Data):
     For a more in depth explanation see the top of the file.
     """
 
-    __slots__ = ['table', 'csv_path']
+    __slots__ = []
 
-    @error_catcher()
-    def __init__(self, logger, csv_dir):
-        """Initializes row instance and determine info about it.
+    table = Hijack_Table
 
-        For a more in depth explanation see the top of the file."""
-
-        self.table = Hijack_Table
-        self.csv_path = "{}/hijack.csv".format(csv_dir)
-        Data.__init__(self, logger)
-
-    @error_catcher()
+    
     def _parse_uncommon_info(self, as_info, extended_children):
         """Parses misc hijack row info."""
 
@@ -266,7 +219,7 @@ class Hijack(Data):
                                ).replace('[', '{').replace(']', '}')
         self._temp_row["detected_by_bgpmon_peers"] = self._nums_regex.search(
             extended_children[end - 1].string.strip()).group(1)
-        self.logger.debug("Parsed Hijack Row")
+        logging.debug("Parsed Hijack Row")
 
 
 class Leak(Data):
@@ -275,19 +228,10 @@ class Leak(Data):
     For a more in depth explanation see the top of the file.
     """
 
-    __slots__ = ['table', 'csv_path']
+    __slots__ = []
 
-    @error_catcher()
-    def __init__(self, logger, csv_dir):
-        """Initializes row instance and determine info about it.
-
-        For a more in depth explanation see the top of the file."""
-
-        self.table = Leak_Table
-        self.csv_path = "{}/leak.csv".format(csv_dir)
-        Data.__init__(self, logger)
-
-    @error_catcher()
+    table = Leak_Table
+    
     def _parse_uncommon_info(self, as_info, extended_children):
         """Parses misc leak row info."""
 
@@ -326,7 +270,7 @@ class Leak(Data):
             example_as_path.replace('[', '{').replace(']', '}')
         self._temp_row["detected_by_bgpmon_peers"] = self._nums_regex.search(
             extended_children[end - 1].string.strip()).group(1)
-        self.logger.debug("Parsed leak")
+        logging.debug("Parsed leak")
 
 
 class Outage(Data):
@@ -335,19 +279,10 @@ class Outage(Data):
     For a more in depth explanation see the top of the file.
     """
 
-    __slots__ = ['table', 'csv_path']
+    __slots__ = []
 
-    @error_catcher()
-    def __init__(self, logger, csv_dir):
-        """Initializes row instance and determine info about it.
-
-        For a more in depth explanation see the top of the file."""
-
-        self.table = Outage_Table
-        self.csv_path = "{}/outage.csv".format(csv_dir)
-        Data.__init__(self, logger)
-
-    @error_catcher()
+    table = Outage_Table
+ 
     def _parse_uncommon_info(self, as_info, extended_children):
         """Parses misc outage row info."""
 
@@ -362,4 +297,4 @@ class Outage(Data):
         prefix_info = self.nums_regex.findall(prefix_string)
         self._temp_row["number_prefixes_affected"] = prefix_info[0]
         self._temp_row["percent_prefixes_affected"] = prefix_info[1]
-        self.logger.debug("Parsed Outage")
+        logging.debug("Parsed Outage")

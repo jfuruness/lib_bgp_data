@@ -14,7 +14,7 @@ __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
 from .relationships_parser import Relationships_Parser
-#from .roas_parser import ROAs_Parser, ROAs_Collector
+from .roas_parser import ROAs_Parser, ROAs_Collector
 #from .bgpstream_website_parser import BGPStream_Website_Parser
 from .mrt_parser import MRT_Parser, MRT_Sources
 #from .what_if_analysis import What_If_Analysis
