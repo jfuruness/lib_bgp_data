@@ -66,7 +66,8 @@ class BGPStream_Website_Parser(Parser):
 
         # Parses rows if they are the event types desired
         rows: list = self._get_rows(row_limit)
-        for row in tqdm(rows, desc="Parsing rows", total=len(rows)):
+        tqdm_desc = f"Parsing {' and '.join(self._data.keys())}"
+        for row in tqdm(rows, desc=tqdm_desc, total=len(rows)):
             # Parses the row
             self._parse_row(row, known_events, refresh)
 
@@ -112,7 +113,7 @@ class BGPStream_Website_Parser(Parser):
                 self._data[_type].append(row)
                 logging.debug("Appending")
 
-    def _get_row_front_page_info(self, row) -> tuple:
+    def _get_row_front_page_info(self, row: bs4.element.Tag) -> tuple:
         """Returns type of event, start, end, url, event num.
 
         Essentially, all info available on front page of bgpstream.com.
