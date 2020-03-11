@@ -16,7 +16,7 @@ __status__ = "Development"
 from .relationships_parser import Relationships_Parser
 from .roas_parser import ROAs_Parser, ROAs_Collector
 from .bgpstream_website_parser import BGPStream_Website_Parser
-from .bgpstream_website_parser import Event_types as BGPStream_Types
+from .bgpstream_website_parser import Event_Types as BGPStream_Types
 from .mrt_parser import MRT_Parser, MRT_Sources
 #from .what_if_analysis import What_If_Analysis
 from .rpki_validator import RPKI_Validator_Wrapper, RPKI_Validator_Parser

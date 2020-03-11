@@ -54,6 +54,7 @@ Possible Future Extensions:
 """
 
 from .bgpstream_website_parser import BGPStream_Website_Parser
+from .event_types import Event_Types
 
 __author__ = "Justin Furuness"
 __credits__ = ["Justin Furuness"]

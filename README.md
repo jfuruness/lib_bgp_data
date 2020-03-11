@@ -289,8 +289,13 @@ There are two ways you can run this parser. It will run with all the defaults. L
 
 Best way:
 ```bash
-mrt_parser
+lib_bgp_data --mrt_parser
 ```
+For debugging:
+```bash
+lib_bgp_data --mrt_parser --debug
+```
+
 
 This example must be run over the package, so cd into one directory above that package
 ```bash
@@ -500,7 +505,10 @@ Best way:
 ```bash
 lib_bgp_data --mrt_parser
 ```
-
+For debugging:
+```bash
+lib_bgp_data --mrt_parser --debug
+```
 This example must be run over the package, so cd into one directory above that package
 ```bash
 python3 -m lib_bgp_data --mrt_parser
@@ -658,7 +666,10 @@ Best way:
 ```bash
 lib_bgp_data --relationships_parser
 ```
-
+For debugging:
+```bash
+lib_bgp_data --relationships_parser --debug
+```
 This example must be run over the package, so cd into one directory above that package
 ```bash
 python3 -m lib_bgp_data --relationships_parser
@@ -832,6 +843,10 @@ Depending on the permissions of your system, and whether or not you pip installe
 
 ```lib_bgp_data --roas_parser```
 
+For debugging:
+```bash
+lib_bgp_data --roas_parser --debug
+```
 or a variety of other possible commands, I've tried to make it fairly idiot proof with the capitalization and such.
 
 The other way you can run it is with:
@@ -947,7 +962,10 @@ Best way:
 ```bash
 lib_bgp_data --extrapolator_parser
 ```
-
+For debugging:
+```bash
+lib_bgp_data --extrapolator_parser --debug
+```
 This example must be run over the package, so cd into one directory above that package
 ```bash
 python3 -m lib_bgp_data --extrapolator_parser
@@ -1076,8 +1094,18 @@ BGPStream_Website_Parser().run(refresh=True)
 ```
 
 #### From the Command Line
-Coming Soon to a theater near you
-
+Best way:
+```bash
+lib_bgp_data --bgpstream_website_parser
+```
+For debugging:
+```bash
+lib_bgp_data --bgpstream_website_parser --debug
+```
+Must be called on the library:
+```bash
+python3 -m lib_bgp_data --bgpstream_website_parser
+```
 ### BGPStream Website Table Schema
 * [lib\_bgp\_data](#lib_bgp_data)
 * [BGPStream Website Submodule](#bgpstream-website-submodule)
@@ -1329,7 +1357,10 @@ Best way:
 ```bash
 lib_bgp_data --rpki_validator_parser
 ```
-
+For debugging:
+```bash
+lib_bgp_data --rpki_validator_parser --debug
+```
 This example must be run over the package, so cd into one directory above that package
 ```bash
 python3 -m lib_bgp_data --rpki_validator_parser
@@ -1774,7 +1805,6 @@ See: [Installation Instructions](#installation-instructions)
 ## Logging Submodule
    * [lib\_bgp\_data](#lib_bgp_data)
    * [Description](#logging-description)
-   * [Error Catcher](#error-catcher)
    * [Design Choices](#logging-design-choices)
    * [Todo and Possible Future Improvements](#todopossible-future-improvements)
 
@@ -1783,22 +1813,14 @@ Status: Development
 ### Logging Description
 * [lib\_bgp\_data](#lib_bgp_data)
 * [Logger Submodule](#logger-submodule)
-The Logger class used to be the logging class that was used. This class
-sets a logging level for printing and for writing to a file. However,
-it turns out that the logging module is insanely bad for multithreading.
-So insane, that you cannot even import the dang thing without having it
-deadlock on you. Crazy, I know. So therefore, I created another logging
-class called Thread_Safe_Logger. This class basically emulates a logger
-except that it only prints, and never writes to a file. It also never
-deadlocks.
 
-There is also a nice decorator called error_catcher. The point of this
-was supposed to be to catch any errors that occur and fail nicely with
-good debug statements, which is especially useful when multithreading.
-However with unit testing, it needs to be able fail really horribly,
-so that has become disabled as well. Still, eventually it will be
-fixed, so all functions that have self should be contained within the
-error catcher.
+In utils there is a file called logger.py. In this file there is a config_logging function with inputs as to the section in the config to run from, and the level of the logging. This will configure the logging to the standard out and to a file in /var/log/lib_bgp_data/.
+
+The default logging.INFO and the default section is bgp.
+
+You can run debug logs with --debug in the command line arguments
+
+logging in certain files is disabled because logging adds heavy overhead to the point of deadlocking for highly parallelizable programs.
 
 For an explanation on how logging works:
 logging has different levels. If you are below the set logging level,
@@ -1811,17 +1833,12 @@ nothing gets recorded. The levels are, in order top to bottom:
         logging.DEBUG
         logging.NOTSET
 
-### Error Catcher
-* [lib\_bgp\_data](#lib_bgp_data)
-* [Logger Submodule](#logger-submodule)
-A decorator to be used in all class functions that catches errors and fails nicely with good debug information
-
 ### Logging Design Choices
 * [lib\_bgp\_data](#lib_bgp_data)
 * [Logger Submodule](#logger-submodule)
-    * Logger class is not used because logging deadlocks just on import
-    * Thread_Safe_Logger is used because it does not deadlock
-    * error_catcher is used so that functions fail nicely
+    * A catch all error catcher is no longer used, instead if a parser errors the exception is logged
+    * logging will deadlock in parallel processes and must be disabled
+    * config_logging is designed so that logging can never be configured twice
 
 ## Installation
    * [lib\_bgp\_data](#lib_bgp_data)
@@ -2177,6 +2194,3 @@ A: Read these:
 Q: What is the fastest way to dump these tables?
 
 A: ```pgdump bgp | pigz -p <numthreads> > jdump.sql.gz``` I have tested all of the different possibilities, and this is the fastest for dumping and reuploading for our tables. Note that indexes do not get dumped and must be recreated.
-
-
-

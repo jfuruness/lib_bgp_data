@@ -26,9 +26,11 @@ __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
 from argparse import ArgumentParser, Action
+from logging import DEBUG
 from sys import argv
 
 from .base_classes import Parser
+from .utils import config_logging
 
 
 def main():
@@ -50,6 +52,16 @@ def main():
         parser.add_argument(f"--{cls.__name__.lower()}",
                             nargs=0,
                             action=argparse_action_cls)
+
+    # Configure logging to be debug if passed in
+    # I know this should be done differently, but to make the module extendable
+    # Sacrafices had to be made, and destroying argparse was one of them
+    for i, arg in enumerate(argv):
+        if "--debug" == arg.lower():
+            config_logging(DEBUG)
+            argv.pop(i)
+            break
+
     parser.parse_args()
 
 
