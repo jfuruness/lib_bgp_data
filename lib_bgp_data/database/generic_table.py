@@ -22,6 +22,13 @@ There are also some convenience funcs, documented below
 
 # Document the convenience funcs in readme!
 
+__authors__ = ["Justin Furuness"]
+__credits__ = ["Justin Furuness"]
+__Lisence__ = "MIT"
+__maintainer__ = "Justin Furuness"
+__email__ = "jfuruness@gmail.com"
+__status__ = "Development"
+
 import inspect
 import warnings
 import logging
@@ -29,15 +36,8 @@ from multiprocessing import cpu_count
 from subprocess import check_call
 import os
 import time
+
 from .database import Database
-
-
-__authors__ = ["Justin Furuness"]
-__credits__ = ["Justin Furuness"]
-__Lisence__ = "MIT"
-__maintainer__ = "Justin Furuness"
-__email__ = "jfuruness@gmail.com"
-__status__ = "Development"
 
 
 # SHOULD INHERIT DECOMETA!

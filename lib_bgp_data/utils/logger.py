@@ -16,13 +16,13 @@ import os
 
 import multiprocessing_logging
 
-from .config import set_global_section_header
+from ..database.config import set_global_section_header
 
 def config_logging(level=logging.INFO, section=None):
     """Configures logging to log to a file"""
 
     try:
-        from .config import global_section_header
+        from ..database.config import global_section_header
     except ImportError:
         global_section_header = set_global_section_header(section)
 

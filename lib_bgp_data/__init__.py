@@ -13,6 +13,8 @@ __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
+import os
+
 from .relationships_parser import Relationships_Parser
 from .roas_parser import ROAs_Parser, ROAs_Collector
 from .bgpstream_website_parser import BGPStream_Website_Parser
@@ -22,6 +24,11 @@ from .mrt_parser import MRT_Parser, MRT_Sources
 from .rpki_validator import RPKI_Validator_Wrapper, RPKI_Validator_Parser
 #from .api import create_app
 from .extrapolator_parser import Extrapolator_Parser
-#from .utils import Install
 from .database import Database
 #from .forecast import Forecast
+
+class NotSudo(Exception):
+    pass
+
+if os.getuid() != 0:
+    raise NotSudo("Sudo priveleges are required")

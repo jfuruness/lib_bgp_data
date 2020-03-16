@@ -63,6 +63,9 @@ class Test_MRT_File:
         regex to get desired output from a file.
         """
 
+        1/0
+        # because doesn't delete files properlydon't let it run at all
+
         args = ' | cut -d "|" -f1,2,3,10 | sed -n "s/[=|+|-]|\([0|1|2|3|4|5'
         args += '|6|7|8|9|%|\.|\:|a|b|c|d|e|f|/]\+\)|\([^{]*[[:space:]]\)*'
         args += '\([^{]*\)|\(.*\)/\\1\\t{\\2\\3}\\t\\3\\t\\4/p"'
@@ -101,6 +104,8 @@ class Test_MRT_File:
         """This will test if the method '_bgpdump_args' uses correct regex
         to get desired output from a file.
         """
+        1/0
+        # because doesn't delete files properlydon't let it run at all
 
         args = ' | cut -d "|" -f2,6,7 | sed -e "/{.*}/d" -e "s/\(.*|.*|\)'
         args += '\(.*$\)/\\1{\\2}/g" -e "s/ /, /g" -e "s/|/\t/g"'

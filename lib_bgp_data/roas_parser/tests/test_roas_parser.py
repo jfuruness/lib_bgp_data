@@ -20,7 +20,7 @@ import pytest
 from ..roas_parser import ROAs_Parser
 from ...database import Database
 
-@pytest.mark_roas_parser
+@pytest.mark.roas_parser
 class Test_ROAs_Parser:
     """Tests all functions within the ROAs Parser class."""
 

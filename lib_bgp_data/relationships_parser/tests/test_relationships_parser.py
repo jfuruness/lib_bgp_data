@@ -13,7 +13,7 @@ import validators
 
 from ..relationships_parser import Relationships_Parser
 from ...database import Database
-from ...utils import utils, Config
+from ...utils import utils
 
 
 

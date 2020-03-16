@@ -35,6 +35,7 @@ class Relationships_Parser(Parser):
         """
 
         Provider_Customers_Table()
+        
         url = url if url else self._get_urls()[0]
         Rel_File(self.path, self.csv_dir, url).parse_file()
         utils.delete_paths([self.csv_dir, self.path])
@@ -45,7 +46,6 @@ class Relationships_Parser(Parser):
         # creates and closes table
         with AS_Connectivity_Table(clear=True) as _conn_table:
             _conn_table.fill_table()
-
 
 ########################
 ### Helper Functions ###

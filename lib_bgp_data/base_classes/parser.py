@@ -18,7 +18,7 @@ import logging
 import pytest
 
 from ..utils import utils, config_logging
-from ..utils.config import set_global_section_header
+from ..database.config import set_global_section_header
 
 
 class Parser:
@@ -51,7 +51,7 @@ class Parser:
         separate databases with different sections."""
 
         set_global_section_header(kwargs.get("section"))
-        from ..utils.config import global_section_header
+        from ..database.config import global_section_header
         kwargs["section"] = kwargs.get("section", global_section_header)
         # The class name. This because when parsers are done,
         # they aggressively clean up. We do not want parser to clean up in

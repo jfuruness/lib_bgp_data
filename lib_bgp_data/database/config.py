@@ -7,15 +7,6 @@ To see the config itself, see the create_config function and view the
 _config dictionary.
 """
 
-import os
-from datetime import datetime
-import logging
-
-import pytest
-from configparser import ConfigParser as SCP
-from configparser import NoSectionError
-from psutil import virtual_memory
-
 __authors__ = ["Justin Furuness", "Matt Jaccino"]
 __credits__ = ["Justin Furuness", "Matt Jaccino"]
 __Lisence__ = "MIT"
@@ -24,7 +15,15 @@ __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
 
-def set_global_section_header(section="bgp"):
+from datetime import datetime
+import logging
+import os
+
+import pytest
+from configparser import NoSectionError, ConfigParser as SCP
+from psutil import virtual_memory
+
+def set_global_section_header(section=None):
     global global_section_header
     if hasattr(pytest, 'global_running_test') and pytest.global_running_test:
         global_section_header = "test"
@@ -35,13 +34,13 @@ def set_global_section_header(section="bgp"):
 class Config:
     """Interact with config file"""
 
-    __slots__ = ["path", "logger", "section"]
+    __slots__ = ["section"]
 
+    path = "/etc/bgp/bgp.conf"
     
-    def __init__(self, section, path="/etc/bgp/bgp.conf"):
+    def __init__(self, section):
         """Initializes path for config file."""
 
-        self.path = path
         self.section = section
         # Declare the section header to be global so Database can refer to it
         set_global_section_header(section)
@@ -63,8 +62,8 @@ class Config:
         # Removes old conf section
         self._remove_old_config_section(self.section)
         # Gets ram on the machine
-        _ram = int((virtual_memory().available/1000/1000)*.9)
-        logging.info("Setting ram to {}".format(_ram))
+        _ram = int((virtual_memory().available / 1000 / 1000) * .9)
+        logging.info(f"Setting ram to {_ram}")
 
         # Conf info
         _config = SCP()
@@ -86,9 +85,8 @@ class Config:
         try:
             os.makedirs(os.path.split(self.path)[0])
         except FileExistsError:
-            logging.debug("{} exists, not creating new directory".format(
-                os.path.split(self.path)[0]))
-
+            logging.debug(f"{os.path.split(self.path)[0]} exists, "
+                          "not creating new directory")
     
     def _remove_old_config_section(self, section):
         """Removes the old config file if it exists."""
@@ -118,17 +116,37 @@ class Config:
         except ValueError:
             return string
 
-    
-    def get_db_creds(self):
+    def get_db_creds(self, error=False):
         """Returns database credentials from the config file."""
 
-        # section = "bgp"
-        subsections = ["user", "host", "database"]
-        args = {x: self._read_config(self.section, x) for x in subsections}
-        args["password"] = self._read_config(self.section,
-                                             "password",
-                                             raw=True)
-        return args
+        try:
+            # section = "bgp"
+            subsections = ["user", "host", "database"]
+            args = {x: self._read_config(self.section, x) for x in subsections}
+            args["password"] = self._read_config(self.section,
+                                                 "password",
+                                                 raw=True)
+            return args
+
+        except NoSectionError as e:
+            if error:
+                raise NoSectionError              
+            self.install()
+            return self.get_db_creds()
+
+    def install(self):
+        """Installs the database section"""
+
+        try:
+            self.get_db_creds(error=True)
+        except NoSectionError as e:
+            # Database section is not installed, install it
+            # Needed here due to circular imports
+            from .postgres import Postgres
+            Postgres().install(self.section)
+            self.__init__(self.section)
+            return self.get_db_creds()
+
 
     @property
     def ram(self):
@@ -147,16 +165,15 @@ class Config:
 
             typical_cmd = "sudo systemctl restart postgresql@12-main.service"
 
-            prompt = "Enter the command to restart postgres\n"
-            prompt += "0 or Enter: "
-            prompt += typical_cmd + "\n"
-            prompt += "1: sudo systemctl restart postgresql: \n"
-            prompt += "Custom: Enter cmd for your machine\n"
+            prompt = ("Enter the command to restart postgres\n"
+                      f"Enter: {typical_cmd}\n"
+                      "Custom: Enter cmd for your machine\n")
+            if hasattr(pytest, "global_running_test") and\
+                 pytest.global_running_test:
+                 return typical_cmd
             cmd = input(prompt)
-            if cmd == "" or "0":
+            if cmd == "":
                 cmd = typical_cmd
-            elif cmd == "1":
-                cmd = "sudo systemctl restart postgresql"
         return cmd
 
     def _write_to_config(self, section, subsection, string):

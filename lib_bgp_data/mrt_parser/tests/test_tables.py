@@ -31,7 +31,7 @@ class Test_MRT_Announcements_Table(Generic_Table_Test):
     # Needed for inheritance
     table_class = MRT_Announcements_Table
 
-    @pytest.mkar.skip(reason="Should be moved to generic table test")
+    @pytest.mark.skip(reason="Should be moved to generic table test")
     def test_IPV_filtering(self):
         """Tests the IPV filtering function of the mrt table class.
 

@@ -30,7 +30,7 @@ from pathos.multiprocessing import ProcessingPool
 from contextlib import contextmanager
 from multiprocessing import cpu_count, Queue, Process, Manager
 from subprocess import check_call, DEVNULL
-from .config import set_global_section_header
+from ..database.config import set_global_section_header
 
 __authors__ = ["Justin Furuness", "Matt Jaccino"]
 __credits__ = ["Justin Furuness", "Matt Jaccino"]

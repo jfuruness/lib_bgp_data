@@ -31,18 +31,6 @@ Design Choices:
 Possible Future improvements:
 -Move unhinge and rehinge db to different sql files."""
 
-# Due to circular imports this must be here
-from contextlib import contextmanager
-import psycopg2
-from psycopg2.extras import RealDictCursor
-from multiprocessing import cpu_count
-from subprocess import check_call
-import logging
-import os
-import time
-from ..utils import Config, utils, config_logging
-
-
 __authors__ = ["Justin Furuness", "Matt Jaccino"]
 __credits__ = ["Justin Furuness", "Matt Jaccino"]
 __Lisence__ = "MIT"
@@ -51,30 +39,49 @@ __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
 
+import logging
+from multiprocessing import cpu_count
+import os
+import time
+
+import psycopg2
+from psycopg2.extras import RealDictCursor
+
+from .config import Config
+from ..utils import utils, config_logging
+
 class Database:
     """Interact with the database"""
 
-    __slots__ = ['conn', 'cursor', 'clear']
+    __slots__ = ['conn', 'cursor', '_clear']
 
-    # NOTE: SHOULD INHERIT DECOMETA HERE!!!
-
-    
     def __init__(self, cursor_factory=RealDictCursor, clear=False):
         """Create a new connection with the database"""
 
         # Initializes self.logger
         config_logging()
         self._connect(cursor_factory)
-        self.clear=clear
+        self._clear = clear
 
     def __enter__(self):
-        if self.clear and type(self) != Database:
+        """This allows this class to be used as a context manager
+
+        With this you don't need to worry about closing connections.
+        """
+
+        # Checks if it has attributes, because this parent class does not
+        # Only the generic table has these attributes
+        # If clear is set clear the table
+        if self._clear and hasattr(self, "clear_table"):
             self.clear_table()
-            if hasattr(self, "_create_tables"):
-                self._create_tables()
+        # Create the tables if possible
+        if hasattr(self, "_create_tables"):
+            self._create_tables()
         return self
 
     def __exit__(self, type, value, traceback):
+        """Closes connection, exits contextmanager"""
+
         self.close()
         
     def _connect(self, cursor_factory=RealDictCursor):
@@ -82,7 +89,9 @@ class Database:
 
         Note that RealDictCursor returns everything as a dictionary."""
 
-        from ..utils.config import global_section_header
+        # Gets the global section header to connect to that db
+        from .config import global_section_header
+        assert global_section_header is not None
         # Database needs access to the section header
         kwargs = Config(global_section_header).get_db_creds()
         if cursor_factory:
@@ -105,10 +114,13 @@ class Database:
             # Creates tables if do not exist
             self._create_tables()
 
-    def execute(self, sql, data=None):
+    def execute(self, sql: str, data: iter = None) -> list:
         """Executes a query. Returns [] if no results."""
 
-        assert data is None or isinstance(data, list) or isinstance(data, tuple), "Data must be list/tuple"
+        assert (data is None
+                or isinstance(data, list)
+                or isinstance(data, tuple)), "Data must be list/tuple"
+
         if data is None:
             self.cursor.execute(sql)
         else:
@@ -116,12 +128,12 @@ class Database:
         try:
             return self.cursor.fetchall()
         except psycopg2.ProgrammingError as e:
-            logging.debug(f"No results to fetch: {e}")
             return []
 
-    def multiprocess_execute(self, sqls):
+    def multiprocess_execute(self, sqls: list):
         """Executes sql statements in parallel"""
 
+        # Must close so connection isn't duplicated
         self.close()
         with utils.Pool(None, 1, "database execute") as db_pool:
             db_pool.map(lambda self, sql: self._reconnect_execute(sql),
@@ -129,14 +141,18 @@ class Database:
                         sqls)
         self.__init__()
 
-    def _reconnect_execute(self, sql):
+    def _reconnect_execute(self, sql: str):
         """To be used for parellel queries.
 
         In parallel queries, one connection between multiple processes
-        is not allowed."""
+        is not allowed.
+        """
 
-        self.__init__(logging)
+        # Connect to db
+        self.__init__()
+        # Execute sql
         self.execute(sql)
+        # Close db
         self.close()
 
     def close(self):
@@ -159,88 +175,3 @@ class Database:
         self.execute("CHECKPOINT;")
         if full:
             self.execute("VACUUM FULL ANALYZE;")
-
-    def unhinge_db(self):
-        """Enhances database, but doesn't allow for writing to disk."""
-
-        logging.info("unhinging db")
-        # access to section header
-        ram = Config(global_section_header).ram
-        # This will make it so that your database never writes to
-        # disk unless you tell it to. It's faster, but harder to use
-        sqls = [  # https://www.2ndquadrant.com/en/blog/
-                # basics-of-tuning-checkpoints/
-                # manually do all checkpoints to abuse this thing
-                "ALTER SYSTEM SET checkpoint_timeout TO '1d';",
-                "ALTER SYSTEM SET checkpoint_completion_target TO .9;",
-                # The amount of ram that needs to be hit before a write do disk
-                "ALTER SYSTEM SET max_wal_size TO '{}MB';".format(ram-1000),
-                # Disable autovaccum
-                "ALTER SYSTEM SET autovacuum TO off;",
-                # Change max number of workers
-                # Since this is now manual it can be higher
-                "ALTER SYSTEM SET autovacuum_max_workers TO {};".format(
-                    cpu_count() - 1),
-                # Change the number of max_parallel_maintenance_workers
-                # Since its manual it can be higher
-                "ALTER SYSTEM SET max_parallel_maintenance_workers TO {};"\
-                    .format(cpu_count() - 1),
-                "ALTER SYSTEM SET maintenance_work_mem TO '{}MB';".format(
-                    int(ram/5))]
-
-        utils.delete_paths("/tmp/db_modify.sql")
-        # Writes sql file
-        with open("/tmp/db_modify.sql", "w+") as db_mod_file:
-            for sql in sqls:
-                db_mod_file.write(sql + "\n")
-        # Calls sql file
-        check_call("sudo -u postgres psql -f /tmp/db_modify.sql", shell=True)
-        self._restart_postgres()
-        # Removes sql file to clean up
-        os.remove("/tmp/db_modify.sql")
-        logging.debug("unhinged db")
-
-    def rehinge_db(self):
-        """Restores postgres 11 defaults"""
-
-
-        logging.info("rehinging db")
-        # This will make it so that your database never writes to
-        # disk unless you tell it to. It's faster, but harder to use
-        sqls = [  # https://www.2ndquadrant.com/en/blog/
-                # basics-of-tuning-checkpoints/
-                # manually do all checkpoints to abuse this thing
-                "ALTER SYSTEM SET checkpoint_timeout TO '5min';",
-                "ALTER SYSTEM SET checkpoint_completion_target TO .5;",
-                # The amount of ram that needs to be hit before a write do disk
-                "ALTER SYSTEM SET max_wal_size TO '1GB';",
-                # Disable autovaccum
-                "ALTER SYSTEM SET autovacuum TO ON;",
-                # Change max number of workers
-                # Since this is now manual it can be higher
-                "ALTER SYSTEM SET autovacuum_max_workers TO 3;",
-                # Change the number of max_parallel_maintenance_workers
-                # Since its manual it can be higher
-                "ALTER SYSTEM SET max_parallel_maintenance_workers TO 2;",
-                "ALTER SYSTEM SET maintenance_work_mem TO '64MB';"]
-        utils.delete_paths("/tmp/db_modify.sql")
-        # Writes sql file
-        with open("/tmp/db_modify.sql", "w+") as db_mod_file:
-            for sql in sqls:
-                db_mod_file.write(sql + "\n")
-        # Calls sql file
-        check_call("sudo -u postgres psql -f /tmp/db_modify.sql", shell=True)
-        self._restart_postgres()
-        # Removes sql file to clean up
-        os.remove("/tmp/db_modify.sql")
-        logging.debug("rehinged db")
-
-    def _restart_postgres(self):
-        """Restarts postgres and all connections."""
-
-        self.close()
-        # access to section header
-        check_call(Config(global_section_header).restart_postgres_cmd,
-                   shell=True)
-        time.sleep(30)
-        self._connect(create_tables=False)

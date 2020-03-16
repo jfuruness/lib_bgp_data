@@ -6,15 +6,15 @@
 For specifics on each test, see the docstrings under each function.
 """
 
-from psycopg2.errors import UndefinedTable
-import pytest
-
-__author__ = "Justin Furuness", "Matt Jaccino"
+__authors__ = ["Justin Furuness", "Matt Jaccino"]
 __credits__ = ["Justin Furuness", "Matt Jaccino"]
 __Lisence__ = "MIT"
 __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
+
+from psycopg2.errors import UndefinedTable
+import pytest
 
 
 class Generic_Table_Test:
