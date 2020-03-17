@@ -12,7 +12,7 @@ from .api_utils import validate_asns, validate_policies, format_json, dictify
 
 __author__ = "Justin Furuness"
 __credits__ = ["Justin Furuness"]
-__Lisence__ = "MIT"
+__Lisence__ = "BSD"
 __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Development"

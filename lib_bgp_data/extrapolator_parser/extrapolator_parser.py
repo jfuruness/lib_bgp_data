@@ -10,7 +10,7 @@ For the specifics on how the extrapolator is run see each function
 
 __author__ = "Justin Furuness"
 __credits__ = ["Justin Furuness"]
-__Lisence__ = "MIT"
+__Lisence__ = "BSD"
 __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
@@ -63,7 +63,7 @@ class Extrapolator_Parser(Parser):
 
         logging.debug("Validating table exist that extrapolator needs")
         with Database() as db:
-            sql = "SELECT * FROM {} LIMIT 1;"
+            sql = "SELECT * FROM {} LIBSD 1;"
 
             assert len(db.execute(sql.format(input_table))) > 0,\
                 f"{input_table} is empty and is necessary for extrapolator"

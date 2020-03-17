@@ -9,7 +9,7 @@ into a database. See README for in depth explanation
 
 __author__ = "Justin Furuness"
 __credits__ = ["Justin Furuness", "Xinyu"]
-__Lisence__ = "MIT"
+__Lisence__ = "BSD"
 __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Development"

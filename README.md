@@ -2061,7 +2061,7 @@ This will install the package, force the command line arguments to be installed,
 You can test the package if in development by moving/cd into the directory where setup.py is located and running:
 ```sudo python3 setup.py test```
 
-To test a specific submodule, run pytest --help. Then you can run pytest -m <submodule_name> and onl tests from that submodule will be run.
+To test a specific submodule, run pytest --markers. Then you can run pytest -m <submodule_name> and onl tests from that submodule will be run.
 
 Also note that slow tests are marked as slow. So you can not run slow tests by doing pytest -m "not slow".
 

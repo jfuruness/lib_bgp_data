@@ -24,7 +24,7 @@ There are also some convenience funcs, documented below
 
 __authors__ = ["Justin Furuness"]
 __credits__ = ["Justin Furuness"]
-__Lisence__ = "MIT"
+__Lisence__ = "BSD"
 __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
@@ -85,7 +85,7 @@ class Generic_Table(Database):
         """Copies table to a specified path"""
 
         logging.debug(f"Copying file from {self.name} to {path}")
-        self.execute(f"COPY {self.name} TO %s DELIMITER '\t';", [path])
+        self.execute(f"COPY {self.name} TO %s DELIBSDER '\t';", [path])
         logging.debug("Copy complete")
 
     def filter_by_IPV_family(self, IPV4: bool, IPV6: bool, col="prefix"):

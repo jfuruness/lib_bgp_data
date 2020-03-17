@@ -13,7 +13,7 @@ from ..enums import Hijack_Types, Conditions as Conds
 
 __author__ = "Cameron Morris"
 __credits__ = ["Cameron Morris"]
-__Lisence__ = "MIT"
+__Lisence__ = "BSD"
 __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Development"

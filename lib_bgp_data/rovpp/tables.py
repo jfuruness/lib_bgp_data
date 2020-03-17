@@ -27,7 +27,7 @@ from ..database import Database
 
 __author__ = "Justin Furuness"
 __credits__ = ["Justin Furuness"]
-__Lisence__ = "MIT"
+__Lisence__ = "BSD"
 __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
@@ -208,7 +208,7 @@ class ROVPP_ASes_Subtable(Database):
             sql = """UPDATE {0} SET impliment = TRUE
                     FROM (SELECT * FROM {0}
                              WHERE {0}.asn != {1}
-                             ORDER BY RANDOM() LIMIT (
+                             ORDER BY RANDOM() LIBSD (
                                  SELECT COUNT(*) FROM {0}) * ({2}::decimal/100.0)
                              ) b
                    WHERE b.asn = {0}.asn;""".format(self.name, attacker, percent)

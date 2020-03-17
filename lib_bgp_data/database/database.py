@@ -5,7 +5,7 @@
 
 __authors__ = ["Justin Furuness", "Matt Jaccino"]
 __credits__ = ["Justin Furuness", "Matt Jaccino"]
-__Lisence__ = "MIT"
+__Lisence__ = "BSD"
 __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
@@ -20,6 +20,7 @@ import psycopg2
 from psycopg2.extras import RealDictCursor
 
 from .config import Config
+from .postgres import Postgres
 from ..utils import utils, config_logging
 
 class Database(Postgres):

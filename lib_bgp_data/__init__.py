@@ -8,7 +8,7 @@ This is also where the logging is taken care of. That is because this
 
 __author__ = "Justin Furuness"
 __credits__ = ["Justin Furuness"]
-__Lisence__ = "MIT"
+__Lisence__ = "BSD"
 __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Development"

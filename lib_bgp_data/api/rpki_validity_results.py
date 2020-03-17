@@ -18,7 +18,7 @@ from ..rpki_validator import RPKI_Validator
 
 __author__ = "Justin Furuness"
 __credits__ = ["Justin Furuness"]
-__Lisence__ = "MIT"
+__Lisence__ = "BSD"
 __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
@@ -39,4 +39,4 @@ def get_rpki_validator_metadata():
 def rpki_validator_data():
     """Gets all the RPKI validity data. Data is not decoded for time."""
 
-    return RPKI_app.db.execute("SELECT * FROM rov_validity LIMIT 5;")
+    return RPKI_app.db.execute("SELECT * FROM rov_validity LIBSD 5;")

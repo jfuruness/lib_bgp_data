@@ -9,7 +9,7 @@ See README for more in depth details.
 
 __author__ = "Justin Furuness", "Cameron Morris"
 __credits__ = ["Cameron Morris", "Justin Furuness"]
-__Lisence__ = "MIT"
+__Lisence__ = "BSD"
 __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
