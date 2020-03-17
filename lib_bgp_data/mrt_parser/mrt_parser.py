@@ -167,7 +167,7 @@ class MRT_Parser(Parser):
         # then make it an even number and add an hour
         # https://stackoverflow.com/q/12400256/8903959
         if _start.hour % 2 != 0:
-            _start.replace(hour=_start.hour + 1)
+            _start = _start.replace(hour=_start.hour + 1)
 
         # The file name for the RIB wanted according to the start parameter...
         _start_file = f'rib.{_start.strftime("%Y%m%d.%H00")}.bz2'
