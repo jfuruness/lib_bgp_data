@@ -38,14 +38,14 @@ class Config:
 
     path = "/etc/bgp/bgp.conf"
     
-    def __init__(self, section):
+    def __init__(self, section: str):
         """Initializes path for config file."""
 
         self.section = section
         # Declare the section header to be global so Database can refer to it
         set_global_section_header(section)
 
-    def create_config(self, _password):
+    def create_config(self, _password: str):
         """Creates the default config file."""
 
         # Do this here so that ram is set correctly
@@ -88,7 +88,7 @@ class Config:
             logging.debug(f"{os.path.split(self.path)[0]} exists, "
                           "not creating new directory")
     
-    def _remove_old_config_section(self, section):
+    def _remove_old_config_section(self, section: str):
         """Removes the old config file if it exists."""
 
         # Initialize ConfigParser
@@ -105,18 +105,18 @@ class Config:
         with open(self.path, "w+") as configfile:
             _conf.write(configfile)
         
-    def _read_config(self, section, tag, raw=False):
+    def _read_config(self, section: str, tag: str, raw: bool = False):
         """Reads the specified section from the configuration file."""
 
-        parser = SCP()
-        parser.read(self.path)
-        string = parser.get(section, tag, raw=raw)
+        _parser = SCP()
+        _parser.read(self.path)
+        string = _parser.get(section, tag, raw=raw)
         try:
             return int(string)
         except ValueError:
             return string
 
-    def get_db_creds(self, error=False):
+    def get_db_creds(self, error=False) -> dict:
         """Returns database credentials from the config file."""
 
         try:
@@ -128,18 +128,18 @@ class Config:
                                                  raw=True)
             return args
 
-        except NoSectionError as e:
+        except NoSectionError:
             if error:
-                raise NoSectionError              
+                raise NoSectionError
             self.install()
             return self.get_db_creds()
 
-    def install(self):
+    def install(self) -> dict:
         """Installs the database section"""
 
         try:
-            self.get_db_creds(error=True)
-        except NoSectionError as e:
+            return self.get_db_creds(error=True)
+        except Exception as e:#NoSectionError as e:
             # Database section is not installed, install it
             # Needed here due to circular imports
             from .postgres import Postgres
@@ -149,13 +149,13 @@ class Config:
 
 
     @property
-    def ram(self):
+    def ram(self) -> int:
         """Returns the amount of ram on a system."""
 
         return self._read_config(self.section, "ram")
 
     @property
-    def restart_postgres_cmd(self):
+    def restart_postgres_cmd(self) -> str:
         """Returns restart postgres cmd or writes it if none exists."""
 
         subsection = "restart_postgres_cmd"

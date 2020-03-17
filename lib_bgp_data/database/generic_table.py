@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-"""This module contains class Database and context manager db_connection
+"""This module contains class Generic Table
 
 The Generic Table class can interact with a database. It can also be
 inherited to allow for its functions to be used for specific tables in
@@ -48,7 +48,9 @@ class Generic_Table(Database):
     __slots__ = ["name"]
 
     def __init__(self, *args, **kwargs):
-        """Asserts that name is set"""
+        """Asserts that name is set
+
+        Makes sure sql queries are formed properly"""
 
         assert hasattr(self, "name"), "Inherited class MUST have a table name attr"
         unlogged_err = ("Create unlogged tables for speed.\n Ex:"
@@ -60,15 +62,15 @@ class Generic_Table(Database):
             raise Exception(unlogged_err)
         super(Generic_Table, self).__init__(*args, **kwargs)
 
-    def get_all(self):
+    def get_all(self) -> list:
         """Gets all rows from table"""
 
-        return self.execute("SELECT * FROM {}".format(self.name))
+        return self.execute(f"SELECT * FROM {self.name}")
 
-    def get_count(self, sql=None):
+    def get_count(self, sql: str = None) -> int:
         """Gets count from table"""
 
-        sql = sql if sql else "SELECT COUNT(*) FROM {}".format(self.name)
+        sql = sql if sql else f"SELECT COUNT(*) FROM {self.name}"
         return self.execute(sql)[0]["count"]
 
 
@@ -98,7 +100,7 @@ class Generic_Table(Database):
                 logging.debug(f"IPV{num} deleted from mrt_announcements")
 
     @property
-    def columns(self):
+    def columns(self) -> list:
         """Returns the columns of the table
 
         used in utils to insert csv into the database"""

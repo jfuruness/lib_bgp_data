@@ -62,7 +62,7 @@ class Test_Relationships_Parser:
         assert validators.url(url)
         # Make sure the correct URL is used and the correct file is downloaded
         api_url = 'http://data.caida.org/datasets/as-relationships/serial-2/'
-        api_elements = [x for x in utils.get_tags(api_url, 'a')[0]]
+        api_elements = [x for x in utils.get_tags(api_url, 'a')]
         files = [x["href"] for x in api_elements if "bz2" in x["href"]]
         assert url == api_url + files[-1]
 

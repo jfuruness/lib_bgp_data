@@ -1,35 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-"""This module contains class Database and context manager db_connection
-
-The Database class can interact with a database. It can also be
-inherited to allow for its functions to be used for specific tables in
-the database. Other Table classes inherit the database class to be used
-in utils functions that write data to the database. To do this, the
-class that inherits the database must be named the table name plus
-_Table. For more information on how to do this, see the README on how to
-add a submodule.
-
-Fucntionality also exists to be able to unhinge and rehinge the
-database. When the database is unhinged, it becomes as optimized as
-possible. Checkpointing (writing to disk) is basically disabled, and
-must be done manually with checkpoints and db restarts. We use this for
-massive table joins that would otherwise take an extremely long amount
-of time.
-
-db_connection is used as a context manager to be able to connect to the
-database, and have the connection close properly upon leaving.
-
-Design Choices:
--RealDictCursor was used as the default cursor factory so that if table
- columns moved around everything wouldn't break, and using a dictionary
- is very easy
--Unlogged tables used for speed
--Disable corruption safety measures for speed
-
-Possible Future improvements:
--Move unhinge and rehinge db to different sql files."""
+"""This module contains class Database. See README for in depth details"""
 
 __authors__ = ["Justin Furuness", "Matt Jaccino"]
 __credits__ = ["Justin Furuness", "Matt Jaccino"]
@@ -50,7 +22,7 @@ from psycopg2.extras import RealDictCursor
 from .config import Config
 from ..utils import utils, config_logging
 
-class Database:
+class Database(Postgres):
     """Interact with the database"""
 
     __slots__ = ['conn', 'cursor', '_clear']
@@ -108,7 +80,7 @@ class Database:
                 self.cursor = conn.cursor()
                 break
             except psycopg2.OperationalError as e:
-                logging.warning("Couldn't connect to db {e}")
+                logging.warning(f"Couldn't connect to db {e}")
                 time.sleep(10)
         if hasattr(self, "_create_tables"):
             # Creates tables if do not exist

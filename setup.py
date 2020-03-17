@@ -28,7 +28,7 @@ if sys.version_info < (3, 8):
 setup(
     name='lib_bgp_data',
     packages=find_packages(),
-    version='0.2.4',
+    version='0.3.0',
     authors=['Justin Furuness', 'Matt Jaccino'],
     author_email='jfuruness@gmail.com',
     url='https://github.com/jfuruness/lib_bgp_data.git',
@@ -58,7 +58,7 @@ setup(
     classifiers=[
         'Environment :: Console',
         'Intended Audience :: Developers',
-        'License :: OSI Approved :: MIT License',
+        'License :: OSI Approved :: BSD License',
         'Programming Language :: Python :: 3'],
     entry_points={
         'console_scripts': 'lib_bgp_data = lib_bgp_data.__main__:main'},

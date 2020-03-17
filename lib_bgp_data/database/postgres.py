@@ -49,9 +49,9 @@ class Postgres:
         """Deletes config and all database sections"""
 
         # Check user inteded to erase everything
-        ans = input("You are about to erase the config file and drop all "
-                    "Postgres databases. Enter 'Yes' to confirm.\n")
-        if ans.lower() != "yes":
+        _ans = input("You are about to erase the config file and drop all "
+                     "Postgres databases. Enter 'Yes' to confirm.\n")
+        if _ans.lower() != "yes":
             print("Did not drop databases")
             return
         # Use default path (get from Config?)
@@ -61,9 +61,9 @@ class Postgres:
         _conf.read(path)
         # Database names correspond to section headers
         # Exclude first since ConfigParser reserves for 'DEFAULT'
-        db_names = [x for x in _conf][1:]
+        _db_names = [x for x in _conf][1:]
         cmds = [f'sudo -u postgres psql -c "DROP DATABASE {db}"'
-                for db in db_names]
+                for db in _db_names]
         utils.run_cmds(cmds)
         # Now remove the section from the config file
         # Fastest way to do this is create a new object
@@ -76,7 +76,7 @@ class Postgres:
 ### Installation Functions ###
 ##############################
 
-    def install(self, section):
+    def install(self, section: str):
         """Installs database and modifies it"""
 
         password = ''.join(random.SystemRandom().choice(
@@ -88,7 +88,7 @@ class Postgres:
 
     # Must delete postgres history after setting password
     @utils.delete_files("/var/lib/postgresql.psql_history")
-    def _create_database(self, section, password):
+    def _create_database(self, section: str, password: str):
         """Creates database for specific section"""
 
         # SQL commands to write
@@ -113,7 +113,7 @@ class Postgres:
         utils.run_cmds(f'sudo -u postgres psql -d {section}'
                        ' -c "CREATE EXTENSION btree_gist;"')
 
-    def _modify_database(self, section):
+    def _modify_database(self, section: str):
         """Optimizes database for speed.
 
         The database will be corrputed if there is a crash. These changes
@@ -232,12 +232,14 @@ class Postgres:
         """Restarts postgres and all connections."""
 
         logging.debug("About to restart postgres")
-        self.close()
+        if hasattr(self, "close"):
+            self.close()
         # access to section header
         utils.run_cmds(Config(global_section_header).restart_postgres_cmd)
         time.sleep(30)
         logging.debug("Restarted postgres")
-        self._connect(create_tables=False)
+        if hasattr(self, "_connect"):
+            self._connect()
 
 ########################
 ### Helper Functions ###
@@ -255,7 +257,7 @@ class Postgres:
         # Runst he sql commands
         utils.run_cmds(f"sudo -u postgres psql -f {Postgres.sql_file_path}")
 
-    def _get_ulimit_random_page_cost(self):
+    def _get_ulimit_random_page_cost(self) -> tuple:
         """Gets ulimit and random page cost"""
 
         if hasattr(pytest, 'global_running_test') \
@@ -272,5 +274,7 @@ class Postgres:
             ulimit = input("Enter the output of ulimit -s or press enter for 8192: ")
             if ulimit == "":
                 ulimit = 8192
+            else:
+                ulimit = int(ulimit)
 
         return ulimit, random_page_cost

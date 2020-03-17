@@ -24,7 +24,7 @@ from .mrt_parser import MRT_Parser, MRT_Sources
 from .rpki_validator import RPKI_Validator_Wrapper, RPKI_Validator_Parser
 #from .api import create_app
 from .extrapolator_parser import Extrapolator_Parser
-from .database import Database
+from .database import Database, Postgres, Generic_Table
 #from .forecast import Forecast
 
 class NotSudo(Exception):

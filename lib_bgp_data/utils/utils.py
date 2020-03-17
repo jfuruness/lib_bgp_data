@@ -1,36 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-"""This package contains functions used across classes.
-
-Possible future improvements:
--Move functions that are only used in one file to that file
--Refactor
--Unit tests
-"""
-
-
-import logging
-from enum import Enum
-import requests
-import time
-import urllib
-import shutil
-import os
-import sys
-import functools
-from datetime import datetime, timedelta
-import fileinput
-import csv
-import json
-import pytz
-from bz2 import BZ2Decompressor
-from bs4 import BeautifulSoup as Soup
-from pathos.multiprocessing import ProcessingPool
-from contextlib import contextmanager
-from multiprocessing import cpu_count, Queue, Process, Manager
-from subprocess import check_call, DEVNULL
-from ..database.config import set_global_section_header
+"""This package contains functions used across classes"""
 
 __authors__ = ["Justin Furuness", "Matt Jaccino"]
 __credits__ = ["Justin Furuness", "Matt Jaccino"]
@@ -38,6 +9,32 @@ __Lisence__ = "MIT"
 __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
+
+
+from contextlib import contextmanager
+import csv
+from datetime import datetime, timedelta
+from enum import Enum
+import fileinput
+import functools
+import json
+import logging
+from multiprocessing import cpu_count, Queue, Process, Manager
+import os
+from subprocess import check_call, DEVNULL
+import sys
+import time
+
+from bs4 import BeautifulSoup as Soup
+from bz2 import BZ2Decompressor
+from pathos.multiprocessing import ProcessingPool
+import pytz
+import requests
+import time
+import urllib
+import shutil
+
+from ..database.config import set_global_section_header
 
 
 # This decorator deletes paths before and after func is called
@@ -60,14 +57,13 @@ def delete_files(files=[]):
         return function_that_runs_func
     return my_decorator
 
-# to prevent circular depencies
 @contextmanager
-def Pool(threads, multiplier, name):
+def Pool(threads: int, multiplier: int, name: str):
     """Context manager for pathos ProcessingPool"""
 
     # Creates a pool with threads else cpu_count * multiplier
     p = ProcessingPool(threads if threads else cpu_count() * multiplier)
-    logging.debug("Created {} pool".format(name))
+    logging.debug(f"Created {name} pool")
     yield p
     # Need to clear due to:
     # https://github.com/uqfoundation/pathos/issues/111
@@ -75,7 +71,7 @@ def Pool(threads, multiplier, name):
     p.join()
     p.clear()
 
-def low_overhead_log(msg, level):
+def low_overhead_log(msg: str, level: int):
     """Heavy multiprocessed stuff should not log...
 
     This is because the overhead is too great, even with
@@ -93,7 +89,7 @@ def low_overhead_log(msg, level):
     elif level == 10:
         print(msg)
 
-def write_to_stdout(msg, log_level, flush=True):
+def write_to_stdout(msg: str, log_level: int, flush=True):
     # Note that we need log level here, since if we are doing
     # This only in heaavily parallel processes
     # For which we do not want the overhead of logging
@@ -108,22 +104,13 @@ def write_to_stdout(msg, log_level, flush=True):
 # This works well with multiprocessing for our applications
 # https://stackoverflow.com/a/3160819/8903959
 @contextmanager
-def progress_bar(msg, width):
+def progress_bar(msg: str, width: int):
     log_level = logging.root.level
     write_to_stdout(f"{datetime.now()}: {msg} X/{width}", log_level, flush=False)
     write_to_stdout("[%s]" % (" " * width), log_level)
     write_to_stdout("\b" * (width+1), log_level)
     yield
     write_to_stdout("]\n", log_level)
-
-class Enumerable_Enum(Enum):
-    # https://stackoverflow.com/a/54919285
-    @classmethod
-    def list_values(cls):
-        return list(map(lambda c: c.value, cls))
-
-    
-
 
 def now():
     """Returns current time"""
@@ -132,7 +119,7 @@ def now():
     return pytz.utc.localize(datetime.utcnow())
 
 
-def get_default_start():
+def get_default_start() -> int:
     """Gets default start time, used in multiple places."""
 
     return int((now()-timedelta(days=2)).replace(hour=0,
@@ -141,7 +128,7 @@ def get_default_start():
                                              microsecond=0).timestamp() - 5)
 
 
-def get_default_end():
+def get_default_end() -> int:
     """Gets default end time, used in multiple places."""
 
     # NOTE: Should use the default start for this method
@@ -150,8 +137,8 @@ def get_default_end():
                                              second=59,
                                              microsecond=59).timestamp())
 
-def download_file(url,
-                  path,
+def download_file(url: str,
+                  path: str,
                   file_num=1,
                   total_files=1,
                   sleep_time=0,
@@ -162,8 +149,7 @@ def download_file(url,
     if progress_bar:  # mrt_parser or multithreaded app running, disable logging cause in child
         logging.root.handlers.clear()
         logging.shutdown()
-    low_overhead_log("Downloading a file.\n    Path: {}\n    Link: {}\n"
-                     .format(path, url), log_level)
+    low_overhead_log(f"Downloading\n  Path:{path}\n Link:{url}\n", log_level)
     # This is to make sure that the network is not bombarded with requests
     time.sleep(sleep_time)
     retries = 10
@@ -175,7 +161,8 @@ def download_file(url,
                     as response, open(path, 'wb') as out_file:
                 # Copy the file into the specified file_path
                 shutil.copyfileobj(response, out_file)
-                low_overhead_log("{} / {} downloaded".format(file_num, total_files), log_level)
+                low_overhead_log(f"{file_num} / {total_files} downloaded",
+                                 log_level)
                 if progress_bar:
                     incriment_bar(log_level)
                 return
@@ -185,10 +172,10 @@ def download_file(url,
             retries -= 1
             time.sleep(5)
             if retries <= 0 or "No such file" in str(e):
-                logging.error("Failed download {}\nDue to: {}".format(url, e))
+                logging.error(f"Failed download {url}\nDue to: {e}")
                 sys.exit(1)
 
-def incriment_bar(log_level):
+def incriment_bar(log_level: int):
     # Needed here because mrt_parser can't log
     if log_level <= 20:  # INFO
         sys.stdout.write("#")
@@ -219,11 +206,11 @@ def delete_paths(paths):
         # Just in case we always delete everything at the end of a run
         # So some files may not exist anymore
         except AttributeError:
-            logging.debug("Attribute error when deleting {}".format(path))
+            logging.debug(f"Attribute error when deleting {path}")
         except FileNotFoundError:
-            logging.debug("File not found when deleting {}".format(path))
+            logging.debug(f"File not found when deleting {path}")
         except PermissionError:
-            logging.warning("Permission error when deleting {}".format(path))
+            logging.warning(f"Permission error when deleting {path}")
 
 
 def clean_paths(paths):
@@ -238,24 +225,24 @@ def clean_paths(paths):
         os.makedirs(path, mode=0o777, exist_ok=False)
 
 
-def unzip_bz2(old_path):
+def unzip_bz2(old_path: str) -> str:
     """Unzips a bz2 file from old_path into new_path and deletes old file"""
 
-    new_path = "{}.decompressed".format(old_path[:-4])
+    new_path = f"{old_path[:-4]}.decompressed"
     with open(new_path, 'wb') as new_file, open(old_path, 'rb') as file:
         decompressor = BZ2Decompressor()
         for data in iter(lambda: file.read(100 * 1024), b''):
             new_file.write(decompressor.decompress(data))
 
-    logging.debug("Unzipped a file: {}".format(old_path))
+    logging.debug(f"Unzipped a file: {old_path}")
     delete_paths(old_path)
     return new_path
 
 
-def write_csv(rows, csv_path):
+def write_csv(rows: list, csv_path: str):
     """Writes rows into csv_path, a tab delimited csv"""
 
-    logging.debug("Writing to {}".format(csv_path))
+    logging.debug(f"Writing to {csv_path}")
     delete_paths(csv_path)
 
     with open(csv_path, mode='w') as temp_csv:
@@ -269,7 +256,7 @@ def write_csv(rows, csv_path):
         csv_writer.writerows(rows)
 
 
-def csv_to_db(Table, csv_path, clear_table=False):
+def csv_to_db(Table, csv_path: str, clear_table=False):
     """Copies csv into table and deletes csv_path
 
     Copies tab delimited csv into table and deletes csv_path
@@ -286,7 +273,7 @@ def csv_to_db(Table, csv_path, clear_table=False):
             t.clear_table()
             t._create_tables()
         # No logging for mrt_announcements, overhead slows it down too much
-        logging.debug("Copying {} into the database".format(csv_path))
+        logging.debug(f"Copying {csv_path} into the database")
         # Opens temporary file
         with open(r'{}'.format(csv_path), 'r') as f:
             columns = [x for x in t.columns if x != "id"]
@@ -294,28 +281,30 @@ def csv_to_db(Table, csv_path, clear_table=False):
             t.cursor.copy_from(f, t.name, sep='\t', columns=columns, null="")
             t.cursor.execute("CHECKPOINT;")
         # No logging for mrt_announcements, overhead slows it down too much
-        logging.debug("Done inserting {} into the database".format(csv_path))
+        logging.debug(f"Done inserting {csv_path} into the database")
     delete_paths(csv_path)
 
 
-def rows_to_db(rows, csv_path, Table, clear_table=True):
+def rows_to_db(rows: list, csv_path: str, Table, clear_table=True):
     """Writes rows to csv and from csv to database"""
 
     write_csv(rows, csv_path)
     csv_to_db(Table, csv_path, clear_table)
 
 
-def get_tags(url, tag):
+def get_tags(url: str, tag: str):
     """Gets the html of a given url, and returns a list of tags"""
 
     response = requests.get(url)
     # Raises an exception if there was an error
     response.raise_for_status()
     # Get all tags within the beautiful soup from the html and return them
-    return [x for x in Soup(response.text, 'html.parser').select(tag)],\
-        response.close()
+    tags = [x for x in Soup(response.text, 'html.parser').select(tag)]
+    response.close()
 
-def get_json(url, headers={}):
+    return tags
+
+def get_json(url: str, headers={}):
     """Gets the json from a url"""
 
     # Formats request

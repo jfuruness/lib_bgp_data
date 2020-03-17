@@ -158,7 +158,7 @@ class MRT_Parser(Parser):
         _url = "http://isolario.it/Isolario_MRT_data/"
         # Get the collectors from the page
         # Slice out the parent directory link and sorting links
-        _collectors = [x["href"] for x in utils.get_tags(_url, 'a')[0]][5:]
+        _collectors = [x["href"] for x in utils.get_tags(_url, 'a')][5:]
         _start = datetime.datetime.fromtimestamp(start)
 
         # Get the folder name according to the start parameter

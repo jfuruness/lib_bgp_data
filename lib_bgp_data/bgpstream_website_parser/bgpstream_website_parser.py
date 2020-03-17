@@ -80,7 +80,7 @@ class BGPStream_Website_Parser(Parser):
         """Returns rows within row limit"""
 
         # Gets the rows to parse
-        rows, _ = utils.get_tags("https://bgpstream.com", "tr")
+        rows = utils.get_tags("https://bgpstream.com", "tr")
         # Reduce/set row_limit to total number of rows
         # We remove last ten rows because html is messed up
         if row_limit is None or row_limit > len(rows) - 10:

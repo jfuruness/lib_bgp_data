@@ -3,7 +3,6 @@ This package contains multiple submodules that are used to gather and manipulate
 
 *disclaimer: If a submodule is in development, that means that it unit tests are in the process of being written*
 
-
 * [lib\_bgp\_data](#lib_bgp_data)
 * [Description](#package-description)
 * Submodules:
@@ -19,7 +18,6 @@ This package contains multiple submodules that are used to gather and manipulate
     * [API Submodule](#api-submodule)
     * [ROVPP Submodule](#rovpp-submodule)
     * [Utils](#utils)
-    * [Config](#config-submodule)
     * [Database](#database-submodule)
     * [Logging](#logging-submodule)
 * [Installation](#installation)
@@ -29,6 +27,7 @@ This package contains multiple submodules that are used to gather and manipulate
 * [History](#history)
 * [Credits](#credits)
 * [Licence](#licence)
+* [New Hires](#new-hires)
 * [Todo and Possible Future Improvements](#todopossible-future-improvements)
 * [FAQ](#faq)
 ## Package Description
@@ -38,14 +37,16 @@ This README is split up into several subsections for each of the submodules incl
 **![](https://docs.google.com/drawings/u/0/d/sx3R9HBevCu5KN2luxDuOzw/image?w=864&h=650&rev=1621&ac=1&parent=1fh9EhU9yX9X4ylwg_K-izE2T7C7CK--X-Vfk1qqd1sc)**
 Picture link: https://docs.google.com/document/d/1fh9EhU9yX9X4ylwg_K-izE2T7C7CK--X-Vfk1qqd1sc/edit?usp=sharing
 
+If you'd like more of a laymens perspective, see the [FAQ](#faq)
+
 Please note: These steps are not necessarily linear, as much of this is done in parallel as possible. For more details please view the [Forecast Submodule](#forecast-submodule)
-1. The project first starts by using the [MRT Parser](#mrt-announcements-submodule) to collect all announcements sent over the internet for a specific time interval. This usually takes around 15-20 minutes on our machine and results in approximately 40-100 GB of data.
+1. The project first starts by using the [MRT Parser](#mrt-announcements-submodule). With the two urls listed in the picture, we can access public announcements from specific collectors. Basically it collects all public announcements sent over the internet for a specific time interval. This usually takes around an hour minutes on our machine and results in approximately 67 GB of data.
 2. The [Roas Parser](#roas-submodule) also downloads all the ROAs for that time interval. This usually takes a couple of seconds.
-3. A new table is formed with all mrt announcements that have ROAs. This join is done by checking whether or not the prefixes of the MRT announcements are a subset of the prefixes in the ROAs table. Because this is an expensive operation, and is done on a 40GB+ table, this takes an hour or two on our machine.
-4. The relationships data [Relationships Parser](#relationships-submodule) is also gathered in order to be able to simulate the connections between different AS's on the internet. This takes a couple of seconds.
-5. Each of these data sets gets fed into the [Extrapolator](#extrapolator-submodule) which then creates a graph of the internet and propagates announcements through it. After this stage is complete, there is a graph of the internet, with each AS having all of it's announcements that was propagated to it (with the best announcement for each prefix saved based on gao rexford). The [Extrapolator](#extrapolator-submodule) itself takes around 5-6 hours on our machine, and results in a table around 10 GB large. This is also because we invert the results. This means that instead of storing the RIB for each AS, which results in a table that is 300GB+ large, we store what is not in the RIB for each AS. This allows us to save space, and it also saves time because joins we do on this table take less time.
-6. At this point we also run the [RPKI Validator](#rpki-validator-submodule), to get the validity of these announcements. With this data we can know whether an announcement that arrived at a particular AS (from the [Extrapolator](#extrapolator-submodule) and whether or not that announcement would have been blocked by standard ROV. This usually takes 10-20 minutes the first time, or about 1 minute every time thereafter, on our machine.
-7. We also download all data from bgpstream.com with the [BGPStream Website Parser](#bgpstream-website-submodule). Using this data we can know whether an announcement is actually hijacked or not. This takes about 2-3 hours the first time, and then about 1-5 minutes every time after on our machine. This takes a while because querying the website takes a while.
+3. A new table is formed with all mrt announcements that have ROAs. This join is done by checking whether or not the prefixes of the MRT announcements are a subset of the prefixes in the ROAs table. Because this is an expensive operation, and is done on a 67GB+ table, this takes an hour or two on our machine. The reason we filter these announcements is to reduce the data that we need to go over for faster execution.
+4. The relationships data [Relationships Parser](#relationships-submodule) is also gathered in order to be able to simulate the connections between different AS's on the internet. This takes a couple of seconds. From a laymans perspective, this is how the internet is connected.
+5. Each of these data sets gets fed into the [Extrapolator](#extrapolator-submodule) which then creates a graph of the internet and propagates announcements through it. From a laymens point of view, we feed in the public announcements, and the relationship data (internet topology). Then, using some algorithms and heuristics that mostly rely on GOA Rexford, we can "guess" with very high accuracy the private traffic of all the ASes that do not have public data. If you don't know what GOA Rexford is please see [FAQ](#faq). After this stage is complete, there is a graph of the internet, with each AS having all of it's announcements that was propagated to it (with the best announcement for each prefix saved based on gao rexford and other heuristics). The [Extrapolator](#extrapolator-submodule) itself takes around 5-6 hours on our machine, and results in a table around 40 GB large.  The reason this table is not larger is because we can invert the results. What does this mean? Well, if you think about it, all announcements should theoretically be everywhere on the internet. So most ASes traffic will be almost the same and will be very large. Instead, we can just save the traffic that did not propogate to that AS, which will result in much smaller tables (since most announcements will be saved). This means that instead of storing the RIB for each AS, which results in a table that is 300GB+ large, we store what is not in the RIB for each AS. This allows us to save space, and it also saves time because joins we do on this table take less time.
+6. At this point we also run the [RPKI Validator](#rpki-validator-submodule), to get the validity of these announcements. With this data we can know whether an announcement that arrived at a particular AS (from the [Extrapolator](#extrapolator-submodule) and whether or not that announcement would have been blocked by standard ROV. This usually takes 10-20 minutes.
+7. We also download all data from bgpstream.com with the [BGPStream Website Parser](#bgpstream-website-submodule). Using this data we can know whether an announcement is actually hijacked or not. This takes about 20 minutes the first time, and then about 1-5 minutes every time after on our machine. This takes a while because querying the website takes a while.
 8.  Using the bgpstream.com data from the [BGPStream Website Parser](#bgpstream-website-submodule) and the [RPKI Validator](#rpki-validator-submodule) data we can tell if an announcement would have been blocked or not, and whether or not that announcement would have been blocked correctly. For example, if the rpki validator says that a prefix origin pair is invalid by asn, that means it would be blocked (for the invalid by asn policy). If that announcement also occurs in bgpstream.com as a hijacking, then we know that the prefix origin pair is a hijacking, and then we add one point to the hijacked and blocked column. That is an over simplification, but this calculation is done in the last submodule, the [What if Analysis](#what-if-analysis-submodule). The output of this data is for each AS, a table of how many announcements have been blocked and were hijacks, blocked and were not hijacks, not blocked but were hijacks, and not blocked and were not hijacks. This does joins on massive tables, and takes 1-10 minutes on our server.
 9. The [What if Analysis](#what-if-analysis-submodule) data as well as the [Extrapolator](#extrapolator-submodule) data is then available to query form a web interface through the [API](#api-submodule), the last last submodule. All of these steps are done in the submodule called [Main](#main-submodule), in which many of these steps are done in parallel for efficiency. These results are then displayed on our website at [https://sidr.engr.uconn.edu/](https://sidr.engr.uconn.edu/)
 10. The purpose of this is to determine the effect that these security policies would have on the internet and blocking hijacks (attacks). Now from the API it is possible to see what attacks (hijacks) where blocked correctly and incorrectly. It's also possible to see if other announcements where treated as a hijack and were incorrectly blocked. Using this it is possible to see how different security policies would affect your specific ASN
@@ -58,6 +59,9 @@ Please note: These steps are not necessarily linear, as much of this is done in 
 * [Table Schema](#forecast-table-schema)
 * [Design Choices](#forecast-design-choices)
 * [Todo and Possible Future Improvements](#todopossible-future-improvements)
+
+NOTE: This submodule is not yet complete, and should not be used
+
 
 Status: Development
 ### Forecast Short description
@@ -252,7 +256,7 @@ To initialize any parser that inherits this class:
 | path         | ```"/tmp/bgp_{}".format(name)```     | Not used                                                                                         |
 | csv_dir      | ```"/dev/shm/bgp_{}".format(name)``` | Path for CSV files, located in RAM                                                                                |
 | stream_level | ```logging.INFO```                        | Logging level for printing                                                                                        |
-
+| section | ```"bgp"  ```                      | database section to use                                                                                      |
 > Note that any one of the above attributes can be changed or all of them can be changed in any combination
 
 **Note that for all examples below, we use the MRT_Parser, but you could do this the same way with any class that inherits the base parser**
@@ -265,13 +269,14 @@ from lib_bgp_data import MRT_Parser
 mrt_parser = MRT_Parser()
 ```
 
-To initialize MRT_Parser with custom path, CSV directory, and logging level:
+To initialize MRT_Parser with custom path, CSV directory, and logging level, and database section:
 ```python
 from logging import DEBUG
 from lib_bgp_data import MRT_Parser
 mrt_parser = MRT_Parser(path="/my_custom_path",
                         csv_dir="/my_custom_csv_dir",
-                        stream_level=DEBUG)
+                        stream_level=DEBUG,
+                        section="mydbsection")
 ```
 
 To run the MRT Parser with defaults:
@@ -393,7 +398,7 @@ The Defaults for the MRT Parser are the same as the [base parser's](base-parser-
 | path         | ```"/tmp/bgp_{}".format(name)```     | Not used                                                                                         |
 | csv_dir      | ```"/dev/shm/bgp_{}".format(name)``` | Path for CSV files, located in RAM                                                                                |
 | stream_level | ```logging.INFO```                        | Logging level for printing                                                                                        |
-
+| section | ```"bgp"  ```                      | database section to use                                                                                      |
 > Note that any one of the above attributes can be changed or all of them can be changed in any combination
 
 To initialize MRT_Parser with default values:
@@ -402,13 +407,14 @@ from lib_bgp_data import MRT_Parser
 mrt_parser = MRT_Parser()
 ```
 
-To initialize MRT_Parser with custom path, CSV directory, and logging level:
+To initialize MRT_Parser with custom path, CSV directory, section, and logging level:
 ```python
 from logging import DEBUG
 from lib_bgp_data import MRT_Parser
 mrt_parser = MRT_Parser(path="/my_custom_path",
                         csv_dir="/my_custom_csv_dir",
-                        stream_level=DEBUG)
+                        stream_level=DEBUG,
+                        section="mydbsection")
 ```
 
 Running the MRT Parser:
@@ -627,7 +633,7 @@ The Defaults for the Relationships Parser are:
 | path         | ```"/tmp/bgp_{}".format(name)```     | Not used                                                                                         |
 | csv_dir      | ```"/dev/shm/bgp_{}".format(name)``` | Path for CSV files, located in RAM                                                                                |
 | stream_level | ```logging.INFO```                        | Logging level for printing                                                                                        |
-
+| section | ```"bgp"  ```                      | database section to use                                                                                      |
 > Note that any one of the above attributes can be changed or all of them can be changed in any combination
 
 
@@ -636,13 +642,14 @@ To initialize Relationships_Parser with default values:
 from lib_bgp_data import Relationships_Parser
 relationships_parser = Relationships_Parser()
 ```                 
-To initialize Relationships_Parser with custom path, CSV directory, and logging level:
+To initialize Relationships_Parser with custom path, CSV directory, and logging level and database section:
 ```python
 from logging import DEBUG
 from lib_bgp_data import Relationships_Parser
 relationships_parser = Relationships_Parser(path="/my_custom_path",
                                             csv_dir="/my_custom_csv_dir",
-                                            stream_level=DEBUG)
+                                            stream_level=DEBUG.
+                                            section="mydatabasesection")
 ```
 Running the Relationships_Parser:
 
@@ -817,6 +824,7 @@ Initializing the ROAs_Parser:
 | path         | ```"/tmp/bgp_{}".format(name)```     | Not used                                                                                         |
 | csv_dir      | ```"/dev/shm/bgp_{}".format(name)``` | Path for CSV files, located in RAM                                                                                |
 | stream_level | ```logging.INFO```                        | Logging level for printing                                                                                        |
+| section | ```"bgp"  ```                      | database section to use                                                                                      |
 > Note that any one of the above attributes can be changed or all of them can be changed in any combination
 
 To initialize ROAs_Parser with default values:
@@ -824,13 +832,14 @@ To initialize ROAs_Parser with default values:
 from lib_bgp_data import ROAs_Parser
 roas_parser = ROAs_Parser()
 ```                 
-To initialize ROAs_Parser with custom path, CSV directory, and logging level:
+To initialize ROAs_Parser with custom path, CSV directory, and logging level and section:
 ```python
 from logging import DEBUG
 from lib_bgp_data import ROAs_Parser
 roas_parser = ROAs_Parser(path="/my_custom_path",
                           csv_dir="/my_custom_csv_dir",
-                          stream_level=DEBUG})
+                          stream_level=DEBUG,
+                          section="mydatabasesection")
 ```
 To run the ROAs_Parser with defaults (there are no optional parameters):
 ```python
@@ -1035,7 +1044,7 @@ The Defaults for the BGPStream_Website_Parser are the same as the [base parser's
 | path         | ```"/tmp/bgp_{}".format(name)```     | Not used                                                                                         |
 | csv_dir      | ```"/dev/shm/bgp_{}".format(name)``` | Path for CSV files, located in RAM                                                                                |
 | stream_level | ```logging.INFO```                        | Logging level for printing                                                                                        |
-
+| section | ```"bgp"  ```                      | database section to use                                                                                      |
 > Note that any one of the above attributes can be changed or all of them can be changed in any combination
 
 To initialize BGPStream_Website_Parser with default values:
@@ -1044,13 +1053,14 @@ from lib_bgp_data import BGPStream_Website_Parser
 bgpstream_website_parser = BGPStream_Website_Parser()
 ```
 
-To initialize BGPStream_Website_Parser with custom path, CSV directory, and logging level:
+To initialize BGPStream_Website_Parser with custom path, CSV directory, database section, and logging level:
 ```python
 from logging import DEBUG
 from lib_bgp_data import BGPStream_Website_Parser
 bgpstream_website_parser = BGPStream_Website_Parser(path="/my_custom_path",
                                                     csv_dir="/my_custom_csv_dir",
-                                                    stream_level=DEBUG)
+                                                    stream_level=DEBUG,
+                                                    section="mydatabasesection")
 ```
 
 Running the BGPStream_Website_Parser:
@@ -1473,6 +1483,7 @@ with RPKI_Validator_Wrapper(table_input="table_name_of_prefix_origins") as _rpki
     * Parsed information is stored in CSV files
         * Binary files require changes based on each postgres version
         * Not as compatable as CSV files
+     * Instructions on multi sectional capabilities are not included only one should be run at a time. However, if you are just running one on a different database, you can use a different section.
 
 ## What if Analysis Submodule
    * [lib\_bgp\_data](#lib_bgp_data)
@@ -1482,6 +1493,8 @@ with RPKI_Validator_Wrapper(table_input="table_name_of_prefix_origins") as _rpki
    * [Table Schema](#what-if-analysis-table-schema)
    * [Design Choices](#what-if-analysis-design-choices)
    * [Todo and Possible Future Improvements](#todopossible-future-improvements)
+
+NOTE: This is not yet complete and should not be used.
 
 Status: Development
 ### What if Analysis  Short description
@@ -1577,6 +1590,8 @@ Coming Soon to a theater near you
    * [Design Choices](#api-design-choices)
    * [Todo and Possible Future Improvements](#todopossible-future-improvements)
 
+NOTE: This is not yet complete and should not be used
+
 Status: Development
 ### API Short Description
 * [lib\_bgp\_data](#lib_bgp_data)
@@ -1626,6 +1641,8 @@ Coming soon to a theater near you
    * [Design Choices](#rovpp-design-choices)
    * [Todo and Possible Future Improvements](#todopossible-future-improvements)
 
+NOTE: Do not use, due to deadlines became hardcoded mess. Avoid lmaooo
+
 Status: Development
 ### ROVPP Short description
 * [lib\_bgp\_data](#lib_bgp_data)
@@ -1668,7 +1685,9 @@ The utils folder contains a utils file that has many useful functions used acros
 * [Utils](#utils)
 Below is a quick list of functions that might be helpful. For more in depth explanations please view the utils file and the functions themselves:
 * Pool: A Context manager for multiprocessing pathos pools
-* run_parser: A decorator for running the main parser functions that has useful features like deleting files and printing start and end times
+* Delete files: A decorator that can delete files before and after a function call
+* low overhead log: prints without logging overhead, useful for multiprocessing.
+* Progress bar: Makes a custom progress bar, better than tqdm for mrt_parser
 * now: Returns current time
 * get_default_start: Gets the default start time
 * get_default_end: Gets default end time
@@ -1683,19 +1702,9 @@ Below is a quick list of functions that might be helpful. For more in depth expl
 * rows_to_db: Inserts data into a csv and then the database
 * get_tags: Gets html tags
 * get_json: Gets json with url and headers specified
-
-## Config Submodule
-   * [lib\_bgp\_data](#lib_bgp_data)
-   * [Description](#config-submodule-description)
-   * [Design Choices](#config-submodule-design-choices)
-   * [Todo and Possible Future Improvements](#todopossible-future-improvements)
-
-Status: Development
-### Config Submodule Description
-* [lib\_bgp\_data](#lib_bgp_data)
-* [Config Submodule](#config-submodule)
-
-This module contains a config class that creates and parses a config file. To avoid outdated documentation to see the config format, please view the create_config function in utils/config.py
+* get_lines_in_file: Returns number of lines in any given file
+* run_cmds: Runs bash commands with proper logging
+* replace_lines: Replaces lines in file, mostly for installs
 
 ## Database Submodule
    * [lib\_bgp\_data](#lib_bgp_data)
@@ -1709,20 +1718,20 @@ Status: Development
 ### Database Description
 * [lib\_bgp\_data](#lib_bgp_data)
 * [Database Submodule](#database-submodule)
-This module contains class Database and context manager db_connection
 
-The Database class can interact with a database. It can also be inherited to allow for its functions to be used for specific tables in the database. Other Table classes inherit the database class to be used in utils functions that write data to the database. To do this, the class that inherits the database must be named the table name plus _Table. For more information on how to do this, see the README on how to
-add a submodule.
+This module contains all the functionality to interact with a database. First we have the config class in the config.py. This class keeps track of all the different database sections and their login information. By default pytest always uses the test database class, and if section is not set then bgp is used. Note that this class will install the database for any section that is passed in and does not exist.
 
-Fucntionality also exists to be able to unhinge and rehinge the database. When the database is unhinged, it becomes as optimized as possible. Checkpointing (writing to disk) is basically disabled, and must be done manually with checkpoints and db restarts. We use this for massive table joins that would otherwise take an extremely long amount of time.
+Then there is the Postgres class in postgres.py. This class contains some useful features for controlling postgres. It contains the functionality to install postgres and perform modifications for a nice fast database (Note that these modifications make the database corruptable upon crashing, but don't care about that since we can reproduce the data easily). We can also "unhinge" the database, which basically means turning off all safety features and writing to disk for some really fast queries. This also contains the functionality to restart the postgres database. Note that a lot of these system modifications will affect all running instances of postgres databases.
 
-db_connection is used as a context manager to be able to connect to the database, and have the connection close properly upon leaving
+Then there is the database class. This class deals specifically with connecting to the database and performing some minor functions. You can use it as a context manager to be able to access the database and execute commands. By default the realDictCursor is used so that all results returned are lists of dictionaries.
+
+Lastly there is the generic table class. This class is super convenient to write functions with. It inherits the database class. Is it mainly to be used through inheritance. When a class inherits this class, it gains access to a large swath of functionality. It can connect to the database, and whenever it does create tables if they do not exist. It can clear tables upon connection. It has built in clear_table and other functions such as get_count, etc. Check out some great examples of how this is used in the ROAs Parser Submodule in tables.py, and in the usage examples below.
 
 ### Database Enhancements
 * [lib\_bgp\_data](#lib_bgp_data)
 * [Database Submodule](#database-submodule)
 
-Rather than repeat documentation, please view the Install Script to see all sql queries that alter the database. In addition, see the unhinge_db function, for when the database is unhinged. These are extensive lists of sql queries and the reasons why we use them in order to improve database performance.
+Rather than repeat documentation, please view the Postgres class for the modify database function. In addition, see the unhinge_db function, for when the database is unhinged. These are extensive lists of sql queries and the reasons why we use them in order to improve database performance.
 
 Note that we NEVER alter the config file for the database. We only ever use the ALTER SYSTEM command so that we can always have the default config to be able to go back to.
 
@@ -1731,7 +1740,88 @@ Note that we NEVER alter the config file for the database. We only ever use the 
 * [Database Submodule](#database-submodule)
 
 
-#### In a Script
+#### Postgres Functions
+Erasing all installed databases:
+```python
+from lib_bgp_data import Postgres
+Postgres().erase_all()
+```
+Unhinging database:
+```python
+from lib_bgp_data import Postgres
+Postgres().unhinge_db()
+# Do stuff here
+Postgres().rehinge_db()
+```
+Restarting postgres:
+```python
+from lib_bgp_data import Postgres
+Postgres().restart_postgres()
+```
+#### Database Functions
+Connecting to the database
+```python
+from lib_bgp_data import Database
+with Database() as db:
+    db.execute("my sql query")
+# Database is closed here
+```
+Executing multiple sql queries at once:
+```python
+from lib_bgp_data import Database
+sql_queries = ["sql quer 1", "sql query 2"]
+with Database() as db:
+    db.multiprocess_execute(sql_queries)
+# Database is closed here
+```
+#### Generic Table Functions
+Lets say you have a table called roas (example in roas [arser.
+
+```python
+from lib_bgp_data import Generic_Table
+class ROAs_Table(Generic_Table):
+    """Announcements table class"""
+
+    __slots__ = []
+
+    name = "roas"
+
+    def _create_tables(self):
+        """ Creates tables if they do not exist"""
+
+        sql = """CREATE UNLOGGED TABLE IF NOT EXISTS roas (
+              asn bigint,
+              prefix cidr,
+              max_length integer
+              ) ;"""
+        self.execute(sql)
+
+```
+Lets get all rows from the Roas_Table:
+```python
+# Note that when it is initialized, create tables is called!
+with ROAs_Table() as db:
+    # Returns a list of dictionaries
+    rows = db.get_all()
+# connection is closed here
+```
+Lets clear the table upon initializing, in case it has things in it
+```python
+# This will drop the table (if exists) and recreate it
+with ROAs_Table(clear=True) as db:
+    # Do stuff here
+# Connection closed here
+```
+Other convenience funcs:
+* get_count: returns total count
+* get_all: Returns all rows as a list of dicts
+* clear_table: Drops table if exists
+* copy_table: Takes as input a path string and copies table to that path
+* filter_by_IPV_family: Filter table by IPV6 or IPV4
+* columns: Returns the columns of that table
+
+Again please note: upon connection, it creates the tables. If clear is passed, it will clear them. After the context manager is over it will close the database.
+
 Initializing the Database using db_connection (which should always be used):
 
 
@@ -1787,14 +1877,14 @@ with db_connection(Database) as db:
     # do intensive queries
     db.rehinge_db()
 ```
-#### From the Command Line
-Coming Soon to a theater near you
+
 ### Database Design Choices
 * [lib\_bgp\_data](#lib_bgp_data)
 * [Database Submodule](#database-submodule)
     * RealDictCursor is used as the default cursor factory because it is more OO and using a dictionary is very intuitive.
     * Unlogged tables are used for speed
     * Most safety measures for corruption and logging are disabled to get a speedup since our database is so heavily used with such massive amounts of data
+    * Lots of convenience functions so that code would not be duplicated across submodules
 
 ### Database Installation
 * [lib\_bgp\_data](#lib_bgp_data)
@@ -1845,9 +1935,8 @@ nothing gets recorded. The levels are, in order top to bottom:
    * [Installation Instructions](#installation-instructions)
    * [Postgres Installation](#postgres-instructions)
    * [System Requirements](#system-requirements)
-   * [Installation Submodule](#installation-submodule)
 
-Status: Development
+Status: Production
 
 ### Installation instructions
 * [lib\_bgp\_data](#lib_bgp_data)
@@ -1860,13 +1949,13 @@ First you need some dependencies. Run
 sudo apt-get install python-psycopg2
 sudo apt-get install libpq-dev
 ```
-Then install postgres 11 (see [Postgres Installation](#postgres-installation))
+Then install postgres 12 (see [Postgres Installation](#postgres-installation))
 
 If you are on a machine that has SELinux, you are going to need to run this in a python environment. On Ubuntu, the steps are as follows
-NOTE: We now use python3.8, so this will be slightly different
+NOTE: We now use python3.8. Make sure that you are using python 3.8.
 ```bash
 sudo apt-get install python3-pip
-sudo python3 -m pip3 install virtualenv 
+sudo python3.8 -m pip3 install virtualenv 
 ```
 
 On Redhat the steps can be found here:
@@ -1898,7 +1987,8 @@ python3 setup.py sdist bdist_wheel
 python3 setup.py develop --force
 ```
 
-After this you are going to need a install a couple of other things to be able to use most features. bgscanner, bgpdump, and the extrapolator are all automatically installed and moved to /usr/bin. bgpdump must be installed from source because it has bug fixes that are necessary. The RPKI validator is installed and move to /var/lib.
+There are lots of other dependencies, but they will be installed automatically the first time they are needed. If not, manual install links are below:
+
 >bgpscanner manual install link:
 >[https://gitlab.com/Isolario/bgpscanner](https://gitlab.com/Isolario/bgpscanner)
 >bgpdump manual install link:
@@ -1908,35 +1998,21 @@ After this you are going to need a install a couple of other things to be able t
 >RPKI Validator manual install link:
 >[https://www.ripe.net/manage-ips-and-asns/resource-management/certification/tools-and-resources](https://www.ripe.net/manage-ips-and-asns/resource-management/certification/tools-and-resources)
 
-To run the automatic install process, make a script called install.py with the script below.
-WARNING: THIS WILL OVERWRITE ALL PREVIOUS DB AND OTHER CONFIGURATIONS.
-
-ALSO NOTE: We are still in development. The current pip version has some installation bugs, and the development version should be used. Also, on different machines installs are buggy, please lmk if you have any problems at jfuruness@gmail.com
-```python
-from lib_bgp_data import Install
-Install().install()
-```
-If you have already installed a database and config and don't need a fresh install, do:
-```python
-from lib_bgp_data import Install
-Install().install(fresh_install=False)
-```
-This will automate the installation process, and from here you should be ready to go.
-
 Note that now that you have installed every part of lib_bgp_data, you can test it if you'd like. You can run:
 
 ```pip3 install lib_bgp_data --upgrade --force --install-option test```
 
-to test the install. To test the development package, cd into the root directory and run:
+to test the install. 
 
-```python3 setup.py develop test```
+To test the development package, cd into the root directory and run pytest.
+
 ### Postgres Installation
 * [lib\_bgp\_data](#lib_bgp_data)
 * [Installation Instructions](#installation-instructions)
 * [Installation Submodule](#installation-submodule)
 
 
-For this, you are going to need postgres 11. You need this because it allows for parallel query execution, which significantly speeds up processing time. For installing postgres on your machine, see:
+For this, you are going to need postgres 12. You need this because it allows for parallel query execution, which significantly speeds up processing time. For installing postgres on your machine, see:
 Ubuntu Install:
 [https://computingforgeeks.com/install-postgresql-11-on-ubuntu-18-04-ubuntu-16-04/](https://computingforgeeks.com/install-postgresql-11-on-ubuntu-18-04-ubuntu-16-04/)
 
@@ -1946,13 +2022,13 @@ or redhat install:
 
 After the database is installed, we are going to need to make a couple of changes. First, we need to start the database. To do this run:
 ```bash
-sudo systemctl start postgresql@11-main.service
+sudo systemctl start postgresql@12-main.service
 # or maybe
 sudo systemctl start postgresql
 ```
 To check to see if it is running:
 ```bash
-sudo systemctl status postgresql@11-main.service
+sudo systemctl status postgresql@12-main.service
 # or maybe
 sudo systemctl status postgresql
 ```
@@ -1970,123 +2046,86 @@ For the number of cores, the more the merrier. The MRT parser is multithreaded, 
 
 For the amount of RAM, I think this also largely depends on the extrapolator, which needs A LOT of RAM to run. How much, I don't know, that is not part of this package and you should refer to their github here: [https://github.com/c-morris/BGPExtrapolator](https://github.com/c-morris/BGPExtrapolator). If they don't have it written down perhaps they don't know either. This also matters a lot for the database. We have about 80GB of RAM in our machine, so many massive table joins can be done entirely in RAM, which makes the database a heck of a lot faster. You don't need RAM for the database, but without at least 50GB most joins will have to be written to disk which will slow queries down.
 
+In addition, the machine needs postgres 12 and python3.8 or above
 
-### Installation Submodule
-* [lib\_bgp\_data](#lib_bgp_data)
-* [Installation Instructions](#installation-instructions)
-* [Installation Submodule](#installation-submodule)
-* [Installation Submodule Description](#installation-submodule-description)
-* [Installation Submodule Design Choices](#installation-submodule-design-choices)
-* [Todo and Possible Future Improvements](#todopossible-future-improvements)
-
-#### Installation Submodule Description
-* [lib\_bgp\_data](#lib_bgp_data)
-* [Installation Instructions](#installation-instructions)
-* [Installation Submodule](#installation-submodule)
-
-
-The Install class contains the functionality to create through a script
-everything that is needed to be used for the program to run properly.
-This is done through a series of steps.
-
-1. Create the config file. This is optional in case a config was created
-    * This is handled by the config class
-    * The fresh_install arg is by default set to true for a new config
-2. Install the new database and database users. This is optional.
-    * This is handled by _create_database
-    * If a new config is created, a new database will be created
-3. Then the database is modified.
-    * This is handled by modify_database
-    * If unhinged argument is passed postgres won't write to disk
-        * All writing to disk must be forced with vaccuum
-        * If data isn't written to disk then memory will be leaked
-4. Then the extrapolator is installed
-    * Handled in the _install_forecast_extrapolator and _install_rovpp_extrapolator function
-    * The rov and forecast versions of the extrapolator are isntalled
-    * The extrapolators are copied into /usr/bin for later use
-5. Then bgpscanner is installed
-    * Handled in the _install_bgpscanner function
-    * Once it is isntalled it is copied into /usr/bin for later use
-6. Then bgpdump is installed
-    * Handled in the _install_bpdump function
-    * Must be installed from source due to bug fixes
-    * Copied to /usr/bin for later use
-7. Then the rpki validator is installed
-    * Handled in the _install_rpki_validator functions
-    * Config files are swapped out for our own
-    * Installed in /var/lib
-   
-#### Installation Submodule Design Choices
-* [lib\_bgp\_data](#lib_bgp_data)
-* [Installation Instructions](#installation-instructions)
-* [Installation Submodule](#installation-submodule)
-    * Database modifications increase speed
-        * Tradeoff is that upon crash corruption occurs
-        * These changes are made at a cluster level
-            * (Some changes affect all databases)
-    * bgpdump must be installed from source due to bug fixes
 
 ## Testing
    * [lib\_bgp\_data](#lib_bgp_data)
 
+NOTE: Along with everything else in this package, you must be a super user and have your python environment activated before running any of these commands.
+
 Run tests on install by doing:
-```pip3 install lib_bgp_data --force --install-option test```
+```sudo pip3 install lib_bgp_data --force --install-option test```
 This will install the package, force the command line arguments to be installed, and run the tests
-NOTE: You might need sudo to install command line arguments when doing this
 
 You can test the package if in development by moving/cd into the directory where setup.py is located and running:
-```python3 setup.py test```
+```sudo python3 setup.py test```
 
-To test a specific submodule, cd into that submodule and run:
-```pytest```
+To test a specific submodule, run pytest --help. Then you can run pytest -m <submodule_name> and onl tests from that submodule will be run.
 
+Also note that slow tests are marked as slow. So you can not run slow tests by doing pytest -m "not slow".
+
+All the skipped tests are for the interns to fill in. I have completed these tests manually and am confident they will succeed, and I have been told by my bosses to move on to other tasks.
 
 ## Adding a Submodule
    * [lib\_bgp\_data](#lib_bgp_data)
    * [How to Add a Submodule](#how-to-add-a-submodule)
 ### How to Add a Submodule
+NOTE: If you are a collaborator, make sure to branch! Never, ever push to master.
+
+Where to begin. To start, first I would install the package and run the roas parser. That way you can kind of get a feel for how to run something from this package. Once that is done, you will need to get up to speed on a few python things. If you know some of these things, feel free to skip them:
+
+list comprehensions:
+[https://www.youtube.com/watch?v=3dt4OGnU5sM](https://www.youtube.com/watch?v=3dt4OGnU5sM)
+decorators:
+[https://www.youtube.com/watch?v=FsAPt_9Bf3U](https://www.youtube.com/watch?v=FsAPt_9Bf3U)
+context managers:
+[https://www.youtube.com/watch?v=-aKFBoZpiqA](https://www.youtube.com/watch?v=-aKFBoZpiqA)
+Python packages (NOTE: There's no good youtube vids, but here is something quick):
+[https://www.youtube.com/watch?v=uVJf5wuPpyw](https://www.youtube.com/watch?v=uVJf5wuPpyw)
+SQL/PostgreSQL: google your own stuff for this
+pytest: 
+[https://www.udemy.com/course/elegant-automation-frameworks-with-python-and-pytest/](https://www.udemy.com/course/elegant-automation-frameworks-with-python-and-pytest/)
+
 To explain this easier we will look at the roas collector submodule. Do not use this submodule. Instead, copy it and all of it's contents into another directory. If you have access to a bash terminal you can accomplish this by copying doing:
 ```bash
 cp -R roas_collector my_submodule
 ```
 Then you can manipulate this submodule to do what you want. If you want to look at a very simple submodule for another example, the relationships_parser is also fairly straightforward.
 
-Let's first look at the \_\_init\_\_.py file inside this new submodule. For formatting of all python files, I looked it up and the proper way to do it is to have a shebang at the top defining that it is python and that the coding is in utf8, as you can see. Then there is usually a docstring containing all the information you would need about the file. For a normal file someone should be able to read it and obtain a thorough understanding of what's in the file. For the \_\_init\_\_.py file a user should be able to read it and obtain a thorough understanding of the whole submodule. I like to split these docstrings into a series of parts. The first line, as is specified by pep8, is a short description. Then a new line, and then a slightly longer description. Then I like to list out the steps that my file will perform. After that there is a design choices section, which should summarize design choices from above. This section is important because you can clearly detail why certain decisions where made for future users. There is also a future extensions section, which should contain all possible future work for the current file, or, in the case of the \_\_init\_\_.py file, all the future work for the current submodule. Then we are going to include some python headers with some metadata. This data should be kept up to date, and make sure to give credit where credit is due. Another thing, for the love of god please make your files pep8 compliant. There are numerous tools to do this automatically that exist for many different text editors.
+Let's first look at the \_\_init\_\_.py file inside this new submodule. For formatting of all python files, I looked it up and the proper way to do it is to have a shebang at the top defining that it is python and that the coding is in utf8, as you can see. Then there is usually a docstring containing all the information you would need about the file. For a normal file someone should be able to read it and obtain a thorough understanding of what's in the file. For the \_\_init\_\_.py file a user should be able to read it and obtain a thorough understanding of the whole submodule. I like to split these docstrings into a series of parts. The first line, as is specified by pep8, is a short description. Then a new line, and then a slightly longer description. Then I like to list out the steps that my file will perform. After that there is a design choices section, which should summarize design choices from above. This section is important because you can clearly detail why certain decisions where made for future users. There is also a future extensions section, which should contain all possible future work for the current file, or, in the case of the \_\_init\_\_.py file, all the future work for the current submodule. Then we are going to include some python headers with some metadata. This data should be kept up to date, and make sure to give credit where credit is due. Another thing, for the love of god please make your files pep8 compliant. There are numerous tools to do this automatically that exist for many different text editors. If you are using vim you can use flake8. If doing it on a remote server is to difficult, feel free to download it onto your own laptop and do it there.
 
 If you are not familiar with the \_\_init\_\_.py file, this is a file in python that the package manager will look at to determine what is inside of a folder. That is a very short explanation, a much better explanation can be found at:
 google.com
 just kidding lol.  I thought I had a good tutorial but I couldn't find it. However, some of this python code is not basic stuff, if you are ever confused I suggest searching the problem with "Corey Shafer" on youtube, his tutorials are usually pretty good.
 All classes, functions, etc. that will be used outside of your submodule should be imported in \_\_init\_\_.py . Similar import statements should again occur at the top level \_\_init\_\_.py file. Only the programs that are in the top level \_\_init\_\_.py file can be easily accessed in a script. Also notice how my submodule name, my file in the submodule that contains the most important class required to run that will be imported above, and the class that will be imported to upper level folders are almost all the same name. This will let a user know what the main files are in a program.
 
-Before you continue, you should try to get your new submodule to run. Make sure that you have imported it correctly in both the \_\_init\_\_.py file that is located within your submodules folder, and also the \_\_init\_\_.py file located in the folder above. Then try to import it from lib_bgp_data in a script and run it. Note that to get the traceback from errors, you should pass in as an argument to the initialization of your class {"stream_level": logging.DEBUG}. Good luck! Let me know if you have any problems!
+Before you continue, you should try to get your new submodule to run. Make sure that you have imported it correctly in both the \_\_init\_\_.py file that is located within your submodules folder, and also the \_\_init\_\_.py file located in the folder above. Then try to import it from lib_bgp_data in a script and run it. Note that to get the traceback from errors, you should pass in as an argument to the initialization of your class stream_level=logging.DEBUG}. Good luck! Let me know if you have any problems!
 
-Now lets take a look at the roas_collector. Aside from the stuff at the top which is similar to the \_\_init\_\_.py file, the imports are very different. You'll notice that normal packages import normally, such as the re function. To import classes from files outside of your current folder (in the folder above) you need to do 
+Now lets take a look at the roas_parser. Aside from the stuff at the top which is similar to the \_\_init\_\_.py file, the imports are very different. You'll notice that normal packages import normally, such as the re function. To import classes from files outside of your current folder (in the folder above) you need to do 
 ```python
 from ..<above folder> import <stuff you want to import>
 ```
 You can see this as an example in the line:
 ```python
-from ..utils import utils, error_catcher, db_connection
+from ..utils import utils
 ```
-This imports the utils file, error_catcher, and db_connection from the utils folder, which is outside of our current folder. To import classes and other things from the current folder, do the same as above but with one less period. Example below.
+This imports the utils file from the utils folder, which is outside of our current folder. To import classes and other things from the current folder, do the same as above but with one less period. Example below.
 ```python
 from .tables import ROAs_Table
 ```
 After that we have the class. Notice all the docstrings and comments throughout the code. If the information is included in the docstring at the top of the file, just say for a more in depth explanation refer to the top of the file. Also notice the use of \_\_slots\_\_. This is not required, but turns the class almost like into a named tuple. Attributes that are not included in the \_\_slots\_\_ cannot be added. It decreases the reference time for a value significantly, I think by about a third. You probably won't need this, and it can cause lots of errors if you don't understand it, so probably just delete it.
 
-In the \_\_init\_\_ method the utils.set_common_init_args is called. You can view this function in the utils file, but in short this initializes the logger, the path for files, and the csv directory. Leaving these as the default is usually fine.
+Note that the ROAs_Parser inherits from the Parser class. You should use this class. All subclasses of parser are automatically added to the command line arguments (as the lowercase name of your class). They must also have a _run function, which will act as the main function that runs your code. This function will also catch all errors and log them. 
 
-Also notice the @error_catcher decorator. This catches any errors that occur. For a better explanation, view [Error Catcher](#error-catcher). In short, this is a nice convenient way to log errors.
+Inside this function we have a Database context manager. This will open a connection to the database with the table specified and also create that table by automatically calling the _create_tables function. 
 
-Then we have the parse_roas function. Notice the decorator for the run_parser. This decorator runs the parser, logs all errors, and records the start and end time of the parser.
+After this function we have a helper functions sign. This is usually if you have a long list of functions, and want to group them somehow. Helper functions just means that they are private. Notice these functions, and all other variables that should be private have an underscore underneath them. 
 
-Inside this function we have a db_connection context manager. This will open a connection to the database with the table specified and also create that table. 
-
-After this function we have a helper functions sign. This is usually if you have a long list of functions, and want to group them somehow. Helper functions just means that they are private. Notice these functions, and all other variables that should be private (hopefully I do that soon, forgot to do all the variables, oops!) have an underscore underneath them. 
-
-Lets take a look at the file tables.py. This file typically contains all the database interactions side of things. All the tables that get generated. The names of these classes are important and are used in the program. The name of the class should be the name of the table followed by _Table. They inherit from a database class. When this class is initialized it connects to the database, and calls the _create_tables function. This function should create whatever table you are trying to create. Another function, clear_table, should be included in whatever class you created. This is the function that is called whenever db_connection is initiated, to drop whatever previous data was there before. For SQL all table names should be hardcoded in. The \_\_slots\_\_ is empty here because it inherits from the database class. The real dict cursor is used to make all return values into a list of dictionaries, to make it easier to use. Note that this is not the most effective memory wise, and other cursor factories should be used if memory consumption is a problem.
+Lets take a look at the file tables.py. This file typically contains all the database interactions side of things. All the tables that get generated. The names of these classes are important and are used in the program. They inherit from a Generic_Table class. When this class is initialized it connects to the database, and calls the _create_tables function. This function should create whatever table you are trying to create. Another function, clear_table, should be included in whatever class you created. This is the function that is called whenever db_connection is initiated, to drop whatever previous data was there before. The \_\_slots\_\_ is empty here because it inherits from the database class. The real dict cursor is used to make all return values into a list of dictionaries, to make it easier to use. Note that this is not the most effective memory wise, and other cursor factories should be used if memory consumption is a problem. See the [Database](#database-submodule) for more details on how to ineract with a database.
 
 There you have it. Please let me know any questions you might have. Take a look at the [Utils](#utils) section for things you may want to use in your submodule.
+
 ## Development/Contributing
    * [lib\_bgp\_data](#lib_bgp_data)
 
@@ -2101,23 +2140,24 @@ To add your own submodule: [How to Add a Submodule](#how-to-add-a-submodule)
 
 ## History
    * [lib\_bgp\_data](#lib_bgp_data)
-   * 0.2.2 - Automated full run
+   * 0.3.0 - Got many submodules up to date and with lots of unit tests. Backwards compatibility destroyed
    * 0.2.3 - Fixed bugs found in the RPKI Validator, MRT Parser. Various other bug fixes. Added pytest for roas_collector.
+   * 0.2.2 - Automated full run
 
 ## Credits
    * [lib\_bgp\_data](#lib_bgp_data)
 
 This is a massive python package, and it obviously would not have been possible without lots of help.
 
-First of all, thanks to Comcast for funding such amazing research. It had really been a pleasure working with you guys and this research is yielding some pretty incredible results.
+Thanks goes out first to Matt Jaccino. He added the isolario announcements and also the capabilities for a multi section config, among many other contributions. Truly amazing work.
 
-Thanks to Dr. Amir Herzberg and Dr. Bing Wang with all the help for leading the development team and for all of their knowledge on this subject, and for employing me to work on this.
-
-Thanks to Matt Jaccino for adding many useful features and unit tests, great work lots of contributions
-
-Thanks to Cameron Morris for his help writing the RPKI Validator submodule, and configuring the RPKI Validator to run off of our own file. Also thanks for pointing out other bugs throughout development. And pulling numerous all nighters with me to push for getting the forecast up and running for deadlines for demonstrations. Definitely MVP.
+Thanks to Cameron for helping with the RPKI Validator, pulling various all nighters with me to push for deadlines, various other contributions, and pointing out many bugs along the development process.
 
 Thanks to James for looking into the mrt_w_roas join duplication bug and the numerous bugs that were discovered in Caida's API, and communicating with them and debugging some SQL queries
+
+Thanks to Comcast for funding such amazing research. It had really been a pleasure working with you guys and this research is yielding some pretty incredible results.
+
+Thanks to Dr. Amir Herzberg and Dr. Bing Wang with all the help for leading the development team and for all of their knowledge on this subject, and for employing me to work on this.
 
 Thanks to Luke Malinowski for help in debugging some SQL queries.
 
@@ -2125,11 +2165,15 @@ Thanks to Reynaldo Morris for his help for showing me how to configure the API t
 
 Thanks to Cameron, Reynaldo, and James for connecting the API to the website
 
+And of course thanks to the new python hires, Abhinna, Tony, and Nicholas, I look forward to working with you.
+
+Thanks for all the other help that I have since neglected to write down, it's been a pleasure working with you all.
+
 There is also all  of the tools that we use:
 Thanks to the bgpscanner team. The tool is amazing, it is much faster than bgpdump. They also helped me out to modify their script, and were very responsive to emails.
 [https://gitlab.com/Isolario/bgpscanner](https://gitlab.com/Isolario/bgpscanner)
 
-Thanks to the people behind the RPKI Validator. It is an extremely useful and fast tool.
+Thanks to the people behind the RPKI Validator. It is an extremely useful tool.
 [https://www.ripe.net/manage-ips-and-asns/resource-management/certification/tools-and-resources](https://www.ripe.net/manage-ips-and-asns/resource-management/certification/tools-and-resources)
 
 Thanks to the people behind bgpdump. This tool was what we originally used and has had consistent updates. 
@@ -2138,7 +2182,7 @@ Thanks to the people behind bgpdump. This tool was what we originally used and h
 Thanks to Caida for their MRT and Relationship data, which is extremely useful:
 [http://www.caida.org/home/](http://www.caida.org/home/)
 
-Thanks to ISOlario for their MRT data, which we have not yet integrated but will soon:
+Thanks to ISOlario for their MRT data:
 [https://www.isolar.io/](https://www.isolar.io/)
 
 Thanks to bgpstream.com for their information on hijackings:
@@ -2164,12 +2208,49 @@ Thanks to all of these blogs, stack overflow posts, etc. for their help in solvi
 * [https://stackoverflow.com/a/20691431](https://stackoverflow.com/a/20691431)
 * [https://stackoverflow.com/a/43057166/8903959](https://stackoverflow.com/a/43057166/8903959)
 * https://www.geeksforgeeks.org/python-difference-between-two-dates-in-minutes-using-datetime-timedelta-method/
+* [https://stackoverflow.com/a/427533/8903959](https://stackoverflow.com/a/427533/8903959)  
+* [https://stackoverflow.com/a/3468410](https://stackoverflow.com/a/3468410)  
+* [https://stackoverflow.com/a/54919285](https://stackoverflow.com/a/54919285)  
+* [https://stackoverflow.com/a/18431364](https://stackoverflow.com/a/18431364)  
+* [https://www.tutorialdocs.com/article/python-class-dynamically.html](https://www.tutorialdocs.com/article/python-class-dynamically.html)  
+* [https://stackoverflow.com/a/40409974](https://stackoverflow.com/a/40409974)  
+* [https://stackoverflow.com/a/55961848/8903959](https://stackoverflow.com/a/55961848/8903959)  
+* [https://stackoverflow.com/a/9079062/8903959](https://stackoverflow.com/a/9079062/8903959)  
+* [https://stackoverflow.com/a/9079080/8903959](https://stackoverflow.com/a/9079080/8903959)  
+* [https://stackoverflow.com/a/1883251/8903959](https://stackoverflow.com/a/1883251/8903959)  
+* [https://stackoverflow.com/a/7065242](https://stackoverflow.com/a/7065242)  
+* [https://stackoverflow.com/q/12400256/8903959](https://stackoverflow.com/q/12400256/8903959)  
+* [https://stackoverflow.com/a/43064544/8903959](https://stackoverflow.com/a/43064544/8903959)  
+* [https://github.com/tqdm/tqdm/issues/484](https://github.com/tqdm/tqdm/issues/484)  
+* [https://stackoverflow.com/a/3160819/8903959](https://stackoverflow.com/a/3160819/8903959)  
+* [https://stackoverflow.com/a/39281387](https://stackoverflow.com/a/39281387)
+* [https://stackoverflow.com/a/1482316](https://stackoverflow.com/a/1482316)https://stackoverflow.com/a/1482316
+* https://stackoverflow.com/a/19640319
 * 
 
 ## License
    * [lib\_bgp\_data](#lib_bgp_data)
 
-MIT License
+BSD License
+
+## New Hires
+   * [lib\_bgp\_data](#lib_bgp_data)
+
+I added this section just so I would have to deal with less overhead with all the new hires that we were getting. To start with you will need to do some things to get started.
+
+1. Email Amir and Jeanette (if you don't know her email just email Amir) and get set up with payroll on ess.uconn.edu. When you submit your hours, you will also need to submit an excel spreadsheet of the times that you worked, and what you did during those hours. You can keep the descriptions short, for example: Aug 8 9am-5pm Worked on Roas parser. Whenever you work please update your hours so that you do not forget. Please remind me and I will get you access to this doc. Also note that all training is billable hours. We expect at least 10 hours a week, but if you have heavy or light weeks due to school everything is very flexible, certainly don't let this get in the way of your grades. Please just let me know in advance if you will be working less and have high priority tasks, and I'll redelegate them elsewhere.
+2. Email Professor Laurent with your public ssh key and password, cc Amir and myself, and make sure to ask for access and sudo power on ahlocal and ahdev. To log on to these servers, do:
+```ssh -A jmf@csi-lab-ssh.engr.uconn.edu```
+```ssh -A ahlocal```
+```sudo -E su```
+Once you have cloned this repo (NOTE: DO NOT USE GLOBAL CONFIG!!):
+```git config user.email <youremail>```
+```git config user.name <"Your Name">```
+Also note that you should code and run your programs on these servers. You should not do it on your local machine. Our servers are much faster than your laptop with much more memory, by a margin of more than 10X. Time is money. In addition, when there is a problem it will help me to debug if I can access your code and run it. We've also had problems in the past of code breaking when run on our environments that didn't break on laptops, and it had to be scrapped. I recommend using tmux in conjunction with vim.
+3. We will need to get you access to slack. Email me a reminder to do that, and to give you access to Jira. Any questions you may have, slack is the way to reach me.
+4. Once you have access to the Jira board, this is where we will keep track of what we need to do. Every week we have a "stand up" meeting, a short 15 minute meeting where we go over the progress we've made on the tickets we are working on, and any roadblocks we may have. Make sure to have pushed your code to your own branch before this meeting.
+5. Read the Goa Rexford paper (ask for access) and I'd read this README for clarity on some things. Message me when this is done so that we can have a one on one discussion of our research and what you will be working on. Don't worry if this stuff is confusing, I did not get anything when I first started, it won't be a problem at all.
+6. That's about it! We are working on some exciting stuff and exciting papers. We usually publish a couple every year, so you are definitely working on some awesome stuff that will change the internet as we know it!
 
 ## TODO/Possible Future Improvements
    * [lib\_bgp\_data](#lib_bgp_data)
@@ -2194,3 +2275,7 @@ A: Read these:
 Q: What is the fastest way to dump these tables?
 
 A: ```pgdump bgp | pigz -p <numthreads> > jdump.sql.gz``` I have tested all of the different possibilities, and this is the fastest for dumping and reuploading for our tables. Note that indexes do not get dumped and must be recreated.
+
+Q: What is inter domain routing, gao rexford, hijacks, and ROV from a laymens perspective?
+
+A: I'm glad you asked! The internet is comprised of these giant networks called ASes (Autonomous Systems). You can almost think of it as a bunch of servers that communicate with each other, and they communicate using the Border Gateway Protocol, or BGP. In this protocol, they send back and forth their AS number (also called the origin) and their prefixes (a list of ip address, or in other words urls). So basically, one AS will send out a prefix (1.2.0.0/16) and it's origin (1) to the entire internet. Then, any url/ip address that falls within 1.2.0.0/16 will be go to that address. Now, what happens if two ASes announce the same prefix?! This is called a hijacking. One of them is surely lying! But how do the ASes that recieve both announcements decide which one to trust? With the Gao Rexford protocol (mostly)! In this protocol, the AS selects the announcements that they think will make them the most money. Not the shortest path, but the cheapest one. In this case, if the prefix is the same, they will choose the announcement that has a shorter path to it's destination. If the prefix was different, it would choose the more specific prefix (i.e. 1.2.3/24 instaed of 1.2/16). In this way, any AS can lie, and get all the traffic! How do we stop this do you ask? With ROV (Route Origin Validation). You can think of it almost as a database of information for announcements (in reality it is a public key infrastructure, but don't worry about that). This database contains information on the prefix and the origins. So if an announcement occurs that is in conflict with an entry (a ROA) in this database, it will be blocked! However, ROAs are not always accurate. If they were, everyone would use ROV, but they do not. Sometimes ROAs are outdate and wrong. Other times they are made with errors. When this happens, good traffic and good announcements can get blocked, even though it is not a hijack. Network operators want to know - what will happen to MY traffic if I use this security policy?? That is what this package is trying to solve. Please see the package description for further information on that.

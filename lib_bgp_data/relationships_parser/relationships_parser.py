@@ -61,7 +61,7 @@ class Relationships_Parser(Parser):
         # Api url
         prepend = 'http://data.caida.org/datasets/as-relationships/serial-2/'
         # Get all html tags that might have links
-        _elements = [x for x in utils.get_tags(prepend, 'a')[0]]
+        _elements = [x for x in utils.get_tags(prepend, 'a')]
         # Gets the last file of all bz2 files
         file_urls = [x["href"] for x in _elements if "bz2" in x["href"]]
         return [prepend + x for x in file_urls[-1 - months_back:]]

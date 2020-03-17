@@ -137,7 +137,7 @@ class Data:
             self._temp_row["url"]).group()
         url = 'https://bgpstream.com' + self._temp_row["url"]
         # Returns the as info and html for the page with more info
-        return as_info, utils.get_tags(url, "td")[0]
+        return as_info, utils.get_tags(url, "td")
 
     
     def _parse_as_info(self, as_info: str):
