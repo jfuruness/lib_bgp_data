@@ -17,8 +17,9 @@ __status__ = "Development"
 import pytest
 
 from ..bgpstream_website_parser import BGPStream_Website_Parser
+from ..tables import Hijacks_Table, Leaks_Table, Outages_Table
 from ...utils import utils
-
+from time import strftime, gmtime, time
 
 @pytest.mark.bgpstream_website_parser
 class Test_BGPStream_Website_Parser:
@@ -80,7 +81,6 @@ class Test_BGPStream_Website_Parser:
 
         pass
 
-    @pytest.mark.skip(reason="New hire work")
     def test_generate_known_events(self):
         """Tests the generate_known_events function
 
@@ -89,5 +89,19 @@ class Test_BGPStream_Website_Parser:
         Make sure it doesn't fail if one of the tables is empty either.
         Parametize is prob required.
         """
+        # inserts a dummy event into hijack, tests if generate_known_events gets dummy event, deletes dummy event
+        test_event_number = 1
+        test_start_time = strftime('%Y-%m-%d %H:%M:%S', gmtime(time() - 86400))
+        test_end_time = strftime('%Y-%m-%d %H:%M:%S', gmtime(time()))
 
-        pass
+        for _Table_Class in [Hijacks_Table, Leaks_Table, Outages_Table]:
+            with _Table_Class() as _db:
+                _db.execute(f"""INSERT INTO {_db.name}(event_number, start_time, end_time)
+                            VALUES(%s, %s::timestamp with time zone, %s::timestamp with time zone)""",
+                            [test_event_number, test_start_time, test_end_time])
+        events = BGPStream_Website_Parser()._generate_known_events()
+        assert events[test_event_number] == (test_start_time + '+00:00', test_end_time + '+00:00')
+
+        for _Table_Class in [Hijacks_Table, Leaks_Table, Outages_Table]:
+            with _Table_Class() as _db:
+                _db.execute(f"DELETE FROM {_db.name} WHERE event_number={test_event_number}")

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-"""This file contains tests for the relationships_parser.py file.
+"""This file contains tests for the data_classes.py file.
 For specifics on each test, see the docstrings under each function.
 """
 

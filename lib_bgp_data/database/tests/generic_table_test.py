@@ -115,3 +115,7 @@ class Generic_Table_Test:
                       WHERE tablename = '{_db.name}'"""
                 indexes = _db.execute(sql)
                 assert len(indexes) > 0
+                # second run of create_index() shouldn't add anything
+                _db.create_index()
+                indexes_second = _db.execute(sql)
+                assert len(indexes) == len(indexes_second)
