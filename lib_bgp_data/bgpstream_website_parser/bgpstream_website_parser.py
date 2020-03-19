@@ -84,7 +84,7 @@ class BGPStream_Website_Parser(Parser):
         # Reduce/set row_limit to total number of rows
         # We remove last ten rows because html is messed up
         if row_limit is None or row_limit > len(rows) - 10:
-            row_limit = len(rows)
+            row_limit = len(rows) - 10
 
         return rows[:row_limit]
 

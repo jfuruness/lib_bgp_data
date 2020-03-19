@@ -6,8 +6,8 @@ For specifics on each test, see docstrings under each function.
 """
 
 
-__authors__ = ["Justin Furuness"]
-__credits__ = ["Justin Furuness"]
+__authors__ = ["Justin Furuness", "Tony Zheng"]
+__credits__ = ["Justin Furuness", "Tony Zheng"]
 __Lisence__ = "BSD"
 __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
@@ -19,6 +19,8 @@ from unittest.mock import Mock, patch
 
 from ..bgpstream_website_parser import BGPStream_Website_Parser
 from ..tables import Hijacks_Table, Leaks_Table, Outages_Table
+from ..data_classes import Hijack, Leak, Outage
+from ..event_types import Event_Types
 from ...utils import utils
 from bs4 import BeautifulSoup as Soup
 from time import strftime, gmtime, time
@@ -41,7 +43,6 @@ class Test_BGPStream_Website_Parser:
 
         pass 
 
-    @pytest.mark.skip(reason="WIP")
     def test_get_rows(self):
         """Tests get rows func
 
@@ -54,13 +55,16 @@ class Test_BGPStream_Website_Parser:
         add a keyword arg to the get rows func.
         """
         parser = BGPStream_Website_Parser()
-        rows = utils.get_tags("https://bgpstream.com", "tr")
-        # check with no limit
-        assert len(parser._get_rows(None)) == len(rows)
-        # check with limit
-        assert len(parser._get_rows(20)) == 20
-        # check with limit that's greater than number of rows available
-        assert len(parser._get_rows(999999)) == len(rows)
+
+        # test row_limits and if the row_limit should be used
+        row_limits = [(None, False), (20, True), (999999, False)]
+
+        for l in row_limits:
+            rows = utils.get_tags("https://bgpstream.com", "tr")
+            if l[1]:
+                assert len(parser._get_rows(l[0])) == l[0]
+            else:
+                assert len(parser._get_rows(l[0])) == len(rows) - 10
 
         def open_custom_HTML(url: str, tag: str):
             with open('./test_HTML/page.html') as f:
@@ -72,7 +76,7 @@ class Test_BGPStream_Website_Parser:
             mock_get_tag.side_effect = open_custom_HTML
             assert len(parser._get_rows(None)) == 3
             assert len(parser._get_rows(2)) == 2
-            assert len(parser._get_rows(999999)) == len(rows)
+            assert len(parser._get_rows(999999)) == 3
 
     @pytest.mark.skip(reason="WIP")
     def test_parse_row(self):
@@ -86,23 +90,61 @@ class Test_BGPStream_Website_Parser:
     
         Should make sure output is as expected
         """
-        mock_row = Mock()
-        # 1=_type, 7=start, 9=end, 11=url
-        type = Mock()
-        type.string = "Possible Hijack"
-        start = Mock()
-        start.string = "2020-03-18 10:40:00"
-        end = Mock()
-        end.string = "2020-03-18 11:04:00"
-        url = Mock()
-        url.a = {"href": "/event/229061"}
-        mock_row.children = [0, type, 2, 3, 4, 5, 6, start, 8, end, 10, url]
+        event_combos = [{Event_Types.HIJACK.value: Hijack('./')},
+                        {Event_Types.LEAK.value: Leak('./')},
+                        {Event_Types.OUTAGE.value: Outage('./')},
+                        {Event_Types.HIJACK.value: Hijack('./'), Event_Types.LEAK.value: Leak('./')},
+                        {Event_Types.HIJACK.value: Hijack('./'), Event_Types.OUTAGE.value: Leak('./')},
+                        {Event_Types.LEAK.value: Leak('./'), Event_Types.OUTAGE.value: Outage('./')},
+                        {Event_Types.HIJACK.value: Hijack('./'), Event_Types.LEAK.value: Leak('./'), Event_Types.OUTAGE.value: Outage('./')}]
+
+        with open('./test_HTML/page.html') as f:
+            html = f.read()
+            tags = [x for i, x in enumerate(Soup(html, 'html.parser').select('tr')) if i < 3]
 
         parser = BGPStream_Website_Parser()
-        parser._parse_row(mock_row, {}, False)
-        assert parser._data[type.string].data
+        for row in tags:
+            parser._parse_row(row, {}, True)
+            print(parser._data[Event_Types.HIJACK.value].data)
+            print(parser._data[Event_Types.OUTAGE.value].data)
+            print(parser._data[Event_Types.LEAK.value].data)
 
-    @pytest.mark.skip(reason="New hire work")
+#        for combination in event_combos:
+#            parser = BGPStream_Website_Parser()
+#            parser._data = combination
+#            # unseen event should be added
+#            parser._parse_row(tags[0], {}, False)
+#            if Event_Types.HIJACK.value in combination:
+#                print(parser._data[Event_Types.HIJACK.value].data)
+#                assert parser._data[Event_Types.HIJACK.value].data[0] == ['', '{131477, 138576, 3257, 28329, 265888, 2}', '8', 'UDEL-DCN, US', '2',
+#                                                       '2020-03-18 17:41:23', '', '229087', 'Possible Hijack', 'BULL-HN, US', '6',
+#                                                       '128.201.254.0/23', '128.201.254.0/23', '/event/229087']
+#                # seen event should not be added
+#                parser._parse_row(tags[0], {'229087': ('2020-03-18 17:41:23', '')}, False)
+#                assert parser._data[Event_Types.HIJACK.value].data[0] == [['', '{131477, 138576, 3257, 28329, 265888, 2}', '8', 'UDEL-DCN, US', '2',
+#                                                       '2020-03-18 17:41:23', '', '229087', 'Possible Hijack', 'BULL-HN, US', '6',
+#                                                       '128.201.254.0/23', '128.201.254.0/23', '/event/229087']]
+#                # unless refresh is True
+#                parser._parse_row(tags[0], {'229087': ('2020-03-18 17:41:23', '')}, True)
+#                assert parser._data[Event_Types.HIJACK.value].data[0] == [['', '{131477, 138576, 3257, 28329, 265888, 2}', '8', 'UDEL-DCN, US', '2',
+#                                                       '2020-03-18 17:41:23', '', '229087', 'Possible Hijack', 'BULL-HN, US', '6',
+#                                                       '128.201.254.0/23', '128.201.254.0/23', '/event/229087'],
+#                                                   ['', '{131477, 138576, 3257, 28329, 265888, 2}', '8', 'UDEL-DCN, US', '2',
+#                                                       '2020-03-18 17:41:23', '', '229087', 'Possible Hijack', 'BULL-HN, US', '6',
+#                                                       '128.201.254.0/23', '128.201.254.0/23', '/event/229087']]
+#                # or event has new start/end time
+#                tags[0].children[7].string = '2020-03-18 18:41:23'
+#                parser._parse_row(tags[0], {'229087': ('2020-03-18 17:41:23', '')}, False)
+#                assert parser._data[Event_Types.HIJACK.value].data[0] == [['', '{131477, 138576, 3257, 28329, 265888, 2}', '8', 'UDEL-DCN, US', '2',
+#                                                       '2020-03-18 17:41:23', '', '229087', 'Possible Hijack', 'BULL-HN, US', '6',
+#                                                       '128.201.254.0/23', '128.201.254.0/23', '/event/229087'],
+#                                                   ['', '{131477, 138576, 3257, 28329, 265888, 2}', '8', 'UDEL-DCN, US', '2',
+#                                                       '2020-03-18 17:41:23', '', '229087', 'Possible Hijack', 'BULL-HN, US', '6',
+#                                                       '128.201.254.0/23', '128.201.254.0/23', '/event/229087'],
+#                                                   ['', '{131477, 138576, 3257, 28329, 265888, 2}', '8', 'UDEL-DCN, US', '2',
+#                                                       '2020-03-18 18:41:23', '', '229087', 'Possible Hijack', 'BULL-HN, US', '6',
+#                                                       '128.201.254.0/23', '128.201.254.0/23', '/event/229087']]
+
     def test_get_row_front_page_info(self):
         """Tests the get_row_front_page_info function
 
@@ -111,8 +153,19 @@ class Test_BGPStream_Website_Parser:
         try a row with and without contry/flag.
         Prob should parametize this function.
         """
+        with open('./test_HTML/page.html') as f:
+            html = f.read()
+            tags = [x for i, x in enumerate(Soup(html, 'html.parser').select('tr')) if i < 3]
 
-        pass
+        parser = BGPStream_Website_Parser()
+        outage_info = ('Outage', '2020-03-18 22:31:00+00:00', '2020-03-18 22:34:00+00:00', '/event/229106', '229106')
+        leak_info = ('BGP Leak', '2020-03-18 20:26:10+00:00', 'None', '/event/229100', '229100')
+        hijack_info = ('Possible Hijack', '2020-03-18 17:41:23+00:00', 'None', '/event/229087', '229087')
+        infos = [outage_info, leak_info, hijack_info]
+        print(tags)
+
+        for i in range(len(tags)):
+            assert parser._get_row_front_page_info(tags[i]) == infos[i]
 
     def test_generate_known_events(self):
         """Tests the generate_known_events function
