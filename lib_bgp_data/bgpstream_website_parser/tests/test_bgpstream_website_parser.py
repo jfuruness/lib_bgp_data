@@ -15,10 +15,12 @@ __status__ = "Development"
 
 
 import pytest
+from unittest.mock import Mock, patch
 
 from ..bgpstream_website_parser import BGPStream_Website_Parser
 from ..tables import Hijacks_Table, Leaks_Table, Outages_Table
 from ...utils import utils
+from bs4 import BeautifulSoup as Soup
 from time import strftime, gmtime, time
 
 @pytest.mark.bgpstream_website_parser
@@ -39,7 +41,7 @@ class Test_BGPStream_Website_Parser:
 
         pass 
 
-    @pytest.mark.skip(reason="New hire work")
+    @pytest.mark.skip(reason="WIP")
     def test_get_rows(self):
         """Tests get rows func
 
@@ -51,10 +53,28 @@ class Test_BGPStream_Website_Parser:
         NOTE: try using mock to insert your own html. If that doesn't work,
         add a keyword arg to the get rows func.
         """
+        parser = BGPStream_Website_Parser()
+        rows = utils.get_tags("https://bgpstream.com", "tr")
+        # check with no limit
+        assert len(parser._get_rows(None)) == len(rows)
+        # check with limit
+        assert len(parser._get_rows(20)) == 20
+        # check with limit that's greater than number of rows available
+        assert len(parser._get_rows(999999)) == len(rows)
 
-        pass
+        def open_custom_HTML(url: str, tag: str):
+            with open('./test_HTML/page.html') as f:
+                html = f.read()
+                tags = [x for x in Soup(html, 'html.parser').select('tr')]
+            return tags
+        # checks with custom HTML that has 1 hijack, 1 outage, and 1 leak
+        with patch('lib_bgp_data.utils.utils.get_tags') as mock_get_tag:
+            mock_get_tag.side_effect = open_custom_HTML
+            assert len(parser._get_rows(None)) == 3
+            assert len(parser._get_rows(2)) == 2
+            assert len(parser._get_rows(999999)) == len(rows)
 
-    @pytest.mark.skip(reason="New hire work")
+    @pytest.mark.skip(reason="WIP")
     def test_parse_row(self):
         """Tests parse row function
 
@@ -66,8 +86,21 @@ class Test_BGPStream_Website_Parser:
     
         Should make sure output is as expected
         """
+        mock_row = Mock()
+        # 1=_type, 7=start, 9=end, 11=url
+        type = Mock()
+        type.string = "Possible Hijack"
+        start = Mock()
+        start.string = "2020-03-18 10:40:00"
+        end = Mock()
+        end.string = "2020-03-18 11:04:00"
+        url = Mock()
+        url.a = {"href": "/event/229061"}
+        mock_row.children = [0, type, 2, 3, 4, 5, 6, start, 8, end, 10, url]
 
-        pass
+        parser = BGPStream_Website_Parser()
+        parser._parse_row(mock_row, {}, False)
+        assert parser._data[type.string].data
 
     @pytest.mark.skip(reason="New hire work")
     def test_get_row_front_page_info(self):
