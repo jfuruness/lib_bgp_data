@@ -1822,62 +1822,6 @@ Other convenience funcs:
 
 Again please note: upon connection, it creates the tables. If clear is passed, it will clear them. After the context manager is over it will close the database.
 
-Initializing the Database using db_connection (which should always be used):
-
-
-| Parameter    | Default                             | Description                                                                                                       |
-|--------------|-------------------------------------|-------------------------------------------------------------------------------------------------------------------|
-| table | Database | What gets initialized |
-| logger         | ```Thread_Safe_Logger()```     | Logger used to log information |
-| clear | ```False``` | Clear table upon initialization. Leave for normal db usage | 
-| cursor_factory         | ```RealDictCursor```     | Format for how data is returned                                                                                         |
-> Note that any one of the above attributes can be changed or all of them can be changed in any combination
-
-To initialize Database with default values using db_connection:
-```python
-from lib_bgp_data import Database, db_connection
-with db_connection(Database) as db:
-    pass
-```                 
-To initialize the Database with logger on debug using db_connection:
-```python
-from logging import DEBUG
-from lib_bgp_data import Database, db_connection, Thread_Safe_Logger as Logger
-with db_connection(Database, Logger({"stream_level": DEBUG)) as db:
-    pass
-```
-To initialize the Database with a custom cursor factory other than RealDictCursor and custom logging:
-```python
-from logging import DEBUG
-from psycopg2.extras import NamedTupleCursor
-from lib_bgp_data import Database, db_connection, Thread_Safe_Logger as Logger
-with db_connection(Database,
-                   Logger({"stream_level": DEBUG),
-                   cursor_factory=NamedTupleCursor) as db:
-    pass
-```
-To get data from a query:
-```python
-from lib_bgp_data import Database, db_connection
-with db_connection(Database) as db:
-    data = db.execute("SELECT * FROM my_table WHERE my_val=%s", [1])
-```
-To execute multiple sql queries at once:
-```python
-from lib_bgp_data import Database, db_connection
-with db_connection(Database) as db:
-    sqls = ["SELECT * FROM my_table", "SELECT * FROM my_table2"]
-    data = db.multiprocess_execute(sqls)
-```
-To unhinge/rehinge database (disable writing to disk, then reenable it):
-```python
-from lib_bgp_data import Database, db_connection
-with db_connection(Database) as db:
-    db.unhinge_db()
-    # do intensive queries
-    db.rehinge_db()
-```
-
 ### Database Design Choices
 * [lib\_bgp\_data](#lib_bgp_data)
 * [Database Submodule](#database-submodule)
