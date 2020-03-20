@@ -39,7 +39,7 @@ def config_logging(level=logging.INFO, section=None):
         multiprocessing_logging.install_mp_handler()
 
 def _get_log_path(section):
-    fname = f"{section}_{datetime.now().strftime('%Y_%M_%d')}.log"
+    fname = f"{section}_{datetime.now().strftime('%Y_%m_%d')}.log"
     log_dir = "/var/log/lib_bgp_data/"
     if not os.path.exists(log_dir):
         os.makedirs(log_dir)
