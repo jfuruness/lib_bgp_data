@@ -22,6 +22,7 @@ from ..tables import Hijacks_Table, Leaks_Table, Outages_Table
 from ..data_classes import Hijack, Leak, Outage
 from ..event_types import Event_Types
 from ...utils import utils
+from ...database import Database
 from bs4 import BeautifulSoup as Soup
 from time import strftime, gmtime, time
 
@@ -30,7 +31,6 @@ class Test_BGPStream_Website_Parser:
     """Tests all local functions within the BGPStream_Website_Parser class."""
 
     @pytest.mark.slow(reason="Needs to query website many times")
-    @pytest.mark.skip(reason="New hire work")
     def test_run(self):
         """Tests _run function
 
@@ -40,8 +40,55 @@ class Test_BGPStream_Website_Parser:
         assert that the output is approximately what you expect (for instance,
         more than 0 hijacks, shouldn't have empty fields, etc.
         """
+        def drop():
+            _db.execute('DROP TABLE IF EXISTS hijacks')
+            _db.execute('DROP TABLE IF EXISTS leaks')
+            _db.execute('DROP TABLE IF EXISTS outages')
 
-        pass 
+        event_combos = [[Event_Types.HIJACK.value],
+                        [Event_Types.LEAK.value],
+                        [Event_Types.OUTAGE.value],
+                        [Event_Types.HIJACK.value, Event_Types.LEAK.value],
+                        [Event_Types.HIJACK.value, Event_Types.OUTAGE.value],
+                        [Event_Types.LEAK.value, Event_Types.OUTAGE.value],
+                        [Event_Types.HIJACK.value, Event_Types.LEAK.value, Event_Types.OUTAGE.value]]
+
+        parser = BGPStream_Website_Parser()
+
+        for combination in event_combos:
+            for row_limit in [None, 100, 999999]:
+                for IPV in [(False, False), (True, False), (False, True), (True, True)]:
+                    with Database() as _db:
+                        drop()
+                        parser._run(row_limit, IPV[0], IPV[1], combination, False)
+
+                        row_count = 0
+
+                        if Event_Types.HIJACK.value in combination:
+                            hijack_count = _db.execute('SELECT COUNT(*) FROM hijacks')[0]['count']
+                            assert hijack_count > 0
+                            row_count += hijack_count
+
+                            if IPV[0]:
+                                assert len(_db.execute('SELECT expected_prefix FROM hijacks WHERE family(expected_prefix) = 4')) > 0
+                            if IPV[1]:
+                                assert len(_db.execute('SELECT expected_prefix FROM hijacks WHERE family(expected_prefix) = 6')) > 0
+
+                        if Event_Types.LEAK.value in combination:
+                            leak_count = _db.execute('SELECT COUNT(*) FROM leaks')[0]['count']
+                            assert leak_count > 0
+                            row_count += leak_count
+
+                            if IPV[0]:
+                                assert len(_db.execute('SELECT leaked_prefix FROM leaks WHERE family(leaked_prefix) = 4')) > 0
+
+                        if Event_Types.OUTAGE.value in combination:
+                            outage_count = _db.execute('SELECT COUNT(*) FROM outages')[0]['count']
+                            assert outage_count > 0
+                            row_count += outage_count
+
+                        if row_limit == 100:
+                            assert 0 < row_count <= 100
 
     def test_get_rows(self):
         """Tests get rows func
