@@ -1,4 +1,4 @@
-from constants import Constants
+from .constants import Constants
 import time
 import os
 

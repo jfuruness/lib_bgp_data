@@ -62,7 +62,7 @@ __email__ = "abhinna.adhikari@uconn.edu"
 __status__ = "Development"
 
 import csv
-from constants import Constants
+from .constants import Constants
 
 
 class ASRankData:

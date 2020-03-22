@@ -68,7 +68,7 @@ from selenium import webdriver
 from bs4 import BeautifulSoup
 import os
 
-from constants import Constants
+from .constants import Constants
 
 
 
