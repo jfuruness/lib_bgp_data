@@ -32,8 +32,8 @@ __email__ = "abhinna.adhikari@uconn.edu"
 __status__ = "Development"
 
 
-class Hijack_Table(Database):
-    """Hijack table class, inherits from database.
+class ASRank_Table(Database):
+    """ASRank table class, inherits from database.
 
     For a more in depth explanation see the top of the file.
     """

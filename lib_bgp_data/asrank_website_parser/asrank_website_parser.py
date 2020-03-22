@@ -101,6 +101,7 @@ class ASRankWebsiteParser:
         driver.close()
 
         self._as_rank = [0] * self._total_entries
+        self._as_rank = [0] * self._total_entries
         self._as_num = [0] * self._total_entries
         self._org = [0] * self._total_entries
         self._country = [0] * self._total_entries
@@ -193,7 +194,7 @@ class ASRankWebsiteParser:
         return math.ceil(self._total_entries / Constants.ENTRIES_PER_PAGE)
 
 
-    def run_parser(self, t_id, total_threads):
+    def _run_parser(self, t_id, total_threads):
         """Parses the website saving information on the AS rank,
         AS number, organization, country, and cone size"""
         driver = self.init_driver()
@@ -251,20 +252,17 @@ class ASRankWebsiteParser:
                 line += '\t\t' if j != len(self._elements_lst) - 1 else '\n'
             print(line)
 
-    def run_mt(self):
+    def _run_mt(self):
         """Parse asrank website using threads for separate pages"""
         threads = []
         num_threads = self._total_pages // 6
         for i in range(num_threads):
-            thread = Thread(target=self.run_parser, args=(i, num_threads))
+            thread = Thread(target=self._run_parser, args=(i, num_threads))
             threads.append(thread)
             thread.start()
 
         for th in threads:
             th.join()
-
-    def get_org(self):
-        return self._org
 
     def write_csv(self, csv_path):
         with open(csv_path, mode='w') as temp_csv:
@@ -273,16 +271,18 @@ class ASRankWebsiteParser:
                 row = [lst[i] for lst in self._elements_lst]
                 csv_writer.writerow(row)
 
-    def main(self):
+    def run(self):
         start = time.time()
-        self.run_mt()
+        self._run_mt()
 
         total_time = time.time() - start
         print('total time taken:', total_time, 'seconds,', total_time / 60, 'minutes', total_time / 3600, 'hours')
         self.write_csv(Constants.CSV_FILE_NAME)
+        #utils.csv_to_db(ASRank_Table, Constants.CSV_FILE_NAME, True)
 
 
 if __name__ == '__main__':
-    ASRankWebsiteParser().main()
+    ASRankWebsiteParser().run()
     
     
+#!/usr/bin/env python3
