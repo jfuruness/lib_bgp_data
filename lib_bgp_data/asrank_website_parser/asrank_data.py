@@ -62,11 +62,14 @@ __email__ = "abhinna.adhikari@uconn.edu"
 __status__ = "Development"
 
 import csv
+import os
+
 from .constants import Constants
 
 
 class ASRankData:
-    """Parent Class for parsing rows of bgpstream.com.
+    """Class where the parsed rows of asrank.caida.org 
+    are saved. 
 
     For a more in depth explanation see the top of the file.
     """
@@ -76,8 +79,6 @@ class ASRankData:
     #@error_catcher()
     #def __init__(self, logger, total_entries):
     def __init__(self, total_entries):
-        """Initializes regexes and other important info."""
-
         #self.logger = logger
         #self.logger.debug("Initialized row")
         
@@ -92,6 +93,7 @@ class ASRankData:
         self._init()
 
     def _init(self):
+        """Initialize the five columns of information found on asrank.caida.org"""
         self._as_rank = [0] * self._total_entries
         self._as_num = [0] * self._total_entries
         self._org = [0] * self._total_entries
@@ -105,6 +107,8 @@ class ASRankData:
                               self._cone_size] 
 
     def insert_data(self, page_num, tds_lst):
+        """Given a list of HTML table cells (tds), insert into the respective
+        element list."""
         for i in range(0, len(tds_lst) // len(self._elements_lst)):
             for j, element in enumerate(self._elements_lst):
                 temp_ind = i * len(self._elements_lst) + j
@@ -119,7 +123,8 @@ class ASRankData:
                     element[el_ind] = str(tds_lst[temp_ind])[-16:-14]
 
     def write_csv(self, csv_path):
-        with open(csv_path, mode='w') as temp_csv:
+        """Convert the stored data into a tab separated csv file at path, csv_path"""
+        with open(os.path.join(Constants.FILE_PATH, csv_path), mode='w') as temp_csv:
             csv_writer = csv.writer(temp_csv, delimiter='\t', quotechar='"', quoting=csv.QUOTE_MINIMAL)
             for i in range(len(self._as_rank)):
                 row = [lst[i] for lst in self._elements_lst]

@@ -57,12 +57,14 @@ __status__ = "Development"
 from threading import Thread
 import math
 import time
+import os
 
 from ..utils import utils
 from .constants import Constants
 from .sel_driver import SeleniumDriver
 from .asrank_data import ASRankData
 from .install_selenium_dependencies import run_shell
+from .tables import ASRank_Table
 
 
 class ASRankWebsiteParser:
@@ -71,7 +73,6 @@ class ASRankWebsiteParser:
 
     For a more in depth explanation, read the top of the file.
     Attributes:
-
 
     """
     def __init__(self):
@@ -140,18 +141,18 @@ class ASRankWebsiteParser:
             thread = Thread(target=self._run_parser, args=(i, num_threads))
             threads.append(thread)
             thread.start()
-
         for th in threads:
             th.join()
 
     def run(self):
+        """Run the multithreaded ASRankWebsiteParser"""
         start = time.time()
         self._run_mt()
-
         total_time = time.time() - start
         print('total time taken:', total_time, 'seconds,', total_time / 60, 'minutes', total_time / 3600, 'hours')
         self._asrank_data.write_csv(Constants.CSV_FILE_NAME)
-        #utils.csv_to_db(ASRank_Table, Constants.CSV_FILE_NAME, True)
+        utils.csv_to_db(ASRank_Table, os.path.join(Constants.FILE_PATH, Constants.CSV_FILE_NAME), True)
+        ASRank_Table().print_top_100()
 
 
 if __name__ == '__main__':

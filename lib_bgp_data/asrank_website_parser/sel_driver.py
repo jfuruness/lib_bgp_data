@@ -71,18 +71,23 @@ import os
 from .constants import Constants
 
 
-
 class SeleniumDriver:
 
     def __init__(self):
         self._driver = self._init_driver()
 
     def __enter__(self):
+        """Allows the SeleniumDriver to be instantiated using a context manager. 
+        
+        Returns:
+            The class itself. 
+        """
         if not self._driver:
             self._driver = self._init_driver()
         return self
 
     def __exit__(self, exc_type, exc_value, exc_traceback):
+        """Exit the context manager by closing the selenium driver"""
         self.close()
 
     def _init_driver(self):
@@ -135,6 +140,7 @@ class SeleniumDriver:
         return soup
 
     def close(self):
+        """Close the selenium driver"""
         if self._driver:
             self._driver.close()
 

@@ -22,7 +22,7 @@ Possible future improvements:
     -Add test cases
 """
 
-from ..utils import Database, error_catcher
+from ..database import Generic_Table
 
 __author__ = "Abhinna Adhikari"
 __credits__ = ["Abhinna Adhikari"]
@@ -32,7 +32,7 @@ __email__ = "abhinna.adhikari@uconn.edu"
 __status__ = "Development"
 
 
-class ASRank_Table(Database):
+class ASRank_Table(Generic_Table):
     """ASRank table class, inherits from database.
 
     For a more in depth explanation see the top of the file.
@@ -40,22 +40,22 @@ class ASRank_Table(Database):
 
     __slots__ = []
 
-    @error_catcher()
+    name = 'asrank'
+
     def _create_tables(self):
         """Creates new table everytime because information
         in the datebase may be out of date.   
         """
 
-        sql = """CREATE UNLOGGED TABLE asrank (
-              as_number bigint,
+        sql = """CREATE UNLOGGED TABLE IF NOT EXISTS asrank (
               as_rank bigint,
+              as_number bigint,
               organization varchar (250),
               country varchar (2),
               cone_size integer
               );"""
         self.cursor.execute(sql)
 
-    @error_catcher()
     def create_index(self):
         """Creates an index on the times for later table creations
             Create index on the as_rank"""
@@ -64,5 +64,11 @@ class ASRank_Table(Database):
         sql = """CREATE INDEX IF NOT EXISTS hijack_index ON hijack
                   USING BTREE(start_time, end_time);"""
         self.cursor.execute(sql)
+
+    def print_top_100(self):
+        sql = """SELECT * FROM asrank ORDER BY as_rank"""
+        self.cursor.execute(sql)
+        for i in range(100):
+            print(self.cursor.fetchone())
 
    
