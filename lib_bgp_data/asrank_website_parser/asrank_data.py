@@ -51,9 +51,6 @@ Possible Future Extensions:
 """
 
 
-#from ..utils import utils, error_catcher, db_connection
-#from .tables import Hijack_Table, Outage_Table, Leak_Table
-
 __author__ = "Abhinna Adhikari"
 __credits__ = ["Abhinna Adhikari"]
 __Lisence__ = "MIT"
@@ -68,32 +65,26 @@ from .constants import Constants
 
 
 class ASRankData:
-    """Class where the parsed rows of asrank.caida.org 
-    are saved. 
+    """Class where the parsed rows of asrank.caida.org are saved.
 
     For a more in depth explanation see the top of the file.
     """
 
-    #__slots__ = ['logger']
-
-    #@error_catcher()
-    #def __init__(self, logger, total_entries):
     def __init__(self, total_entries):
-        #self.logger = logger
-        #self.logger.debug("Initialized row")
-        
         self._as_rank = None
         self._as_num = None
         self._org = None
         self._country = None
         self._cone_size = None
-        
+
         self._elements_lst = None
         self._total_entries = total_entries
         self._init()
 
     def _init(self):
-        """Initialize the five columns of information found on asrank.caida.org"""
+        """Initialize the five columns of information
+        found on asrank.caida.org
+        """
         self._as_rank = [0] * self._total_entries
         self._as_num = [0] * self._total_entries
         self._org = [0] * self._total_entries
@@ -104,7 +95,7 @@ class ASRankData:
                               self._as_num,
                               self._org,
                               self._country,
-                              self._cone_size] 
+                              self._cone_size]
 
     def insert_data(self, page_num, tds_lst):
         """Given a list of HTML table cells (tds), insert into the respective
@@ -122,10 +113,16 @@ class ASRankData:
                 else:
                     element[el_ind] = str(tds_lst[temp_ind])[-16:-14]
 
-    def write_csv(self, csv_path):
-        """Convert the stored data into a tab separated csv file at path, csv_path"""
-        with open(os.path.join(Constants.FILE_PATH, csv_path), mode='w') as temp_csv:
-            csv_writer = csv.writer(temp_csv, delimiter='\t', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+    def write_csv(self, csv_name):
+        """Convert the stored data into a tab
+        separated csv file at path, csv_path
+        """
+        csv_path = os.path.join(Constants.FILE_PATH, csv_path)
+        with open(csv_path, mode='w') as temp_csv:
+            csv_writer = csv.writer(temp_csv,
+                                    delimiter='\t',
+                                    quotechar='"',
+                                    quoting=csv.QUOTE_MINIMAL)
             for i in range(len(self._as_rank)):
                 row = [lst[i] for lst in self._elements_lst]
                 csv_writer.writerow(row)

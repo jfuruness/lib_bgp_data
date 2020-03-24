@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-"""This module contains all of the data classes for parsing
+"""This module contains an abstraction of a Selenium Chrome webdriver
 
-The purpose of these classes is to parse information for BGP hijacks,
-leaks, and outages from bgpstream.com. This information is then stored
-in the database. Please note that each data class inherits from the
-Data class. For each data class, This is done through a series of steps.
+The purpose of this class is to simplify the use of
+chromedriver by abstracting the various functions
+and initialization into an easy-to-use class/ context manager.
 
 1. Initialize the class
     -Handled in the __init__ function
@@ -38,21 +37,14 @@ Data class. For each data class, This is done through a series of steps.
         -These are tables that are subsets of the overall data
 
 Design Choices (summarizing from above):
-    -A parent data class is used because many functions are the same
-     for all data types
     -This is a mess, parsing this website is messy so I will leave it
     -Parsing is done from the last element to the first element
         -This is done because not all pages start the same way
 
 Possible Future Extensions:
     -Add test cases
-    -Ask bgpstream.com for an api?
-        -It would cause less querying of their site
 """
 
-
-#from ..utils import utils, error_catcher, db_connection
-#from .tables import Hijack_Table, Outage_Table, Leak_Table
 
 __author__ = "Abhinna Adhikari"
 __credits__ = ["Abhinna Adhikari"]
@@ -77,10 +69,11 @@ class SeleniumDriver:
         self._driver = self._init_driver()
 
     def __enter__(self):
-        """Allows the SeleniumDriver to be instantiated using a context manager. 
-        
+        """Allows the SeleniumDriver to be
+        instantiated using a context manager.
+
         Returns:
-            The class itself. 
+            The class itself.
         """
         if not self._driver:
             self._driver = self._init_driver()
@@ -102,9 +95,9 @@ class SeleniumDriver:
         chrome_options.add_argument("--headless")
         chrome_options.add_argument("--no-sandbox")
         chrome_options.add_argument("--disable-dev-shm-usage")
-        chrome_driver_name = 'chromedriver'
-        driver = webdriver.Chrome(os.path.join(Constants.CHROMEDRIVER_PATH, chrome_driver_name),
-                                                                        options=chrome_options)
+        path = os.path.join(Constants.CHROMEDRIVER_PATH,
+                            Constants.CHROMEDRIVER_NAME)
+        driver = webdriver.Chrome(path, options=chrome_options)
         return driver
 
     def get_page(self,
@@ -119,8 +112,8 @@ class SeleniumDriver:
             url (str): The URL that will be run on the driver
             timeout (int): The amount of time for the request to timeout
             dynamic_class_name (str): The name of a class that is only
-                visible once the dynamic html is created. Indicator that 
-                the dynamic HTML has been created. 
+                visible once the dynamic html is created. Indicator that
+                the dynamic HTML has been created.
 
         Returns:
             A BeautifulSoup object made from the dyamic HTML
@@ -143,7 +136,3 @@ class SeleniumDriver:
         """Close the selenium driver"""
         if self._driver:
             self._driver.close()
-
-    def get_driver(self):
-        return self._driver
-        

@@ -50,10 +50,6 @@ __maintainer__ = "Abhinna Adhikari"
 __email__ = "abhinna.adhikari@uconn.edu"
 __status__ = "Development"
 
-#from enum import Enum
-#from ..utils import error_catcher, utils, db_connection
-#from .data_classes import Leak, Hijack, Outage
-
 from threading import Thread
 import math
 import time
@@ -84,7 +80,7 @@ class ASRankWebsiteParser:
     def _init(self):
         """Initialize the variables and lists that
         contain the information that will be parsed"""
-        run_shell() 
+        run_shell()
         with SeleniumDriver() as sel_driver:
             self._total_pages = self._find_total_pages(sel_driver)
         self._asrank_data = ASRankData(self._total_entries)
@@ -107,8 +103,9 @@ class ASRankWebsiteParser:
             table_entries = Constants.ENTRIES_PER_PAGE
         elif table_entries < 1:
             table_entries = 1
-        return Constants.URL + '?page_number=%s&page_size=%s&sort=rank' % (page_num,
-                                                                           table_entries)
+        extra_url = '?page_number=%s&page_size=%s&sort=rank' % (page_num,
+                                                                table_entries)
+        return Constants.URL + extra_url
 
     def _find_total_pages(self, sel_driver):
         """Returns the total number pages of the website
@@ -116,7 +113,8 @@ class ASRankWebsiteParser:
         soup = sel_driver.get_page(self._produce_url(1, 1))
         self._total_entries = max([int(page.text)
                                    for page in soup.findAll('a',
-                                                            {'class': 'page-link'})
+                                                            {'class':
+                                                             'page-link'})
                                    if '.' not in page.text])
         return math.ceil(self._total_entries / Constants.ENTRIES_PER_PAGE)
 
@@ -130,8 +128,10 @@ class ASRankWebsiteParser:
                 soup = sel_driver.get_page(self._produce_url(page_num + 1))
                 tds_lst = soup.findAll('td')
                 self._asrank_data.insert_data(page_num, tds_lst)
-                print('time taken on page #' + str(page_num) + ': ',
-                                                    time.time() - prev)
+                print('time taken on page #' +
+                      str(page_num) +
+                      ': ',
+                      time.time() - prev)
 
     def _run_mt(self):
         """Parse asrank website using threads for separate pages"""
@@ -149,12 +149,13 @@ class ASRankWebsiteParser:
         start = time.time()
         self._run_mt()
         total_time = time.time() - start
-        print('total time taken:', total_time, 'seconds,', total_time / 60, 'minutes', total_time / 3600, 'hours')
+        print('total time taken:',
+              total_time,
+              'seconds,',
+              total_time / 60,
+              'minutes',
+              total_time / 3600,
+              'hours')
         self._asrank_data.write_csv(Constants.CSV_FILE_NAME)
-        utils.csv_to_db(ASRank_Table, os.path.join(Constants.FILE_PATH, Constants.CSV_FILE_NAME), True)
+        utils.csv_to_db(ASRank_Table, Constants.CSV_FILE_NAME, True)
         ASRank_Table().print_top_100()
-
-
-if __name__ == '__main__':
-    ASRankWebsiteParser().run()
-    

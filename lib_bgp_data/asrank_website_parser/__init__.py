@@ -3,8 +3,8 @@
 
 """This package contains class ASRankWebsiteParser
 
-The purpose of this class is to parse the information for BGP hijacks,
-leaks, and outages from bgpstream.com. This information is then stored
+The purpose of this class is to parse the information of various AS's
+from asrank.caida.org. This information is then stored
 in the database. This is done through a series of steps.
 
 1. Initialize the three different kinds of data classes.
@@ -52,7 +52,7 @@ Possible Future Extensions:
     -Multithread the first hundred results?
         -If we only parse new info this is the common case
 """
-from .asrank_website_parser import ASRankWebsiteParser  
+from .asrank_website_parser import ASRankWebsiteParser
 
 __author__ = "Abhinna Adhikari"
 __credits__ = ["Abhinna Adhikari"]

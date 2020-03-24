@@ -3,6 +3,7 @@ import os
 
 class Constants:
     FILE_PATH = os.path.dirname(os.path.abspath(__file__))
+    CHROMEDRIVER_NAME = 'chromedriver'
     CHROMEDRIVER_PATH = os.path.join(FILE_PATH, 'chromedrivers')
 
     URL = 'https://asrank.caida.org/'

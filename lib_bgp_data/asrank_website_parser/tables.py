@@ -1,22 +1,18 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-"""This module contains numerous bgpstream.com tables
+"""This module contains the table found on asrank.caida.org
 
-These tables must all inherit from the Database class. The Database
+These tables must all inherit from the Generic_Table class. The Generic_Table
 class allows for the conection to a database upon initialization. Also
 upon initialization the _create_tables function is called to initialize
 any tables. Beyond that the class can clear the
 table, create an index, and has the name and columns properties that are
-used in utils function to insert CSVs into the database. Each table
-follows the table name followed by a _Table since it inherits from the
-database class. These tables also contain functions that delete
-duplicates, format tables for IPV4 or IPV6 data, and can create
-subtables that are subsets of the data
+used in utils function to insert CSVs into the database.
 
 Design choices:
-    -Indexes are created on the times for the what if analysis
-    -The asrank table is always created in its entirety everytime
+    -Index will be created to find the top 100 as_numbers
+    -The asrank table is always cleared when the asrank_website_parser is run
 
 Possible future improvements:
     -Add test cases
@@ -33,7 +29,7 @@ __status__ = "Development"
 
 
 class ASRank_Table(Generic_Table):
-    """ASRank table class, inherits from database.
+    """ASRank table class, inherits from Generic_Table.
 
     For a more in depth explanation see the top of the file.
     """
@@ -43,8 +39,9 @@ class ASRank_Table(Generic_Table):
     name = 'asrank'
 
     def _create_tables(self):
-        """Creates new table everytime because information
-        in the datebase may be out of date.   
+        """Creates new table if it doesn't already exist. The contents will
+        be cleared everytime asrank_website_parser is run because information
+        in the datebase may be out of date.
         """
 
         sql = """CREATE UNLOGGED TABLE IF NOT EXISTS asrank (
@@ -57,12 +54,10 @@ class ASRank_Table(Generic_Table):
         self.cursor.execute(sql)
 
     def create_index(self):
-        """Creates an index on the times for later table creations
-            Create index on the as_rank"""
+        """Creates an index on top 100 AS numbers"""
 
-
-        sql = """CREATE INDEX IF NOT EXISTS hijack_index ON hijack
-                  USING BTREE(start_time, end_time);"""
+        sql = """CREATE INDEX IF NOT EXISTS asrank_index ON as_rank
+                  USING BTREE(as_number) WHERE as_rank <= 100;"""
         self.cursor.execute(sql)
 
     def print_top_100(self):
@@ -70,5 +65,3 @@ class ASRank_Table(Generic_Table):
         self.cursor.execute(sql)
         for i in range(100):
             print(self.cursor.fetchone())
-
-   

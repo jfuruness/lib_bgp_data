@@ -4,7 +4,9 @@ import os
 
 
 def run_shell():
-    if not os.path.exists(os.path.join(Constants.CHROMEDRIVER_PATH, 'chromedriver')):
+    exists = os.path.exists(os.path.join(Constants.CHROMEDRIVER_PATH,
+                                         Constants.CHROMEDRIVER_NAME))
+    if not exists:
         print("Chromedriver doesn't exist. Installing chromedriver and chrome")
         os.system('sudo echo ""')
         os.system('./install_selenium_dependencies.sh')
