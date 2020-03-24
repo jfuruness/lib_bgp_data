@@ -2183,6 +2183,7 @@ BSD License
 I added this section just so I would have to deal with less overhead with all the new hires that we were getting. To start with you will need to do some things to get started.
 
 1. Email Amir and Jeanette (if you don't know her email just email Amir) and get set up with payroll on ess.uconn.edu. When you submit your hours, you will also need to submit an excel spreadsheet of the times that you worked, and what you did during those hours. You can keep the descriptions short, for example: Aug 8 9am-5pm Worked on Roas parser. Whenever you work please update your hours so that you do not forget. Please remind me and I will get you access to this doc. Also note that all training is billable hours. We expect at least 10 hours a week, but if you have heavy or light weeks due to school everything is very flexible, certainly don't let this get in the way of your grades. Please just let me know in advance if you will be working less and have high priority tasks, and I'll redelegate them elsewhere.
+
 2. Email Professor Laurent with your public ssh key and password, cc Amir and myself, and make sure to ask for access and sudo power on ahlocal and ahdev. To log on to these servers, do:
 ```ssh -A jmf@csi-lab-ssh.engr.uconn.edu```
 ```ssh -A ahlocal```
@@ -2202,10 +2203,15 @@ git config user.name <"Your Name">
 ```
 
 Also note that you should code and run your programs on these servers. You should not do it on your local machine. Our servers are much faster than your laptop with much more memory, by a margin of more than 10X. Time is money. In addition, when there is a problem it will help me to debug if I can access your code and run it. We've also had problems in the past of code breaking when run on our environments that didn't break on laptops, and it had to be scrapped. I recommend using tmux in conjunction with vim.
+
 3. We will need to get you access to slack. Email me a reminder to do that, and to give you access to Jira. Any questions you may have, slack is the way to reach me.
+
 4. Once you have access to the Jira board, this is where we will keep track of what we need to do. Every week we have a "stand up" meeting, a short 15 minute meeting where we go over the progress we've made on the tickets we are working on, and any roadblocks we may have. Make sure to have pushed your code to your own branch before this meeting. We will go over what you worked on, what you are working on, what you will work on, and any roadblocks.
+
 5. Read the Goa Rexford paper (ask for access) and I'd read this README for clarity on some things. Message me when this is done so that we can have a one on one discussion of our research and what you will be working on. Don't worry if this stuff is confusing, I did not get anything when I first started, it won't be a problem at all.
+
 6. Follow the installation instructions. Install the repo you cloned.
+
 7. That's about it! We are working on some exciting stuff and exciting papers. We usually publish a couple every year, so you are definitely working on some awesome stuff that will change the internet as we know it!
 
 ## TODO/Possible Future Improvements
