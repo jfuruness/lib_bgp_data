@@ -61,7 +61,9 @@ __status__ = "Development"
 import csv
 import os
 
+from ..utils import utils
 from .constants import Constants
+from .tables import ASRank_Table
 
 
 class ASRankData:
@@ -98,8 +100,9 @@ class ASRankData:
                               self._cone_size]
 
     def insert_data(self, page_num, tds_lst):
-        """Given a list of HTML table cells (tds), insert into the respective
-        element list."""
+        """Given a list of HTML table cells (tds),
+        insert into the respective element list
+        """
         for i in range(0, len(tds_lst) // len(self._elements_lst)):
             for j, element in enumerate(self._elements_lst):
                 temp_ind = i * len(self._elements_lst) + j
@@ -113,11 +116,10 @@ class ASRankData:
                 else:
                     element[el_ind] = str(tds_lst[temp_ind])[-16:-14]
 
-    def write_csv(self, csv_name):
+    def _write_csv(self, csv_path):
         """Convert the stored data into a tab
         separated csv file at path, csv_path
         """
-        csv_path = os.path.join(Constants.FILE_PATH, csv_path)
         with open(csv_path, mode='w') as temp_csv:
             csv_writer = csv.writer(temp_csv,
                                     delimiter='\t',
@@ -127,5 +129,10 @@ class ASRankData:
                 row = [lst[i] for lst in self._elements_lst]
                 csv_writer.writerow(row)
 
-    def get_elements_lst(self):
-        return self._elements_lst
+    def insert_data_into_db(self):
+        """Create a CSV file with asrank data and then
+        use the csv file to insert into the database
+        """
+        csv_path = os.path.join(Constants.FILE_PATH, Constants.CSV_FILE_NAME)
+        self._write_csv(csv_path)
+        utils.csv_to_db(ASRank_Table, csv_path, True)

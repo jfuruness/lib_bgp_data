@@ -89,7 +89,6 @@ class SeleniumDriver:
 
         Returns:
             A headless selenium.webdriver.Chrome object
-
         """
         chrome_options = webdriver.ChromeOptions()
         chrome_options.add_argument("--headless")
@@ -118,7 +117,6 @@ class SeleniumDriver:
         Returns:
             A BeautifulSoup object made from the dyamic HTML
             retrived using selenium's chrome webdriver
-
         """
         self._driver.get(url)
 

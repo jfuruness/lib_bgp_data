@@ -53,14 +53,13 @@ __status__ = "Development"
 from threading import Thread
 import math
 import time
-import os
+from tqdm import tqdm
 
-from ..utils import utils
 from .constants import Constants
 from .sel_driver import SeleniumDriver
 from .asrank_data import ASRankData
 from .install_selenium_dependencies import run_shell
-from .tables import ASRank_Table
+from .mt_tqdm import MtTqdm
 
 
 class ASRankWebsiteParser:
@@ -69,21 +68,24 @@ class ASRankWebsiteParser:
 
     For a more in depth explanation, read the top of the file.
     Attributes:
-
     """
+
     def __init__(self):
         self._asrank_data = None
         self._total_entries = None
         self._total_pages = None
+        self._mt_tqdm = None
         self._init()
 
     def _init(self):
         """Initialize the variables and lists that
-        contain the information that will be parsed"""
+        contain the information that will be parsed
+        """
         run_shell()
         with SeleniumDriver() as sel_driver:
             self._total_pages = self._find_total_pages(sel_driver)
         self._asrank_data = ASRankData(self._total_entries)
+        self._mt_tqdm = MtTqdm(100 / self._total_pages)
 
     def _produce_url(self, page_num, table_entries=Constants.ENTRIES_PER_PAGE):
         """Create a URL of the website with the intended
@@ -97,19 +99,19 @@ class ASRankWebsiteParser:
         Returns:
             The string of the of the URL that will be on the
             given page and have the given number of table entries
-
         """
         if table_entries > Constants.ENTRIES_PER_PAGE:
             table_entries = Constants.ENTRIES_PER_PAGE
         elif table_entries < 1:
             table_entries = 1
-        extra_url = '?page_number=%s&page_size=%s&sort=rank' % (page_num,
-                                                                table_entries)
-        return Constants.URL + extra_url
+        var_url = '?page_number=%s&page_size=%s&sort=rank' % (page_num,
+                                                              table_entries)
+        return Constants.URL + var_url
 
     def _find_total_pages(self, sel_driver):
         """Returns the total number pages of the website
-        depending on the entries per page"""
+        depending on the entries per page
+        """
         soup = sel_driver.get_page(self._produce_url(1, 1))
         self._total_entries = max([int(page.text)
                                    for page in soup.findAll('a',
@@ -120,18 +122,15 @@ class ASRankWebsiteParser:
 
     def _run_parser(self, t_id, total_threads):
         """Parses the website saving information on the AS rank,
-        AS number, organization, country, and cone size"""
-        elements_lst = self._asrank_data.get_elements_lst()
+        AS number, organization, country, and cone size
+        """
         with SeleniumDriver() as sel_driver:
             for page_num in range(t_id, self._total_pages, total_threads):
                 prev = time.time()
                 soup = sel_driver.get_page(self._produce_url(page_num + 1))
                 tds_lst = soup.findAll('td')
                 self._asrank_data.insert_data(page_num, tds_lst)
-                print('time taken on page #' +
-                      str(page_num) +
-                      ': ',
-                      time.time() - prev)
+                self._mt_tqdm.update()
 
     def _run_mt(self):
         """Parse asrank website using threads for separate pages"""
@@ -148,6 +147,7 @@ class ASRankWebsiteParser:
         """Run the multithreaded ASRankWebsiteParser"""
         start = time.time()
         self._run_mt()
+        self._mt_tqdm.close()
         total_time = time.time() - start
         print('total time taken:',
               total_time,
@@ -156,6 +156,4 @@ class ASRankWebsiteParser:
               'minutes',
               total_time / 3600,
               'hours')
-        self._asrank_data.write_csv(Constants.CSV_FILE_NAME)
-        utils.csv_to_db(ASRank_Table, Constants.CSV_FILE_NAME, True)
-        ASRank_Table().print_top_100()
+        self._asrank_data.insert_data_into_db()
