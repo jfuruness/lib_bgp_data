@@ -1,3 +1,19 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+"""The Constants class contains several high use variables that are shared
+among the various python files within the asrank_website_parser
+directory.
+"""
+
+
+__author__ = "Abhinna Adhikari"
+__credits__ = ["Abhinna Adhikari"]
+__Lisence__ = "MIT"
+__maintainer__ = "Abhinna Adhikari"
+__email__ = "abhinna.adhikari@uconn.edu"
+__status__ = "Development"
+
 import os
 
 

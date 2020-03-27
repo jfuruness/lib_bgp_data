@@ -51,6 +51,7 @@ __email__ = "abhinna.adhikari@uconn.edu"
 __status__ = "Development"
 
 from threading import Thread
+import logging
 import math
 import time
 from tqdm import tqdm

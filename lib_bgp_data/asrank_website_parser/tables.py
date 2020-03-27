@@ -18,7 +18,6 @@ Possible future improvements:
     -Add test cases
 """
 
-from ..database import Generic_Table
 
 __author__ = "Abhinna Adhikari"
 __credits__ = ["Abhinna Adhikari"]
@@ -26,6 +25,8 @@ __Lisence__ = "MIT"
 __maintainer__ = "Abhinna Adhikari"
 __email__ = "abhinna.adhikari@uconn.edu"
 __status__ = "Development"
+
+from ..database import Generic_Table
 
 
 class ASRank_Table(Generic_Table):

@@ -1,53 +1,16 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-"""This module contains all of the data classes for parsing
+"""This module contains a way to store the asrank.caida.org data
 
-The purpose of these classes is to parse information for BGP hijacks,
-leaks, and outages from bgpstream.com. This information is then stored
-in the database. Please note that each data class inherits from the
-Data class. For each data class, This is done through a series of steps.
-
-1. Initialize the class
-    -Handled in the __init__ function
-    -Sets the table and the csv_path, and then calls __init__ on Data
-2. Call __init__ on the parent class Data.
-    -This initializes all regexes
-    -The data list of all events of that type is also initialized
-3. Rows are appended to each data class
-    -This is handled by the BGPStream_Website_Parser class
-    -The append function is overwritten in the parent Data class
-4. For each row, parse the common elements
-    -Handled by the append _parse_common_elements in the Data class
-    -Gets all information that is generic to all events
-5. Pass extra information to the _parse_uncommon_elements function
-    -This is a function specified by each subclass
-    -This function parses elements that are specific to that event type
-6. Then the row is formatted for csv insertion and appended to self.data
-    -Formatting is handled by the _format_temp_row() in the Data Class
-7. Later the BGPStream_Website_Parser will call the db_insert function
-    -This is handled in the parent Data class
-    -This will insert all rows into a CSV
-        -This is done because CSVs have fast bulk insertion time
-    -The CSV will then be copied into the database
-8. After the data is in the database, the tables will be formatted
-    -First the tables remove unwanted IPV4 and IPV6 values
-    -Then an index is created if it doesn't exist
-    -Then duplicates are deleted if they exist
-    -Then temporary tables are created
-        -These are tables that are subsets of the overall data
-
-Design Choices (summarizing from above):
-    -A parent data class is used because many functions are the same
-     for all data types
-    -This is a mess, parsing this website is messy so I will leave it
-    -Parsing is done from the last element to the first element
-        -This is done because not all pages start the same way
+The ASRankData class contains the functionality to insert
+asrank data from asrank.caida.org into five respective
+lists that represent the five columns found on the website.
+These five lists are then converted into a csv file
+and then the csv file is inserted into a database.
 
 Possible Future Extensions:
     -Add test cases
-    -Ask bgpstream.com for an api?
-        -It would cause less querying of their site
 """
 
 
@@ -58,6 +21,7 @@ __maintainer__ = "Abhinna Adhikari"
 __email__ = "abhinna.adhikari@uconn.edu"
 __status__ = "Development"
 
+import logging
 import csv
 import os
 
@@ -116,6 +80,8 @@ class ASRankData:
                 else:
                     element[el_ind] = str(tds_lst[temp_ind])[-16:-14]
 
+        total_pages = self._total_entries // Constants.ENTRIES_PER_PAGE
+
     def _write_csv(self, csv_path):
         """Convert the stored data into a tab
         separated csv file at path, csv_path
@@ -129,6 +95,8 @@ class ASRankData:
                 row = [lst[i] for lst in self._elements_lst]
                 csv_writer.writerow(row)
 
+        logging.debug(f"Wrote {csv_path}")
+
     def insert_data_into_db(self):
         """Create a CSV file with asrank data and then
         use the csv file to insert into the database
@@ -136,3 +104,5 @@ class ASRankData:
         csv_path = os.path.join(Constants.FILE_PATH, Constants.CSV_FILE_NAME)
         self._write_csv(csv_path)
         utils.csv_to_db(ASRank_Table, csv_path, True)
+
+        logging.debug("Inserted data into the database")
