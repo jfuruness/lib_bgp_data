@@ -8,7 +8,7 @@ Note that if tests are failing, the self.start and self.end may need
 updating to be more recent. Possibly same with the api_param_mods.
 """
 
-__authors__ = ["Justin Furuness", "Matt Jaccino"]
+__authors__ = ["Justin Furuness", "Matt Jaccino, Nicholas Shpetner"]
 __credits__ = ["Justin Furuness", "Matt Jaccino"]
 __Lisence__ = "BSD"
 __maintainer__ = "Justin Furuness"
@@ -29,10 +29,17 @@ class Test_MRT_Parser:
         The reason being that the day could change, then the times will
         differ.
         """
+        # Set times for testing purposes, based off old tests
+        # Nov 1, 2019, 1:00 PM
+        self._start = 1572613200
+        # Nov 1, 2019, 2:00 PM
+        self._end = 1572616800
+        # TODO: Check on how to set up param mods
+        # I used the old _api_param_mods cause I don't quite
+        # understand how it works.
+        self._api_param_mods = {"collectors[]": ["route-views.telxatl",
+                                                 "route-views2"]}
 
-        pass
-
-    @pytest.mark.skip(reason="New hire will work on this")
     def test___init__(self):
         """Tests initialization of the MRT parser
 
@@ -40,10 +47,23 @@ class Test_MRT_Parser:
         should be called. (Mock this, don't duplicate install test)
         In addition, the mrt_announcement table should be cleared.
         """
+        # Connect to database
+        with db_connection(Database) as db:
+            # Check if we warned that the dependencies are not installed
+            # First check if we need to install dependencies
+            if not os.path.exists("/usr/bin/bgpscanner"):
+                with pytest.warns(None) as record:
+                    # MRT_Parser should emit a warning here
+                    MRT_Parser()
+                    # If no warning was given even though it should have
+                    if not record:
+                        pytest.fail("Warning not issued when deps not installed")
+            else:
+                # Run init
+                MRT_Parser()
+            # Check that the table exists and is empty
+            assert db.execute("SELECT * FROM mrt_announcements") == []
 
-        pass
-
-    @pytest.mark.skip(reason="New hire will work on this")
     def test_get_iso_mrt_urls(self):
         """Tests getting isolario data.
 
@@ -52,10 +72,23 @@ class Test_MRT_Parser:
         Should assert that there are 5 collectors by default.
         probably should parametize this function
         """
+        # Create a parser
+        test_parser = MRT_Parser()
+        # Get our URLs
+        # TODO: Ensure this works with how I set up param mods
+        urls = test_parser._get_iso_mrt_urls(self._start, 
+                                             self._end, 
+                                             self._api_param_mods)
+        # Assert that files is empty if ISOLARIO is not in sources
+        if MRT_Sources.ISOLARIO not in sources:
+            assert files = []
+        # Verify that we have valid URLs
+        for url in urls:
+            assert validators.url(url)
+        # Assert that we have 5 collectors
+            assert len(urls) == 5
+        
 
-        pass
-
-    @pytest.mark.skip(reason="New hire will work on this")
     def test_get_caida_mrt_urls(self):
         """Tests getting caida data.
 
@@ -68,20 +101,43 @@ class Test_MRT_Parser:
         Should test api parameters and make sure they work.
         Probably should parametize this function
         """
+        # Create a parser
+        test_parser = MRT_Parser()
+        # Get our URLS
+        # TODO: This will fail since I am not calling it correctly. Check how to.
+        urls = test_parser._get_caida_mrt_urls(self._start, 
+                                               self._end, 
+                                               self._api_param_mods)
+        # If we have no URLs, then urls should be empty.
+        if MRT_Sources.RIPE not in sources 
+           and MRT_Sources.ROUTE_VIEWS not in sources:
+           assert urls == []
+        # Verify we have valid URLs
+        for url in urls:
+           assert validators.url(url)
+        # TODO: Figure out how to check number of collectors.
 
-        pass
-
-    @pytest.mark.skip(reason="New hire will work on this")
     def test_get_mrt_urls(self):
         """Tests getting url data.
 
         Assert that there is 47 total collectors. Also test param mods.
         Probably should parametize this function.
         """
+        # Create the parser
+        test_parser = MRT_Parser()
+        # Call get mrt urls
+        # Only needs three args given, I think, as last is call.
+        urls = test_parser._get_mrt_urls(self._start,
+                                         self._end,
+                                         self._api_param_mods)
+        # Ensure we have proper URLs
+        for url in urls:
+            assert validators.url(url)
+        # Ensure we have 47 collectors...that's 47 URLs, right?
+        assert len(urls) == 47
+        # TODO: Test param mods
 
-        pass
 
-    @pytest.mark.skip(reason="New hire work")
     def test_multiprocess_download(self):
         """Test multiprocess downloading of files
 
@@ -91,8 +147,22 @@ class Test_MRT_Parser:
         Test that all files are downloaded correctly.
         Test that end result is same as no multiprocessing
         """
+        # Create the parser
+        parser = MRT_Parser()
+        # Get URLs
+        urls = parser._get_mrt_urls(self._start,
+                                    self._end,
+                                    self._api_param_mods)
+        # Get a few (3) MRT files
+        mrt_files = parser._multiprocess_download(3, urls[:2])
+        # Test all files were downloaded correctly
+        assert len(mrt_files) == 3
+        # Test using more threads than necessary doesn't crash things
+        parser._multiprocess_download(4, urls[:2])
+        # Test no multiprocessing, check end result
+        no_multi = parser._multiprocess_download(1, urls[:2])
+        assert all(x in mrt_files for x in no_multi) 
 
-        pass
 
     @pytest.mark.skip(reason="New hire work")
     def test_multiprocess_parse_dls(self):
@@ -106,7 +176,18 @@ class Test_MRT_Parser:
         that number of announcements in it.
         Test that the end result would be the same without multiprocessing.
         """
-
+        """
+        # Create the parser
+        parser = MRT_Parser()
+        # Get URLs
+        urls = parser._get_mrt_urls(self._start,
+                                    self._end,
+                                    self._api_param_mods)
+        # Get a few MRT files
+        mrt_files = parser._multiprocess_download(3, urls[:2])
+        with db_connection(MRT_Announcements_Table, clear = True) as db:
+        """
+        # TODO: Understand exactly what is going on, and how to test.
         pass
 
     @pytest.mark.skip(reason="New hire work")
@@ -129,20 +210,32 @@ class Test_MRT_Parser:
 
         pass
 
-    @pytest.mark.skip(reason="New hire work")
     def test_filter_and_clean_up_db(self):
         """Tests that this function runs without error.
 
         No need to duplicate tests in tables.py. Make it fast.
         """
+        # Make our parser
+        parser = MRT_Parser()
+        # Do what is necessary to create a table to filter and clean.
+        urls = parser._get_mrt_urls(self._start,
+                                    self._end,
+                                    self._api_param_mods)
+        files = parser._multiprocess_download(5, urls[:10])
+        parser._multiprocess_parse_dls(5, files, True)
+        # Hope that we don't run into an error here.
+        parser._filter_and_clean_up_db(True, True)
 
-        pass
-
-    @pytest.mark.skip(reason="new hire work")
     def  test_parse_files(self):
         """Test that the parse files function
 
         Should raise a warning and parse correctly. Use API Params
         and sources to ensure a fast runtime.
         """
-        pass
+        # Make a parser
+        parser = MRT_Parser()
+        # Call and see if we get a deprecated warn.
+        with pytest.deprecated_call():
+            parser.parse_files(self._start, 
+                               self._end, 
+                               self._api_param_mods)
