@@ -21,13 +21,17 @@ from .constants import Constants
 
 
 def run_shell():
-    exists = os.path.exists(os.path.join(Constants.CHROMEDRIVER_PATH,
-                                         Constants.CHROMEDRIVER_NAME))
+    try:
+        exists = os.path.exists(os.path.join(Constants.CHROMEDRIVER_PATH,
+                                             Constants.CHROMEDRIVER_NAME))
+    except FileNotFoundError:
+        exists = None
+        
     if not exists:
         logging.warning("Dependencies are not installed. Installing now.")
 
-        print("Chromedriver doesn't exist. Installing chromedriver and chrome")
+        print("Chromedriver doesn't exist. Installing chrome and chromedriver")
         os.system('sudo echo ""')
-        os.system('./install_selenium_dependencies.sh')
+        os.system(Constants.FILE_PATH + '/install_selenium_dependencies.sh')
     else:
-        print('Chromedriver already exists')
+        print('Chromedriver already exists\n')

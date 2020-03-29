@@ -7,50 +7,33 @@ The purpose of this class is to parse the information of various AS's
 from asrank.caida.org. This information is then stored
 in the database. This is done through a series of steps.
 
-1. Initialize the three different kinds of data classes.
-    -Handled in the __init__ function in BGPStream_Website_Parser
-    -This class mainly deals with accessing the website, the data
-     classes deal with parsing the information. These data classes
-     inherit from the parent class Data
-2. All rows are received from the main page of the website
-    -This is handled in the utils.get_tags function
-    -This has some initial data for all bgp events
-3. The last ten rows on the website are removed
-    -This is handled in the parse function in BGPStream_Website_Parser
-    -There is some html errors there, which causes errors when parsing
-4. The row limit is set so that it is not too high
-    -This is handled in the parse function in BGPStream_Website_Parser
-    -This is to prevent going over the maximum number of rows on website
-5. Rows are iterated over until row_limit is reached
-    -This is handled in the parse function
-6. For each row, if that row is of a datatype passed in the parameters,
-   and the row is new (by default) add that to the self.data dictionary
-    -This causes that row to be parsed as well
-    -Rows are parsed into CSVs and inserted into the database
-7. Call the db_insert funtion on each of the data classes in self.data
+1. Initialize the ASRankData classes that will store the data
+    -Handled in the __init__ function
+    -This class mainly deals with inserting the data into lists
+     and then eventually into the database
+2. All rows/pages are recieved from the main page of the website
+    -This is handled within the _run_parser method
+    -The _run_parser method uses get_page method within SelDriver class
+3. The data is parsed within the ASRankData class
+    -The insert_data method is used to insert all the rows from a page
+    -The insert_data method parses the HTML
+4. Rows and pages are iterated over until all the rows are parsed
+    -The threads split up the pages so that there is no interference
+     from other threads
+5. Call the insert_data_into_db method within the ASRankData class
+    -The data is converted into a csv file before inserting
     -This will parse all rows and insert them into the database
     -This formats the tables as well
-        -Unwanted IPV4 or IPV6 prefixes are removed
         -Indexes are created if they don't exist
-        -Duplicates are deleted
-        -Temporary tables that are subsets of the data are created
 
 Design Choices (summarizing from above):
-    -The last ten rows of the website are not parsed due to html errors
-    -Only the data types that are passed in as a parameter are parsed
-        -This is because querying each individual events page for info
-         takes a long time
-        -Only new rows by default are parsed for the same reason
-    -Multithreading isn't used because the website blocks the requests
-    -Parsing is done from the end of the page to the top
-        -The start of the page is not always the same
+    -Only the five attribute table found on the front of website is parsed
+    -Parsing is done from the top of the first page to the end of last page
+    -Multithreading is used because the task is less computationally intensive
+     than IO intensive
 
 Possible Future Extensions:
     -Add test cases
-    -Request of make bgpstream.com an api for faster request time?
-        -It would cause less querying to their site
-    -Multithread the first hundred results?
-        -If we only parse new info this is the common case
 """
 from .asrank_website_parser import ASRankWebsiteParser
 

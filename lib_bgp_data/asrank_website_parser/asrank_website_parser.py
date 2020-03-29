@@ -7,38 +7,29 @@ The purpose of this class is to parse the information of Autonomous
 Systems from asrank.caida.org. This information is then stored
 in the database. This is done through a series of steps.
 
-1. Initialize the three different kinds of data classes.
+1. Initialize the asrank_data classes that will store the data
     -Handled in the __init__ function
-    -This class mainly deals with accessing the website, the data
-     classes deal with parsing the information.
-2. All rows are recieved from the main page of the website
-    -This is handled in the utils.get_tags function
-    -This has some initial data for all bgp events
-3. The last ten rows on the website are removed
-    -This is handled in the parse function
-    -There is some html errors there, which causes errors when parsing
-4. The row limit is set so that it is not too high
-    -This is handled in the parse function
-    -This is to prevent going over the maximum number of rows on website
-5. Rows are iterated over until row_limit is reached
-    -This is handled in the parse function
-6. For each row, if that row is of a datatype passed in the parameters,
-   and it is new data, add that to the self.data dictionary
-    -A row is "new" if the start or end times are new or have changed
-    -A paramater called refresh can be set to true to get all new rows
-7. Call the db_insert funtion on each of the data classes in self.data
+    -This class mainly deals with inserting the data into lists
+     and then eventually into the database
+2. All rows/pages are recieved from the main page of the website
+    -This is handled within the _run_parser method
+    -The _run_parser method uses get_page method within sel_driver.py
+3. The data is parsed within the asrank_data class
+    -The insert_data method is used to insert all the rows from a page
+    -The insert_data method parses the HTML
+4. Rows and pages are iterated over until all the rows are parsed
+    -The threads split up the pages so that there will be no
+     interference from other threads
+5. Call the insert_data_into_db method within the asrank_data class
+    -The data is converted into a csv file before inserting
     -This will parse all rows and insert them into the database
 
 Design Choices (summarizing from above):
-    -The last ten rows of the website are not parsed due to html errors
-    -Only the data types that are passed in as a parameter are parsed
-        -In addition, only new rows (by default) are parsed
-            -This is because querying each individual events page for
-             info takes a long time
-    -Multithreading isn't used because the website blocks the requests
+    -Only the five attribute table found on the front of asrank is parsed
+    -Multithreading is used because the task is less computationally
+     intensive than IO intensive
 
 Possible Future Extensions:
-    -Only parse entries that have new or changed data
     -Add test cases
 """
 
@@ -54,13 +45,11 @@ from threading import Thread
 import logging
 import math
 import time
-from tqdm import tqdm
 
 from .constants import Constants
 from .sel_driver import SeleniumDriver
 from .asrank_data import ASRankData
 from .install_selenium_dependencies import run_shell
-from .mt_tqdm import MtTqdm
 
 
 class ASRankWebsiteParser:
@@ -68,14 +57,12 @@ class ASRankWebsiteParser:
     cone size from the https://asrank.caida.org/ website into a database.
 
     For a more in depth explanation, read the top of the file.
-    Attributes:
     """
 
     def __init__(self):
         self._asrank_data = None
         self._total_entries = None
         self._total_pages = None
-        self._mt_tqdm = None
         self._init()
 
     def _init(self):
@@ -83,10 +70,10 @@ class ASRankWebsiteParser:
         contain the information that will be parsed
         """
         run_shell()
+        print(f'Parsing {Constants.URL}...')
         with SeleniumDriver() as sel_driver:
             self._total_pages = self._find_total_pages(sel_driver)
         self._asrank_data = ASRankData(self._total_entries)
-        self._mt_tqdm = MtTqdm(100 / self._total_pages)
 
     def _produce_url(self, page_num, table_entries=Constants.ENTRIES_PER_PAGE):
         """Create a URL of the website with the intended
@@ -131,12 +118,12 @@ class ASRankWebsiteParser:
                 soup = sel_driver.get_page(self._produce_url(page_num + 1))
                 tds_lst = soup.findAll('td')
                 self._asrank_data.insert_data(page_num, tds_lst)
-                self._mt_tqdm.update()
+                #self._mt_tqdm.update()
 
     def _run_mt(self):
         """Parse asrank website using threads for separate pages"""
         threads = []
-        num_threads = self._total_pages // 6
+        num_threads = Constants.NUM_THREADS
         for i in range(num_threads):
             thread = Thread(target=self._run_parser, args=(i, num_threads))
             threads.append(thread)
@@ -148,13 +135,5 @@ class ASRankWebsiteParser:
         """Run the multithreaded ASRankWebsiteParser"""
         start = time.time()
         self._run_mt()
-        self._mt_tqdm.close()
         total_time = time.time() - start
-        print('total time taken:',
-              total_time,
-              'seconds,',
-              total_time / 60,
-              'minutes',
-              total_time / 3600,
-              'hours')
         self._asrank_data.insert_data_into_db()

@@ -25,3 +25,4 @@ class Constants:
     URL = 'https://asrank.caida.org/'
     CSV_FILE_NAME = 'asrank_caida.csv'
     ENTRIES_PER_PAGE = 1000
+    NUM_THREADS = 11

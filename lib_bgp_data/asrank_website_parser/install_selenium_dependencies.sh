@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# The exact directory path of this script file
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+
 # Function that wraps another function and provides context about what process will occur
 sleep_dec() {
         # First parameter is the context, second parameter is the function
@@ -82,4 +85,6 @@ install_chromedriver () {
         rm chromedriver_linux64.zip
 }
 
+pushd $DIR
 sleep_dec "Installing latest version of chromedriver" install_chromedriver
+popd

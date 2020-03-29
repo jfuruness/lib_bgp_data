@@ -28,6 +28,7 @@ import os
 from ..utils import utils
 from .constants import Constants
 from .tables import ASRank_Table
+from .mt_tqdm import MtTqdm
 
 
 class ASRankData:
@@ -45,11 +46,12 @@ class ASRankData:
 
         self._elements_lst = None
         self._total_entries = total_entries
+        self._mt_tqdm = MtTqdm(100 / self._total_entries)
         self._init()
 
     def _init(self):
-        """Initialize the five columns of information
-        found on asrank.caida.org
+        """Initialize the lists where the five columns of 
+        information found on asrank.caida.org will be stored
         """
         self._as_rank = [0] * self._total_entries
         self._as_num = [0] * self._total_entries
@@ -79,6 +81,7 @@ class ASRankData:
                         element[el_ind] = tds_lst[temp_ind].text
                 else:
                     element[el_ind] = str(tds_lst[temp_ind])[-16:-14]
+            self._mt_tqdm.update()
 
         total_pages = self._total_entries // Constants.ENTRIES_PER_PAGE
 
@@ -101,8 +104,10 @@ class ASRankData:
         """Create a CSV file with asrank data and then
         use the csv file to insert into the database
         """
+        self._mt_tqdm.close() 
         csv_path = os.path.join(Constants.FILE_PATH, Constants.CSV_FILE_NAME)
         self._write_csv(csv_path)
         utils.csv_to_db(ASRank_Table, csv_path, True)
 
         logging.debug("Inserted data into the database")
+        print('Done.')
