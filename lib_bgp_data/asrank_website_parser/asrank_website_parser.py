@@ -42,9 +42,7 @@ __email__ = "abhinna.adhikari@uconn.edu"
 __status__ = "Development"
 
 from threading import Thread
-import logging
 import math
-import time
 
 from .constants import Constants
 from .selenium_related.sel_driver import SeleniumDriver
@@ -84,7 +82,8 @@ class ASRankWebsiteParser:
             self._total_pages = self._find_total_pages(sel_driver)
         self._asrank_data = ASRankData(self._total_entries)
 
-    def _produce_url(self, page_num, table_entries=Constants.ENTRIES_PER_PAGE):
+    @staticmethod
+    def _produce_url(page_num, table_entries=Constants.ENTRIES_PER_PAGE):
         """Create a URL of the website with the intended
         page number and page size where page size is less than 1000.
 
@@ -117,7 +116,7 @@ class ASRankWebsiteParser:
             The total number of pages of the main table
             that is found on asrank.caida.org.
         """
-        soup = sel_driver.get_page(self._produce_url(1, 1))
+        soup = sel_driver.get_page(ASRankWebsiteParser._produce_url(1, 1))
         self._total_entries = max([int(page.text)
                                    for page in soup.findAll('a',
                                                             {'class':
@@ -135,8 +134,8 @@ class ASRankWebsiteParser:
         """
         with SeleniumDriver() as sel_driver:
             for page_num in range(t_id, self._total_pages, total_threads):
-                prev = time.time()
-                soup = sel_driver.get_page(self._produce_url(page_num + 1))
+                url = ASRankWebsiteParser._produce_url(page_num + 1)
+                soup = sel_driver.get_page(url)
                 tds_lst = soup.findAll('td')
                 self._asrank_data.insert_data(page_num, tds_lst)
 
@@ -148,12 +147,10 @@ class ASRankWebsiteParser:
             thread = Thread(target=self._run_parser, args=(i, num_threads))
             threads.append(thread)
             thread.start()
-        for th in threads:
-            th.join()
+        for thread in threads:
+            thread.join()
 
     def run(self):
         """Run the multithreaded ASRankWebsiteParser."""
-        start = time.time()
         self._run_mt()
-        total_time = time.time() - start
         self._asrank_data.insert_data_into_db()

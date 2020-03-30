@@ -6,7 +6,6 @@ among the various python files within the asrank_website_parser
 directory.
 """
 
-
 __author__ = "Abhinna Adhikari"
 __credits__ = ["Abhinna Adhikari"]
 __Lisence__ = "MIT"
@@ -18,6 +17,10 @@ import os
 
 
 class Constants:
+    """The Constants class contains several high use variables that are shared
+    among the various python files within the asrank_website_parser
+    directory.
+    """
     FILE_PATH = os.path.dirname(os.path.abspath(__file__))
     CHROMEDRIVER_NAME = 'chromedriver'
     CHROMEDRIVER_PATH = os.path.join(os.path.join(FILE_PATH,

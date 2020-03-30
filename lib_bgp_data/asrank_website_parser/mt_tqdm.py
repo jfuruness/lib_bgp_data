@@ -25,10 +25,8 @@ __email__ = "abhinna.adhikari@uconn.edu"
 __status__ = "Development"
 
 from threading import Lock
-from tqdm import tqdm
-import os
 
-from .constants import Constants
+from tqdm import tqdm
 
 
 class MtTqdm:
@@ -43,7 +41,7 @@ class MtTqdm:
             each time an event occurs. The event must be uniform.
     """
 
-    __slots__ = ['_lock', '_pbar', '_update_val'] 
+    __slots__ = ['_lock', '_pbar', '_update_val']
 
     def __init__(self, update_value):
         self._lock = Lock()

@@ -23,12 +23,13 @@ __maintainer__ = "Abhinna Adhikari"
 __email__ = "abhinna.adhikari@uconn.edu"
 __status__ = "Development"
 
+import os
+
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.common.by import By
 from selenium import webdriver
 from bs4 import BeautifulSoup
-import os
 
 from ..constants import Constants
 
@@ -45,7 +46,7 @@ class SeleniumDriver:
     __slots__ = ['_driver']
 
     def __init__(self):
-        self._driver = self._init_driver()
+        self._driver = SeleniumDriver.init_driver()
 
     def __enter__(self):
         """Allows the SeleniumDriver to be
@@ -55,14 +56,15 @@ class SeleniumDriver:
             The class itself.
         """
         if not self._driver:
-            self._driver = self._init_driver()
+            self._driver = SeleniumDriver.init_driver()
         return self
 
     def __exit__(self, exc_type, exc_value, exc_traceback):
         """Exit the context manager by closing the selenium driver."""
         self.close()
 
-    def _init_driver(self):
+    @staticmethod
+    def init_driver():
         """Initialize the headless chrome webdriver
         that is used to retrieve the dynamic HTML.
 

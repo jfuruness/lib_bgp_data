@@ -27,7 +27,7 @@ import os
 
 from ..utils import utils
 from .constants import Constants
-from .tables import ASRank_Table
+from .tables import ASRankTable
 from .mt_tqdm import MtTqdm
 
 
@@ -55,13 +55,12 @@ class ASRankData:
             updating tqdm.
     """
 
-    __slots__ = ['_as_rank', 
-                 '_as_num', 
-                 '_org', 
+    __slots__ = ['_as_rank',
+                 '_as_num',
+                 '_org',
                  '_country',
                  '_cone_size',
                  '_elements_lst',
-                 '_total_entries',
                  '_mt_tqdm']
 
     def __init__(self, total_entries):
@@ -72,19 +71,18 @@ class ASRankData:
         self._cone_size = None
 
         self._elements_lst = None
-        self._total_entries = total_entries
-        self._mt_tqdm = MtTqdm(100 / self._total_entries)
-        self._init()
+        self._mt_tqdm = MtTqdm(100 / total_entries)
+        self._init(total_entries)
 
-    def _init(self):
+    def _init(self, total_entries):
         """Initialize the lists where the five columns of
         information found on asrank.caida.org will be stored.
         """
-        self._as_rank = [0] * self._total_entries
-        self._as_num = [0] * self._total_entries
-        self._org = [0] * self._total_entries
-        self._country = [0] * self._total_entries
-        self._cone_size = [0] * self._total_entries
+        self._as_rank = [0] * total_entries
+        self._as_num = [0] * total_entries
+        self._org = [0] * total_entries
+        self._country = [0] * total_entries
+        self._cone_size = [0] * total_entries
 
         self._elements_lst = [self._as_rank,
                               self._as_num,
@@ -117,8 +115,6 @@ class ASRankData:
                     element[el_ind] = str(tds_lst[temp_ind])[-16:-14]
             self._mt_tqdm.update()
 
-        total_pages = self._total_entries // Constants.ENTRIES_PER_PAGE
-
     def _write_csv(self, csv_path):
         """Convert the stored data into a tab
         separated csv file at path, csv_path.
@@ -136,7 +132,7 @@ class ASRankData:
                 row = [lst[i] for lst in self._elements_lst]
                 csv_writer.writerow(row)
 
-        logging.debug(f"Wrote {csv_path}")
+        logging.debug("Wrote %s", csv_path)
 
     def insert_data_into_db(self):
         """Create a CSV file with asrank data and then
@@ -145,7 +141,7 @@ class ASRankData:
         self._mt_tqdm.close()
         csv_path = os.path.join(Constants.FILE_PATH, Constants.CSV_FILE_NAME)
         self._write_csv(csv_path)
-        utils.csv_to_db(ASRank_Table, csv_path, True)
+        utils.csv_to_db(ASRankTable, csv_path, True)
 
         logging.debug("Inserted data into the database")
         print('Done.')

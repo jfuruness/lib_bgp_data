@@ -29,8 +29,8 @@ __status__ = "Development"
 from ..database import Generic_Table
 
 
-class ASRank_Table(Generic_Table):
-    """ASRank table class, inherits from Generic_Table.
+class ASRankTable(Generic_Table):
+    """ASRankTable class, inherits from Generic_Table.
     For a more in depth explanation see the top of the file.
     """
 
