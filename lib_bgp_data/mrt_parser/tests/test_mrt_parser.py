@@ -81,7 +81,7 @@ class Test_MRT_Parser:
                                              self._api_param_mods)
         # Assert that files is empty if ISOLARIO is not in sources
         if MRT_Sources.ISOLARIO not in sources:
-            assert files = []
+            assert files == []
         # Verify that we have valid URLs
         for url in urls:
             assert validators.url(url)
@@ -109,8 +109,7 @@ class Test_MRT_Parser:
                                                self._end, 
                                                self._api_param_mods)
         # If we have no URLs, then urls should be empty.
-        if MRT_Sources.RIPE not in sources 
-           and MRT_Sources.ROUTE_VIEWS not in sources:
+        if MRT_Sources.RIPE not in sources and MRT_Sources.ROUTE_VIEWS not in sources:
            assert urls == []
         # Verify we have valid URLs
         for url in urls:
