@@ -31,6 +31,7 @@ def run_shell():
         logging.warning("Dependencies are not installed. Installing now.")
         print("Chromedriver doesn't exist. Installing chrome and chromedriver")
         os.system('sudo echo ""')
-        os.system(Constants.FILE_PATH + '/install_selenium_dependencies.sh')
+        file_path = os.path.dirname(os.path.abspath(__file__)) 
+        os.system(file_path + '/install_selenium_dependencies.sh')
     else:
         print('Chromedriver already exists\n')
