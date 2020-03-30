@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-"""This package contains class ASRankWebsiteParser
+"""This package contains class ASRankWebsiteParser.
 
 The purpose of this class is to parse the information of various AS's
 from asrank.caida.org. This information is then stored

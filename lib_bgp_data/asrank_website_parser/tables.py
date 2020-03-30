@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-"""This module contains the table found on asrank.caida.org
+"""This module contains the table found on asrank.caida.org.
 
 These tables must all inherit from the Generic_Table class. The Generic_Table
 class allows for the conection to a database upon initialization. Also
@@ -31,7 +31,6 @@ from ..database import Generic_Table
 
 class ASRank_Table(Generic_Table):
     """ASRank table class, inherits from Generic_Table.
-
     For a more in depth explanation see the top of the file.
     """
 
@@ -54,13 +53,7 @@ class ASRank_Table(Generic_Table):
         self.cursor.execute(sql)
 
     def create_index(self):
-        """Creates an index on top 100 AS numbers"""
+        """Creates an index on top 100 AS numbers."""
         sql = """CREATE INDEX IF NOT EXISTS asrank_index ON as_rank
                   USING BTREE(as_number) WHERE as_rank <= 100;"""
         self.cursor.execute(sql)
-
-    def print_top_100(self):
-        sql = """SELECT * FROM asrank ORDER BY as_rank"""
-        self.cursor.execute(sql)
-        for i in range(100):
-            print(self.cursor.fetchone())

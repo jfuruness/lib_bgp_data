@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-"""This module contains class Asrank_Website_Parser
+"""This module contains class Asrank_Website_Parser.
 
 The purpose of this class is to parse the information of Autonomous
 Systems from asrank.caida.org. This information is then stored
@@ -47,16 +47,23 @@ import math
 import time
 
 from .constants import Constants
-from .sel_driver import SeleniumDriver
+from .selenium_related.sel_driver import SeleniumDriver
 from .asrank_data import ASRankData
-from .install_selenium_dependencies import run_shell
+from .selenium_related.install_selenium_dependencies import run_shell
 
 
 class ASRankWebsiteParser:
     """Parses the AS rank, AS num, organization, country, and
     cone size from the https://asrank.caida.org/ website into a database.
-
     For a more in depth explanation, read the top of the file.
+
+    Attributes:
+        _asrank_data: ASRankData, An instance of ASRankData class
+            where the HTML will be parsed and the table attributes
+            are temporarily stored.
+        _total_entries: int, The total number of rows on asrank.caida.org
+        _total_pages: int, The total number of pages on asrank given
+            Constants.ENTRIES_PER_PAGE entries per page.
     """
 
     def __init__(self):
@@ -67,7 +74,7 @@ class ASRankWebsiteParser:
 
     def _init(self):
         """Initialize the variables and lists that
-        contain the information that will be parsed
+        contain the information that will be parsed.
         """
         run_shell()
         print(f'Parsing {Constants.URL}...')
@@ -77,16 +84,16 @@ class ASRankWebsiteParser:
 
     def _produce_url(self, page_num, table_entries=Constants.ENTRIES_PER_PAGE):
         """Create a URL of the website with the intended
-        page number and page size where page size is less than 1000
+        page number and page size where page size is less than 1000.
 
         Args:
-            page_num (int): The number of the current page
-            table_entries (int): The number of entries found
-                within the table on the current page
+            page_num: int, The number of the current page.
+            table_entries: int, The number of entries found
+                within the table on the current page.
 
         Returns:
             The string of the of the URL that will be on the
-            given page and have the given number of table entries
+            given page and have the given number of table entries.
         """
         if table_entries > Constants.ENTRIES_PER_PAGE:
             table_entries = Constants.ENTRIES_PER_PAGE
@@ -98,7 +105,15 @@ class ASRankWebsiteParser:
 
     def _find_total_pages(self, sel_driver):
         """Returns the total number pages of the website
-        depending on the entries per page
+        depending on the entries per page.
+
+        Args:
+            sel_driver: SeleniumDriver, An instance of the
+                SeleniumDriver class.
+
+        Returns:
+            The total number of pages of the main table
+            that is found on asrank.caida.org.
         """
         soup = sel_driver.get_page(self._produce_url(1, 1))
         self._total_entries = max([int(page.text)
@@ -110,7 +125,11 @@ class ASRankWebsiteParser:
 
     def _run_parser(self, t_id, total_threads):
         """Parses the website saving information on the AS rank,
-        AS number, organization, country, and cone size
+        AS number, organization, country, and cone size.
+
+        Args:
+            t_id: int, The id of the current thread.
+            total_threads: int, The total amount of threads running.
         """
         with SeleniumDriver() as sel_driver:
             for page_num in range(t_id, self._total_pages, total_threads):
@@ -118,10 +137,9 @@ class ASRankWebsiteParser:
                 soup = sel_driver.get_page(self._produce_url(page_num + 1))
                 tds_lst = soup.findAll('td')
                 self._asrank_data.insert_data(page_num, tds_lst)
-                #self._mt_tqdm.update()
 
     def _run_mt(self):
-        """Parse asrank website using threads for separate pages"""
+        """Parse asrank website using threads for separate pages."""
         threads = []
         num_threads = Constants.NUM_THREADS
         for i in range(num_threads):
@@ -132,7 +150,7 @@ class ASRankWebsiteParser:
             th.join()
 
     def run(self):
-        """Run the multithreaded ASRankWebsiteParser"""
+        """Run the multithreaded ASRankWebsiteParser."""
         start = time.time()
         self._run_mt()
         total_time = time.time() - start

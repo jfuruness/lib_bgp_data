@@ -20,7 +20,9 @@ import os
 class Constants:
     FILE_PATH = os.path.dirname(os.path.abspath(__file__))
     CHROMEDRIVER_NAME = 'chromedriver'
-    CHROMEDRIVER_PATH = os.path.join(FILE_PATH, 'chromedrivers')
+    CHROMEDRIVER_PATH = os.path.join(os.path.join(FILE_PATH,
+                                                  'selenium_related'),
+                                     'chromedrivers')
 
     URL = 'https://asrank.caida.org/'
     CSV_FILE_NAME = 'asrank_caida.csv'

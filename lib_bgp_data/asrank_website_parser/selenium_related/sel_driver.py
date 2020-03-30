@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-"""This module contains an abstraction of a Selenium Chrome webdriver
+"""This module contains an abstraction of a Selenium Chrome webdriver.
 
 The purpose of this class is to simplify the use of
 chromedriver by abstracting the various functions
@@ -30,13 +30,16 @@ from selenium import webdriver
 from bs4 import BeautifulSoup
 import os
 
-from .constants import Constants
+from ..constants import Constants
 
 
 class SeleniumDriver:
-    """Class where Selenium webdriver functions are abstracted to simplify code
+    """Class where Selenium webdriver functions are abstracted to simplify
+    code. For a more in depth explanation see the top of the file.
 
-    For a more in depth explanation see the top of the file.
+    Attributes:
+        _driver: selenium.webdriver.Chrome, An instance of a selenium
+            chromedriver.
     """
 
     def __init__(self):
@@ -54,15 +57,15 @@ class SeleniumDriver:
         return self
 
     def __exit__(self, exc_type, exc_value, exc_traceback):
-        """Exit the context manager by closing the selenium driver"""
+        """Exit the context manager by closing the selenium driver."""
         self.close()
 
     def _init_driver(self):
         """Initialize the headless chrome webdriver
-        that is used to retrieve the dynamic HTML
+        that is used to retrieve the dynamic HTML.
 
         Returns:
-            A headless selenium.webdriver.Chrome object
+            A headless selenium.webdriver.Chrome object.
         """
         chrome_options = webdriver.ChromeOptions()
         chrome_options.add_argument("--headless")
@@ -79,18 +82,18 @@ class SeleniumDriver:
                  dynamic_class_name="asrank-row-org"):
 
         """Run the url on the driver to get dynamic HTML of
-        a page and then create beautiful soup object of the HTML page
+        a page and then create beautiful soup object of the HTML page.
 
         Args:
-            url (str): The URL that will be run on the driver
-            timeout (int): The amount of time for the request to timeout
-            dynamic_class_name (str): The name of a class that is only
+            url: str, The URL that will be run on the driver.
+            timeout: int, The amount of time for the request to timeout.
+            dynamic_class_name: str, The name of a class that is only
                 visible once the dynamic html is created. Indicator that
                 the dynamic HTML has been created.
 
         Returns:
             A BeautifulSoup object made from the dyamic HTML
-            retrived using selenium's chrome webdriver
+            retrived using selenium's chrome webdriver.
         """
         self._driver.get(url)
 
@@ -105,6 +108,6 @@ class SeleniumDriver:
         return soup
 
     def close(self):
-        """Close the selenium driver"""
+        """Close the selenium driver."""
         if self._driver:
             self._driver.close()

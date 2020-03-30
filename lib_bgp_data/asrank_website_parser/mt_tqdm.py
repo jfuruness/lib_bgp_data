@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-"""This module contains an abstraction of tdqm
+"""This module contains a thread-safe abstraction of tdqm.
 
 The purpose of this class is to simplify the use of tdqm
 by abstracting away the progress bar and the update of the
@@ -32,10 +32,15 @@ from .constants import Constants
 
 
 class MtTqdm:
-    """Implement a tqdm progress bar that
-    supports multithreaded manual updating
+    """Implement a tqdm progress bar that supports multithreaded
+    manual updating. For a more in depth explanation
+    see the top of the file.
 
-    For a more in depth explanation see the top of the file.
+    Attributes:
+        _lock: threading.Lock, A multithreading, blocking lock.
+        _pbar: tqdm.tqdm, A manual tqdm progress bar.
+        _update_val: float, The value that the pbar should update
+            each time an event occurs. The event must be uniform.
     """
 
     def __init__(self, update_value):
@@ -44,7 +49,7 @@ class MtTqdm:
         self._update_val = update_value
 
     def update(self):
-        """Update the tqdm progress bar. Thread safe"""
+        """Update the tqdm progress bar. Thread safe."""
         self._lock.acquire()
         if (self._pbar.n + self._update_val) >= self._pbar.total:
             self._pbar.update(self._pbar.total - self._pbar.n)
@@ -53,7 +58,7 @@ class MtTqdm:
         self._lock.release()
 
     def close(self):
-        """Close the tqdm progress bar"""
+        """Close the tqdm progress bar."""
         if self._pbar.n < self._pbar.total:
             self._pbar.update(self._pbar.total - self._pbar.n)
         self._pbar.close()

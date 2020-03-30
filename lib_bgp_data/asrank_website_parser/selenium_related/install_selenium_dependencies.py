@@ -17,7 +17,7 @@ import logging
 import time
 import os
 
-from .constants import Constants
+from ..constants import Constants
 
 
 def run_shell():
@@ -26,10 +26,9 @@ def run_shell():
                                              Constants.CHROMEDRIVER_NAME))
     except FileNotFoundError:
         exists = None
-        
+
     if not exists:
         logging.warning("Dependencies are not installed. Installing now.")
-
         print("Chromedriver doesn't exist. Installing chrome and chromedriver")
         os.system('sudo echo ""')
         os.system(Constants.FILE_PATH + '/install_selenium_dependencies.sh')
