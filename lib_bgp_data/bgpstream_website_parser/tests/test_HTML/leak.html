@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+	<title>BGPStream Event #229100</title>
+</head>
+
+<body>
+
+<div class="container">
+
+        <h3> BGP Leak</h3>
+        Beginning at 2020-03-18 20:26:10 UTC, we detected a possible BGP Leak
+        <p>
+        Prefix 162.10.252.0/24, Normally announced by AS40685 ANACOMP-SD, US <br>
+		Leaked by AS3910  CENTURYLINK-EUROPE-LEGACY-QWEST, US
+        </p>
+        <p>
+        This was detected by 12 BGPMon peers.
+        </p>
+        <table class="table">
+            <th>Leak Details</th>
+            <tr><td>Start time: 2020-03-18 20:26:10 UTC</td></tr>
+            <tr><td>Leaked prefix: 162.10.252.0/24 (AS40685 ANACOMP-SD, US)</td></tr>
+            <tr><td>Leaked By: AS3910 <img
+			src="https://portal.bgpmon.net/images/flags/us.gif"> (CENTURYLINK-EUROPE-LEGACY-QWEST, US)</td></tr>
+            <tr><td>Leaked To:<br> 
+				<li>3356 (LEVEL3, US)</li>
+			
+			</td></tr>
+            <tr><td>Example AS path: 28642 267469 267613 3549 3356 3910 209 3561 40685 </td></tr>
+            <tr><td>Number of BGPMon peers that saw it: 12</td></tr>
+        </table>
+
+</div>
+
+</body>
+
+</html>

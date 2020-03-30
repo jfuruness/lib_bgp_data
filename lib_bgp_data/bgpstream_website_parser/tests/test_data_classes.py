@@ -5,17 +5,18 @@
 For specifics on each test, see the docstrings under each function.
 """
 
-__authors__ = ["Justin Furuness"]
-__credits__ = ["Justin Furuness"]
+__authors__ = ["Justin Furuness, Tony Zheng"]
+__credits__ = ["Justin Furuness, Tony Zheng"]
 __Lisence__ = "BSD"
 __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
 import pytest
-
+from unittest.mock import patch
+from bs4 import BeautifulSoup as Soup
+from .open_custom_HTML import open_custom_HTML
 from ..data_classes import Data, Hijack, Leak, Outage
-
 
 @pytest.mark.bgpstream_website_parser
 class Test_Data:
@@ -71,6 +72,7 @@ class Test_Data:
 
         pass
 
+
 @pytest.mark.bgpstream_website_parser
 class Test_Hijack:
     """Tests all functions within the Hijack class."""
@@ -84,14 +86,27 @@ class Test_Hijack:
 
         pass
  
-    @pytest.mark.skip(reason="New hires work")
     def test_format_temp_row(self):
         """Tests the format temp row func function
 
         Make sure list exists with all columns but ID.
         """
 
-        pass
+        hijack = Hijack('./')
+
+        row = open_custom_HTML('./test_HTML/page.html', 'tr')[2]
+
+        self._temp_row = []
+
+        with patch('lib_bgp_data.utils.utils.get_tags') as mock_get_tag:
+            mock_get_tag.side_effect = open_custom_HTML
+            hijack._parse_uncommon_info(*hijack._parse_common_elements(row))
+
+        #expected output
+        return_list = ['', '{131477, 138576, 3257, 28329, 265888, 2}', '8', 'UDEL-DCN, US', '2', '2020-03-18 17:41:23',
+                       '', '229087', 'Possible Hijack', 'BULL-HN, US', '6', '128.201.254.0/23', '128.201.254.0/23',
+                       '/event/229087']
+        assert hijack._format_temp_row() == return_list
 
 @pytest.mark.bgpstream_website_parser
 class Test_Leak:
@@ -105,15 +120,30 @@ class Test_Leak:
         """
 
         pass
- 
-    @pytest.mark.skip(reason="New hires work")
+
+
     def test_format_temp_row(self):
         """Tests the format temp row func function
 
         Make sure list exists with all columns but ID.
         """
+        leak = Leak('./')
 
-        pass
+        row = open_custom_HTML('./test_HTML/page.html', 'tr')[1]
+
+        self._temp_row = {}
+
+        with patch('lib_bgp_data.utils.utils.get_tags') as mock_get_tag:
+            mock_get_tag.side_effect = open_custom_HTML
+            leak._parse_uncommon_info(*leak._parse_common_elements(row))
+
+        #expected output
+        return_list = ['', '12', '2020-03-18 20:26:10', '', '229100', 'BGP Leak',
+                       '{28642, 267469, 267613, 3549, 3356, 3910, 209, 3561, 40685}', '162.10.252.0/24',
+                       "{'LEVEL3, US'}", '{3356}', 'CENTURYLINK-EUROPE-LEGACY-QWEST, US', '3910', 'ANACOMP-SD, US',
+                       '40685', '/event/229100']
+        assert leak._format_temp_row() == return_list
+
 
 @pytest.mark.bgpstream_website_parser
 class Test_Outage:
@@ -128,12 +158,26 @@ class Test_Outage:
 
         pass
  
-    @pytest.mark.skip(reason="New hires work")
     def test_format_temp_row(self):
         """Tests the format temp row func function
 
         Make sure list exists with all columns but ID.
         """
+        outage = Outage('./')
 
-        pass
+        row = open_custom_HTML('./test_HTML/page.html', 'tr')[0]
+
+        self._temp_row = {}
+
+        with patch('lib_bgp_data.utils.utils.get_tags') as mock_get_tag:
+            mock_get_tag.side_effect = open_custom_HTML
+            outage._parse_uncommon_info(*outage._parse_common_elements(row))
+
+        #expected output
+        return_list = [None, None, 'DO', '2020-03-18 22:31:00', '2020-03-18 22:34:00',
+                       '229106', 'Outage', '167 ', '27', '/event/229106']
+
+        assert outage._format_temp_row() == return_list
+
+
 

@@ -1,3 +1,4 @@
+
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
@@ -16,7 +17,6 @@ __status__ = "Development"
 
 import pytest
 from unittest.mock import Mock, patch
-
 from ..bgpstream_website_parser import BGPStream_Website_Parser
 from ..tables import Hijacks_Table, Leaks_Table, Outages_Table
 from ..data_classes import Hijack, Leak, Outage
@@ -25,6 +25,7 @@ from ...utils import utils
 from ...database import Database
 from bs4 import BeautifulSoup as Soup
 from time import strftime, gmtime, time
+from .open_custom_HTML import open_custom_HTML
 
 @pytest.mark.bgpstream_website_parser
 class Test_BGPStream_Website_Parser:
@@ -70,9 +71,11 @@ class Test_BGPStream_Website_Parser:
                             row_count += hijack_count
 
                             if IPV[0]:
-                                assert len(_db.execute('SELECT expected_prefix FROM hijacks WHERE family(expected_prefix) = 4')) > 0
+                                sql = 'SELECT expected_prefix FROM hijacks WHERE family(expected_prefix) = 4'
+                                assert len(_db.execute(sql)) > 0
                             if IPV[1]:
-                                assert len(_db.execute('SELECT expected_prefix FROM hijacks WHERE family(expected_prefix) = 6')) > 0
+                                sql = 'SELECT expected_prefix FROM hijacks WHERE family(expected_prefix) = 6'
+                                assert len(_db.execute(sql)) > 0
 
                         if Event_Types.LEAK.value in combination:
                             leak_count = _db.execute('SELECT COUNT(*) FROM leaks')[0]['count']
@@ -80,7 +83,8 @@ class Test_BGPStream_Website_Parser:
                             row_count += leak_count
 
                             if IPV[0]:
-                                assert len(_db.execute('SELECT leaked_prefix FROM leaks WHERE family(leaked_prefix) = 4')) > 0
+                                sql = 'SELECT leaked_prefix FROM leaks WHERE family(leaked_prefix) = 4'
+                                assert len(_db.execute(sql)) > 0
 
                         if Event_Types.OUTAGE.value in combination:
                             outage_count = _db.execute('SELECT COUNT(*) FROM outages')[0]['count']
@@ -89,6 +93,86 @@ class Test_BGPStream_Website_Parser:
 
                         if row_limit == 100:
                             assert 0 < row_count <= 100
+
+    @patch('lib_bgp_data.utils.utils.get_tags', autospec=True)
+    def test_run_custom(self, mock_get_tags):
+        mock_get_tags.side_effect = open_custom_HTML
+
+        def drop():
+            _db.execute('DROP TABLE IF EXISTS hijacks')
+            _db.execute('DROP TABLE IF EXISTS leaks')
+            _db.execute('DROP TABLE IF EXISTS outages')
+
+        event_combos = [[Event_Types.HIJACK.value],
+                        [Event_Types.LEAK.value],
+                        [Event_Types.OUTAGE.value],
+                        [Event_Types.HIJACK.value, Event_Types.LEAK.value],
+                        [Event_Types.HIJACK.value, Event_Types.OUTAGE.value],
+                        [Event_Types.LEAK.value, Event_Types.OUTAGE.value],
+                        [Event_Types.HIJACK.value, Event_Types.LEAK.value, Event_Types.OUTAGE.value]]
+
+        parser = BGPStream_Website_Parser()
+
+        for combination in event_combos:
+            for row_limit in [None, 3, 999999]:
+                for IPV in [(False, False), (True, False), (False, True), (True, True)]:
+                    with Database() as _db:
+                        drop()
+                        parser._run(row_limit, IPV[0], IPV[1], combination, False)
+
+                        if Event_Types.HIJACK.value in combination:
+                            sql = """SELECT 1 FROM hijacks WHERE
+                                     country is NULL AND
+                                     detected_as_path = '{131477, 138576, 3257, 28329, 265888, 2}' AND
+                                     detected_by_bgpmon_peers = '8' AND
+                                     detected_origin_name = 'UDEL-DCN, US' AND
+                                     detected_origin_number = '2' AND
+                                     start_time = '2020-03-18 17:41:23' AND
+                                     end_time is NULL AND
+                                     event_number = '229087' AND
+                                     event_type = 'Possible Hijack' AND
+                                     expected_origin_name = 'BULL-HN, US' AND
+                                     expected_origin_number = '6' AND
+                                     expected_prefix = '128.201.254.0/23' AND
+                                     more_specific_prefix = '128.201.254.0/23' AND
+                                     url = '/event/229087'"""
+
+                            assert len(_db.execute(sql)) == 1
+
+                        if Event_Types.LEAK.value in combination:
+                            sql = """SELECT 1 FROM leaks WHERE
+                                     country is NULL AND
+                                     detected_by_bgpmon_peers = '12' AND
+                                     start_time = '2020-03-18 20:26:10' AND
+                                     end_time is NULL AND
+                                     event_number = '229100' AND
+                                     event_type = 'BGP Leak' AND
+                                     example_as_path = '{28642, 267469, 267613, 3549, 3356, 3910, 209, 3561, 40685}' AND
+                                     leaked_prefix = '162.10.252.0/24' AND
+                                     leaked_to_name = %s::varchar (200) ARRAY AND
+                                     leaked_to_number = '{3356}' AND
+                                     leaker_as_name = 'CENTURYLINK-EUROPE-LEGACY-QWEST, US' AND
+                                     leaker_as_number = '3910' AND
+                                     origin_as_name = 'ANACOMP-SD, US' AND
+                                     origin_as_number = '40685' AND
+                                     url = '/event/229100'"""
+
+                            assert len(_db.execute(sql, (["'LEVEL3", "US'"],))) == 1
+
+                        if Event_Types.OUTAGE.value in combination:
+                            sql = """SELECT 1 FROM outages WHERE
+                                     as_name is NULL AND
+                                     as_number is NULL AND
+                                     country = 'DO' AND
+                                     start_time = '2020-03-18 22:31:00' AND
+                                     end_time = '2020-03-18 22:34:00' AND
+                                     event_number = '229106' AND
+                                     event_type = 'Outage' AND
+                                     number_prefixes_affected = '167' AND
+                                     percent_prefixes_affected = '27' AND
+                                     url = '/event/229106'"""
+
+                            assert len(_db.execute(sql)) == 1
 
     def test_get_rows(self):
         """Tests get rows func
@@ -113,11 +197,6 @@ class Test_BGPStream_Website_Parser:
             else:
                 assert len(parser._get_rows(l[0])) == len(rows) - 10
 
-        def open_custom_HTML(url: str, tag: str):
-            with open('./test_HTML/page.html') as f:
-                html = f.read()
-                tags = [x for x in Soup(html, 'html.parser').select('tr')]
-            return tags
         # checks with custom HTML that has 1 hijack, 1 outage, and 1 leak
         with patch('lib_bgp_data.utils.utils.get_tags') as mock_get_tag:
             mock_get_tag.side_effect = open_custom_HTML
@@ -134,16 +213,13 @@ class Test_BGPStream_Website_Parser:
         try a row with and without contry/flag.
         Prob should parametize this function.
         """
-        with open('./test_HTML/page.html') as f:
-            html = f.read()
-            tags = [x for i, x in enumerate(Soup(html, 'html.parser').select('tr')) if i < 3]
+        tags = open_custom_HTML('./test_HTML/page.html', 'tr')[:3]
 
         parser = BGPStream_Website_Parser()
         outage_info = ('Outage', '2020-03-18 22:31:00+00:00', '2020-03-18 22:34:00+00:00', '/event/229106', '229106')
         leak_info = ('BGP Leak', '2020-03-18 20:26:10+00:00', 'None', '/event/229100', '229100')
         hijack_info = ('Possible Hijack', '2020-03-18 17:41:23+00:00', 'None', '/event/229087', '229087')
         infos = [outage_info, leak_info, hijack_info]
-        print(tags)
 
         for i in range(len(tags)):
             assert parser._get_row_front_page_info(tags[i]) == infos[i]
@@ -172,3 +248,5 @@ class Test_BGPStream_Website_Parser:
         for _Table_Class in [Hijacks_Table, Leaks_Table, Outages_Table]:
             with _Table_Class() as _db:
                 _db.execute(f"DELETE FROM {_db.name} WHERE event_number={test_event_number}")
+
+
