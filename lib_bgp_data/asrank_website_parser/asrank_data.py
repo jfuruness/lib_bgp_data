@@ -55,6 +55,15 @@ class ASRankData:
             updating tqdm.
     """
 
+    __slots__ = ['_as_rank', 
+                 '_as_num', 
+                 '_org', 
+                 '_country',
+                 '_cone_size',
+                 '_elements_lst',
+                 '_total_entries',
+                 '_mt_tqdm']
+
     def __init__(self, total_entries):
         self._as_rank = None
         self._as_num = None

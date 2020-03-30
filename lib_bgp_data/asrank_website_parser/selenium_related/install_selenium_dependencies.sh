@@ -28,9 +28,10 @@ install_selenium () {
         if ! [[ $sel_check == *"s"* ]]; then
                 pip install -U selenium
         fi
+        pip install tqdm
 }
 
-sleep_dec "Installing selenium if necessary" install_selenium
+sleep_dec "Installing selenium and other dependencies if necessary" install_selenium
 
 
 # Set up prerequisites

@@ -42,6 +42,8 @@ class SeleniumDriver:
             chromedriver.
     """
 
+    __slots__ = ['_driver']
+
     def __init__(self):
         self._driver = self._init_driver()
 

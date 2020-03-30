@@ -66,6 +66,8 @@ class ASRankWebsiteParser:
             Constants.ENTRIES_PER_PAGE entries per page.
     """
 
+    __slots__ = ['_asrank_data', '_total_entries', '_total_pages']
+
     def __init__(self):
         self._asrank_data = None
         self._total_entries = None

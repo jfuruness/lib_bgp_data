@@ -43,6 +43,8 @@ class MtTqdm:
             each time an event occurs. The event must be uniform.
     """
 
+    __slots__ = ['_lock', '_pbar', '_update_val'] 
+
     def __init__(self, update_value):
         self._lock = Lock()
         self._pbar = tqdm(total=100)
