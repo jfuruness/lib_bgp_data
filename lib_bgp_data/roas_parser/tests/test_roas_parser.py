@@ -18,6 +18,7 @@ __status__ = "Development"
 import pytest
 
 from ..roas_parser import ROAs_Parser
+from ..roas_parser import ROAs_Collector
 from ...database import Database
 
 @pytest.mark.roas_parser
@@ -97,12 +98,14 @@ class Test_ROAs_Parser:
             # Checks for the max length
             assert formatted_roa[2] == int(roa["maxLength"])
 
-    @pytest.mark.skip(reason="new hires wil work on this:")
     def test_warnings(self):
         """Checks deprecation warnings
 
         Should check that roas_collector.parse_files returns two
         deprecation warnings
         """
-
-        pass
+        with pytest.deprecated_call():
+            # Call parse_roas() for its warning
+            self.parser.parse_roas()
+            # Make a temporary ROAs_Parser object to test warning in init
+            temp = self.ROAs_Collector()
