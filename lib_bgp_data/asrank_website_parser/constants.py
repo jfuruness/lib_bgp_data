@@ -22,12 +22,10 @@ class Constants:
     directory.
     """
     FILE_PATH = os.path.dirname(os.path.abspath(__file__))
-    CHROMEDRIVER_NAME = 'chromedriver'
-    CHROMEDRIVER_PATH = os.path.join(os.path.join(FILE_PATH,
-                                                  'selenium_related'),
-                                     'chromedrivers')
+    CSV_FILE_NAME = 'asrank_caida.csv'
 
     URL = 'https://asrank.caida.org/'
-    CSV_FILE_NAME = 'asrank_caida.csv'
     ENTRIES_PER_PAGE = 1000
-    NUM_THREADS = 11
+
+    NUM_THREADS = 20
+    RETRIES = 3

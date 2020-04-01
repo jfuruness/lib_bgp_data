@@ -15,15 +15,16 @@ __status__ = "Development"
 import logging
 import os
 
-from ..constants import Constants
+from .sel_constants import SeleniumConstants
 
 
 def run_shell():
     """Runs a bash script that downloads all the dependencies necessary
     for selenium as well as the newest version of chrome and chromedriver."""
     try:
-        exists = os.path.exists(os.path.join(Constants.CHROMEDRIVER_PATH,
-                                             Constants.CHROMEDRIVER_NAME))
+        driver_path = os.path.join(SeleniumConstants.CHROMEDRIVER_PATH,
+                                   SeleniumConstants.CHROMEDRIVER_NAME)
+        exists = os.path.exists(driver_path)
     except FileNotFoundError:
         exists = None
 

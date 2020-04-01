@@ -58,7 +58,13 @@ class MtTqdm:
         self._lock.release()
 
     def close(self):
-        """Close the tqdm progress bar."""
+        """Close the tqdm progress bar.
+
+        Returns:
+            If the progress bar is fully complete or not.
+        """
         if self._pbar.n < self._pbar.total:
             self._pbar.update(self._pbar.total - self._pbar.n)
+        complete = self._pbar.n == self._pbar.total
         self._pbar.close()
+        return complete

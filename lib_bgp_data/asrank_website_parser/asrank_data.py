@@ -137,11 +137,18 @@ class ASRankData:
     def insert_data_into_db(self):
         """Create a CSV file with asrank data and then
         use the csv file to insert into the database.
+
+        The data will only be inserted into the db if the
+        progress bar is complete. A full progress bar determines
+        that no errors have occured/ no rows have been dropped.
         """
-        self._mt_tqdm.close()
+        complete = self._mt_tqdm.close()
+        if not complete:
+            logging.debug("Errors occured. Didn't insert into database.")
+            return
         csv_path = os.path.join(Constants.FILE_PATH, Constants.CSV_FILE_NAME)
         self._write_csv(csv_path)
         utils.csv_to_db(ASRankTable, csv_path, True)
 
-        logging.debug("Inserted data into the database")
+        logging.debug("Inserted data into the database.")
         print('Done.')

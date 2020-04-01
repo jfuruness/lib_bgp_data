@@ -23,15 +23,17 @@ __maintainer__ = "Abhinna Adhikari"
 __email__ = "abhinna.adhikari@uconn.edu"
 __status__ = "Development"
 
+import logging
 import os
 
+from selenium.common.exceptions import TimeoutException, WebDriverException
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.common.by import By
 from selenium import webdriver
 from bs4 import BeautifulSoup
 
-from ..constants import Constants
+from .sel_constants import SeleniumConstants
 
 
 class SeleniumDriver:
@@ -75,8 +77,8 @@ class SeleniumDriver:
         chrome_options.add_argument("--headless")
         chrome_options.add_argument("--no-sandbox")
         chrome_options.add_argument("--disable-dev-shm-usage")
-        path = os.path.join(Constants.CHROMEDRIVER_PATH,
-                            Constants.CHROMEDRIVER_NAME)
+        path = os.path.join(SeleniumConstants.CHROMEDRIVER_PATH,
+                            SeleniumConstants.CHROMEDRIVER_NAME)
         driver = webdriver.Chrome(path, options=chrome_options)
         return driver
 
@@ -99,12 +101,18 @@ class SeleniumDriver:
             A BeautifulSoup object made from the dyamic HTML
             retrived using selenium's chrome webdriver.
         """
-        self._driver.get(url)
-
-        # Wait for the page to load dynamically
-        wait = WebDriverWait(self._driver, timeout)
-        wait.until(EC.visibility_of_element_located(
-            (By.CLASS_NAME, dynamic_class_name)))
+        try:
+            self._driver.get(url)
+            # Wait for the page to load dynamically
+            wait = WebDriverWait(self._driver, timeout)
+            wait.until(EC.visibility_of_element_located(
+                (By.CLASS_NAME, dynamic_class_name)))
+            #print('success!')
+        except TimeoutException:
+            logging.debug('Selenium driver timeout waiting for dynamic html.')
+            #print('timeout')
+        except WebDriverException:
+            logging.debug('Website URL is invalid.')
 
         # Extract the html and then use it to create a beautiful soup object
         data = self._driver.page_source
@@ -112,6 +120,6 @@ class SeleniumDriver:
         return soup
 
     def close(self):
-        """Close the selenium driver."""
+        """Close the selenium driver instance."""
         if self._driver:
-            self._driver.close()
+            self._driver.quit()

@@ -132,12 +132,18 @@ class ASRankWebsiteParser:
             t_id: int, The id of the current thread.
             total_threads: int, The total amount of threads running.
         """
+        timeout = total_threads * 2
         with SeleniumDriver() as sel_driver:
             for page_num in range(t_id, self._total_pages, total_threads):
-                url = ASRankWebsiteParser._produce_url(page_num + 1)
-                soup = sel_driver.get_page(url)
-                tds_lst = soup.findAll('td')
-                self._asrank_data.insert_data(page_num, tds_lst)
+                for retry in range(1, Constants.RETRIES + 1):
+                    url = ASRankWebsiteParser._produce_url(page_num + 1)
+                    soup = sel_driver.get_page(url, timeout)
+                    tds_lst = soup.findAll('td')
+                    if len(tds_lst) == 0:
+                        timeout += total_threads
+                    else:
+                        self._asrank_data.insert_data(page_num, tds_lst)
+                        break
 
     def _run_mt(self):
         """Parse asrank website using threads for separate pages."""
