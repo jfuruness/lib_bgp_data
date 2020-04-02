@@ -197,7 +197,8 @@ class ROVPP_ASes_Subtable(Database):
         if deterministic:
             ases = sorted(set([x["asn"] for x
                                in self.execute("SELECT * FROM " + self.name)]))
-            ases.remove(attacker)
+            if attacker in ases:
+                ases.remove(attacker)
             num_ases = len(ases) * percent // 100
             impliment_ases = sample(ases, k=num_ases)
             for _as in impliment_ases:
