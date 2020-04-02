@@ -1,4 +1,3 @@
-
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
@@ -17,6 +16,7 @@ __status__ = "Development"
 
 import pytest
 from unittest.mock import Mock, patch
+from itertools import chain, combinations
 from ..bgpstream_website_parser import BGPStream_Website_Parser
 from ..tables import Hijacks_Table, Leaks_Table, Outages_Table
 from ..data_classes import Hijack, Leak, Outage
@@ -26,6 +26,59 @@ from ...database import Database
 from bs4 import BeautifulSoup as Soup
 from time import strftime, gmtime, time
 from .open_custom_HTML import open_custom_HTML
+
+def generate_event_combos():
+    """Returns possible combinations of events to be parsed"""
+    # https://stackoverflow.com/questions/1482308/how-to-get-all-subsets-of-a-set-powerset
+    events = Event_Types.list_values()
+    return chain.from_iterable(combinations(events, r) for r in range(len(events) + 1))
+
+def generate_params(custom: bool):
+    """Generator for all possible parameter combinations.
+       If testing on custom HTML, a more appropriate row_limit is used."""
+    limits = [None, 3, 999999] if custom else [None, 100, 999999]
+
+    for combination in generate_event_combos():
+        for row_limit in [None, 100, 999999]:
+            for IPV in combinations([True, False], 2):
+                yield (row_limit, *IPV, combination)
+
+def table_list():
+    for table in [Hijacks_Table(), Leaks_Table(), Outages_Table()]:
+        yield table
+
+def fresh_tables():
+    """Recreates tables so that they have no data in them"""
+    with Database() as _db:
+        for table in table_list():
+            name = table.name
+            _db.execute(f'DROP TABLE IF EXISTS {name}')
+            table._create_tables()
+
+def row_count():
+    with Database() as _db:
+        return _db.execute("""SELECT(SELECT COUNT(*) FROM hijacks) +
+                                    (SELECT COUNT(*) FROM leaks) +
+                                    (SELECT COUNT(*) FROM outages) AS count""")[0]['count']
+
+
+def IPV_check(IPV: bool, event_type: str):
+    """Returns True if there exists rows with IPV in event_type table."""
+    # setting the table name and prefix column for sql query
+    if event_type == Event_Types.HIJACK.value:
+        name = Hijacks_Table().name
+        prefix = Hijacks_Table().prefix_column
+    elif event_type == Event_Types.LEAK.value:
+        name = Leaks_Table().name
+        prefix = Leaks_Table().prefix_column
+
+    with Database() as _db:
+        count = 0
+        try:
+            count +=  _db.execute(f'SELECT COUNT({prefix}) FROM {name} WHERE family({prefix}) = {IPV}')[0]['count']
+        except:
+            return False
+        return count > 0
 
 @pytest.mark.bgpstream_website_parser
 class Test_BGPStream_Website_Parser:
@@ -41,138 +94,80 @@ class Test_BGPStream_Website_Parser:
         assert that the output is approximately what you expect (for instance,
         more than 0 hijacks, shouldn't have empty fields, etc.
         """
-        def drop():
-            _db.execute('DROP TABLE IF EXISTS hijacks')
-            _db.execute('DROP TABLE IF EXISTS leaks')
-            _db.execute('DROP TABLE IF EXISTS outages')
-
-        event_combos = [[Event_Types.HIJACK.value],
-                        [Event_Types.LEAK.value],
-                        [Event_Types.OUTAGE.value],
-                        [Event_Types.HIJACK.value, Event_Types.LEAK.value],
-                        [Event_Types.HIJACK.value, Event_Types.OUTAGE.value],
-                        [Event_Types.LEAK.value, Event_Types.OUTAGE.value],
-                        [Event_Types.HIJACK.value, Event_Types.LEAK.value, Event_Types.OUTAGE.value]]
 
         parser = BGPStream_Website_Parser()
 
-        for combination in event_combos:
-            for row_limit in [None, 100, 999999]:
-                for IPV in [(False, False), (True, False), (False, True), (True, True)]:
-                    with Database() as _db:
-                        drop()
-                        parser._run(row_limit, IPV[0], IPV[1], combination, False)
+        for params in generate_params(False):
+            # recreates tables as empty
+            fresh_tables()
+            parser._run(*params)
 
-                        row_count = 0
+            row_count = row_count()
 
-                        if Event_Types.HIJACK.value in combination:
-                            hijack_count = _db.execute('SELECT COUNT(*) FROM hijacks')[0]['count']
-                            assert hijack_count > 0
-                            row_count += hijack_count
+            row_limit = params[0]
+            IPV4 = 4 if params[1] else False
+            IPV6 = 6 if params[2] else False
+            data_types = params[3]
 
-                            if IPV[0]:
-                                sql = 'SELECT expected_prefix FROM hijacks WHERE family(expected_prefix) = 4'
-                                assert len(_db.execute(sql)) > 0
-                            if IPV[1]:
-                                sql = 'SELECT expected_prefix FROM hijacks WHERE family(expected_prefix) = 6'
-                                assert len(_db.execute(sql)) > 0
+            # if a row limit was set, the number of events parsed should be less than or equal to limit
+            if row_limit:
+                assert row_count <= row_limit
 
-                        if Event_Types.LEAK.value in combination:
-                            leak_count = _db.execute('SELECT COUNT(*) FROM leaks')[0]['count']
-                            assert leak_count > 0
-                            row_count += leak_count
+            for IPV in [IPV4, IPV6]:
+                for event in data_types:
+                    # Hijacks can have IPV4 and IPV6, so if either are selected for parsing, IPV_check should return True
+                    if IPV and event == Event_Types.HIJACK.value:
+                        assert IPV_check(IPV, event)
+                    # Leaks only have IPV4
+                    elif IPV == 4 and event == Event_Types.LEAK.value:
+                        assert IPV_check(IPV, event)
+                    # Otherwise, the IPV is not selected for parsing, it's a combination of Leaks and IPV6,
+                    # Or outages that have no prefixes
+                    else:
+                        assert not IPV_check(IPV, event)
 
-                            if IPV[0]:
-                                sql = 'SELECT leaked_prefix FROM leaks WHERE family(leaked_prefix) = 4'
-                                assert len(_db.execute(sql)) > 0
-
-                        if Event_Types.OUTAGE.value in combination:
-                            outage_count = _db.execute('SELECT COUNT(*) FROM outages')[0]['count']
-                            assert outage_count > 0
-                            row_count += outage_count
-
-                        if row_limit == 100:
-                            assert 0 < row_count <= 100
 
     @patch('lib_bgp_data.utils.utils.get_tags', autospec=True)
     def test_run_custom(self, mock_get_tags):
         mock_get_tags.side_effect = open_custom_HTML
 
-        def drop():
-            _db.execute('DROP TABLE IF EXISTS hijacks')
-            _db.execute('DROP TABLE IF EXISTS leaks')
-            _db.execute('DROP TABLE IF EXISTS outages')
-
-        event_combos = [[Event_Types.HIJACK.value],
-                        [Event_Types.LEAK.value],
-                        [Event_Types.OUTAGE.value],
-                        [Event_Types.HIJACK.value, Event_Types.LEAK.value],
-                        [Event_Types.HIJACK.value, Event_Types.OUTAGE.value],
-                        [Event_Types.LEAK.value, Event_Types.OUTAGE.value],
-                        [Event_Types.HIJACK.value, Event_Types.LEAK.value, Event_Types.OUTAGE.value]]
-
         parser = BGPStream_Website_Parser()
 
-        for combination in event_combos:
-            for row_limit in [None, 3, 999999]:
-                for IPV in [(False, False), (True, False), (False, True), (True, True)]:
-                    with Database() as _db:
-                        drop()
-                        parser._run(row_limit, IPV[0], IPV[1], combination, False)
+        for params in generate_params(True):
+            fresh_tables()
+            parser._run(*params)
 
-                        if Event_Types.HIJACK.value in combination:
-                            sql = """SELECT 1 FROM hijacks WHERE
-                                     country is NULL AND
-                                     detected_as_path = '{131477, 138576, 3257, 28329, 265888, 2}' AND
-                                     detected_by_bgpmon_peers = '8' AND
-                                     detected_origin_name = 'UDEL-DCN, US' AND
-                                     detected_origin_number = '2' AND
-                                     start_time = '2020-03-18 17:41:23' AND
-                                     end_time is NULL AND
-                                     event_number = '229087' AND
-                                     event_type = 'Possible Hijack' AND
-                                     expected_origin_name = 'BULL-HN, US' AND
-                                     expected_origin_number = '6' AND
-                                     expected_prefix = '128.201.254.0/23' AND
-                                     more_specific_prefix = '128.201.254.0/23' AND
-                                     url = '/event/229087'"""
+            row_limit = params[0]
+            IPV4 = params[1]
+            IPV6 = params[2]
+            data_types = params[3]
 
-                            assert len(_db.execute(sql)) == 1
+            if row_limit == 3:
+                assert row_count() == 3
+            else:
+                required_count = 0
+                # there are 2 hijacks, 1 leak, and 4 outages in the custom HTML
+                for event, count in zip(Event_Types.list_values(), [2, 1, 4]):
+                    if event in data_types:
+                        required_count += count
+                assert required_count == row_count()
 
-                        if Event_Types.LEAK.value in combination:
-                            sql = """SELECT 1 FROM leaks WHERE
-                                     country is NULL AND
-                                     detected_by_bgpmon_peers = '12' AND
-                                     start_time = '2020-03-18 20:26:10' AND
-                                     end_time is NULL AND
-                                     event_number = '229100' AND
-                                     event_type = 'BGP Leak' AND
-                                     example_as_path = '{28642, 267469, 267613, 3549, 3356, 3910, 209, 3561, 40685}' AND
-                                     leaked_prefix = '162.10.252.0/24' AND
-                                     leaked_to_name = %s::varchar (200) ARRAY AND
-                                     leaked_to_number = '{3356}' AND
-                                     leaker_as_name = 'CENTURYLINK-EUROPE-LEGACY-QWEST, US' AND
-                                     leaker_as_number = '3910' AND
-                                     origin_as_name = 'ANACOMP-SD, US' AND
-                                     origin_as_number = '40685' AND
-                                     url = '/event/229100'"""
+                # if all rows are parsed, also check for IPV filtering
+                with Database() as _db:
+                    sql = 'SELECT * FROM {} WHERE event_number = {}'
 
-                            assert len(_db.execute(sql, (["'LEVEL3", "US'"],))) == 1
+                    # if IPV4 is parsed, check that these events, which have IPV4 prefixes, are in the tables
+                    if IPV4:
+                        if Event_Types.HIJACK.value in data_types:
+                            assert len(_db.execute(sql.format(Hijacks_Table().name, 229087))) == 1
+                        if Event_Types.LEAK.value in data_types:
+                            assert len(_db.execute(sql.format(Leaks_Table().name, 229100))) == 1
 
-                        if Event_Types.OUTAGE.value in combination:
-                            sql = """SELECT 1 FROM outages WHERE
-                                     as_name is NULL AND
-                                     as_number is NULL AND
-                                     country = 'DO' AND
-                                     start_time = '2020-03-18 22:31:00' AND
-                                     end_time = '2020-03-18 22:34:00' AND
-                                     event_number = '229106' AND
-                                     event_type = 'Outage' AND
-                                     number_prefixes_affected = '167' AND
-                                     percent_prefixes_affected = '27' AND
-                                     url = '/event/229106'"""
+                    # if IPV6 is parsed, check that this hijack was inserted
+                    if IPV6:
+                        if Event_Types.HIJACK.value in data_Types:
+                            assert len(_db.execute(sql.format(Hijacks_Table().name, 230097))) == 1
 
-                            assert len(_db.execute(sql)) == 1
 
     def test_get_rows(self):
         """Tests get rows func

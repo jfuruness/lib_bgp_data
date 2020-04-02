@@ -6,7 +6,7 @@
     <meta charset="utf-8">
     <!--[if IE]><meta http-equiv="X-UA-Compatible" content="IE=edge" /><![endif]-->
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>BGPStream Event #229100</title>
+    <title>BGPStream Event #230097</title>
     <link href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css" rel="stylesheet">
     <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
     <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
@@ -1121,28 +1121,34 @@
 </div>
 <div class="container">
 
-        <h3> BGP Leak</h3>
-        Beginning at 2020-03-18 20:26:10 UTC, we detected a possible BGP Leak
+
+    
+        <h3>Possible BGP hijack</h3>
+        Beginning at 2020-03-29 16:43:57 UTC, we detected a possible BGP hijack.
         <p>
-        Prefix 162.10.252.0/24, Normally announced by AS40685 ANACOMP-SD, US <br>
-		Leaked by AS3910  CENTURYLINK-EUROPE-LEGACY-QWEST, US
+        Prefix 2804:47ac::/32, is normally announced by AS267070 Fibranet Juiz de Fora Serviços de Telecomunicações, BR.
         </p>
         <p>
-        This was detected by 12 BGPMon peers.
+        But beginning at 2020-03-29 16:43:57, the same prefix (2804:47ac::/32) was also announced by ASN 135636.
+        </p>
+        <p>
+        This was detected by 2 BGPMon peers.
         </p>
         <table class="table">
-            <th>Leak Details</th>
-            <tr><td>Start time: 2020-03-18 20:26:10 UTC</td></tr>
-            <tr><td>Leaked prefix: 162.10.252.0/24 (AS40685 ANACOMP-SD, US)</td></tr>
-            <tr><td>Leaked By: AS3910 <img
-			src="https://portal.bgpmon.net/images/flags/us.gif"> (CENTURYLINK-EUROPE-LEGACY-QWEST, US)</td></tr>
-            <tr><td>Leaked To:<br> 
-				<li>3356 (LEVEL3, US)</li>
-			
-			</td></tr>
-            <tr><td>Example AS path: 28642 267469 267613 3549 3356 3910 209 3561 40685 </td></tr>
-            <tr><td>Number of BGPMon peers that saw it: 12</td></tr>
+            <th>Expected</th>
+            <tr><td>Start time: 2020-03-29 16:43:57 UTC</td></tr>
+            <tr><td>Expected prefix: 2804:47ac::/32</td></tr>
+            <tr><td>Expected ASN: 267070 (Fibranet Juiz de Fora Serviços de Telecomunicações, BR)</td></tr>
         </table>
+        <table class="table">
+            <th>Event Details</th>
+            <tr><td>Detected advertisement: 2804:47ac::/32</td></tr>
+            <tr><td>Detected Origin ASN 135636 (RACKH-AS-AP Rackh Lintas Asia, pt, ID)</td></tr>
+            <tr><td>Detected AS Path 11170 36213 24482 55655 55655 55655 135636</td></tr>
+            <tr><td>Detected by number of BGPMon peers: 2</td></tr>
+        </table>
+    
+
 
 <h2>Watch the replay of this event</h2>
 
@@ -1155,7 +1161,7 @@
 <script src='/static/bgplay/static/widget/bgplayjs-main-widget.js'></script>
 <script>
     var bgplay_config = {
-        "eventid" : '229100',
+        "eventid" : '230097',
         "ignoreReannouncements": "TRUE",
 
         "unix_timestamps": "TRUE",
