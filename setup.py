@@ -53,7 +53,8 @@ setup(
         'psycopg2>=2.8.4',
         'matplotlib',
         'multiprocessing_logging',
-        'jsonschema==2.6.0'  # required for flasgger
+        'jsonschema==2.6.0',   # required for flasgger
+        'selenium>=3.141.0'
     ],
     classifiers=[
         'Environment :: Console',

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-"""The Constants class contains several high use variables that are shared
+"""The Constants class contains several high use enums that are shared
 among the various python files within the asrank_website_parser
 directory.
 """
@@ -13,11 +13,12 @@ __maintainer__ = "Abhinna Adhikari"
 __email__ = "abhinna.adhikari@uconn.edu"
 __status__ = "Development"
 
+from enum import Enum
 import os
 
 
-class Constants:
-    """The Constants class contains several high use variables that are shared
+class Constants(Enum):
+    """The Constants class contains several high use enums that are shared
     among the various python files within the asrank_website_parser
     directory.
     """

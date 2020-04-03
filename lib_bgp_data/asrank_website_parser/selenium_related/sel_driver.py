@@ -33,8 +33,6 @@ from selenium.webdriver.common.by import By
 from selenium import webdriver
 from bs4 import BeautifulSoup
 
-from .sel_constants import SeleniumConstants
-
 
 class SeleniumDriver:
     """Class where Selenium webdriver functions are abstracted to simplify
@@ -46,6 +44,8 @@ class SeleniumDriver:
     """
 
     __slots__ = ['_driver']
+    
+    driver_path = '/usr/bin/chromedriver'
 
     def __init__(self):
         self._driver = SeleniumDriver.init_driver()
@@ -77,8 +77,7 @@ class SeleniumDriver:
         chrome_options.add_argument("--headless")
         chrome_options.add_argument("--no-sandbox")
         chrome_options.add_argument("--disable-dev-shm-usage")
-        path = os.path.join(SeleniumConstants.CHROMEDRIVER_PATH,
-                            SeleniumConstants.CHROMEDRIVER_NAME)
+        path = os.path.join(SeleniumDriver.driver_path)
         driver = webdriver.Chrome(path, options=chrome_options)
         return driver
 

@@ -101,6 +101,16 @@ class ASRankData:
             tds_lst: list, Contains all the HTML table cells found on
                 the HTML of the page_num on asrank.caida.org.
         """
+
+        '''data = []
+        for row in rows:
+            data.append(self._get_elements(row))
+        utils.rows_to_db(
+
+
+        def _get_elements(self, row):
+            for i, el in enumerate(row.children):
+        '''
         for i in range(0, len(tds_lst) // len(self._elements_lst)):
             for j, element in enumerate(self._elements_lst):
                 temp_ind = i * len(self._elements_lst) + j

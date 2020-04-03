@@ -47,7 +47,7 @@ import math
 from .constants import Constants
 from .selenium_related.sel_driver import SeleniumDriver
 from .asrank_data import ASRankData
-from .selenium_related.install_selenium_dependencies import run_shell
+from .selenium_related.install_selenium_dependencies import install_selenium_driver
 
 
 class ASRankWebsiteParser:
@@ -64,20 +64,14 @@ class ASRankWebsiteParser:
             Constants.ENTRIES_PER_PAGE entries per page.
     """
 
-    __slots__ = ['_asrank_data', '_total_entries', '_total_pages']
+    #__slots__ = ['_asrank_data', '_total_entries', '_total_pages']
 
     def __init__(self):
-        self._asrank_data = None
-        self._total_entries = None
-        self._total_pages = None
-        self._init()
-
-    def _init(self):
         """Initialize the variables and lists that
         contain the information that will be parsed.
         """
-        run_shell()
-        print(f'Parsing {Constants.URL}...')
+        install_selenium_driver()
+        self._total_entries = None
         with SeleniumDriver() as sel_driver:
             self._total_pages = self._find_total_pages(sel_driver)
         self._asrank_data = ASRankData(self._total_entries)

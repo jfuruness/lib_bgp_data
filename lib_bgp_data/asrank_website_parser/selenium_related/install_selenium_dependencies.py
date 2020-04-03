@@ -15,24 +15,37 @@ __status__ = "Development"
 import logging
 import os
 
-from .sel_constants import SeleniumConstants
+from .sel_driver import SeleniumDriver
+from ...utils import utils
 
 
-def run_shell():
+def install_selenium_driver():
     """Runs a bash script that downloads all the dependencies necessary
     for selenium as well as the newest version of chrome and chromedriver."""
-    try:
-        driver_path = os.path.join(SeleniumConstants.CHROMEDRIVER_PATH,
-                                   SeleniumConstants.CHROMEDRIVER_NAME)
-        exists = os.path.exists(driver_path)
-    except FileNotFoundError:
-        exists = None
+    exists = os.path.exists(SeleniumDriver.driver_path)
 
     if not exists:
         logging.warning("Dependencies are not installed. Installing now.")
-        print("Chromedriver doesn't exist. Installing chrome and chromedriver")
-        os.system('sudo echo ""')
-        file_path = os.path.dirname(os.path.abspath(__file__))
-        os.system(file_path + '/install_selenium_dependencies.sh')
+        logging.debug("Chromedriver doesn't exist. Installing chrome and chromedriver")
+
+        installing_chrome_cmds = ['sudo apt-get update',
+                                  'sudo apt-get install -y unzip xvfb libxi6 libgconf-2-4',
+                                  'yes | sudo apt-get remove google-chrome-stable',
+                                  'sudo bash -c "echo \'deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main\' >> /etc/apt/sources.list.d/google-chrome.list"',
+                                  'sudo apt-get -y update',
+                                  'sudo apt-get -y install google-chrome-stable',
+                                  'wget -O /tmp/LATEST_RELEASE "https://chromedriver.storage.googleapis.com/LATEST_RELEASE"'
+        ]
+
+        utils.run_cmds(installing_chrome_cmds)
+
+        installing_chromedriver_cmds = ['wget "https://chromedriver.storage.googleapis.com/$(cat /tmp/LATEST_RELEASE)/chromedriver_linux64.zip"',
+                                        'unzip chromedriver_linux64.zip',
+                                        'sudo chmod +x chromedriver',
+                                        'sudo mv chromedriver /usr/bin',
+                                        'rm -r chromedriver_linux64.zip'
+        ]
+        utils.run_cmds(installing_chromedriver_cmds)
+        
     else:
-        print('Chromedriver already exists\n')
+        logging.debug('Chromedriver already exists\n')
