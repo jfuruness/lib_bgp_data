@@ -68,13 +68,16 @@ class Test_MRT_Parser:
                     # If no warning was given even though it should have
                     if not record:
                         pytest.fail("Warning not issued when deps not installed")
+            # No need to install anything
             else:
                 # Run init
                 MRT_Parser()
             # Check that the table exists and is empty
             assert db.execute("SELECT * FROM mrt_announcements") == []
 
-    def test_get_iso_mrt_urls(self):
+    @pytest.mark.parametrize("sources, collectors", [(MRT_Sources, 5),
+                                                     ([], 5)])
+    def test_get_iso_mrt_urls(self, sources, collectors):
         """Tests getting isolario data.
 
         Should asser that when ISOLARIO not in sources it should
@@ -85,18 +88,15 @@ class Test_MRT_Parser:
         # Create a parser
         test_parser = MRT_Parser()
         # Get our URLs
-        # TODO: Ensure this works with how I set up param mods
-        urls = test_parser._get_iso_mrt_urls(self._start, 
-                                             self._end, 
-                                             self._api_param_mods)
+        urls = test_parser._get_iso_mrt_urls(self._start, sources)
         # Assert that files is empty if ISOLARIO is not in sources
         if MRT_Sources.ISOLARIO not in sources:
-            assert files == []
+            assert urls == []
         # Verify that we have valid URLs
         for url in urls:
             assert validators.url(url)
-        # Assert that we have 5 collectors
-            assert len(urls) == 5
+        # Assert that we have 5 (by default) collectors
+            assert len(urls) == collectors
         
 
     def test_get_caida_mrt_urls(self):
