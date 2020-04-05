@@ -20,13 +20,11 @@ from ...utils import utils
 
 
 def install_selenium_driver():
-    """Runs a bash script that downloads all the dependencies necessary
-    for selenium as well as the newest version of chrome and chromedriver."""
-    exists = os.path.exists(SeleniumDriver.driver_path)
-
-    if not exists:
-        logging.warning("Dependencies are not installed. Installing now.")
-        logging.debug("Chromedriver doesn't exist. Installing chrome and chromedriver")
+    """Downloads all the dependencies necessary for selenium as well 
+    as the newest version of chrome and chromedriver.
+    """
+    if not os.path.exists(SeleniumDriver.driver_path):
+        logging.warning("Selenium driver dependencies are not installed. Installing now.")
 
         installing_chrome_cmds = ['sudo apt-get update',
                                   'sudo apt-get install -y unzip xvfb libxi6 libgconf-2-4',
@@ -36,7 +34,6 @@ def install_selenium_driver():
                                   'sudo apt-get -y install google-chrome-stable',
                                   'wget -O /tmp/LATEST_RELEASE "https://chromedriver.storage.googleapis.com/LATEST_RELEASE"'
         ]
-
         utils.run_cmds(installing_chrome_cmds)
 
         installing_chromedriver_cmds = ['wget "https://chromedriver.storage.googleapis.com/$(cat /tmp/LATEST_RELEASE)/chromedriver_linux64.zip"',
@@ -46,6 +43,3 @@ def install_selenium_driver():
                                         'rm -r chromedriver_linux64.zip'
         ]
         utils.run_cmds(installing_chromedriver_cmds)
-        
-    else:
-        logging.debug('Chromedriver already exists\n')

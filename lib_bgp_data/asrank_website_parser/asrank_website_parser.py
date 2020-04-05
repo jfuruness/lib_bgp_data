@@ -44,13 +44,13 @@ __status__ = "Development"
 from threading import Thread
 import math
 
-from .constants import Constants
+from ..base_classes import Parser
 from .selenium_related.sel_driver import SeleniumDriver
 from .asrank_data import ASRankData
 from .selenium_related.install_selenium_dependencies import install_selenium_driver
 
 
-class ASRankWebsiteParser:
+class ASRankWebsiteParser(Parser):
     """Parses the AS rank, AS num, organization, country, and
     cone size from the https://asrank.caida.org/ website into a database.
     For a more in depth explanation, read the top of the file.
@@ -61,23 +61,29 @@ class ASRankWebsiteParser:
             are temporarily stored.
         _total_entries: int, The total number of rows on asrank.caida.org
         _total_pages: int, The total number of pages on asrank given
-            Constants.ENTRIES_PER_PAGE entries per page.
+            entries_per_page entries per page.
     """
 
-    #__slots__ = ['_asrank_data', '_total_entries', '_total_pages']
+    __slots__ = ['_asrank_data', '_total_entries', '_total_pages']
 
-    def __init__(self):
+    entries_per_page = 1000
+    url = 'https://asrank.caida.org/'
+    num_threads = 10
+    retries = 3
+
+    def __init__(self, **kwargs):
         """Initialize the variables and lists that
         contain the information that will be parsed.
         """
+        super(ASRankWebsiteParser, self).__init__(**kwargs)
         install_selenium_driver()
+
         self._total_entries = None
         with SeleniumDriver() as sel_driver:
             self._total_pages = self._find_total_pages(sel_driver)
         self._asrank_data = ASRankData(self._total_entries)
 
-    @staticmethod
-    def _produce_url(page_num, table_entries=Constants.ENTRIES_PER_PAGE):
+    def _produce_url(self, page_num, table_entries):
         """Create a URL of the website with the intended
         page number and page size where page size is less than 1000.
 
@@ -90,13 +96,13 @@ class ASRankWebsiteParser:
             The string of the of the URL that will be on the
             given page and have the given number of table entries.
         """
-        if table_entries > Constants.ENTRIES_PER_PAGE:
-            table_entries = Constants.ENTRIES_PER_PAGE
+        if table_entries > self.entries_per_page:
+            table_entries = self.entries_per_page 
         elif table_entries < 1:
             table_entries = 1
         var_url = '?page_number=%s&page_size=%s&sort=rank' % (page_num,
                                                               table_entries)
-        return Constants.URL + var_url
+        return self.url + var_url
 
     def _find_total_pages(self, sel_driver):
         """Returns the total number pages of the website
@@ -110,13 +116,13 @@ class ASRankWebsiteParser:
             The total number of pages of the main table
             that is found on asrank.caida.org.
         """
-        soup = sel_driver.get_page(ASRankWebsiteParser._produce_url(1, 1))
+        soup = sel_driver.get_page(self._produce_url(1, 1))
         self._total_entries = max([int(page.text)
                                    for page in soup.findAll('a',
                                                             {'class':
                                                              'page-link'})
                                    if '.' not in page.text])
-        return math.ceil(self._total_entries / Constants.ENTRIES_PER_PAGE)
+        return math.ceil(self._total_entries / self.entries_per_page)
 
     def _run_parser(self, t_id, total_threads):
         """Parses the website saving information on the AS rank,
@@ -129,20 +135,27 @@ class ASRankWebsiteParser:
         timeout = total_threads * 2
         with SeleniumDriver() as sel_driver:
             for page_num in range(t_id, self._total_pages, total_threads):
-                for retry in range(1, Constants.RETRIES + 1):
-                    url = ASRankWebsiteParser._produce_url(page_num + 1)
+                for retry in range(self.retries):
+                    url = self._produce_url(page_num + 1, self.entries_per_page)
                     soup = sel_driver.get_page(url, timeout)
-                    tds_lst = soup.findAll('td')
-                    if len(tds_lst) == 0:
+                    table = soup.findChildren('table')[0]
+                    rows = table.findChildren('tr')
+
+                    # If timeout occurs, increase the timeout rate and try again
+                    if len(rows) == 1:
                         timeout += total_threads
-                    else:
-                        self._asrank_data.insert_data(page_num, tds_lst)
-                        break
+                        continue
+
+                    # Insert rows if no timeout and proceed to next page
+                    for i, row in enumerate(rows):
+                        if i != 0:  # Ignore the first row
+                            self._asrank_data.insert_data(row.findChildren('td'))
+                    break
 
     def _run_mt(self):
         """Parse asrank website using threads for separate pages."""
         threads = []
-        num_threads = Constants.NUM_THREADS
+        num_threads = self.num_threads
         for i in range(num_threads):
             thread = Thread(target=self._run_parser, args=(i, num_threads))
             threads.append(thread)
@@ -150,7 +163,7 @@ class ASRankWebsiteParser:
         for thread in threads:
             thread.join()
 
-    def run(self):
+    def _run(self):
         """Run the multithreaded ASRankWebsiteParser."""
         self._run_mt()
-        self._asrank_data.insert_data_into_db()
+        self._asrank_data.insert_data_into_db(self.csv_dir)
