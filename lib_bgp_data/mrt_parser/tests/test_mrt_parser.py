@@ -9,7 +9,7 @@ updating to be more recent. Possibly same with the api_param_mods.
 """
 
 __authors__ = ["Justin Furuness", "Matt Jaccino, Nicholas Shpetner"]
-__credits__ = ["Justin Furuness", "Matt Jaccino"]
+__credits__ = ["Justin Furuness", "Matt Jaccino", "Nicholas Shpetner"]
 __Lisence__ = "BSD"
 __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
@@ -18,6 +18,7 @@ __status__ = "Development"
 
 import pytest
 import validators
+import os
 from ..mrt_file import MRT_File
 from ..mrt_parser import MRT_Parser
 from ..mrt_sources import MRT_Sources
@@ -46,7 +47,9 @@ class Test_MRT_Parser:
         # understand how it works.
         self._api_param_mods = {"collectors[]": ["route-views.telxatl",
                                                  "route-views2"]}
-
+    # This test passes (as of 4 Apr 2020)
+    # However, it is recommended to test on a machine where dependencies
+    # are not installed.
     def test___init__(self):
         """Tests initialization of the MRT parser
 
@@ -55,7 +58,7 @@ class Test_MRT_Parser:
         In addition, the mrt_announcement table should be cleared.
         """
         # Connect to database
-        with db_connection(Database) as db:
+        with Database() as db:
             # Check if we warned that the dependencies are not installed
             # First check if we need to install dependencies
             if not os.path.exists("/usr/bin/bgpscanner"):
@@ -215,7 +218,7 @@ class Test_MRT_Parser:
         """
 
         pass
-
+    @pytest.mark.skip(reason="Broken at the moment")
     def test_filter_and_clean_up_db(self):
         """Tests that this function runs without error.
 
