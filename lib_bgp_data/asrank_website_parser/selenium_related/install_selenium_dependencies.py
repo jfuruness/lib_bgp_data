@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-"""This python file runs the bash script that installs Selenium, the newest
-version of Chrome and chromedriver if chromedriver doesn't exist within
-the chromedrivers folder.
+"""This python file runs installs the newest version 
+of chrome and chromedriver if chromedriver doesn't 
+exist within the chromedrivers folder.
 """
 
 __author__ = "Abhinna Adhikari"
@@ -32,14 +32,12 @@ def install_selenium_driver():
                                   'sudo bash -c "echo \'deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main\' >> /etc/apt/sources.list.d/google-chrome.list"',
                                   'sudo apt-get -y update',
                                   'sudo apt-get -y install google-chrome-stable',
-                                  'wget -O /tmp/LATEST_RELEASE "https://chromedriver.storage.googleapis.com/LATEST_RELEASE"'
-        ]
+                                  'wget -O /tmp/LATEST_RELEASE "https://chromedriver.storage.googleapis.com/LATEST_RELEASE"']
         utils.run_cmds(installing_chrome_cmds)
 
         installing_chromedriver_cmds = ['wget "https://chromedriver.storage.googleapis.com/$(cat /tmp/LATEST_RELEASE)/chromedriver_linux64.zip"',
                                         'unzip chromedriver_linux64.zip',
                                         'sudo chmod +x chromedriver',
                                         'sudo mv chromedriver /usr/bin',
-                                        'rm -r chromedriver_linux64.zip'
-        ]
+                                        'rm -r chromedriver_linux64.zip']
         utils.run_cmds(installing_chromedriver_cmds)

@@ -3,10 +3,11 @@
 
 """This module contains a way to store the asrank.caida.org data.
 
-The ASRankData class contains the functionality to insert
-asrank data from asrank.caida.org into a list that consists 
-of lists that each represent a row on the main table of asrank.caida.org. 
-The main list that contains all the rows is then added to the database.
+The ASRankData class contains the functionality to insert asrank data from
+asrank.caida.org into the _rows list which consists of lists that each
+represent a row on the main table of asrank.caida.org. The _rows list
+that contains all the rows, of the asrank.caida.org table is then
+added to the database.
 
 Possible Future Extensions:
     -Add test cases
@@ -21,7 +22,6 @@ __email__ = "abhinna.adhikari@uconn.edu"
 __status__ = "Development"
 
 import logging
-import csv
 import os
 
 from ..utils import utils
@@ -34,7 +34,7 @@ class ASRankData:
     For a more in depth explanation see the top of the file.
 
     Attributes:
-        _rows: list, Stores lists that each represent a row 
+        _rows: list, Stores lists that each represent a row
             of the main asrank.caida.org table.
         _mt_tqdm: MtTqdm, An instance of a the thread safe, manually
             updating tqdm.
@@ -47,7 +47,7 @@ class ASRankData:
         self._mt_tqdm = MtTqdm(100 / total_rows)
 
     def insert_data(self, tds_lst):
-        """Given a list of five HTML table cells (tds),
+        """Given a list of five HTML table cells (tds)
         that make up a single row on asrank.caida.org,
         insert the information into the _rows list.
 
@@ -65,10 +65,10 @@ class ASRankData:
                 new_row.append(attr.text)
         self._rows.append(new_row)
         self._mt_tqdm.update()
-    
+
     def insert_data_into_db(self, csv_dir):
-        """Create a CSV file with asrank data and then
-        use the csv file to insert into the database.
+        """The _rows data is inserted into the database under the
+        table created in ASRankTable.
 
         The data will only be inserted into the db if the
         progress bar is complete. A full progress bar determines

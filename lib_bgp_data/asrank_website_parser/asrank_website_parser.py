@@ -7,25 +7,24 @@ The purpose of this class is to parse the information of Autonomous
 Systems from asrank.caida.org. This information is then stored
 in the database. This is done through a series of steps.
 
-1. Initialize the asrank_data classes that will store the data
+1. Initialize the asrank_data classes that will store the data as rows
     -Handled in the __init__ function
-    -This class mainly deals with inserting the data into lists
-     and then eventually into the database
+    -This class deals with inserting the data into a list of list,
+     which contains the rows and then eventually into the database
 2. All rows/pages are recieved from the main page of the website
-    -This is handled within the _run_parser method
-    -The _run_parser method uses get_page method within sel_driver.py
-3. The data is parsed within the asrank_data class
-    -The insert_data method is used to insert all the rows from a page
-    -The insert_data method parses the HTML
+    -This is handled within the _run_parser method
+    -The _run_parser method uses get_page method within SeleniumDriver class
+    -The _run_parser method then inserts rows into the ASRankData class
+3. The data for each row is parsed within the ASRankData class
+    -The insert_data method is given a row of HTML and parses the data from it
 4. Rows and pages are iterated over until all the rows are parsed
     -The threads split up the pages so that there will be no
      interference from other threads
 5. Call the insert_data_into_db method within the asrank_data class
-    -The data is converted into a csv file before inserting
-    -This will parse all rows and insert them into the database
+    -This method will insert the parsed data into the database
 
 Design Choices (summarizing from above):
-    -Only the five attribute table found on the front of asrank is parsed
+    -Only the five attribute table found on the front of asrank are parsed
     -Multithreading is used because the task is less computationally
      intensive than IO intensive
 
@@ -57,18 +56,16 @@ class ASRankWebsiteParser(Parser):
 
     Attributes:
         _asrank_data: ASRankData, An instance of ASRankData class
-            where the HTML will be parsed and the table attributes
-            are temporarily stored.
-        _total_entries: int, The total number of rows on asrank.caida.org
-        _total_pages: int, The total number of pages on asrank given
-            entries_per_page entries per page.
+            where the HTML will be parsed and the table attribute data
+            is temporarily stored.
+        _total_rows: int, The total number of rows on asrank.caida.org
     """
 
-    __slots__ = ['_asrank_data', '_total_entries', '_total_pages']
+    __slots__ = ['_asrank_data', '_total_rows']
 
-    entries_per_page = 1000
+    rows_per_page = 1000
     url = 'https://asrank.caida.org/'
-    num_threads = 10
+    num_threads = 20
     retries = 3
 
     def __init__(self, **kwargs):
@@ -78,51 +75,56 @@ class ASRankWebsiteParser(Parser):
         super(ASRankWebsiteParser, self).__init__(**kwargs)
         install_selenium_driver()
 
-        self._total_entries = None
-        with SeleniumDriver() as sel_driver:
-            self._total_pages = self._find_total_pages(sel_driver)
-        self._asrank_data = ASRankData(self._total_entries)
+        self._total_rows = self._find_total_rows()
+        self._asrank_data = ASRankData(self._total_rows)
 
-    def _produce_url(self, page_num, table_entries):
+    def _produce_url(self, page_num, table_rows):
         """Create a URL of the website with the intended
         page number and page size where page size is less than 1000.
 
         Args:
             page_num: int, The number of the current page.
-            table_entries: int, The number of entries found
+            table_rows: int, The number of rows found
                 within the table on the current page.
 
         Returns:
             The string of the of the URL that will be on the
-            given page and have the given number of table entries.
+            given page and have the given number of table rows.
         """
-        if table_entries > self.entries_per_page:
-            table_entries = self.entries_per_page 
-        elif table_entries < 1:
-            table_entries = 1
+        if table_rows > self.rows_per_page:
+            table_rows = self.rows_per_page
+        elif table_rows < 1:
+            table_rows = 1
         var_url = '?page_number=%s&page_size=%s&sort=rank' % (page_num,
-                                                              table_entries)
+                                                              table_rows)
         return self.url + var_url
 
-    def _find_total_pages(self, sel_driver):
-        """Returns the total number pages of the website
-        depending on the entries per page.
-
-        Args:
-            sel_driver: SeleniumDriver, An instance of the
-                SeleniumDriver class.
+    def _find_total_rows(self):
+        """Returns the total number rows of the table.
 
         Returns:
-            The total number of pages of the main table
-            that is found on asrank.caida.org.
+            The total number of rows of the main table that are found
+            on asrank.caida.org.
         """
-        soup = sel_driver.get_page(self._produce_url(1, 1))
-        self._total_entries = max([int(page.text)
-                                   for page in soup.findAll('a',
-                                                            {'class':
-                                                             'page-link'})
-                                   if '.' not in page.text])
-        return math.ceil(self._total_entries / self.entries_per_page)
+        with SeleniumDriver() as sel_driver:
+            soup = sel_driver.get_page(self._produce_url(1, 1))
+            total_rows = max([int(page.text)
+                              for page in soup.findAll('a',
+                                                       {'class':
+                                                        'page-link'})
+                              if '.' not in page.text])
+        return total_rows
+
+    def _find_total_pages(self):
+        """Returns the total number pages of the website
+        depending on the rows per page.
+
+        Returns:
+            The total number of pages of the main table that are found
+            on asrank.caida.org given the rows_per_page.
+        """
+        return math.ceil(self._total_rows / self.rows_per_page)
+
 
     def _run_parser(self, t_id, total_threads):
         """Parses the website saving information on the AS rank,
@@ -134,9 +136,9 @@ class ASRankWebsiteParser(Parser):
         """
         timeout = total_threads * 2
         with SeleniumDriver() as sel_driver:
-            for page_num in range(t_id, self._total_pages, total_threads):
+            for page_num in range(t_id, self._find_total_pages(), total_threads):
                 for retry in range(self.retries):
-                    url = self._produce_url(page_num + 1, self.entries_per_page)
+                    url = self._produce_url(page_num + 1, self.rows_per_page)
                     soup = sel_driver.get_page(url, timeout)
                     table = soup.findChildren('table')[0]
                     rows = table.findChildren('tr')
@@ -147,9 +149,8 @@ class ASRankWebsiteParser(Parser):
                         continue
 
                     # Insert rows if no timeout and proceed to next page
-                    for i, row in enumerate(rows):
-                        if i != 0:  # Ignore the first row
-                            self._asrank_data.insert_data(row.findChildren('td'))
+                    for i in range(1, len(rows)):
+                        self._asrank_data.insert_data(rows[i].findChildren('td'))
                     break
 
     def _run_mt(self):
