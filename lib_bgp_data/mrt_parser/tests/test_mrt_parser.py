@@ -40,9 +40,9 @@ class Test_MRT_Parser:
         """
         # Set times for testing purposes, based off old tests
         # Nov 1, 2019, 1:00 PM
-        self._start = 1572613200
+        self._start = 1580562000
         # Nov 1, 2019, 2:00 PM
-        self._end = 1572616800
+        self._end = 1580565600
 
     # This test passes (as of 4 Apr 2020)
     # However, it is recommended to test on a machine where dependencies
@@ -148,6 +148,7 @@ class Test_MRT_Parser:
             assert validators.url(url)
         # Ensure we have 47 collectors
         assert len(urls) == 47
+        return urls
         # TODO: Test other params, ensure we are supposed to get 47 urls
 
 
@@ -224,7 +225,7 @@ class Test_MRT_Parser:
         """
 
         pass
-    @pytest.mark.skip(reason="Broken at the moment")
+
     def test_filter_and_clean_up_db(self):
         """Tests that this function runs without error.
 
@@ -233,9 +234,7 @@ class Test_MRT_Parser:
         # Make our parser
         parser = MRT_Parser()
         # Do what is necessary to create a table to filter and clean.
-        urls = parser._get_mrt_urls(self._start,
-                                    self._end,
-                                    self._api_param_mods)
+        urls = self.test_get_mrt_urls()
         files = parser._multiprocess_download(5, urls[:10])
         parser._multiprocess_parse_dls(5, files, True)
         # Hope that we don't run into an error here.
