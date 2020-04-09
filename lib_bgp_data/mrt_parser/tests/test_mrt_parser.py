@@ -19,6 +19,7 @@ __status__ = "Development"
 import pytest
 import validators
 import os
+from .collectors import Collectors
 from ..mrt_file import MRT_File
 from ..mrt_parser import MRT_Parser
 from ..mrt_sources import MRT_Sources
@@ -42,13 +43,7 @@ class Test_MRT_Parser:
         self._start = 1572613200
         # Nov 1, 2019, 2:00 PM
         self._end = 1572616800
-        # Some caida collectors, for testing caida
-        self._collectors_1 = {"collectors[]": ["route-views2"]}
-        self._collectors_2 = {"collectors[]": ["route-views.telxatl",
-                                                     "route-views2"]}
-        self._collectors_3 = {"collectors[]": ["route-views.telxatl",
-                                                     "route-views2",
-                                                     "route-views3"]}
+
     # This test passes (as of 4 Apr 2020)
     # However, it is recommended to test on a machine where dependencies
     # are not installed.
@@ -99,15 +94,15 @@ class Test_MRT_Parser:
             assert validators.url(url)
         # Assert that we have 5 (by default) collectors
             assert len(urls) == collectors
-    
-    @pytest.mark.skip(reason="use of self in api_params breaks function")
-    # TODO: Fix this so it works    
-    #@pytest.mark.parametize("sources, collectors, api_param",
-    #                        [(MRT_Sources.RIPE, 1, self._collectors_1),
-    #                         (MRT_Sources.ROUTE_VIEWS, 2, self._collectors_2),
-    #                        (MRT_Sources, 3, self._collectors_3),
-    #                         ([], 0, self._collectors_2)])
-    def test_get_caida_mrt_urls(self, sources, collectors, api_param):
+
+    # This method works, but more tests should be added
+    # TODO: Add more tests
+    @pytest.mark.parametrize("src, collectors, api_param",
+                            [(MRT_Sources, 1, Collectors.collectors_1.value),
+                             (MRT_Sources, 2, Collectors.collectors_2.value),
+                             (MRT_Sources, 3, Collectors.collectors_3.value),
+                             ([], 0, Collectors.collectors_0.value)])
+    def test_get_caida_mrt_urls(self, src, collectors, api_param):
         """Tests getting caida data.
 
         Should assert that when sources is just routeview that there
@@ -124,10 +119,10 @@ class Test_MRT_Parser:
         # Get our URLS
         urls = test_parser._get_caida_mrt_urls(self._start, 
                                                self._end,
-                                               sources,
+                                               src,
                                                api_param)
         # If we have no sources, then urls should be empty.
-        if MRT_Sources.RIPE not in sources and MRT_Sources.ROUTE_VIEWS not in sources:
+        if MRT_Sources.RIPE not in src and MRT_Sources.ROUTE_VIEWS not in src:
            assert urls == []
         # Verify we have valid URLs
         for url in urls:
@@ -171,14 +166,17 @@ class Test_MRT_Parser:
         urls = parser._get_mrt_urls(self._start,
                                     self._end)
         # Get a few (3) MRT files
-        mrt_files = parser._multiprocess_download(3, urls[:2])
+        mrt_files = parser._multiprocess_download(3, urls[:3])
         # Test all files were downloaded correctly
         assert len(mrt_files) == 3
         # Test using more threads than necessary doesn't crash things
-        parser._multiprocess_download(4, urls[:2])
+        parser._multiprocess_download(4, urls[:3])
         # Test no multiprocessing, check end result
-        no_multi = parser._multiprocess_download(1, urls[:2])
-        assert all(x in mrt_files for x in no_multi) 
+        no_multi = parser._multiprocess_download(1, urls[:3])
+        # Since we're using generators, time for a sort of hack
+        threaded = list(mrt_files)
+        unthreaded = list(no_multi)
+        assert all(files in threaded for files in unthreaded) 
 
 
     @pytest.mark.skip(reason="New hire work")
