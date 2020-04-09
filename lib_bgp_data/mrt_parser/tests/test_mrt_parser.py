@@ -250,7 +250,9 @@ class Test_MRT_Parser:
         # Make a parser
         parser = MRT_Parser()
         # Call and see if we get a deprecated warn.
+        kwargs = dict({'start': self._start, 'end': self._end, 
+                       'api_param_mods': {}, 'download_threads': 1,
+                       'parse_threads': 1, 'IPV4': True, 'IPV6': False, 
+                       'bgpscanner': True, 'sources': []})
         with pytest.deprecated_call():
-            parser.parse_files(self._start, 
-                               self._end, 
-                               self._api_param_mods)
+            parser.parse_files(**kwargs)
