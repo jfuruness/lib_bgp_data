@@ -23,7 +23,7 @@ from random import sample
 from .enums import Policies, Hijack_Types
 from .enums import AS_Types, Conditions as Conds
 from .enums import Control_Plane_Conditions as C_Plane_Conds
-from ..database import Database
+from ..database import Database, Generic_Table
 
 __author__ = "Justin Furuness"
 __credits__ = ["Justin Furuness"]
@@ -32,7 +32,7 @@ __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
-class ROVPP_MRT_Announcements_Table(Database):
+class UGHROVPP_MRT_Announcements_Table(Generic_Table):
     """Class with database functionality.
 
     In depth explanation at the top of the file."""
@@ -46,7 +46,6 @@ class ROVPP_MRT_Announcements_Table(Database):
         Called during initialization of the database class.
         """
 
-        self.clear_table()
         sql = """CREATE UNLOGGED TABLE IF NOT EXISTS
                  rovpp_mrt_announcements (
                  origin bigint,
@@ -54,19 +53,7 @@ class ROVPP_MRT_Announcements_Table(Database):
                  prefix CIDR,
                  attacker BOOLEAN
                  );"""
-        self.cursor.execute(sql)
-
-        
-
-    def clear_table(self):
-        """Clears the rovpp_ases table.
-
-        Should be called at the start of every run.
-        """
-
-        self.logger.debug("Dropping ROVPP_MRT_Announcements")
-        self.cursor.execute("DROP TABLE IF EXISTS rovpp_mrt_announcements")
-        self.logger.debug("ROVPP_MRT_Announcements Table dropped")
+        self.execute(sql)
 
     def populate_mrt_announcements(self, subprefix_hijack, hijack_type):
         """Populates the mrt announcements table"""
@@ -90,12 +77,24 @@ class ROVPP_MRT_Announcements_Table(Database):
 
         # Split into two separate tables, because we decided to use a bool
         # and other people keep going back and forth so gonna leave it
-        sql = """CREATE TABLE {} AS
-              SELECT origin, as_path, prefix FROM rovpp_mrt_announcements
-              WHERE attacker = {}"""
-        for attacker, table in zip([True, False], ["attackers", "victims"]):
-            self.cursor.execute("DROP TABLE IF EXISTS " + table)
-            self.cursor.execute(sql.format(table, attacker))
+        for Table in [Attackers_Table, Victims_Table]:
+            # Creates attacker and victim tables
+            with Table(clear=True) as _:
+                pass
+
+class ROVPP_MRT_Announcements_Table(Generic_Table):
+    def _create_tables(self):
+        sql = f"""CREATE UNLOGGED TABLE {self.name} (
+                 origin bigint,
+                 as_path bigint ARRAY,
+                 prefix CIDR;"""
+        self.execute(sql)
+
+class Attackers_Table(ROVPP_MRT_Announcements_Table):
+    name = "attackers"
+
+class Victims_Table(ROVPP_MRT_Announcements_Table):
+    name = "victims"
 
 class Subprefix_Hijack_Temp_Table(Database):
     """Class with database functionality.

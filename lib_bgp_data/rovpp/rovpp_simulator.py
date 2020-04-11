@@ -733,6 +733,10 @@ class Subtables:
 
         self._cur_table = -1
 
+    @staticmethod
+    def create_ribs_out_tables():
+        pass
+
     def __len__(self):
         return len(self.tables)
 
