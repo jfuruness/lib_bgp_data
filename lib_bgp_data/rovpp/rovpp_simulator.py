@@ -65,6 +65,7 @@ class ROVPP_Simulator(Parser):
             pass
 
         tables = Subtables(percents, seeded)
+        tables.fill_tables()
 
         data_pts = [Data_Point(tables, i, p) for i, p in enumerate(percents)]
 
@@ -141,84 +142,68 @@ class Test:
         # Stores the run's data
         subtables.store(self.attack, self.scenario, self.adopt_policy, percent)
 
-        
+
 class Subtables:
 
+    def __init__(self, percents, connect=True):
 
-    """NOTE:
-        split these into two subtables -
-            one for inputs to extrapolator
-            one for outputs from extrapolator
+        # Note that if you want to change adoption percentage:
+        # Simply change percents to a list of your choosing here
 
-    that way you can divy up functionality and table names easily
-    """
+        # Add any extra tables to this initial list
+        self.tables = [Subtable(Top_100_ASes_Table,
+                                percents,
+                                possible_attacker=False),
+                       Subtable(Edge_ASes_Table, percents)]
+        # Etc table must go at the end. It is all leftover ases
+        self.tables.append(Subtable(Etc_ASes_Table,
+                                    percents,
+                                    possible_attacker=False))
 
-
-
-    def __init__(self, default_percents, logger, _open=True):
-
-        self.logger = logger
-
-        # Add docs on how to add a table to these sims
-        # Create these tables and then 
-        # Create an everything else table
-        self.tables = [Subtable(ROVPP_Top_100_ASes_Table,
-                                self.logger,
-                                default_percents,
-                                possible_hijacker=False, _open=_open),
-                       Subtable(ROVPP_Edge_ASes_Table,
-                                self.logger,
-                                default_percents, _open=_open)]
-        if _open:
-            for sub_table in self.tables:
-                sub_table.table.fill_table()
-
-        etc = Subtable(ROVPP_Etc_ASes_Table,
-                       self.logger,
-                       default_percents,
-                       possible_hijacker=False, _open=_open)
-        if _open:
-            etc.table.fill_table([x.table.name for x in self.tables])
-        self.tables.append(etc)
-        self.logger.debug("Initialized subtables")
-
-        self._cur_table = -1
-
-    @staticmethod
-    def create_ribs_out_tables():
-        pass
-
-    def __len__(self):
-        return len(self.tables)
-
-    def __iter__(self):
-        return self
-
-    def __next__(self):
-        self._cur_table += 1
-        try:
-            return self.tables[self._cur_table]
-        except IndexError:
-            self._cur_table = -1
-            raise StopIteration
+        if connect:
+            for table in self.tables:
+                table.connect()
 
     def close(self):
-        # Should really be in the subtable class not here (but for loop should be here)
         for table in self.tables:
             table.close()
 
+class Subtable:
+    """Subtable that we divide results into"""
 
-    def set_implimentable_ases(self, percent_iteration_num, attacker, deterministic):
+    def __init__(self, Table_Class, percents, possible_attacker=True):
+        self.Table = Table_Class
+        self.possible_attacker = possible_attacker
+        self.percents = percents
 
-        for sub_table in self.tables:
-            sub_table.set_implimentable_ases(percent_iteration_num, attacker, deterministic)
+    def connect(self):
+        """Connects table to database"""
+
+        self.Table = self.Table()
+
+    def close(self):
+        """Closes connection"""
+
+        self.Table.close()
+ 
+class Input_Subtables(Subtables):
+    """Contains subtable functionality for pre exr functions"""
+
+    def __init__(self, percents):
+        super(Input_Subtables, self).__init__(percents)
+        self.input_tables = [Input_Table(x) for x in self.tables]
+
+    def fill_input_tables(self):
+        for subtable in self.input_tables:
+            subtable.fill_input_table(self.tables)
+
+    def set_adopting_ases(self, percent_iter, attacker, seeded):
+        for subtable in self.input_tables:
+            subtable.set_adopting_ases(percent_iter, attacker, seeded)
 
     def change_routing_policies(self, policy):
         """Changes the routing policy for that percentage of ASes"""
 
-        # NOTE: maybe make this a new table func with a rename for better speed?
-        # TEST IT OUT!!!
-        # Also, test index vs no index
         self.logger.debug("About to change the routing policies")
         for sub_table in self.tables:
             sub_table.change_routing_policies(policy)
@@ -226,54 +211,29 @@ class Subtables:
     @property
     def possible_hijacker_ases(self):
         possible_hijacker_ases = []
-        for _table in self.tables:
-            if _table.possible_hijacker:
-                results = _table.table.get_all()
-                for result in results:
-                    possible_hijacker_ases.append(result["asn"])
+        # For all tables where possible attacker is true
+        for _table in self.input_tables:
+            possible_hijacker_ases.extend(_table.get_possible_attackers())
         return possible_hijacker_ases
 
-    def store_trial_data(self, hijack, hijack_type, adopt_pol_name, trial_num, percent_iter):
-        # NOTE: Change this later, should be exr_filtered,
-        # Or at the very least pass in the args required
-        sql = """SELECT asn, received_from_asn, alternate_as FROM
-              rovpp_extrapolation_results_filtered;"""
-        with db_connection(logger=self.logger) as db:
-            ases = {x["asn"]: x for x in db.execute(sql)}
-        for table in self.tables:
-            table.store_trial_data(ases,
-                                   hijack,
-                                   hijack_type,
-                                   adopt_pol_name,
-                                   trial_num,
-                                   percent_iter)
 
-class Subtable:
+class Output_Subtables(Subtables):
+    def __init__(self, percents):
+        super(Output_Subtables, self).__init__(percents)
+        self.output_tables = [Output_Table(x) for x in self.tables]
+
+    def store(self, attack, scenario, adopt_policy, percent):
+        # Gets all the asn data
+        with ROVPP_Extrapolator_Rib_Out_Table() as _db:
+            ases = {x["asn"]: x for x in _db.get_all()}
+        # Stores the data for the specific subtables
+        for table in self.output_tables:
+            table.store(ases, attack, scenario, adopt_policy, percent)
+
+class Input_Subtable(Subtable):
     """Subtable class for ease of use"""
 
-    def __init__(self,
-                 table,
-                 logger,
-                 percents,
-                 possible_hijacker=True,
-                 policy_to_impliment=None,
-                 _open=True):
-        self.logger = logger
-        if _open is True:
-            print("OOO")
-        self.table = table(logger, _open=_open)
-        self.exr_table_name = "rovpp_exr_{}".format(self.table.name)
-        if _open:
-            self.count = self.table.get_count()
-        self.percents = percents
-        self.possible_hijacker = possible_hijacker
-        # None for whatever policy is being tested
-        self.policy_to_impliment = policy_to_impliment
-
-    def close(self):
-        self.table.close()
-
-    def set_implimentable_ases(self, iteration_num, attacker, deterministic):
+    def set_adopting_ases(self, iteration_num, attacker, deterministic):
         self.table.set_implimentable_ases(self.percents[iteration_num],
                                           attacker, deterministic)
     def change_routing_policies(self, policy):
@@ -281,9 +241,18 @@ class Subtable:
             policy = self.policy_to_impliment
         self.table.change_routing_policies(policy)
 
-    def store_trial_data(self, all_ases, hijack, h_type, adopt_pol_name, tnum, percent_iter):
-        sql = """SELECT asn, received_from_asn, prefix, origin, alternate_as, impliment FROM {}""".format(self.exr_table_name)
-        subtable_ases = {x["asn"]: x for x in self.table.execute(sql)}
+    def get_possible_attackers(self):
+        possible_attackers = []
+        if self.possible_attacker:
+            possible_attackers = [x["asn"] for x in self.input_table.get_all()]
+        return possible_attackers
+
+
+class Output_Subtable(Subtable)
+    def store(self, all_ases, attack, scenario, adopt_policy, percent):
+
+        subtable_ases = {x["asn"]: x for x in self.output_table.execute(sql)}
+        # Basically, {Condition: {Adopting: 0, Not adopting: 1}
         conds = {x.value: {y.value: 0 for y in AS_Types.__members__.values()}
                  for x in Conditions.__members__.values()}
         traceback_data = self._get_traceback_data(deepcopy(conds),
@@ -298,43 +267,27 @@ class Subtable:
                                                                     x.value)
                               for x in AS_Types.__members__.values()}
 
-#        pprint(traceback_data)
-#        pprint(control_plane_data)
-
         with db_connection(ROVPP_All_Trials_Table) as db:
             db.insert(self.table.name,
-                      hijack,
-                      h_type,
-                      adopt_pol_name,
-                      tnum,
-                      percent_iter,
+                      attack,
+                      scenario,
+                      adopt_policy,
+                      percent,
                       traceback_data,
                       control_plane_data)
 
-    def _get_traceback_data(self, conds, subtable_ases, all_ases, hijack, h_type, adopt_pol_name):
-        possible_conditions = set(conds.keys())
+    def _get_traceback_data(self, subtable_ases, all_ases):
+        conds = {x: {y: 0 for y in AS_Types.list_values()}
+                 for x in Conditions.list_values()}
+
+        # For all the ases in the subtable
         for og_asn, og_as_data in subtable_ases.items():
-            # NEEDED FOR EXR DEVS
+            asn, as_data = og_asn, og_as_data
             looping = True
-            asn = og_asn
-            as_data = og_as_data
-            # Could not use true here but then it becomes very long and ugh
             # SHOULD NEVER BE LONGER THAN 64
             for i in range(64):
-                if as_data["received_from_asn"] in possible_conditions:
-                    # Preventative announcements
-#                    if as_data["alternate_as"] != 0:
-#                        if as_data["received_from_asn"] == Conditions.HIJACKED.value:
-#                            conds[Conditions.PREVENTATIVEHIJACKED.value][og_as_data["impliment"]] += 1
-#                            self.logger.debug("Just hit preventive hijacked in traceback")
-#                        else:
-#                            conds[Conditions.PREVENTATIVENOTHIJACKED.value][og_as_data["impliment"]] += 1
-#                            self.logger.debug("Just hit preventive not hijacked in traceback")
-#                    # Non preventative announcements
-                            # MUST ADD PREVENTIVE BLACKHOLES - THIS SHOULD JUST TRACE BACK TO ALL CONDITIONS!!!!
-#                    else:
-                        # TODO: SPELLING WRONG
-                     conds[as_data["received_from_asn"]][og_as_data["impliment"]] += 1
+                if (condition := as_data["received_from_asn"]) in conds:
+                     conds[condition][og_as_data["adopting"]] += 1
                      looping = False
                      break
                 else:
@@ -342,58 +295,49 @@ class Subtable:
                     as_data = all_ases[asn]
             # NEEDED FOR EXR DEVS
             if looping:
-                self._print_loop_debug_data(all_ases, og_asn, og_as_data, hijack, h_type, adopt_pol_name)
-        ########## ADD STR METHOD TO HIJACK
+                self._print_loop_debug_data(all_ases, og_asn, og_as_data)
         return conds
 
-    def _print_loop_debug_data(self, all_ases, og_asn, og_as_data, hijack, h_type, adopt_pol_name):
-        class ASN:
-            def __init__(self, asn, implimenting):
-                self.asn = asn
-                self.implimenting = implimenting
-            def __repr__(self):
-                return f"ASN:{self.asn:<8}: {self.implimenting}"
-        debug_loop_list = []
-        debug_loop_set = {}
-        asn = og_asn
-        as_data = og_as_data
+    def _print_loop_debug_data(self, all_ases, og_asn, og_as_data):
+        loop_str_list = []
+        loop_asns_set = set()
+        asn, as_data = og_asn, og_as_data
         for i in range(64):
-            debug_loop_list.append(ASN(asn, as_data["impliment"]))
+            asn_str = f"ASN:{self.asn:<8}: {self.adopting}"
+            loop_str_list.append(asn_str)
             asn = as_data["received_from_asn"]
             as_data = all_ases[asn]
-            if asn in debug_loop_set:
-                loop_strs = ["Loop was found with:",
-                             f"Adopt policy: {adopt_pol_name}",
-                             f"{hijack}",
-                             f"hijack_type: {h_type}",
-                             "loop path:",
-                             "\t" + "\n\t".join(str(x) for x in debug_loop_list) + "\n"]
-
-                self.logger.error("\n".join(loop_strs))
+            if asn in loop_asns_set:
+                logging.error("Loop:\n\t" + "\n\t".join(loop_str_list))
                 sys.exit(1)
             else:
-                debug_loop_set.add(asn)
+                loop_asns_set.add(asn)
 
-    def _get_control_plane_data(self, hijack, impliment):
-        c_plane_data = {}
-        sql = "SELECT COUNT(*) FROM " + self.exr_table_name
-        sql += " WHERE prefix = %s AND origin = %s AND impliment = " + ("TRUE" if impliment else "FALSE") + ";"
-        c_plane_data[C_Plane_Conds.RECEIVED_ATTACKER_PREFIX_ORIGIN.value] =\
-            self.table.execute(sql, [hijack.attacker_prefix,
-                                     hijack.attacker_asn])[0]["count"]
-        c_plane_data[C_Plane_Conds.RECEIVED_ONLY_VICTIM_PREFIX_ORIGIN.value] =\
-            self.table.execute(sql, [hijack.victim_prefix,
-                                     hijack.victim_asn])[0]["count"]
-        c_plane_data[C_Plane_Conds.RECEIVED_BHOLE.value] =\
-            self.table.execute(sql, [hijack.attacker_prefix,
-                                     Conditions.BHOLED.value])[0]["count"]
+    def _get_control_plane_data(self, attack):
+        conds = {x: {y: 0 for y in AS_Types.list_values()}
+                 for x in C_Plane_Conds.list_values()}
 
+        for adopt_val in AS_Types.list_values():
+            sql = (f"SELECT COUNT(*) FROM {self.output_table.output_name}"
+                   " WHERE prefix = %s AND origin = %s "
+                   f" AND adopting = {adopt_val}")
+            conds[C_Plane_Conds.RECEIVED_ATTACKER_PREFIX_ORIGIN.value] =\
+                self.table.get_count(sql, [attack.attacker_prefix,
+                                           attack.attacker_asn])
+            conds[C_Plane_Conds.RECEIVED_ONLY_VICTIM_PREFIX_ORIGIN.value] =\
+                self.table.get_count(sql, [hijack.victim_prefix,
+                                           hijack.victim_asn])
+            c_plane_data[C_Plane_Conds.RECEIVED_BHOLE.value] =\
+                self.table.get_count(sql, [hijack.attacker_prefix,
+                                           Conditions.BHOLED.value])
 
-        no_rib_sql = """SELECT COUNT(*) FROM {0}
-                     LEFT JOIN {1} ON {0}.asn = {1}.asn
-                     WHERE {1}.asn IS NULL AND {0}.impliment =
-                     """.format(self.table.name, self.exr_table_name)
-        c_plane_data[C_Plane_Conds.NO_RIB.value] =\
-            self.table.execute(no_rib_sql + ("TRUE" if impliment else "FALSE") + ";")[0]["count"]
+            no_rib_sql = """SELECT COUNT(*) FROM {0}
+                         LEFT JOIN {1} ON {0}.asn = {1}.asn
+                         WHERE {1}.asn IS NULL AND {0}.adopting = {2}
+                         """.format(self.input_table.name,
+                                    self.output_table.name,
+                                    adopt_val)
+            c_plane_data[C_Plane_Conds.NO_RIB.value] =\
+                self.table.get_count(no_rib_sql)
 
         return c_plane_data
