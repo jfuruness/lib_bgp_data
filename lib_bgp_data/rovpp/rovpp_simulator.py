@@ -99,7 +99,7 @@ class Data_Point:
 
     def get_data(self, seeded, exr_bash, exr_kwargs, pbars):
         for test in self.get_possible_tests(seeded=seeded):
-            test.run(exr_bash, exr_kwargs, self.percent, pbars)
+            test.run(self.subtables, exr_bash, exr_kwargs, self.percent, pbars)
 
     def get_possible_tests(self, set_up=True):
         for scenario in Scenarios.__members__.values():
@@ -119,12 +119,12 @@ class Data_Point:
         return hijack
 
 class Test:
-    def __init__(self, scenario, attack, adopt_policy):
+    def __init__(self, scenario, attack, adopt_policy, subtables):
         self.scenario = scenario
         self.attack = attack
         self.adopt_policy = adopt_policy
 
-    def run(self, exr_bash, exr_kwargs, percent, pbars):
+    def run(self, subtables, exr_bash, exr_kwargs, percent, pbars):
         """Simulates a test:
 
         the scenario is usually an attack type, Ex: subprefix hijack
@@ -135,14 +135,26 @@ class Test:
         # Sets description with this tests info
         pbars.set_desc(self.scenario, self.adopt_policy, percent, self.attack)
         # Changes routing policies for all subtables
-        tables.change_routing_policies(self.adopt_policy)
+        subtables.change_routing_policies(self.adopt_policy)
         # Runs the rov++ extrapolator
         ROVPP_Extrapolator_Parser(**exr_kwargs).run(tables.names, exr_bash)
         # Stores the run's data
-        tables.store(self.attack, self.scenario, self.adopt_policy, percent)
+        subtables.store(self.attack, self.scenario, self.adopt_policy, percent)
 
         
 class Subtables:
+
+
+    """NOTE:
+        split these into two subtables -
+            one for inputs to extrapolator
+            one for outputs from extrapolator
+
+    that way you can divy up functionality and table names easily
+    """
+
+
+
     def __init__(self, default_percents, logger, _open=True):
 
         self.logger = logger
