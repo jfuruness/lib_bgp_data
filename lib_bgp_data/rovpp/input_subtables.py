@@ -1,20 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-"""Due to lots of last minute decisions in the way we want to run 
+"""Due to lots of last minute decisions in the way we want to run
 our sims, this module has turned into hardcoded crap. Fixing it now."""
 
-from pathos.multiprocessing import ProcessingPool
-from multiprocessing import cpu_count
-import sys
-from math import sqrt
-import matplotlib
-# https://raspberrypi.stackexchange.com/a/72562
-matplotlib.use('Agg')
-from matplotlib.transforms import Bbox
-from pathos.threading import ThreadPool
-import matplotlib.pyplot as plt
-from statistics import mean, variance, StatisticsError
 from random import sample
 from subprocess import check_call
 from copy import deepcopy
