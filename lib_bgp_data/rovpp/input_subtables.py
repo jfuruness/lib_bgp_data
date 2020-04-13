@@ -1,24 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-"""Due to lots of last minute decisions in the way we want to run
-our sims, this module has turned into hardcoded crap. Fixing it now."""
+"""Contains class Input_Subtables
 
-from random import sample
-from subprocess import check_call
-from copy import deepcopy
-from pprint import pprint
-import json
-import os
-from tqdm import tqdm
-from .enums import Non_BGP_Policies, Policies, Non_BGP_Policies, Hijack_Types, Conditions
-from .enums import AS_Types, Control_Plane_Conditions as C_Plane_Conds
-from .tables import Subprefix_Hijack_Temp_Table
-from .tables import ROVPP_MRT_Announcements_Table, ROVPP_Top_100_ASes_Table
-from .tables import ROVPP_Edge_ASes_Table, ROVPP_Etc_ASes_Table, ROVPP_All_Trials_Table
-from ..relationships_parser import Relationships_Parser
-from ..relationships_parser.tables import AS_Connectivity_Table
-from ..bgpstream_website_parser import BGPStream_Website_Parser
+These subtables act as input to the extrapolator
+
+In depth explanation in README
+"""
+
 
 __author__ = "Justin Furuness"
 __credits__ = ["Justin Furuness"]
@@ -28,12 +17,15 @@ __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
 
+from .subtables import Subtables, Subtable
+
+
 class Input_Subtables(Subtables):
     """Contains subtable functionality for pre exr functions"""
 
     def __init__(self, percents):
         super(Input_Subtables, self).__init__(percents)
-        self.input_tables = [Input_Table(x) for x in self.tables]
+        self.input_tables = [Input_Subtable(x) for x in self.tables]
 
     def fill_input_tables(self):
         for subtable in self.input_tables:
@@ -65,6 +57,7 @@ class Input_Subtable(Subtable):
     def set_adopting_ases(self, iteration_num, attacker, deterministic):
         self.table.set_implimentable_ases(self.percents[iteration_num],
                                           attacker, deterministic)
+
     def change_routing_policies(self, policy):
         if self.policy_to_impliment is not None:
             policy = self.policy_to_impliment

@@ -12,6 +12,9 @@ __status__ = "Development"
 
 from tqdm import tqdm
 
+from .enums import Policies
+
+
 class Multiline_TQDM:
     """Class that allows for larger descriptions using multiline tqdm
 
@@ -57,7 +60,7 @@ class Multiline_TQDM:
         """Gets descriptions to use in the progress bars"""
 
         # Gets adoption policy name
-        adopt_pol_name = Policies(policy.value).name if adopt_pol else ""
+        adopt_pol_name = Policies(policy.value).name if policy else ""
 
         # Descriptions
         descs = [f"Scenario: {scenario.value if scenario else ''}"
@@ -66,8 +69,7 @@ class Multiline_TQDM:
                  f"Attacker: {attack.attacker_asn if attack else ''}"
                  f"Victim: {attack.victim_asn if attack else ''}"]
         # Pads descriptions out to 35 spaces
-        return [f"{desc}{:<35}" for desc in descs]
-
+        return [f"{desc:<35}" for desc in descs]
 
     def close(self):
         """Closes all progress bars"""
