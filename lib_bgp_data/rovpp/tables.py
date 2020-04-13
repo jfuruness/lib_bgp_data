@@ -20,10 +20,11 @@ Possible future improvements:
 """
 
 from random import sample
-from .enums import Policies, Hijack_Types
-from .enums import AS_Types, Conditions as Conds
+from .enums import Policies, Attack_Types
+from .enums import AS_Types, Data_Plane_Conditions as Conds
 from .enums import Control_Plane_Conditions as C_Plane_Conds
 from ..database import Database, Generic_Table
+from ..mrt_parser.tables import MRT_Announcements_Table
 
 __author__ = "Justin Furuness"
 __credits__ = ["Justin Furuness"]
@@ -32,357 +33,173 @@ __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
-class UGHROVPP_MRT_Announcements_Table(Generic_Table):
-    """Class with database functionality.
+class Attackers_Table(MRT_Announcements_Table):
 
-    In depth explanation at the top of the file."""
-
-    __slots__ = ['attacker_asn', 'attacker_prefix', 'victim_asn',
-                 'victim_prefix']
-
-    def _create_tables(self):
-        """Creates tables if they do not exist.
-
-        Called during initialization of the database class.
-        """
-
-        sql = """CREATE UNLOGGED TABLE IF NOT EXISTS
-                 rovpp_mrt_announcements (
-                 origin bigint,
-                 as_path bigint ARRAY,
-                 prefix CIDR,
-                 attacker BOOLEAN
-                 );"""
-        self.execute(sql)
-
-    def populate_mrt_announcements(self, subprefix_hijack, hijack_type):
-        """Populates the mrt announcements table"""
-
-        sql = """INSERT INTO rovpp_mrt_announcements(
-              origin, as_path, prefix, attacker) VALUES
-              (%s, %s, %s, %s)"""
-        attacker_data = [subprefix_hijack.attacker_asn,
-                         [subprefix_hijack.attacker_asn],
-                         subprefix_hijack.attacker_prefix,
-                         True]
-        victim_data = [subprefix_hijack.victim_asn,
-                       [subprefix_hijack.victim_asn],
-                       subprefix_hijack.victim_prefix,
-                       False]
-        data_list = [attacker_data]
-        if hijack_type != Hijack_Types.UNANNOUNCED_PREFIX_HIJACK.value:
-            data_list.append(victim_data)
-        for data in data_list:
-            self.cursor.execute(sql, data)
-
-        # Split into two separate tables, because we decided to use a bool
-        # and other people keep going back and forth so gonna leave it
-        for Table in [Attackers_Table, Victims_Table]:
-            # Creates attacker and victim tables
-            with Table(clear=True) as _:
-                pass
-
-class ROVPP_MRT_Announcements_Table(Generic_Table):
-    def _create_tables(self):
-        sql = f"""CREATE UNLOGGED TABLE {self.name} (
-                 origin bigint,
-                 as_path bigint ARRAY,
-                 prefix CIDR;"""
-        self.execute(sql)
-
-class Attackers_Table(ROVPP_MRT_Announcements_Table):
     name = "attackers"
 
-class Victims_Table(ROVPP_MRT_Announcements_Table):
+class Victims_Table(MRT_Announcements_Table):
+
     name = "victims"
 
-class Subprefix_Hijack_Temp_Table(Database):
-    """Class with database functionality.
+#################
+### Subtables ###
+#################
 
-    THIS SHOULD BE DELETED LATER AND ADDED INTO BGPSTREAM.COM CLASS!!!
-    THIS IS JUST FOR FAKE DATA!!!!
+class ASes_Subtable(Database):
 
-    In depth explanation at the top of the file."""
+    def set_adopting_ases(self, percent, attacker, deterministic):
+        """Sets ases to impliment"""
 
-    __slots__ = []
+        ases = set([x["asn"] for x in self.Input_Table.get_all()])
+        if attacker in ases:
+            ases.remove(attacker)
+        ases_to_set = len(ases) * percent // 100
 
-    def _create_tables(self):
-        """Creates tables if they do not exist.
-
-        Called during initialization of the database class.
-        """
-
-        self.clear_table()
-        sql = """CREATE UNLOGGED TABLE subprefix_hijack_temp(
-                 more_specific_prefix CIDR,
-                 attacker bigint,
-                 url varchar(200),
-                 expected_prefix CIDR,
-                 victim bigint
-                 );"""
-        self.cursor.execute(sql)
-
-    def clear_table(self):
-        """Clears the rovpp_ases table.
-
-        Should be called at the start of every run.
-        """
-
-        self.logger.debug("Dropping Subprefix Hijacks")
-        self.cursor.execute("DROP TABLE IF EXISTS subprefix_hijack_temp;")
-        self.logger.debug("Subprefix Hijacks Table dropped")
-
-    def populate(self, ases, hijack_type):
-        """Populates table with fake data"""
-
-        # Gets two random ases without duplicates
-        attacker, victim = sample(ases, k=2)
-        sql = """INSERT INTO subprefix_hijack_temp(
-              more_specific_prefix, attacker, expected_prefix, victim) VALUES
-              (%s, %s, %s, %s)"""
-        data = ['1.2.3.0/24',  # more_specfic_prefix
-                attacker,  # Random attacker
-                '1.2.0.0/16',  # expected_prefix
-                victim]
-        if hijack_type == Hijack_Types.PREFIX_HIJACK.value:
-            data[0] = data[2]
-        self.cursor.execute(sql, data)
-
-        self.logger.debug("Creating fake data for subprefix hijacks")
-        hijack = Hijack(self.get_all()[0])
-        with db_connection(ROVPP_MRT_Announcements_Table) as db:
-            db.populate_mrt_announcements(hijack, hijack_type)
-        return hijack
-
-class Hijack:
-    def __init__(self, info_dict):
-        self.attacker_asn = info_dict.get("attacker")
-        self.attacker_prefix = info_dict.get("more_specific_prefix")
-        self.victim_asn = info_dict.get("victim")
-        self.victim_prefix = info_dict.get("expected_prefix")
-
-    def __repr__(self):
-        my_str = (f"Attacker: {self.attacker_asn:<8}, prefix: {self.attacker_prefix}\n"
-                  f"Victim:   {self.victim_asn:<8}, prefix: {self.victim_prefix}\n")
-        
-
-####################
-### Subtables!!! ###
-####################
-
-class ROVPP_ASes_Subtable(Database):
-    def _create_tables(self):
-        sql = """CREATE UNLOGGED TABLE IF NOT EXISTS {} (
-                 asn bigint,
-                 as_type text,
-                 impliment BOOLEAN
-                 );""".format(self.name)
-        self.cursor.execute(sql)
-
-    def clear_table(self):
-        """Clears the rovpp_ases table.
-        Should be called at the start of every run.
-        """
-
-        self.logger.debug("Dropping {}".format(self.name))
-        self.cursor.execute("DROP TABLE IF EXISTS {}".format(self.name))
-        self.logger.debug("{} dropped".format(self.name))
-
-    def set_implimentable_ases(self, percent, attacker, deterministic):
-        """Sets ases to impliment. Due to large sample size,
-           1 (the attacker) is not subtracted from the count,
-           since we don't know which data set the attacker is from"""
+        assert ases_to_set > 0, "ASes to set is 0?? Can't be right"
 
         if deterministic:
-            ases = sorted(set([x["asn"] for x
-                               in self.execute("SELECT * FROM " + self.name)]))
-            if attacker in ases:
-                ases.remove(attacker)
-            num_ases = len(ases) * percent // 100
-            impliment_ases = sample(ases, k=num_ases)
-            for _as in impliment_ases:
-                self.execute("""UPDATE {} SET impliment = TRUE
-                                WHERE asn = {}""".format(self.name, _as))
+            ases = list(ases)
+            ases.sort()
+            adopting_ases = sample(ases, k=ases_to_set)
+            percent_s_str = " OR asn = ".join("%s" for AS in adopting_ases)
+            sql = """UPDATE {self.name} SET adopting = TRUE
+                  WHERE asn = {percent_s_str}"""
+            self.execute(sql, adopting_ases)
         else:
-
-            sql = """UPDATE {0} SET impliment = TRUE
+            sql = """UPDATE {0} SET adopting = TRUE
                     FROM (SELECT * FROM {0}
                              WHERE {0}.asn != {1}
-                             ORDER BY RANDOM() LIBSD (
-                                 SELECT COUNT(*) FROM {0}) * ({2}::decimal/100.0)
+                             ORDER BY RANDOM() LIMIT {2}
                              ) b
-                   WHERE b.asn = {0}.asn;""".format(self.name, attacker, percent)
+                   WHERE b.asn = {0}.asn
+                   ;""".format(self.name, attacker, ases_to_set)
             self.execute(sql)
 
     def change_routing_policies(self, policy):
-        sql = """UPDATE {} SET as_type = {}
-                 WHERE impliment = TRUE;""".format(self.name, policy)
+        sql = """UPDATE {self.name} SET as_type = {policy}
+                 WHERE adopting = TRUE;"""
         self.execute(sql)
 
+class Subtable_Rib_Out(Generic_Table):
 
-class ROVPP_Top_100_ASes_Table(ROVPP_ASes_Subtable):
+    def fill_table(self):
+        sql = f"""CREATE UNLOGGED TABLES IF NOT EXISTS {self.name} AS (
+              SELECT * FROM {ROVPP_Extrapolator_Rib_out_Table.name} a
+              INNER JOIN {self.input_name} b
+                ON a.asn = b.asn;"""
+        self.execute(sql)
+
+class Top_100_ASes_Table(ASes_Subtable):
     """Class with database functionality.
     In depth explanation at the top of the file."""
 
     __slots__ = []
 
-    def fill_table(self):
-        self.clear_table()
+    input_name = name = "top_100_ases"
+
+    @property
+    def Rib_Out_Table(self):
+        return Top_100_ASes_Rib_Out_Table
+
+    def fill_table(self, *args):
+
+        ases = [3356, 1299, 174, 2914, 3257, 6762, 6939, 6453, 3491, 6461,
+                1273, 3549, 9002, 5511, 12956, 4637, 7473, 209, 12389, 701,
+                3320, 7018, 7922, 20485, 3216, 9498, 31133, 20764, 6830, 1239,
+                52320, 16735, 2828, 15412, 8359, 286, 58453, 28917, 262589,
+                10429, 4809, 7738, 4755, 41095, 37468, 33891, 43531, 4766,
+                11537, 8220, 31500, 4826, 18881, 7843, 29076, 4230, 46887,
+                34800, 62663, 8167, 9304, 7029, 5588, 267613, 3303, 11164,
+                20804, 8218, 5617, 4134, 1221, 7474, 13786, 22773, 9049, 28329,
+                12741, 61832, 28598, 132602, 3326, 22356, 2516, 7545, 26615,
+                6663, 2497, 577, 23520, 55410, 9318, 3786, 20115, 3267, 3223,
+                20562, 6128, 3741, 9505, 50607]
+
+        ases_str = " OR asn = ".join(ases)
         # TODO deadlines so fuck it
-        sql = """CREATE UNLOGGED TABLE IF NOT EXISTS rovpp_top_100_ases AS (
-                 SELECT a.asn, {} AS as_type, FALSE as impliment
-                     FROM rovpp_ases a WHERE asn = 3356
-                     OR asn = 1299
-OR asn = 174
-OR asn = 2914
-OR asn = 3257
-OR asn = 6762
-OR asn = 6939
-OR asn = 6453
-OR asn = 3491
-OR asn = 6461
-OR asn = 1273
-OR asn = 3549
-OR asn = 9002
-OR asn = 5511
-OR asn = 12956
-OR asn = 4637
-OR asn = 7473
-OR asn = 209
-OR asn = 12389
-OR asn = 701
-OR asn = 3320
-OR asn = 7018
-OR asn = 7922
-OR asn = 20485
-OR asn = 3216
-OR asn = 9498
-OR asn = 31133
-OR asn = 20764
-OR asn = 6830
-OR asn = 1239
-OR asn = 52320
-OR asn = 16735
-OR asn = 2828
-OR asn = 15412
-OR asn = 8359
-OR asn = 286
-OR asn = 58453
-OR asn = 28917
-OR asn = 262589
-OR asn = 10429
-OR asn = 4809
-OR asn = 7738
-OR asn = 4755
-OR asn = 41095
-OR asn = 37468
-OR asn = 33891
-OR asn = 43531
-OR asn = 4766
-OR asn = 11537
-OR asn = 8220
-OR asn = 31500
-OR asn = 4826
-OR asn = 18881
-OR asn = 7843
-OR asn = 29076
-OR asn = 4230
-OR asn = 46887
-OR asn = 34800
-OR asn = 62663
-OR asn = 8167
-OR asn = 9304
-OR asn = 7029
-OR asn = 5588
-OR asn = 267613
-OR asn = 3303
-OR asn = 11164
-OR asn = 20804
-OR asn = 8218
-OR asn = 5617
-OR asn = 4134
-OR asn = 1221
-OR asn = 7474
-OR asn = 13786
-OR asn = 22773
-OR asn = 9049
-OR asn = 28329
-OR asn = 12741
-OR asn = 61832
-OR asn = 28598
-OR asn = 132602
-OR asn = 3326
-OR asn = 22356
-OR asn = 2516
-OR asn = 7545
-OR asn = 26615
-OR asn = 6663
-OR asn = 2497
-OR asn = 577
-OR asn = 23520
-OR asn = 55410
-OR asn = 9318
-OR asn = 3786
-OR asn = 20115
-OR asn = 3267
-OR asn = 3223
-OR asn = 20562
-OR asn = 6128
-OR asn = 3741
-OR asn = 9505
-OR asn = 50607
-
-                 );""".format(Policies.DEFAULT.value)              
+        sql = f"""CREATE UNLOGGED TABLE IF NOT EXISTS {self.name} AS (
+                 SELECT a.asn,
+                    {Policies.DEFAULT.value} AS as_type,
+                    FALSE as adopting
+                FROM {ASes_Table.name} a WHERE asn = {ases_str}
+                 );"""              
         self.cursor.execute(sql)
 
+class Top_100_ASes_Rib_Out_Table(Top_100_ASes_Table, Subtable_Rib_Out):
+    name = "top_100_ases_rib_out"
 
-class ROVPP_Edge_ASes_Table(ROVPP_ASes_Subtable):
+
+class Edge_ASes_Table(ASes_Subtable):
     """Class with database functionality.
     In depth explanation at the top of the file."""
 
     __slots__ = []
 
-    def fill_table(self):
-        self.clear_table()
-        sql = """CREATE UNLOGGED TABLE IF NOT EXISTS rovpp_edge_ases AS (
-                     SELECT r.asn, {} AS as_type, FALSE as impliment
-                         FROM rovpp_ases r
-                         INNER JOIN rovpp_as_connectivity c ON c.asn = r.asn
+    input_name = name = "edge_ases"
+
+    @property
+    def Rib_Out_Table(self):
+        return Edge_ASes_Rib_Out_Table
+
+    def fill_table(self, *args):
+        sql = f"""CREATE UNLOGGED TABLE IF NOT EXISTS edge_ases AS (
+                     SELECT r.asn,
+                        {Policies.DEFAULT.value} AS as_type,
+                        FALSE as adopting
+                         FROM {ASes_Table.name} r
+                         INNER JOIN {AS_Connectivity_Table.name} c
+                            ON c.asn = r.asn
                      WHERE c.connectivity = 0
-                 );""".format(Policies.DEFAULT.value)
-        self.cursor.execute(sql)
+                 );"""
+        self.execute(sql)
 
-class ROVPP_Etc_ASes_Table(ROVPP_ASes_Subtable):
+class Edge_ASes_Rib_Out_Table(Edge_ASes_Table, Subtable_Rib_Out):
+    name = "edge_ases_rib_out"
+
+
+class Etc_ASes_Table(ASes_Subtable):
     """Class with database functionality.
     In depth explanation at the top of the file."""
 
     __slots__ = []
+
+    input_name = name = "etc_ases"
+
+    @property
+    def Rib_Out_Table(self):
+        return Etc_ASes_Rib_Out_Table
 
     def fill_table(self, table_names):
-        self.clear_table()
-        sql = """CREATE UNLOGGED TABLE IF NOT EXISTS rovpp_etc_ases AS (
-                 SELECT ra.asn, {} AS as_type, FALSE as impliment
-                     FROM rovpp_ases ra""".format(Policies.DEFAULT.value)
+        sql = f"""CREATE UNLOGGED TABLE IF NOT EXISTS {self.name} AS (
+                 SELECT ra.asn,
+                    {Policies.DEFAULT.value} AS as_type,
+                    FALSE as adopting
+                     FROM {ASes_Table.name} ra"""
         if len(table_names) > 0:
             for table_name in table_names:
                 sql += " LEFT JOIN {0} ON {0}.asn = ra.asn".format(table_name)
             # Gets rid of the last comma
             sql += " WHERE"
             for table_name in table_names:
-                sql += " {}.asn IS NULL AND".format(table_name)
+                sql += f" {table_name}.asn IS NULL AND"
             # Gets rid of the last \sAND
             sql = sql[:-4]
         sql += ");"
-        self.logger.debug("ETC AS SQL:\n\n{}\n".format(sql))
-        self.cursor.execute(sql)
+        logging.debug("ETC AS SQL:\n\n{sql}\n")
+        self.execute(sql)
 
-class ROVPP_All_Trials_Table(Database):
+class Etc_ASes_Rib_Out_Table(Etc_ASes_Table, Subtable_Rib_Out):
+    name = "etc_ases_rib_out"
+
+class Simulation_Results_Table(Database):
     """Class with database functionality.
 
     In depth explanation at the top of the file."""
 
     __slots__ = ['attacker_asn', 'attacker_prefix', 'victim_asn',
                  'victim_prefix']
+
+    name = "simulation_results"
 
     def _create_tables(self):
         """Creates tables if they do not exist.
@@ -391,21 +208,18 @@ class ROVPP_All_Trials_Table(Database):
         """
 
         sql = """CREATE UNLOGGED TABLE IF NOT EXISTS
-                 rovpp_all_trials (
-                 hijack_type varchar(50),
-                 subtable_name varchar(50),
+                 simulation_results (
+                 attack_type text,
+                 subtable_name text,
                  attacker_asn bigint,
                  attacker_prefix CIDR,
                  victim bigint,
                  victim_prefix CIDR,
-                 adopt_pol varchar(50),
-                 trial_num bigint,
-                 percent_iter bigint,
+                 adopt_pol text,
+                 percent bigint,
                  trace_hijacked_collateral bigint,
                  trace_nothijacked_collateral bigint,
                  trace_blackholed_collateral bigint,
-                 trace_preventivehijacked_collateral bigint,
-                 trace_preventivenothijacked_collateral bigint,
                  trace_total_collateral bigint,
                  trace_hijacked_adopting bigint,
                  trace_nothijacked_adopting bigint,
@@ -422,29 +236,18 @@ class ROVPP_All_Trials_Table(Database):
                  c_plane_has_bhole_adopting bigint,
                  no_rib_adopting bigint
                  );"""
-        self.cursor.execute(sql)
-
-    def clear_table(self):
-        """Clears the rovpp_ases table.
-
-        Should be called at the start of every run.
-        """
-
-        self.logger.debug("Dropping ROVPP_All_Trials_Table")
-        self.cursor.execute("DROP TABLE IF EXISTS rovpp_all_trials")
-        self.logger.debug("ROVPP_All_Trials_Table Table dropped")
+        self.execute(sql)
 
     def insert(self,
                subtable_name,
                hijack,
                hijack_type,
                adopt_pol_name,
-               tnum,
-               percent_iter,
+               percent,
                traceback_data,
                c_plane_data):
 
-        sql = """INSERT INTO rovpp_all_trials(
+        sql = f"""INSERT INTO {self.name}(
                  hijack_type,
                  subtable_name,
                  attacker_asn,
@@ -457,14 +260,10 @@ class ROVPP_All_Trials_Table(Database):
                  trace_hijacked_collateral,
                  trace_nothijacked_collateral,
                  trace_blackholed_collateral,
-                 trace_preventivehijacked_collateral,
-                 trace_preventivenothijacked_collateral,
                  trace_total_collateral,
                  trace_hijacked_adopting,
                  trace_nothijacked_adopting,
                  trace_blackholed_adopting,
-                 trace_preventivehijacked_adopting,
-                 trace_preventivenothijacked_adopting,
                  trace_total_adopting,
                  c_plane_has_attacker_prefix_origin_collateral,
                  c_plane_has_only_victim_prefix_origin_collateral,
@@ -476,7 +275,9 @@ class ROVPP_All_Trials_Table(Database):
                  no_rib_adopting)
               VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
                       %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
-                      %s, %s, %s, %s, %s, %s, %s, %s, %s);"""
+                      %s, %s, %s, %s, %s);"""
+
+        1/0 # These need updating, dicts are different now
 
         data = [hijack_type,
                 subtable_name,
@@ -485,21 +286,16 @@ class ROVPP_All_Trials_Table(Database):
                 hijack.victim_asn,
                 hijack.victim_prefix,
                 adopt_pol_name,
-                tnum,
-                percent_iter,
+                percent,
 
                 traceback_data[Conds.HIJACKED.value][AS_Types.NON_ADOPTING.value],
                 traceback_data[Conds.NOTHIJACKED.value][AS_Types.NON_ADOPTING.value],
                 traceback_data[Conds.BHOLED.value][AS_Types.NON_ADOPTING.value],
-                traceback_data[Conds.PREVENTATIVEHIJACKED.value][AS_Types.NON_ADOPTING.value],
-                traceback_data[Conds.PREVENTATIVENOTHIJACKED.value][AS_Types.NON_ADOPTING.value],
                 int(sum(v[AS_Types.NON_ADOPTING.value] for k, v in traceback_data.items())) + c_plane_data[AS_Types.NON_ADOPTING.value][C_Plane_Conds.NO_RIB.value],
 
                 traceback_data[Conds.HIJACKED.value][AS_Types.ADOPTING.value],
                 traceback_data[Conds.NOTHIJACKED.value][AS_Types.ADOPTING.value],
                 traceback_data[Conds.BHOLED.value][AS_Types.ADOPTING.value],
-                traceback_data[Conds.PREVENTATIVEHIJACKED.value][AS_Types.ADOPTING.value],
-                traceback_data[Conds.PREVENTATIVENOTHIJACKED.value][AS_Types.ADOPTING.value],
                 int(sum(v[AS_Types.ADOPTING.value] for k, v in traceback_data.items())) + c_plane_data[AS_Types.ADOPTING.value][C_Plane_Conds.NO_RIB.value],
 
                 c_plane_data[AS_Types.NON_ADOPTING.value][C_Plane_Conds.RECEIVED_ATTACKER_PREFIX_ORIGIN.value],
@@ -511,4 +307,4 @@ class ROVPP_All_Trials_Table(Database):
                 c_plane_data[AS_Types.ADOPTING.value][C_Plane_Conds.RECEIVED_ONLY_VICTIM_PREFIX_ORIGIN.value],
                 c_plane_data[AS_Types.ADOPTING.value][C_Plane_Conds.RECEIVED_BHOLE.value],
                 c_plane_data[AS_Types.ADOPTING.value][C_Plane_Conds.NO_RIB.value]]
-        self.cursor.execute(sql, data)
+        self.execute(sql, data)

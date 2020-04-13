@@ -15,9 +15,13 @@ __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
 from .tables import Top_100_ASes_Table, Edge_ASes_Table, Etc_ASes_Table
+from .input_subtables import Input_Subtables, Input_Subtable
+from .output_subtables import Output_Subtables, Output_Subtable
 
 
-class Subtables:
+# This is probably not the best way to do this inheritance,
+# But they are all kind of messy anyways so whatever
+class Subtables(Input_Subtables, Output_Subtables):
 
     def __init__(self, percents, connect=True):
 
@@ -43,20 +47,22 @@ class Subtables:
             table.close()
 
 
-class Subtable:
+class Subtable(Input_Subtable, Output_Subtable):
     """Subtable that we divide results into"""
 
     def __init__(self, Table_Class, percents, possible_attacker=True):
-        self.Table = Table_Class
+        self.Input_Table = Table_Class
         self.possible_attacker = possible_attacker
         self.percents = percents
 
     def connect(self):
         """Connects table to database"""
 
-        self.Table = self.Table()
+        self.Input_Table = self.Input_Table(clear=True)
+        self.Rib_Out_Table = self.Input_Table.Rib_Out_Table(clear=True)
 
     def close(self):
         """Closes connection"""
 
-        self.Table.close()
+        self.Input_Table.close()
+        self.Rib_Out_Table.close()

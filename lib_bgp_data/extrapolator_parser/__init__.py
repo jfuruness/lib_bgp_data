@@ -12,3 +12,4 @@ __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
 from .extrapolator_parser import Extrapolator_Parser
+from .rovpp_extrapolator_parser import ROVPP_Extrapolator_Parser

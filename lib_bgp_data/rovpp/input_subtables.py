@@ -17,18 +17,12 @@ __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
 
-from .subtables import Subtables, Subtable
-
-
-class Input_Subtables(Subtables):
+class Input_Subtables:
     """Contains subtable functionality for pre exr functions"""
-
-    def __init__(self, percents):
-        super(Input_Subtables, self).__init__(percents)
-        self.input_tables = [Input_Subtable(x) for x in self.tables]
 
     def fill_input_tables(self):
         for subtable in self.input_tables:
+            subtable.clear_table()
             subtable.fill_input_table(self.tables)
 
     def set_adopting_ases(self, percent_iter, attacker, seeded):
@@ -51,7 +45,7 @@ class Input_Subtables(Subtables):
         return possible_hijacker_ases
 
 
-class Input_Subtable(Subtable):
+class Input_Subtable:
     """Subtable class for ease of use"""
 
     def set_adopting_ases(self, iteration_num, attacker, deterministic):

@@ -23,8 +23,6 @@ from .extrapolator_parser import Extrapolator_Parser
 from ..base_classes import Parser
 from ..database import Database
 from ..relationships_parser.tables import Peers_Table, Provider_Customers_Table
-#from ..rovpp.subtables import Subtables
-from ..rovpp.tables import Attackers_Table, Victims_Table
 from ..utils import utils
 
 
@@ -45,6 +43,8 @@ class ROVPP_Extrapolator_Parser(Extrapolator_Parser):
         Installs if necessary. See README for in depth instructions.
         """
 
+        # Should be moved elsewhere. Here for circular imports
+        from ..rovpp.tables import Attackers_Table, Victims_Table
         self._input_validation([Attackers.name, Victims.name] + table_names)
 
         logging.info("About to run the rovpp extrapolator")

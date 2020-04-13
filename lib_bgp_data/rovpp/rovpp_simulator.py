@@ -16,9 +16,12 @@ __status__ = "Development"
 import random
 
 from .data_point import Data_Point
+from .enums import Attack_Types, Non_Default_Policies
 from .multiline_tqdm import Multiline_TQDM
-from .subtables import Subtables
-from .tables import ROVPP_All_Trials_Table
+from .subtables_base import Subtables
+from .tables import Simulation_Results_Table
+
+
 from ..base_classes import Parser
 from ..relationships_parser import Relationships_Parser
 
@@ -34,7 +37,9 @@ class ROVPP_Simulator(Parser):
              num_trials=100,
              exr_bash=None,
              seeded=False,
-             seeded_trial=None):
+             seeded_trial=None,
+             attack_types=Attack_Types.__members__.values(),
+             adopt_policy_types=Non_Default_Policies.__members__.values()):
         """Runs ROVPP simulation.
 
         In depth explanation at top of module.
@@ -44,13 +49,14 @@ class ROVPP_Simulator(Parser):
         Relationships_Parser(**self.kwargs).parse_files()
 
         # Clear the table that stores all trial info
-        with ROVPP_All_Trials_Table(clear=True) as _:
+        with Simulation_Results_Table(clear=True) as _:
             pass
 
         tables = Subtables(percents, seeded)
         tables.fill_tables()
 
-        data_pts = [Data_Point(tables, i, p) for i, p in enumerate(percents)]
+        data_pts = [Data_Point(tables, i, percent, self.csv_dir)
+                    for i, p in enumerate(percents)]
 
         # We do this so that we can immediatly skip to the deterministic trial
         trials = [seeded_trial] if seeded_trial else list(range(num_trials))
@@ -66,7 +72,11 @@ class ROVPP_Simulator(Parser):
                 if seeded:
                     random.seed(trial)
                 for data_pt in data_pts:
-                    data_pt.get_data(seeded, exr_bash, self.kwargs, pbars)
+                    data_pt.get_data(exr_bash,
+                                     self.kwargs,
+                                     pbars,
+                                     attack_types,
+                                     adopt_policy_types)
                 pbars.update()
 
         tables.close()
