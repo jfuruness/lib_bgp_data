@@ -8,4 +8,4 @@ class Collectors(enum.Enum):
                                      "route-views2"]}
     collectors_3 = {"collectors[]": ["route-views.telxatl",
                                      "route-views2",
-                                     "route-views3"]}
+                                     "route-views6"]}
