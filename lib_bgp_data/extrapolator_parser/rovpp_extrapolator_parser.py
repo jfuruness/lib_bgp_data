@@ -45,7 +45,7 @@ class ROVPP_Extrapolator_Parser(Extrapolator_Parser):
         Installs if necessary. See README for in depth instructions.
         """
 
-        tables = [Attackers_Table.name, Victims_Table.name] + table_names
+        tables = [Attackers_Table.name] + table_names
         self._input_validation(tables)
 
         logging.debug("About to run the rovpp extrapolator")

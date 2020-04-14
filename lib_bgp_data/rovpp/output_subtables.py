@@ -29,13 +29,12 @@ class Output_Subtables:
         # Stores the data for the specific subtables
         for table in self.tables:
             table.Rib_Out_Table.clear_table()
-            table.Rib_Out_Table.fill_table()
+            table.Rib_Out_Table.fill_rib_out_table()
             table.store_output(ases, attack, scenario, adopt_policy, percent)
 
 
 class Output_Subtable:
     def store_output(self, all_ases, attack, scenario, adopt_policy, percent):
-
         subtable_ases = {x["asn"]: x for x in self.Rib_Out_Table.get_all()}
         # We don't want to track the attacker, faster than filtering dict comp
         if attack.attacker_asn in subtable_ases:
@@ -92,26 +91,27 @@ class Output_Subtable:
                  for x in C_Plane_Conds.list_values()}
 
         for adopt_val in AS_Types.list_values():
-            sql = (f"SELECT COUNT(*) FROM {self.output_table.output_name}"
+            sql = (f"SELECT COUNT(*) FROM {self.Rib_Out_Table.name}"
                    " WHERE prefix = %s AND origin = %s "
-                   f" AND adopting = {adopt_val}")
-            conds[C_Plane_Conds.RECEIVED_ATTACKER_PREFIX_ORIGIN.value] =\
+                   f" AND adopting = {bool(adopt_val)}")
+            conds[C_Plane_Conds.RECEIVED_ATTACKER_PREFIX_ORIGIN.value][adopt_val] =\
                 self.Rib_Out_Table.get_count(sql, [attack.attacker_prefix,
                                                    attack.attacker_asn])
-            conds[C_Plane_Conds.RECEIVED_ONLY_VICTIM_PREFIX_ORIGIN.value] =\
+            conds[C_Plane_Conds.RECEIVED_ONLY_VICTIM_PREFIX_ORIGIN.value][adopt_val] =\
                 self.Rib_Out_Table.get_count(sql, [attack.victim_prefix,
                                                    attack.victim_asn])
-            c_plane_data[C_Plane_Conds.RECEIVED_BHOLE.value] =\
-                self.Rib_Out_Table.get_count(sql, [attack.attacker_prefix,
-                                                   Conditions.BHOLED.value])
+            conds[C_Plane_Conds.RECEIVED_BHOLE.value][adopt_val] =\
+                self.Rib_Out_Table.get_count(sql, 
+                    [attack.attacker_prefix,
+                     Data_Plane_Conditions.BHOLED.value])
 
             no_rib_sql = """SELECT COUNT(*) FROM {0}
                          LEFT JOIN {1} ON {0}.asn = {1}.asn
                          WHERE {1}.asn IS NULL AND {0}.adopting = {2}
-                         """.format(self.Table.name,
+                         """.format(self.Input_Table.name,
                                     self.Rib_Out_Table.name,
-                                    adopt_val)
-            c_plane_data[C_Plane_Conds.NO_RIB.value] =\
+                                    bool(adopt_val))
+            conds[C_Plane_Conds.NO_RIB.value][adopt_val] =\
                 self.Rib_Out_Table.get_count(no_rib_sql)
 
-        return c_plane_data
+        return conds

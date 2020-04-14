@@ -13,3 +13,4 @@ __status__ = "Development"
 
 from .extrapolator_parser import Extrapolator_Parser
 from .rovpp_extrapolator_parser import ROVPP_Extrapolator_Parser
+from .tables import ROVPP_Extrapolator_Rib_Out_Table

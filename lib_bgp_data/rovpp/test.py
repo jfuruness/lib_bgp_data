@@ -49,6 +49,9 @@ class Test:
             
         # Runs the rov++ extrapolator
         exr.ROVPP_Extrapolator_Parser(**exr_kwargs).run(self.tables.names, exrbash)
+
+        pbars.update_extrapolator()
+
         if old_log_level is not None:
             config_logging(old_log_level,
                            exr_kwargs.get("section"),

@@ -29,22 +29,23 @@ __status__ = "Development"
 import logging
 from random import sample
 
-from .enums import Policies, Attack_Types
+from .enums import Non_Default_Policies, Policies, Attack_Types
 from .enums import AS_Types, Data_Plane_Conditions as DP_Conds
 from .enums import Control_Plane_Conditions as CP_Conds
 
 from ..database import Database, Generic_Table
 from ..mrt_parser.tables import MRT_Announcements_Table
 from ..relationships_parser.tables import AS_Connectivity_Table, ASes_Table
-
+# Done this way to avoid circular imports
 
 class Attackers_Table(MRT_Announcements_Table):
-
     name = "attackers"
 
 class Victims_Table(MRT_Announcements_Table):
-
     name = "victims"
+
+# Fix this later
+from ..extrapolator_parser.tables import ROVPP_Extrapolator_Rib_Out_Table
 
 #################
 ### Subtables ###
@@ -60,14 +61,14 @@ class ASes_Subtable(Generic_Table):
             ases.remove(attacker)
         ases_to_set = len(ases) * percent // 100
 
-        assert ases_to_set > 0, "ASes to set is 0?? Can't be right"
+        assert ases_to_set > 0, "0 ases adopting?? Can't be right"
 
         if deterministic:
             ases = list(ases)
             ases.sort()
             adopting_ases = sample(ases, k=ases_to_set)
             percent_s_str = " OR asn = ".join("%s" for AS in adopting_ases)
-            sql = """UPDATE {self.name} SET adopting = TRUE
+            sql = """UPDATE {self.name} SET adopting = FALSE
                   WHERE asn = {percent_s_str}"""
             self.execute(sql, adopting_ases)
         else:
@@ -87,11 +88,13 @@ class ASes_Subtable(Generic_Table):
 
 class Subtable_Rib_Out(Generic_Table):
 
-    def fill_table(self):
-        sql = f"""CREATE UNLOGGED TABLES IF NOT EXISTS {self.name} AS (
-              SELECT * FROM {ROVPP_Extrapolator_Rib_out_Table.name} a
+    def fill_rib_out_table(self):
+        sql = f"""CREATE UNLOGGED TABLE IF NOT EXISTS {self.name} AS (
+              SELECT a.asn, a.prefix, a.origin, a.received_from_asn,
+                b.as_type, b.adopting
+                FROM {ROVPP_Extrapolator_Rib_Out_Table.name} a
               INNER JOIN {self.input_name} b
-                ON a.asn = b.asn;"""
+                ON a.asn = b.asn);"""
         self.execute(sql)
 
 class Top_100_ASes_Table(ASes_Subtable):
@@ -129,6 +132,7 @@ class Top_100_ASes_Table(ASes_Subtable):
                 FROM {ASes_Table.name} a WHERE asn = {ases_str}
                  );"""              
         self.cursor.execute(sql)
+
 
 class Top_100_ASes_Rib_Out_Table(Top_100_ASes_Table, Subtable_Rib_Out):
     name = "top_100_ases_rib_out"
@@ -236,8 +240,6 @@ class Simulation_Results_Table(Database):
                  trace_hijacked_adopting bigint,
                  trace_nothijacked_adopting bigint,
                  trace_blackholed_adopting bigint,
-                 trace_preventivehijacked_adopting bigint,
-                 trace_preventivenothijacked_adopting bigint,
                  trace_total_adopting bigint,
                  c_plane_has_attacker_prefix_origin_collateral bigint,
                  c_plane_has_only_victim_prefix_origin_collateral bigint,
@@ -260,15 +262,14 @@ class Simulation_Results_Table(Database):
                c_plane_data):
 
         sql = f"""INSERT INTO {self.name}(
-                 hijack_type,
+                 attack_type,
                  subtable_name,
                  attacker_asn,
                  attacker_prefix,
                  victim,
                  victim_prefix,
                  adopt_pol,
-                 trial_num,
-                 percent_iter,
+                 percent,
                  trace_hijacked_collateral,
                  trace_nothijacked_collateral,
                  trace_blackholed_collateral,
@@ -287,7 +288,7 @@ class Simulation_Results_Table(Database):
                  no_rib_adopting)
               VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
                       %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
-                      %s, %s, %s, %s, %s);"""
+                      %s, %s, %s, %s);"""
 
         # Also write out cp = control plane dp = dataplane everywhere
         # Had to do it, things where so insanely long unreadable
@@ -307,16 +308,16 @@ class Simulation_Results_Table(Database):
         total_traceback_non_adopting += cp_non_adopting[CP_Conds.NO_RIB.value]
 
         total_traceback_adopting = sum(traceback_adopting.values())
-        total_traceback_adopting += c_plane_adopting[CP_Conds.NO_RIB.value]
+        total_traceback_adopting += cp_adopting[CP_Conds.NO_RIB.value]
 
 
-        test_info = [hijack_type,
+        test_info = [hijack_type.value,
                      subtable_name,
                      hijack.attacker_asn,
                      hijack.attacker_prefix,
                      hijack.victim_asn,
                      hijack.victim_prefix,
-                     adopt_pol_name,
+                     Non_Default_Policies(adopt_pol_name).name,
                      percent]
 
         traceback_info = [
@@ -336,9 +337,9 @@ class Simulation_Results_Table(Database):
             cp_non_adopting[CP_Conds.RECEIVED_BHOLE.value],
             cp_non_adopting[CP_Conds.NO_RIB.value],
 
-            cp_adopting[C_Plane_Conds.RECEIVED_ATTACKER_PREFIX_ORIGIN.value],
-            cp_adopting[C_Plane_Conds.RECEIVED_ONLY_VICTIM_PREFIX_ORIGIN.value],
-            cp_adopting[C_Plane_Conds.RECEIVED_BHOLE.value],
-            cp_adopting[C_Plane_Conds.NO_RIB.value]]
+            cp_adopting[CP_Conds.RECEIVED_ATTACKER_PREFIX_ORIGIN.value],
+            cp_adopting[CP_Conds.RECEIVED_ONLY_VICTIM_PREFIX_ORIGIN.value],
+            cp_adopting[CP_Conds.RECEIVED_BHOLE.value],
+            cp_adopting[CP_Conds.NO_RIB.value]]
 
         self.execute(sql, test_info + traceback_info + control_plane_info)

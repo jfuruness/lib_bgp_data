@@ -65,7 +65,7 @@ class Control_Plane_Conditions(Enumerable_Enum):
     NO_RIB = "no_rib"
 
 
-class AS_Types(Enum):
+class AS_Types(Enumerable_Enum):
     """Ases either adopt or don't"""
 
     NON_ADOPTING = 0
