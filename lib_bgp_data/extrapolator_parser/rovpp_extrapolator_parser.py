@@ -20,6 +20,9 @@ from multiprocessing import cpu_count
 import os
 
 from .extrapolator_parser import Extrapolator_Parser
+from ..rovpp.tables import Attackers_Table, Victims_Table
+from .tables import ROVPP_Extrapolator_Rib_Out_Table
+
 from ..base_classes import Parser
 from ..database import Database
 from ..relationships_parser.tables import Peers_Table, Provider_Customers_Table
@@ -42,8 +45,6 @@ class ROVPP_Extrapolator_Parser(Extrapolator_Parser):
         Installs if necessary. See README for in depth instructions.
         """
 
-        # Should be moved elsewhere. Here for circular imports
-        from ..rovpp.tables import Attackers_Table, Victims_Table
         tables = [Attackers_Table.name, Victims_Table.name] + table_names
         self._input_validation(tables)
 

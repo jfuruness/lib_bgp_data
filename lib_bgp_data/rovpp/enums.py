@@ -14,7 +14,7 @@ __status__ = "Development"
 
 from enum import Enum
 
-
+from ..base_classes import Enumerable_Enum
 ###########################
 ### Attack/Defend Enums ###
 ###########################
@@ -49,14 +49,14 @@ Non_Default_Policies = Enum('Non_Default_Policies', _non_default_policies_dict)
 ########################
 
 
-class Data_Plane_Conditions(Enum):
+class Data_Plane_Conditions(Enumerable_Enum):
     """Possible outcomes from data plane conditions"""
 
     BHOLED = 64512
     HIJACKED = 64513
     NOTHIJACKED = 64514
 
-class Control_Plane_Conditions(Enum):
+class Control_Plane_Conditions(Enumerable_Enum):
     """Conditions you see in the control plane"""
 
     RECEIVED_ATTACKER_PREFIX_ORIGIN = "received_attacker_prefix_origin"

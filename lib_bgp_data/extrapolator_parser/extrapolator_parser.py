@@ -114,7 +114,7 @@ class Extrapolator_Parser(Parser):
             cmds += [f"git checkout {self.branch}"]
 
         cmds += [f"make -j{cpu_count()}",
-                 "sudo make install",
+                 "sudo make",
                  f"cp bgp-extrapolator {self.install_location}"]
 
         utils.run_cmds(cmds)

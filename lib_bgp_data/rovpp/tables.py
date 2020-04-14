@@ -30,8 +30,8 @@ import logging
 from random import sample
 
 from .enums import Policies, Attack_Types
-from .enums import AS_Types, Data_Plane_Conditions as Conds
-from .enums import Control_Plane_Conditions as C_Plane_Conds
+from .enums import AS_Types, Data_Plane_Conditions as DP_Conds
+from .enums import Control_Plane_Conditions as CP_Conds
 
 from ..database import Database, Generic_Table
 from ..mrt_parser.tables import MRT_Announcements_Table
@@ -207,6 +207,12 @@ class Simulation_Results_Table(Database):
 
     name = "simulation_results"
 
+    """This is kept as one massive table even though it should prob b 3
+    the reason being because we run these trials over vms
+    so to keep track of indexes across all vms so that none are ever the
+    same is unnessecary work. Maybe later we can fix it.
+    """
+
     def _create_tables(self):
         """Creates tables if they do not exist.
 
@@ -283,34 +289,56 @@ class Simulation_Results_Table(Database):
                       %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
                       %s, %s, %s, %s, %s);"""
 
-        1/0 # These need updating, dicts are different now
+        # Also write out cp = control plane dp = dataplane everywhere
+        # Had to do it, things where so insanely long unreadable
 
-        data = [hijack_type,
-                subtable_name,
-                hijack.attacker_asn,
-                hijack.attacker_prefix,
-                hijack.victim_asn,
-                hijack.victim_prefix,
-                adopt_pol_name,
-                percent,
+        # Splits dicts up for readability
+        traceback_non_adopting = {k: type_dict[AS_Types.NON_ADOPTING.value]
+                                  for k, type_dict in traceback_data.items()}
+        traceback_adopting = {k: type_dict[AS_Types.ADOPTING.value]
+                              for k, type_dict in traceback_data.items()}
+        cp_non_adopting = {k: type_dict[AS_Types.NON_ADOPTING.value]
+                           for k, type_dict in c_plane_data.items()}
+        cp_adopting = {k: type_dict[AS_Types.ADOPTING.value]
+                       for k, type_dict in c_plane_data.items()}
 
-                traceback_data[Conds.HIJACKED.value][AS_Types.NON_ADOPTING.value],
-                traceback_data[Conds.NOTHIJACKED.value][AS_Types.NON_ADOPTING.value],
-                traceback_data[Conds.BHOLED.value][AS_Types.NON_ADOPTING.value],
-                int(sum(v[AS_Types.NON_ADOPTING.value] for k, v in traceback_data.items())) + c_plane_data[AS_Types.NON_ADOPTING.value][C_Plane_Conds.NO_RIB.value],
+        # Calculates totals for readability
+        total_traceback_non_adopting = sum(traceback_non_adopting.values())
+        total_traceback_non_adopting += cp_non_adopting[CP_Conds.NO_RIB.value]
 
-                traceback_data[Conds.HIJACKED.value][AS_Types.ADOPTING.value],
-                traceback_data[Conds.NOTHIJACKED.value][AS_Types.ADOPTING.value],
-                traceback_data[Conds.BHOLED.value][AS_Types.ADOPTING.value],
-                int(sum(v[AS_Types.ADOPTING.value] for k, v in traceback_data.items())) + c_plane_data[AS_Types.ADOPTING.value][C_Plane_Conds.NO_RIB.value],
+        total_traceback_adopting = sum(traceback_adopting.values())
+        total_traceback_adopting += c_plane_adopting[CP_Conds.NO_RIB.value]
 
-                c_plane_data[AS_Types.NON_ADOPTING.value][C_Plane_Conds.RECEIVED_ATTACKER_PREFIX_ORIGIN.value],
-                c_plane_data[AS_Types.NON_ADOPTING.value][C_Plane_Conds.RECEIVED_ONLY_VICTIM_PREFIX_ORIGIN.value],
-                c_plane_data[AS_Types.NON_ADOPTING.value][C_Plane_Conds.RECEIVED_BHOLE.value],
-                c_plane_data[AS_Types.NON_ADOPTING.value][C_Plane_Conds.NO_RIB.value],
 
-                c_plane_data[AS_Types.ADOPTING.value][C_Plane_Conds.RECEIVED_ATTACKER_PREFIX_ORIGIN.value],
-                c_plane_data[AS_Types.ADOPTING.value][C_Plane_Conds.RECEIVED_ONLY_VICTIM_PREFIX_ORIGIN.value],
-                c_plane_data[AS_Types.ADOPTING.value][C_Plane_Conds.RECEIVED_BHOLE.value],
-                c_plane_data[AS_Types.ADOPTING.value][C_Plane_Conds.NO_RIB.value]]
-        self.execute(sql, data)
+        test_info = [hijack_type,
+                     subtable_name,
+                     hijack.attacker_asn,
+                     hijack.attacker_prefix,
+                     hijack.victim_asn,
+                     hijack.victim_prefix,
+                     adopt_pol_name,
+                     percent]
+
+        traceback_info = [
+            traceback_non_adopting[DP_Conds.HIJACKED.value],
+            traceback_non_adopting[DP_Conds.NOTHIJACKED.value],
+            traceback_non_adopting[DP_Conds.BHOLED.value],
+            total_traceback_non_adopting,
+
+            traceback_adopting[DP_Conds.HIJACKED.value],
+            traceback_adopting[DP_Conds.NOTHIJACKED.value],
+            traceback_adopting[DP_Conds.BHOLED.value],
+            total_traceback_adopting]
+
+        control_plane_info = [
+            cp_non_adopting[CP_Conds.RECEIVED_ATTACKER_PREFIX_ORIGIN.value],
+            cp_non_adopting[CP_Conds.RECEIVED_ONLY_VICTIM_PREFIX_ORIGIN.value],
+            cp_non_adopting[CP_Conds.RECEIVED_BHOLE.value],
+            cp_non_adopting[CP_Conds.NO_RIB.value],
+
+            cp_adopting[C_Plane_Conds.RECEIVED_ATTACKER_PREFIX_ORIGIN.value],
+            cp_adopting[C_Plane_Conds.RECEIVED_ONLY_VICTIM_PREFIX_ORIGIN.value],
+            cp_adopting[C_Plane_Conds.RECEIVED_BHOLE.value],
+            cp_adopting[C_Plane_Conds.NO_RIB.value]]
+
+        self.execute(sql, test_info + traceback_info + control_plane_info)

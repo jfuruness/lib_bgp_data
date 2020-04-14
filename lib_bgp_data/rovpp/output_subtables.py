@@ -15,6 +15,10 @@ __status__ = "Development"
 
 import sys
 
+from .enums import AS_Types
+from .enums import Control_Plane_Conditions as C_Plane_Conds
+from .enums import Data_Plane_Conditions 
+from .tables import Simulation_Results_Table
 from ..extrapolator_parser.tables import ROVPP_Extrapolator_Rib_Out_Table
 
 class Output_Subtables:
@@ -24,7 +28,7 @@ class Output_Subtables:
             ases = {x["asn"]: x for x in _db.get_all()}
         # Stores the data for the specific subtables
         for table in self.tables:
-            table.Rib_Out_Table.rib_out_table.clear_table()
+            table.Rib_Out_Table.clear_table()
             table.Rib_Out_Table.fill_table()
             table.store_output(ases, attack, scenario, adopt_policy, percent)
 
@@ -37,7 +41,7 @@ class Output_Subtable:
         if attack.attacker_asn in subtable_ases:
             del subtable_ases[attack.attacker_asn]
 
-        with db_connection(Simulation_Results_Table) as db:
+        with Simulation_Results_Table() as db:
             db.insert(self.table.name,
                       attack,
                       scenario,
@@ -48,7 +52,7 @@ class Output_Subtable:
 
     def _get_traceback_data(self, subtable_ases, all_ases):
         conds = {x: {y: 0 for y in AS_Types.list_values()}
-                 for x in Conditions.list_values()}
+                 for x in Data_Plane_Conditions.list_values()}
 
         # For all the ases in the subtable
         for og_asn, og_as_data in subtable_ases.items():
