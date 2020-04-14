@@ -35,8 +35,7 @@ class Extrapolator_Parser(Parser):
 
     default_results_table = "exr_results"
     default_depref_table = "exr_results_depref"
-    install_location = "/usr/bin/bgp-extrapolator"
-    branch = None
+    branch = "master"
 
     def _run(self, input_table="filtered_mrt_announcements"):
         """Runs the bgp-extrapolator and verifies input.
@@ -49,7 +48,7 @@ class Extrapolator_Parser(Parser):
         logging.info("About to run the forecast extrapolator")
 
         # People who are in charge of extrapolator need to change this
-        bash_args = ("bgp-extrapolator"
+        bash_args = (f"{self.install_location}"
                      f" -a {input_table}"
                      f" -r {Extrapolator.default_results_table}"
                      f" -d {Extrapolator.default_depref_table}")
@@ -112,10 +111,16 @@ class Extrapolator_Parser(Parser):
                 "cd BGPExtrapolator"]
         # Sometimes dev team moves stuff to other branches
         if self.branch:
-            cmds += [f"git checkout -b {self.branch} origin/{self.branch}"]
+            cmds += [f"git checkout {self.branch}"]
 
         cmds += [f"make -j{cpu_count()}",
                  "sudo make install",
                  f"cp bgp-extrapolator {self.install_location}"]
 
         utils.run_cmds(cmds)
+
+    @property
+    def install_location(self):
+        """Returns install location for the extrapolator"""
+
+        return f"/usr/bin/{self.branch}_extrapolator"

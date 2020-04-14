@@ -1,5 +1,9 @@
 import json
 
+
+1/0 # postgres needs cast to decimals to fix!!!
+
+
 with open("result.json") as j:
     g_dict = json.loads(j.read())
     new_data = {}

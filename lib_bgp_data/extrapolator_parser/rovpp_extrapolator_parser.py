@@ -34,8 +34,7 @@ class ROVPP_Extrapolator_Parser(Extrapolator_Parser):
 
     __slots__ = []
 
-    install_location = "/usr/bin/rovpp-extrapolator"
-    branch = "mvprefix"
+    branch = "rovpp3.1.2"
 
     def _run(self, table_names, exr_bash=None):
         """Runs the bgp-extrapolator and verifies input.
@@ -50,7 +49,7 @@ class ROVPP_Extrapolator_Parser(Extrapolator_Parser):
 
         logging.debug("About to run the rovpp extrapolator")
 
-        bash_args = "rovpp-extrapolator -v 1"
+        bash_args = f"{self.install_location} -v 1"
         for table_name in table_names:
             bash_args += f" -t {table_name}"
 
