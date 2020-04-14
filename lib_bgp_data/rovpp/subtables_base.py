@@ -42,23 +42,31 @@ class Subtables(Input_Subtables, Output_Subtables):
             for table in self.tables:
                 table.connect()
 
+    def fill_tables(self):
+        for table in self.tables:
+            table.Input_Table.fill_table(self.names)
+
     def close(self):
         for table in self.tables:
             table.close()
 
+    @property
+    def names(self):
+        return [x.table.name for x in self.tables]
 
 class Subtable(Input_Subtable, Output_Subtable):
     """Subtable that we divide results into"""
 
-    def __init__(self, Table_Class, percents, possible_attacker=True):
-        self.Input_Table = Table_Class
+    def __init__(self, Table, percents, possible_attacker=True, policy=None):
+        self.table = Table
         self.possible_attacker = possible_attacker
         self.percents = percents
+        self.permanent_policy = policy
 
     def connect(self):
         """Connects table to database"""
 
-        self.Input_Table = self.Input_Table(clear=True)
+        self.Input_Table = self.table(clear=True)
         self.Rib_Out_Table = self.Input_Table.Rib_Out_Table(clear=True)
 
     def close(self):

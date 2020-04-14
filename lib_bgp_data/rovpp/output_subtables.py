@@ -13,8 +13,9 @@ __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
-
 import sys
+
+from ..extrapolator_parser.tables import ROVPP_Extrapolator_Rib_Out_Table
 
 class Output_Subtables:
     def store(self, attack, scenario, adopt_policy, percent):

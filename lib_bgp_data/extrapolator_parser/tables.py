@@ -44,7 +44,7 @@ class ROVPP_Extrapolator_Rib_Out_Table(Generic_Table):
 
         inputs = [more_specific_results_table, less_specific_results_table]
         outputs = [Attackers_Table.name, Victims_Table.name]
-
+        1/0
         for output_name, input_name in zip(inputs, outputs):
             self.execute(f"DROP TABLE IF EXISTS {output_name}")
             # First we get the more and less specific prefix tables

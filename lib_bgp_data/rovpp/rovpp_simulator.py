@@ -52,11 +52,11 @@ class ROVPP_Simulator(Parser):
         with Simulation_Results_Table(clear=True) as _:
             pass
 
-        tables = Subtables(percents, seeded)
+        tables = Subtables(percents)
         tables.fill_tables()
 
         data_pts = [Data_Point(tables, i, percent, self.csv_dir)
-                    for i, p in enumerate(percents)]
+                    for i, percent in enumerate(percents)]
 
         # We do this so that we can immediatly skip to the deterministic trial
         trials = [seeded_trial] if seeded_trial else list(range(num_trials))
@@ -76,7 +76,8 @@ class ROVPP_Simulator(Parser):
                                      self.kwargs,
                                      pbars,
                                      attack_types,
-                                     adopt_policy_types)
+                                     adopt_policy_types,
+                                     seeded)
                 pbars.update()
 
         tables.close()

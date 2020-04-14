@@ -44,7 +44,7 @@ class Multiline_TQDM:
         for pbar in self.pbars:
             pbar.update()
 
-    def set_description(self, scenario, adopt_pol, percent, attack):
+    def set_desc(self, scenario, adopt_pol, percent, attack):
         """Sets all descriptions"""
 
         descs = self._get_desc(scenario, adopt_pol, percent, attack)
@@ -63,10 +63,10 @@ class Multiline_TQDM:
         adopt_pol_name = Policies(policy.value).name if policy else ""
 
         # Descriptions
-        descs = [f"Scenario: {scenario.value if scenario else ''}"
-                 f"Adopt Policy: {adopt_pol_name}"
-                 f"Adoption Percentage: {percent if percent else ''}"
-                 f"Attacker: {attack.attacker_asn if attack else ''}"
+        descs = [f"Scenario: {scenario.value if scenario else ''}",
+                 f"Adopt Policy: {adopt_pol_name}",
+                 f"Adoption Percentage: {percent if percent else ''}",
+                 f"Attacker: {attack.attacker_asn if attack else ''}",
                  f"Victim: {attack.victim_asn if attack else ''}"]
         # Pads descriptions out to 35 spaces
         return [f"{desc:<35}" for desc in descs]

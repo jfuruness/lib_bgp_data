@@ -45,9 +45,10 @@ class ROVPP_Extrapolator_Parser(Extrapolator_Parser):
 
         # Should be moved elsewhere. Here for circular imports
         from ..rovpp.tables import Attackers_Table, Victims_Table
-        self._input_validation([Attackers.name, Victims.name] + table_names)
+        tables = [Attackers_Table.name, Victims_Table.name] + table_names
+        self._input_validation(tables)
 
-        logging.info("About to run the rovpp extrapolator")
+        logging.debug("About to run the rovpp extrapolator")
 
         bash_args = "rovpp-extrapolator -v 1"
         for table_name in table_names:
@@ -59,5 +60,3 @@ class ROVPP_Extrapolator_Parser(Extrapolator_Parser):
         # Gets rib out. Basically returns only more specific prefixes
         with ROVPP_Extrapolator_Rib_Out_Table(clear=True) as _db:
             _db.fill_table()
-
-        Subtables().create_ribs_out_tables()

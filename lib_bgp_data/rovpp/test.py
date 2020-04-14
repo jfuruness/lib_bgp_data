@@ -21,8 +21,9 @@ class Test:
         self.scenario = scenario
         self.attack = attack
         self.adopt_policy = adopt_policy
+        self.tables = subtables
 
-    def run(self, subtables, exr_bash, exr_kwargs, percent, pbars):
+    def run(self, subtables, exrbash, exr_kwargs, percent, pbars):
         """Simulates a test:
 
         the scenario is usually an attack type, Ex: subprefix hijack
@@ -35,6 +36,6 @@ class Test:
         # Changes routing policies for all subtables
         subtables.change_routing_policies(self.adopt_policy)
         # Runs the rov++ extrapolator
-        ROVPP_Extrapolator_Parser(**exr_kwargs).run(tables.names, exr_bash)
+        ROVPP_Extrapolator_Parser(**exr_kwargs).run(self.tables.names, exrbash)
         # Stores the run's data
         subtables.store(self.attack, self.scenario, self.adopt_policy, percent)

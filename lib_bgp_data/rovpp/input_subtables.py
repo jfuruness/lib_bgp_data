@@ -16,6 +16,8 @@ __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
+import logging
+
 
 class Input_Subtables:
     """Contains subtable functionality for pre exr functions"""
@@ -25,40 +27,41 @@ class Input_Subtables:
             subtable.clear_table()
             subtable.fill_input_table(self.tables)
 
-    def set_adopting_ases(self, percent_iter, attacker, seeded):
-        for subtable in self.input_tables:
-            subtable.set_adopting_ases(percent_iter, attacker, seeded)
+    def set_adopting_ases(self, percent_iter, attack, seeded):
+        for subtable in self.tables:
+            subtable.set_adopting_ases(percent_iter, attack, seeded)
 
     def change_routing_policies(self, policy):
         """Changes the routing policy for that percentage of ASes"""
 
-        self.logger.debug("About to change the routing policies")
+        logging.debug("About to change the routing policies")
         for sub_table in self.tables:
             sub_table.change_routing_policies(policy)
 
     @property
-    def possible_hijacker_ases(self):
-        possible_hijacker_ases = []
+    def possible_attackers(self):
+        possible_attacker_ases = []
         # For all tables where possible attacker is true
-        for _table in self.input_tables:
-            possible_hijacker_ases.extend(_table.get_possible_attackers())
-        return possible_hijacker_ases
+        for _table in self.tables:
+            possible_attacker_ases.extend(_table.get_possible_attackers())
+        return possible_attacker_ases
 
 
 class Input_Subtable:
     """Subtable class for ease of use"""
 
-    def set_adopting_ases(self, iteration_num, attacker, deterministic):
-        self.table.set_implimentable_ases(self.percents[iteration_num],
-                                          attacker, deterministic)
+    def set_adopting_ases(self, iteration_num, attack, deterministic):
+        self.Input_Table.set_adopting_ases(self.percents[iteration_num],
+                                           attack.attacker_asn,
+                                           deterministic)
 
     def change_routing_policies(self, policy):
-        if self.policy_to_impliment is not None:
-            policy = self.policy_to_impliment
-        self.table.change_routing_policies(policy)
+        if self.permanent_policy is not None:
+            policy = self.permanent_policy
+        self.Input_Table.change_routing_policies(policy)
 
     def get_possible_attackers(self):
         possible_attackers = []
         if self.possible_attacker:
-            possible_attackers = [x["asn"] for x in self.input_table.get_all()]
+            possible_attackers = [x["asn"] for x in self.Input_Table.get_all()]
         return possible_attackers

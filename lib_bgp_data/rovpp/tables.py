@@ -19,19 +19,24 @@ Possible future improvements:
     -Add test cases
 """
 
-from random import sample
-from .enums import Policies, Attack_Types
-from .enums import AS_Types, Data_Plane_Conditions as Conds
-from .enums import Control_Plane_Conditions as C_Plane_Conds
-from ..database import Database, Generic_Table
-from ..mrt_parser.tables import MRT_Announcements_Table
-
 __author__ = "Justin Furuness"
 __credits__ = ["Justin Furuness"]
 __Lisence__ = "BSD"
 __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
+
+import logging
+from random import sample
+
+from .enums import Policies, Attack_Types
+from .enums import AS_Types, Data_Plane_Conditions as Conds
+from .enums import Control_Plane_Conditions as C_Plane_Conds
+
+from ..database import Database, Generic_Table
+from ..mrt_parser.tables import MRT_Announcements_Table
+from ..relationships_parser.tables import AS_Connectivity_Table, ASes_Table
+
 
 class Attackers_Table(MRT_Announcements_Table):
 
@@ -45,12 +50,12 @@ class Victims_Table(MRT_Announcements_Table):
 ### Subtables ###
 #################
 
-class ASes_Subtable(Database):
+class ASes_Subtable(Generic_Table):
 
     def set_adopting_ases(self, percent, attacker, deterministic):
         """Sets ases to impliment"""
 
-        ases = set([x["asn"] for x in self.Input_Table.get_all()])
+        ases = set([x["asn"] for x in self.get_all()])
         if attacker in ases:
             ases.remove(attacker)
         ases_to_set = len(ases) * percent // 100
@@ -76,7 +81,7 @@ class ASes_Subtable(Database):
             self.execute(sql)
 
     def change_routing_policies(self, policy):
-        sql = """UPDATE {self.name} SET as_type = {policy}
+        sql = f"""UPDATE {self.name} SET as_type = {policy.value}
                  WHERE adopting = TRUE;"""
         self.execute(sql)
 
@@ -115,7 +120,7 @@ class Top_100_ASes_Table(ASes_Subtable):
                 6663, 2497, 577, 23520, 55410, 9318, 3786, 20115, 3267, 3223,
                 20562, 6128, 3741, 9505, 50607]
 
-        ases_str = " OR asn = ".join(ases)
+        ases_str = " OR asn = ".join([str(x) for x in ases])
         # TODO deadlines so fuck it
         sql = f"""CREATE UNLOGGED TABLE IF NOT EXISTS {self.name} AS (
                  SELECT a.asn,
@@ -175,6 +180,7 @@ class Etc_ASes_Table(ASes_Subtable):
                     {Policies.DEFAULT.value} AS as_type,
                     FALSE as adopting
                      FROM {ASes_Table.name} ra"""
+        table_names = [x for x in table_names if x != self.name]
         if len(table_names) > 0:
             for table_name in table_names:
                 sql += " LEFT JOIN {0} ON {0}.asn = ra.asn".format(table_name)
@@ -185,7 +191,7 @@ class Etc_ASes_Table(ASes_Subtable):
             # Gets rid of the last \sAND
             sql = sql[:-4]
         sql += ");"
-        logging.debug("ETC AS SQL:\n\n{sql}\n")
+        logging.debug(f"ETC AS SQL:\n\n{sql}\n")
         self.execute(sql)
 
 class Etc_ASes_Rib_Out_Table(Etc_ASes_Table, Subtable_Rib_Out):
