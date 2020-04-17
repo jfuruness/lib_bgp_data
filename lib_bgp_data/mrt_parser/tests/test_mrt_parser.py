@@ -168,6 +168,8 @@ class Test_MRT_Parser:
         urls = parser._get_mrt_urls(self._start,
                                     self._end,
                                     Collectors.collectors_3.value)
+        for url in urls:
+            print(str(url))
         # Get MRT files
         mrt_files = parser._multiprocess_download(3, urls)
         # Test all files were downloaded correctly
@@ -176,12 +178,11 @@ class Test_MRT_Parser:
         parser._multiprocess_download(5, urls)
         # Test no multiprocessing, check end result
         no_multi = parser._multiprocess_download(1, urls)
-        # Check to see if one can be found in the other
-        for f1 in mrt_files:
-            print("Checking a multi file")
-            assert f1 in f2
-            # TODO: Fails as it compares location, not content
-
+        # Sanity check
+        assert len(no_multi) == len(mrt_files)
+        # Check sameness
+        # assert hash(str(mrt_files)) == hash(str(no_multi))
+ 
     @pytest.mark.skip(reason="New hire work")
     def test_multiprocess_parse_dls(self):
         """Test multiprocess parsing of files
