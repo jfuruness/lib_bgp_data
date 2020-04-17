@@ -39,11 +39,9 @@ class Test_MRT_Parser:
         The reason being that the day could change, then the times will
         differ.
         """
-        # Set times for testing purposes, based off old tests
-        # Nov 1, 2019, 1:00 PM
-        self._start = 1580562000
-        # Nov 1, 2019, 2:00 PM
-        self._end = 1580565600
+        # Set times for testing purposes
+        self._start = utils.get_default_start()
+        self._end = utils.get_default_end()
 
     # This test passes (as of 4 Apr 2020)
     # However, it is recommended to test on a machine where dependencies
@@ -96,7 +94,6 @@ class Test_MRT_Parser:
         # Assert that we have 5 (by default) collectors
             assert len(urls) == collectors
 
-    @pytest.mark.get_caida
     @pytest.mark.parametrize("sources, collectors, api_param",
                             [(MRT_Sources, 1, Collectors.collectors_1.value),
                              (MRT_Sources, 2, Collectors.collectors_2.value),
@@ -106,8 +103,11 @@ class Test_MRT_Parser:
                              # route-views.jinx is nonfunctional
                              # Site displays 23 collectors, but test
                              # set to 22 purposely due to jinx
-                             ([MRT_Sources.RIPE], 24, {})])
-                             # Why RIPE/ris fails,I haven't a clue
+                             ([MRT_Sources.RIPE], 20, {}),
+                             # For ripe, 3 displayed collectors are
+                             # not working.
+                             (MRT_Sources, 42, {})])
+                             # 42 = sum of all collectors
     def test_get_caida_mrt_urls(self, sources, collectors, api_param):
         """Tests getting caida data.
 
@@ -157,7 +157,6 @@ class Test_MRT_Parser:
         return urls
         # TODO: Test other params, ensure we are supposed to get 47 urls
 
-    @pytest.mark.mt_down
     def test_multiprocess_download(self):
         """Test multiprocess downloading of files
 
