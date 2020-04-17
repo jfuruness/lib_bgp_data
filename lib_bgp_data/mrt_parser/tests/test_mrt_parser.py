@@ -20,6 +20,7 @@ import pytest
 import validators
 import os
 import filecmp
+from subprocess import check_call
 from .collectors import Collectors
 from ..mrt_file import MRT_File
 from ..mrt_parser import MRT_Parser
@@ -153,8 +154,7 @@ class Test_MRT_Parser:
         assert len(urls) == collectors
         return urls
     
-    @pytest.mark.mt_down
-    def test_multiprocess_download(self):
+    def test_multiprocess_download(self, url_arg = None):
         """Test multiprocess downloading of files
 
         NOTE: Run this with just a few quick URLs
@@ -166,9 +166,9 @@ class Test_MRT_Parser:
         # Create the parser
         parser = MRT_Parser()
         # Get URLs
-        urls = self.test_get_mrt_urls([MRT_Sources.ROUTE_VIEWS], 
-                                      3,
-                                      Collectors.collectors_3.value)
+        urls = url_arg if url_arg is not None else self.test_get_mrt_urls([MRT_Sources.ROUTE_VIEWS], 
+                                                                           3,
+                                                                           Collectors.collectors_3.value)
         # Get MRT files
         mrt_files = parser._multiprocess_download(3, urls)
         # Test all files were downloaded correctly
@@ -179,10 +179,9 @@ class Test_MRT_Parser:
         no_multi = parser._multiprocess_download(1, urls)
         # Sanity check
         assert len(no_multi) == len(mrt_files)
-        # Check sameness
-        # assert hash(str(mrt_files)) == hash(str(no_multi))
+        return mrt_files
  
-    @pytest.mark.skip(reason="New hire work")
+    @pytest.mark.mt_parse
     def test_multiprocess_parse_dls(self):
         """Test multiprocess parsing of files
 
@@ -194,18 +193,30 @@ class Test_MRT_Parser:
         that number of announcements in it.
         Test that the end result would be the same without multiprocessing.
         """
-        """
         # Create the parser
         parser = MRT_Parser()
         # Get URLs
-        urls = parser._get_mrt_urls(self._start,
-                                    self._end,
-                                    Collectors.collectors_3.value)
+        urls = self.test_get_mrt_urls([MRT_Sources.ROUTE_VIEWS],
+                                      3,
+                                      Collectors.collectors_3.value)
         # Get a few MRT files
-        mrt_files = parser._multiprocess_download(3, urls)
-        with db_connection(MRT_Announcements_Table, clear = True) as db:
-        """
-        pass
+        mrt_files = self.test_multiprocess_download(urls)
+        # Get expected amount of lines from the files
+        total_lines = self._get_total_number_of_lines(mrt_files)
+        with Database() as db:
+            # Parse files
+            parser._multiprocess_parse_dls(3, mrt_files, True)
+            # Make sure all files were inserted
+            assert (select_all := db.get_count()) == total_lines
+            # Make sure nothing is null
+            lines = ["SELECT * FROM mrt_announcements WHERE prefix IS NULL",
+                    "SELECT * FROM mrt_announcements WHERE as_path IS NULL",
+                    "SELECT * FROM mrt_announcements WHERE origin IS NULL",
+                    "SELECT * FROM mrt_announcements WHERE time IS NULL"]
+            for line in lines:
+                assert len(db.execute(lines)) == 0
+            return db.get_all()
+        
 
     @pytest.mark.skip(reason="New hire work")
     @pytest.mark.slow
@@ -256,3 +267,35 @@ class Test_MRT_Parser:
                        'bgpscanner': True, 'sources': []})
         with pytest.deprecated_call():
             parser.parse_files(**kwargs)
+
+########################
+### Helper Functions ###
+########################
+
+    # From old test
+    def _get_total_number_of_lines(self, mrt_files, bgpscanner=True):
+        """Gets total number of entries with no as sets.
+        A test file is created. Bgpscanner or bgpdump is used with a
+        simple grep to remove AS sets. The total number of lines in
+        this file is counted for the total number of entries in the
+        original MRT files.
+        """
+
+        test_path = "/tmp/testfile.txt"
+        utils.delete_paths(test_path)
+        # This could be multithreaded to count into different files
+        # But this should only be ever run once
+        # And there are only two files. Idc.
+        for mrt_file in mrt_files:
+            # Remove as sets
+            # Must do it this way or else complains about the "{"
+            tool = "bgpscanner" if bgpscanner else "bgpdump"
+            bash_args = '{} {} | grep -v '.format(tool, mrt_file.path)
+            bash_args += '"{"'
+            bash_args += ">> {}".format(test_path)
+            print(bash_args)
+            check_call(bash_args, shell=True)
+        num_lines = utils.get_lines_in_file(test_path)
+        # Deletes the files that we no longer need
+        utils.delete_paths(test_path)
+        return num_lines
