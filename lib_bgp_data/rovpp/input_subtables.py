@@ -18,53 +18,27 @@ __status__ = "Development"
 
 import logging
 
+from ..relationships_parser.tables import ASes_Table
 
 class Input_Subtables:
     """Contains subtable functionality for pre exr functions"""
 
-    def fill_input_tables(self):
-        for subtable in self.input_tables:
-            subtable.clear_table()
-            subtable.fill_input_table(self.tables)
-
-    def set_adopting_ases(self, percent_iter, attack, seeded):
+    def set_adopting_ases(self, percent, attacker):
         for subtable in self.tables:
-            subtable.set_adopting_ases(percent_iter, attack, seeded, self.names)
-
-    def change_routing_policies(self, policy):
-        """Changes the routing policy for that percentage of ASes"""
-
-        logging.debug("About to change the routing policies")
-        for sub_table in self.tables:
-            sub_table.change_routing_policies(policy)
-
-    @property
-    def possible_attackers(self):
-        possible_attacker_ases = []
-        # For all tables where possible attacker is true
-        for _table in self.tables:
-            possible_attacker_ases.extend(_table.get_possible_attackers())
-        return possible_attacker_ases
-
+            subtable.set_adopting_ases(percent, attacker)
 
 class Input_Subtable:
     """Subtable class for ease of use"""
 
-    def set_adopting_ases(self, iteration_num, attack, deterministic, names):
-        # Cleared instead of updated due to speed
-        self.Input_Table.clear_table()
-        self.Input_Table.fill_table(names)
-        self.Input_Table.set_adopting_ases(self.percents[iteration_num],
-                                           attack.attacker_asn,
-                                           deterministic)
-
-    def change_routing_policies(self, policy):
-        if self.permanent_policy is not None:
-            policy = self.permanent_policy
-        self.Input_Table.change_routing_policies(policy)
-
-    def get_possible_attackers(self):
-        possible_attackers = []
-        if self.possible_attacker:
-            possible_attackers = [x["asn"] for x in self.Input_Table.get_all()]
-        return possible_attackers
+    def set_adopting_ases(self, percent, attacker):
+        maybe_adopters = len(self.ases) - (1 if attacker in self.ases else 0)
+        num_adopters = maybe_adopters * percent // 100
+        sql = f"""WITH adopting_ases AS (
+                  SELECT asn, TRUE AS val FROM {self.Input_Table.name} a WHERE a.asn != {attacker}
+                  ORDER BY RANDOM() LIMIT {num_adopters})
+                UPDATE {ASes_Table.name}
+                    SET as_types = array_append(as_types, e.val)
+                FROM (SELECT b.asn, COALESCE(c.val, FALSE) AS val FROM {self.Input_Table.name} b
+                    LEFT JOIN adopting_ases c ON c.asn = b.asn) e
+                WHERE e.asn = {ASes_Table.name}.asn;"""
+        self.Input_Table.execute(sql)

@@ -20,11 +20,10 @@ from .. import extrapolator_parser as exr
 from ..utils.logger import config_logging
 
 class Test:
-    def __init__(self, scenario, attack, adopt_policy, subtables):
-        self.scenario = scenario
+    def __init__(self, attack_type, attack, adopt_policy):
+        self.attack_type = attack_type
         self.attack = attack
         self.adopt_policy = adopt_policy
-        self.tables = subtables
 
     def run(self, subtables, exrbash, exr_kwargs, percent, pbars):
         """Simulates a test:
@@ -33,7 +32,7 @@ class Test:
         the adopt policy is the policy that (percent) percent of the internet
         deploy, for example, BGP, ROV, etc
         """
-
+        1/0 # change this later
         # Sets description with this tests info
         pbars.set_desc(self.scenario, self.adopt_policy, percent, self.attack)
         # Changes routing policies for all subtables

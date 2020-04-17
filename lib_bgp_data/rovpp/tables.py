@@ -38,10 +38,22 @@ from ..mrt_parser.tables import MRT_Announcements_Table
 from ..relationships_parser.tables import AS_Connectivity_Table, ASes_Table
 # Done this way to avoid circular imports
 
-class Attackers_Table(MRT_Announcements_Table):
+class Simulation_Announcements_Table(Generic_Table):
+    def _create_tables(self):
+        sql = f"""CREATE UNLOGGED TABLE IF NOT EXISTS {self.name} (
+                 prefix cidr,
+                 as_path bigint ARRAY,
+                 origin bigint,
+                 list_index integer,
+                 policy_val smallint
+                 );"""
+        self.execute(sql)
+        
+
+class Attackers_Table(Simulation_Announcements_Table):
     name = "attackers"
 
-class Victims_Table(MRT_Announcements_Table):
+class Victims_Table(Simulation_Announcements_Table):
     name = "victims"
 
 # Fix this later
@@ -50,41 +62,6 @@ from ..extrapolator_parser.tables import ROVPP_Extrapolator_Rib_Out_Table
 #################
 ### Subtables ###
 #################
-
-class ASes_Subtable(Generic_Table):
-
-    def set_adopting_ases(self, percent, attacker, deterministic):
-        """Sets ases to impliment"""
-
-        ases = set([x["asn"] for x in self.get_all()])
-        if attacker in ases:
-            ases.remove(attacker)
-        ases_to_set = len(ases) * percent // 100
-
-        assert ases_to_set > 0, "0 ases adopting?? Can't be right"
-
-        if deterministic:
-            ases = list(ases)
-            ases.sort()
-            adopting_ases = sample(ases, k=ases_to_set)
-            percent_s_str = " OR asn = ".join("%s" for AS in adopting_ases)
-            sql = """UPDATE {self.name} SET adopting = FALSE
-                  WHERE asn = {percent_s_str}"""
-            self.execute(sql, adopting_ases)
-        else:
-            sql = """UPDATE {0} SET adopting = TRUE
-                    FROM (SELECT * FROM {0}
-                             WHERE {0}.asn != {1}
-                             ORDER BY RANDOM() LIMIT {2}
-                             ) b
-                   WHERE b.asn = {0}.asn
-                   ;""".format(self.name, attacker, ases_to_set)
-            self.execute(sql)
-
-    def change_routing_policies(self, policy):
-        sql = f"""UPDATE {self.name} SET as_type = {policy.value}
-                 WHERE adopting = TRUE;"""
-        self.execute(sql)
 
 class Subtable_Rib_Out(Generic_Table):
 
@@ -97,7 +74,7 @@ class Subtable_Rib_Out(Generic_Table):
                 ON a.asn = b.asn);"""
         self.execute(sql)
 
-class Top_100_ASes_Table(ASes_Subtable):
+class Top_100_ASes_Table(Generic_Table):
     """Class with database functionality.
     In depth explanation at the top of the file."""
 
@@ -138,7 +115,7 @@ class Top_100_ASes_Rib_Out_Table(Top_100_ASes_Table, Subtable_Rib_Out):
     name = "top_100_ases_rib_out"
 
 
-class Edge_ASes_Table(ASes_Subtable):
+class Edge_ASes_Table(Generic_Table):
     """Class with database functionality.
     In depth explanation at the top of the file."""
 
@@ -166,7 +143,7 @@ class Edge_ASes_Rib_Out_Table(Edge_ASes_Table, Subtable_Rib_Out):
     name = "edge_ases_rib_out"
 
 
-class Etc_ASes_Table(ASes_Subtable):
+class Etc_ASes_Table(Generic_Table):
     """Class with database functionality.
     In depth explanation at the top of the file."""
 

@@ -104,19 +104,6 @@ class ASes_Table(Generic_Table):
 
     name = "ases"
 
-    def _create_tables(self):
-        """Creates tables if they do not exists.
-
-        Called during intialization of the database class.
-        """
-
-        sql = """CREATE UNLOGGED TABLE IF NOT EXISTS ases (
-                 asn bigint,
-                 as_type smallint,
-                 impliment BOOLEAN
-                 );"""
-        self.cursor.execute(sql)
-
     def fill_table(self):
         """Populates the ases table with data from the tables
         peers and provider_customers.
@@ -125,11 +112,9 @@ class ASes_Table(Generic_Table):
 
         make_sure_tables_exist([Peers_Table, Provider_Customers_Table])
 
-        self.clear_table()
         logging.debug("Initializing ases table")
         sql = """CREATE UNLOGGED TABLE IF NOT EXISTS ases AS (
-                 SELECT customer_as AS asn, 0 AS as_type,
-                    FALSE AS adopting FROM (
+                 SELECT customer_as AS asn, ARRAY[]::BOOLEAN[] AS as_types FROM (
                      SELECT DISTINCT customer_as FROM provider_customers
                      UNION SELECT DISTINCT provider_as FROM provider_customers
                      UNION SELECT DISTINCT peer_as_1 FROM peers

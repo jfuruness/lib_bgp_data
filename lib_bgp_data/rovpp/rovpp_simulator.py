@@ -13,17 +13,22 @@ __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
+import os
 import random
+
+from tqdm import trange
 
 from .data_point import Data_Point
 from .enums import Attack_Types, Non_Default_Policies
 from .multiline_tqdm import Multiline_TQDM
 from .subtables_base import Subtables
-from .tables import Simulation_Results_Table
+from .tables import Simulation_Results_Table, Attackers_Table, Victims_Table
 
 
 from ..base_classes import Parser
 from ..relationships_parser import Relationships_Parser
+from ..relationships_parser.tables import ASes_Table
+from ..utils import utils
 
 
 class ROVPP_Simulator(Parser):
@@ -33,13 +38,11 @@ class ROVPP_Simulator(Parser):
     """
 
     def _run(self,
-             percents=list(range(5, 31, 5)),
-             num_trials=100,
+             percents=[1,2,3,4,5,10,20,40,60,80,99],
+             num_trials=1,
              exr_bash=None,
-             seeded=False,
-             seeded_trial=None,
              attack_types=Attack_Types.__members__.values(),
-             adopt_policy_types=Non_Default_Policies.__members__.values()):
+             policies=Non_Default_Policies.__members__.values()):
         """Runs ROVPP simulation.
 
         In depth explanation at top of module.
@@ -48,18 +51,10 @@ class ROVPP_Simulator(Parser):
         # Gets relationships table
         Relationships_Parser(**self.kwargs).parse_files()
 
-        # Clear the table that stores all trial info
-        with Simulation_Results_Table(clear=True) as _:
-            pass
-
         tables = Subtables(percents)
         tables.fill_tables()
 
-        data_pts = [Data_Point(tables, i, percent, self.csv_dir)
-                    for i, percent in enumerate(percents)]
-
-        # We do this so that we can immediatly skip to the deterministic trial
-        trials = [seeded_trial] if seeded_trial else list(range(num_trials))
+        data_pts = [Data_Point(tables, i, p) for i, p in enumerate(percents)]
 
         # The reason we run tqdm off the number of trials
         # And not number of data points is so that someone can input the
@@ -67,17 +62,52 @@ class ROVPP_Simulator(Parser):
         # In addition - the reason we have multiple bars is so that we can
         # display useful stats using the bar
 
+        with ASes_Table(clear=True) as db:
+            db.fill_table()
+
+        # Generate all the tests to run at once
+        for trial in trange(num_trials, desc="Generating input"):
+            for data_pt in data_pts:
+                data_pt.get_possible_tests(attack_types, policies)
+                # Note that the thing that takes a while is list rewrites
+                # We could initialize the list to a certain size to start
+                # But for now that's over optimizing
+                # Since this part takes < 5 min and exr takes a day
+                # And in addition we could multiprocess it with multi db or whatnot
+        attack_rows = []
+        victim_rows = []
+        for data_pt in data_pts:
+            for test in data_pt.tests:
+                attack_rows.append(test.attack.attacker_row)
+                if test.attack.victim_row is not None:
+                    victim_rows.append(test.attack.victim_row)
+
+        for rows, atk_vic_Table in zip([attack_rows, victim_rows],
+                                       [Attackers_Table, Victims_Table]):
+            csv_path = os.path.join(self.csv_dir, atk_vic_Table.name)
+            utils.rows_to_db(rows, csv_path, atk_vic_Table)
+        input("!")
+
+        # Store test data
+        1/0
+        # Run extrapolator - feed as input the policy nums to run
+        # inputs normally exr_bash, exr_kwargs, self.percent, pbars
+        # Make ribs out table properly
+
+
+        # Clear the table that stores all trial info
+        with Simulation_Results_Table(clear=True) as _:
+            pass
+        # Probably should do this using multiprocessing
         with Multiline_TQDM(len(trials)) as pbars:
-            for trial in trials:
-                if seeded:
-                    random.seed(trial)
-                for data_pt in data_pts:
-                    data_pt.get_data(exr_bash,
-                                     self.kwargs,
-                                     pbars,
-                                     attack_types,
-                                     adopt_policy_types,
-                                     seeded)
+            for test in tests:
+                test.analyze_output(tables)
+                data_pt.get_data(exr_bash,
+                                 self.kwargs,
+                                 pbars,
+                                 attack_types,
+                                 adopt_policy_types,
+                                 seeded)
                 pbars.update()
 
         tables.close()
