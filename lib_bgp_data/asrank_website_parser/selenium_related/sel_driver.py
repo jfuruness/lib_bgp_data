@@ -6,6 +6,8 @@
 The purpose of this class is to simplify the use of
 chromedriver by abstracting the various functions
 and initialization into an easy-to-use class/ context manager.
+chromedriver must be found at the path, driver_path class 
+variable, within the SeleniumDriver class. 
 
 Design Choices (summarizing from above):
     -Allow the class to be initialized as a context manager
@@ -33,6 +35,8 @@ from selenium.webdriver.common.by import By
 from selenium import webdriver
 from bs4 import BeautifulSoup
 
+from .install_selenium_dependencies import install_selenium_driver
+
 
 class SeleniumDriver:
     """Class where Selenium webdriver functions are abstracted to simplify
@@ -46,8 +50,11 @@ class SeleniumDriver:
     __slots__ = ['_driver']
     
     driver_path = '/usr/bin/chromedriver'
+    retries = 3
 
     def __init__(self):
+        if not os.path.exists(self.driver_path):
+            install_selenium_driver()
         self._driver = SeleniumDriver.init_driver()
 
     def __enter__(self):
@@ -57,12 +64,14 @@ class SeleniumDriver:
         Returns:
             The class itself.
         """
+
         if not self._driver:
             self._driver = SeleniumDriver.init_driver()
         return self
 
     def __exit__(self, exc_type, exc_value, exc_traceback):
         """Exit the context manager by closing the selenium driver."""
+
         self.close()
 
     @staticmethod
@@ -70,9 +79,12 @@ class SeleniumDriver:
         """Initialize the headless chrome webdriver
         that is used to retrieve the dynamic HTML.
 
+        The --headless argument makes sure that chrome is run headless
+
         Returns:
             A headless selenium.webdriver.Chrome object.
         """
+
         chrome_options = webdriver.ChromeOptions()
         chrome_options.add_argument("--headless")
         chrome_options.add_argument("--no-sandbox")
@@ -85,7 +97,6 @@ class SeleniumDriver:
                  url,
                  timeout=20,
                  dynamic_class_name="asrank-row-org"):
-
         """Run the url on the driver to get dynamic HTML of
         a page and then create beautiful soup object of the HTML page.
 
@@ -100,18 +111,18 @@ class SeleniumDriver:
             A BeautifulSoup object made from the dyamic HTML
             retrived using selenium's chrome webdriver.
         """
-        try:
-            self._driver.get(url)
-            # Wait for the page to load dynamically
-            wait = WebDriverWait(self._driver, timeout)
-            wait.until(EC.visibility_of_element_located(
-                (By.CLASS_NAME, dynamic_class_name)))
-            #print('success!')
-        except TimeoutException:
-            logging.debug('Selenium driver timeout waiting for dynamic html.')
-            #print('timeout')
-        except WebDriverException:
-            logging.debug('Website URL is invalid.')
+
+        for retry in range(self.retries):
+            try:
+                self._driver.get(url)
+                # Wait for the page to load dynamically
+                wait = WebDriverWait(self._driver, timeout)
+                wait.until(EC.visibility_of_element_located(
+                    (By.CLASS_NAME, dynamic_class_name)))
+            except TimeoutException:
+                timeout *= 2
+                continue
+            break
 
         # Extract the html and then use it to create a beautiful soup object
         data = self._driver.page_source
@@ -120,5 +131,6 @@ class SeleniumDriver:
 
     def close(self):
         """Close the selenium driver instance."""
+
         if self._driver:
             self._driver.quit()

@@ -43,6 +43,7 @@ class ASRankTable(Generic_Table):
         be cleared everytime asrank_website_parser is run because information
         in the datebase may be out of date.
         """
+
         sql = """CREATE UNLOGGED TABLE IF NOT EXISTS asrank (
               as_rank bigint,
               as_number bigint,
@@ -54,6 +55,7 @@ class ASRankTable(Generic_Table):
 
     def create_index(self):
         """Creates an index on top 100 AS numbers."""
+
         sql = """CREATE INDEX IF NOT EXISTS asrank_index ON as_rank
                   USING BTREE(as_number) WHERE as_rank <= 100;"""
         self.cursor.execute(sql)
