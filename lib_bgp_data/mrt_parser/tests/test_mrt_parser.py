@@ -100,7 +100,6 @@ class Test_MRT_Parser:
                              (MRT_Sources, 3, Collectors.collectors_3.value),
                              ([], 0, Collectors.collectors_0.value),
                              ([MRT_Sources.ROUTE_VIEWS], 22, {}),
-                             # route-views.jinx is nonfunctional
                              # Site displays 23 collectors, but test
                              # set to 22 purposely due to jinx
                              ([MRT_Sources.RIPE], 20, {}),
@@ -136,10 +135,9 @@ class Test_MRT_Parser:
         # Verify expected collectors == #urls
         assert len(urls) == collectors
 
-    # This technically works, but is incomplete, testing-wise.
-    # Also, it throws an assertion error cause we only get 27 urls 
-    # TODO: Add tests for param mods and the like.
-    def test_get_mrt_urls(self):
+    @pytest.mark.parametrize("sources, collectors, api_param",
+                        [(MRT_Sources, 47, {})]) 
+    def test_get_mrt_urls(self, sources, collectors, api_param):
         """Tests getting url data.
 
         Assert that there is 47 total collectors. Also test param mods.
@@ -148,14 +146,12 @@ class Test_MRT_Parser:
         # Create the parser
         test_parser = MRT_Parser()
         # Call get mrt urls
-        urls = test_parser._get_mrt_urls(self._start, self._end)
+        urls = test_parser._get_mrt_urls(self._start, self._end, api_param, sources)
         # Ensure we have proper URLs
         for url in urls:
             assert validators.url(url)
-        # Ensure we have 47 collectors
-        assert len(urls) == 47
+        assert len(urls) == collectors
         return urls
-        # TODO: Test other params, ensure we are supposed to get 47 urls
 
     def test_multiprocess_download(self):
         """Test multiprocess downloading of files
