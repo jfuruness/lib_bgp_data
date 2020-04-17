@@ -152,7 +152,8 @@ class Test_MRT_Parser:
             assert validators.url(url)
         assert len(urls) == collectors
         return urls
-
+    
+    @pytest.mark.mt_down
     def test_multiprocess_download(self):
         """Test multiprocess downloading of files
 
@@ -165,11 +166,9 @@ class Test_MRT_Parser:
         # Create the parser
         parser = MRT_Parser()
         # Get URLs
-        urls = parser._get_mrt_urls(self._start,
-                                    self._end,
-                                    Collectors.collectors_3.value)
-        for url in urls:
-            print(str(url))
+        urls = self.test_get_mrt_urls([MRT_Sources.ROUTE_VIEWS], 
+                                      3,
+                                      Collectors.collectors_3.value)
         # Get MRT files
         mrt_files = parser._multiprocess_download(3, urls)
         # Test all files were downloaded correctly
@@ -201,12 +200,11 @@ class Test_MRT_Parser:
         # Get URLs
         urls = parser._get_mrt_urls(self._start,
                                     self._end,
-                                    self._api_param_mods)
+                                    Collectors.collectors_3.value)
         # Get a few MRT files
-        mrt_files = parser._multiprocess_download(3, urls[:2])
+        mrt_files = parser._multiprocess_download(3, urls)
         with db_connection(MRT_Announcements_Table, clear = True) as db:
         """
-        # TODO: Understand exactly what is going on, and how to test.
         pass
 
     @pytest.mark.skip(reason="New hire work")
