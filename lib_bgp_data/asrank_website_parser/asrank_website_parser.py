@@ -25,8 +25,7 @@ in the database. This is done through a series of steps.
 
 Design Choices (summarizing from above):
     -Only the five attribute table found on the front of asrank are parsed
-    -Multithreading is used because the task is less computationally
-     intensive than IO intensive
+    -Multiprocessing is used 
 
 Possible Future Extensions:
     -Add test cases
@@ -40,15 +39,15 @@ __maintainer__ = "Abhinna Adhikari"
 __email__ = "abhinna.adhikari@uconn.edu"
 __status__ = "Development"
 
-from multiprocessing import cpu_count
 from concurrent.futures import ProcessPoolExecutor, as_completed
+from multiprocessing import cpu_count
 import math
 import os
 
 from tqdm import tqdm
 
-from ..base_classes import Parser
 from .selenium_related.sel_driver import SeleniumDriver
+from ..base_classes import Parser
 from .tables import ASRankTable
 from ..utils import utils
 
@@ -59,9 +58,6 @@ class ASRankWebsiteParser(Parser):
     For a more in depth explanation, read the top of the file.
 
     Attributes:
-        _asrank_data: ASRankData, An instance of ASRankData class
-            where the HTML will be parsed and the table attribute data
-            is temporarily stored.
         _total_rows: int, The total number of rows on asrank.caida.org
     """
 
@@ -77,6 +73,10 @@ class ASRankWebsiteParser(Parser):
 
         super(ASRankWebsiteParser, self).__init__(**kwargs)
         self._total_rows = self._find_total_rows()
+
+        # Clear the ASRankTable before every run 
+        with ASRankTable(clear=True) as _:
+            pass
 
     def _produce_url(self, page_num, table_rows):
         """Create a URL of the website with the intended
@@ -162,14 +162,15 @@ class ASRankWebsiteParser(Parser):
 
     def _run(self):
         """Run the multiprocessed ASRankWebsiteParser.
-        Parse asrank website using processes for separate pages."""
+        Parse asrank website using processes for separate pages.
+        """
 
-        ASRankTable().clear_table()
-        ASRankTable()._create_tables()
         total_pages = math.ceil(self._total_rows / self.rows_per_page)
         with ProcessPoolExecutor(max_workers=cpu_count() * 2) as executor:
             pages = {executor.submit(self._parse_page,
                                      pg): pg for pg in range(total_pages)}
+
+            # Handles the tqdm progress bar
             kwargs = {'total': len(pages),
                       'unit': 'it',
                       'unit_scale': True,
