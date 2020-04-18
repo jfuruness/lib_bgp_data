@@ -104,6 +104,13 @@ class ASes_Table(Generic_Table):
 
     name = "ases"
 
+    def _create_tables(self):
+        sql = f"""CREATE UNLOGGED TABLE IF NOT EXISTS {self.name}(
+              asn BIGINT,
+              as_types BOOLEAN[]);"""
+        self.execute(sql)
+
+
     def fill_table(self):
         """Populates the ases table with data from the tables
         peers and provider_customers.

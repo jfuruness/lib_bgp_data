@@ -13,16 +13,22 @@ __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
+from concurrent.futures import ProcessPoolExecutor, as_completed
+from copy import deepcopy
+from multiprocessing import cpu_count
 import os
-import random
+from random import random
 
+import numpy as np
 from tqdm import trange
 
+from .attack import Attack_Generator
 from .data_point import Data_Point
 from .enums import Attack_Types, Non_Default_Policies
 from .multiline_tqdm import Multiline_TQDM
 from .subtables_base import Subtables
 from .tables import Simulation_Results_Table, Attackers_Table, Victims_Table
+from .tables import Tests_Table
 
 
 from ..base_classes import Parser
@@ -39,7 +45,7 @@ class ROVPP_Simulator(Parser):
 
     def _run(self,
              percents=[1,2,3,4,5,10,20,40,60,80,99],
-             num_trials=1,
+             num_trials=1000,
              exr_bash=None,
              attack_types=Attack_Types.__members__.values(),
              policies=Non_Default_Policies.__members__.values()):
@@ -47,6 +53,8 @@ class ROVPP_Simulator(Parser):
 
         In depth explanation at top of module.
         """
+
+        assert num_trials <= 15000, "Change prefix generator func to have more prefixes"
 
         # Gets relationships table
         Relationships_Parser(**self.kwargs).parse_files()
@@ -65,10 +73,11 @@ class ROVPP_Simulator(Parser):
         with ASes_Table(clear=True) as db:
             db.fill_table()
 
+        attack_generator = Attack_Generator()
         # Generate all the tests to run at once
         for trial in trange(num_trials, desc="Generating input"):
             for data_pt in data_pts:
-                data_pt.get_possible_tests(attack_types, policies)
+                data_pt.get_possible_tests(attack_types, policies, attack_generator)
                 # Note that the thing that takes a while is list rewrites
                 # We could initialize the list to a certain size to start
                 # But for now that's over optimizing
@@ -86,6 +95,16 @@ class ROVPP_Simulator(Parser):
                                        [Attackers_Table, Victims_Table]):
             csv_path = os.path.join(self.csv_dir, atk_vic_Table.name)
             utils.rows_to_db(rows, csv_path, atk_vic_Table)
+
+        ases_dict = {x.Input_Table.name: x.ases for x in tables.tables}
+        
+        iterable = [(ases_dict,
+                    [dp.tests[i].attack.attacker_asn for i in range(0, len(dp.tests), len(policies))],
+                    dp.percent) for dp in data_pts]
+        with ProcessPoolExecutor(max_workers=cpu_count()) as executor:
+            mp_dps = list(executor.map(self.set_adopting_ases, iterable))
+        tables.write_to_postgres(mp_dps, self.csv_dir)
+        return
         input("!")
 
         # Store test data
@@ -111,3 +130,41 @@ class ROVPP_Simulator(Parser):
                 pbars.update()
 
         tables.close()
+
+    def set_adopting_ases(self, iterable):#subtable_ases_dict, tests, percent):
+        subtable_ases_dict, attackers, percent = iterable
+
+
+        """
+preinitializing a list of zeros for 1k: 5 min 31 seconds
+starting without a list of zeros for 1k: 5 min and 5 seconds
+doing it with random.random instead of numpy: 2 min 39s
+doing it with massive dict comp: 2:57,
+doing it without massive dict comp: 2:56 same time whatevs
+doing it with massive dict comp:
+        """
+
+        # Note: tried doing different logic for possible attackers tables, made it longer
+        for ases_dict in subtable_ases_dict.values():
+            pass
+
+        new_percents_attackers = []
+        for attacker in attackers:
+            maybe_adopters = len(ases_dict) - (1 if attacker in ases_dict else 0)
+            num_adopters = maybe_adopters * percent // 100
+            new_percents_attackers.append((num_adopters / maybe_adopters, attacker))
+
+        for ases_dict in subtable_ases_dict.values():
+            for _as in ases_dict:
+                ases_dict[_as] = str(list(random() < new_percent and _as != attacker for (new_percent, attacker) in new_percents_attackers))[1:-1]
+        return subtable_ases_dict
+"""
+                ases_dict[_as] = [False] * len(attackers)
+            for i, attacker in enumerate(attackers):
+                maybe_adopters = len(ases_dict) - (1 if attacker in ases_dict else 0)
+                num_adopters = maybe_adopters * percent // 100
+                new_percent = num_adopters / maybe_adopters
+                for j, (_as, as_types) in enumerate(ases_dict.items()):
+                    if rands[i + j] < new_percent and _as != attacker:
+                        as_types[i] = True
+        return subtable_ases_dict"""

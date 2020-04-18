@@ -23,6 +23,7 @@ from .enums import Attack_Types
 class Attack_Generator:
     def __init__(self):
         self.attacks = self.gen_attacks()
+        self.test_index = 0
 
     def get_attack(self, index, policy, attacker, victim, attack_type):
         attack = self.attacks[attack_type].pop()
@@ -35,22 +36,22 @@ class Attack_Generator:
         assert len(atk_dict) <= 3, "Must mod this func for more attacks"
 
         for i in range(0, 254, len(atk_dict)):
-            for n in range(254):
+            for n in range(1000):  # Can go up to 16382
                 # Cameron wrote prefix generation code
                 # Should generate prefixes that do not overlap with each other
 
                 # Subprefix attacks
-                sub_atk_pref = ipaddress.ip_network(((i<<24) + (n<<16), 24))
-                sub_vic_pref = ipaddress.ip_network(((i<<24) + (n<<16), 16))
+                sub_atk_pref = ipaddress.ip_network(((i<<24) + (n<<10), 24))
+                sub_vic_pref = ipaddress.ip_network(((i<<24) + (n<<10), 22))
                 subprefix_atk = Attack(sub_atk_pref, sub_vic_pref)
                 atk_dict[Attack_Types.SUBPREFIX_HIJACK].append(subprefix_atk)
                 # Prefix attacks
-                pref_atk = ipaddress.ip_network((((i+1)<<24) + (n<<16), 24))
-                pref_vic = ipaddress.ip_network((((i+1)<<24) + (n<<16), 24))
+                pref_atk = ipaddress.ip_network((((i+1)<<24) + (n<<10), 22))
+                pref_vic = ipaddress.ip_network((((i+1)<<24) + (n<<10), 22))
                 prefix_attack = Attack(pref_atk, pref_vic)
                 atk_dict[Attack_Types.PREFIX_HIJACK].append(prefix_attack)
                 # Non compete attacks
-                non_comp_pref = ipaddress.ip_network((((i+2)<<24) + (n<<16), 16))
+                non_comp_pref = ipaddress.ip_network((((i+2)<<24) + (n<<10), 22))
                 non_comp = Attack(non_comp_pref)
                 atk_dict[Attack_Types.UNANNOUNCED_PREFIX_HIJACK].append(non_comp)
         return atk_dict
@@ -72,7 +73,6 @@ class Attack:
         self.policy = policy
         self.attacker_asn = attacker_asn
         self.victim_asn = victim_asn
-        
 
     @property
     def attacker_row(self):

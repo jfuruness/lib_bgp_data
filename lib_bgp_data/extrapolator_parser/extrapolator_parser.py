@@ -58,8 +58,7 @@ class Extrapolator_Parser(Parser):
         """Validates proper tables exist and exr is installed"""
 
         logging.debug("Validating install")
-        if not os.path.exists(self.install_location):
-            self.install()
+        self.install()
 
         logging.debug("Validating table exist that extrapolator needs")
         with Database() as db:

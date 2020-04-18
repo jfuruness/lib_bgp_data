@@ -45,9 +45,10 @@ class Subtables(Input_Subtables, Output_Subtables):
     def fill_tables(self):
         self.possible_attackers = []
         for table in self.tables:
+            table.Input_Table.clear_table()
             table.Input_Table.fill_table(self.names)
-            table.ases = set([x["asn"] for x in table.Input_Table.get_all()])
-            self.possible_attackers.extend(table.ases if table.possible_attacker else [])
+            table.ases = {x["asn"]: [] for x in table.Input_Table.get_all()}
+            self.possible_attackers.extend(table.ases.keys() if table.possible_attacker else [])
 
     def close(self):
         for table in self.tables:

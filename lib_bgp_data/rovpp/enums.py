@@ -42,7 +42,7 @@ class Policies(Enum):
 _non_default_policies_dict = {x[0]: x[1].value
                               for x in Policies.__members__.items()
                               if x[1].value != Policies.DEFAULT.value}
-Non_Default_Policies = Enum('Non_Default_Policies', _non_default_policies_dict)
+Non_Default_Policies = Enumerable_Enum('Non_Default_Policies', _non_default_policies_dict)
 
 ########################
 ### Statistics Enums ###
