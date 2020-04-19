@@ -97,13 +97,28 @@ class ROVPP_Simulator(Parser):
             utils.rows_to_db(rows, csv_path, atk_vic_Table)
 
         ases_dict = {x.Input_Table.name: x.ases for x in tables.tables}
-        
+        table_classes = {x.Input_Table.name: x.Input_Table.__class__ for x in tables.tables}
         iterable = [(ases_dict,
                     [dp.tests[i].attack.attacker_asn for i in range(0, len(dp.tests), len(policies))],
-                    dp.percent) for dp in data_pts]
+                    dp.percent,
+                    table_classes) for dp in data_pts]
         with ProcessPoolExecutor(max_workers=cpu_count()) as executor:
             mp_dps = list(executor.map(self.set_adopting_ases, iterable))
-        tables.write_to_postgres(mp_dps, self.csv_dir)
+        drop_sqls = []
+        for table in tables.tables:
+            drop_sqls.append(f"DROP TABLE IF EXISTS {table.Input_Table.name}")
+        create_sqls = []
+        for subtable_name, subtable_class in table_classes.items():
+            names = [mp_dp[subtable_name] for mp_dp in mp_dps]
+            as_types_str = " || ".join(f"{name}.as_types" for name in names)
+            inner_join_str = "".join([f"INNER JOIN {name} ON {name}.asn = {names[0]}.asn " for name in names[1:]])
+            sql = f"""CREATE UNLOGGED TABLE {subtable_name} AS (
+                  SELECT {names[0]}.asn, {as_types_str} AS as_types FROM {names[0]} {inner_join_str});"""
+            create_sqls.append(sql)
+        with ProcessPoolExecutor(max_workers=cpu_count()) as executor:
+            list(executor.map(exec_sql, zip(drop_sqls, create_sqls)))
+            
+#        tables.write_to_postgres(mp_dps, self.csv_dir)
         return
         input("!")
 
@@ -132,7 +147,7 @@ class ROVPP_Simulator(Parser):
         tables.close()
 
     def set_adopting_ases(self, iterable):#subtable_ases_dict, tests, percent):
-        subtable_ases_dict, attackers, percent = iterable
+        subtable_ases_dict, attackers, percent, table_classes = iterable
 
 
         """
@@ -144,20 +159,22 @@ doing it without massive dict comp: 2:56 same time whatevs
 doing it with massive dict comp:
         """
 
+        for t_name, table_class in table_classes.items():
+            table_class.name = f"{t_name}_{percent}"
+
         # Note: tried doing different logic for possible attackers tables, made it longer
-        for ases_dict in subtable_ases_dict.values():
-            pass
-
-        new_percents_attackers = []
-        for attacker in attackers:
-            maybe_adopters = len(ases_dict) - (1 if attacker in ases_dict else 0)
-            num_adopters = maybe_adopters * percent // 100
-            new_percents_attackers.append((num_adopters / maybe_adopters, attacker))
-
-        for ases_dict in subtable_ases_dict.values():
+        for t_name, ases_dict in subtable_ases_dict.items():
+            rows = []
+            new_percents_attackers = []
+            for attacker in attackers:
+                maybe_adopters = len(ases_dict) - (1 if attacker in ases_dict else 0)
+                num_adopters = maybe_adopters * percent // 100
+                new_percents_attackers.append((num_adopters / maybe_adopters, attacker))
             for _as in ases_dict:
-                ases_dict[_as] = str(list(random() < new_percent and _as != attacker for (new_percent, attacker) in new_percents_attackers))[1:-1]
-        return subtable_ases_dict
+                rows.append([_as, "{" + str(list(random() < new_percent and _as != attacker for (new_percent, attacker) in new_percents_attackers))[1:-1] + "}"])
+            csv_path = os.path.join(self.csv_dir, f"{table_classes[t_name].name}.csv")
+            utils.rows_to_db(rows, csv_path, table_classes[t_name])
+        return {k: v.name for k, v in table_classes.items()}
 """
                 ases_dict[_as] = [False] * len(attackers)
             for i, attacker in enumerate(attackers):
@@ -168,3 +185,9 @@ doing it with massive dict comp:
                     if rands[i + j] < new_percent and _as != attacker:
                         as_types[i] = True
         return subtable_ases_dict"""
+
+from ..database import Database
+def exec_sql(sqls):
+    with Database() as db:
+        for sql in sqls:
+            db.execute(sql)
