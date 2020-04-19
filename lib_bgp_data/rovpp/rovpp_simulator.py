@@ -32,6 +32,7 @@ from .tables import Tests_Table
 
 
 from ..base_classes import Parser
+from ..database import Database
 from ..relationships_parser import Relationships_Parser
 from ..relationships_parser.tables import ASes_Table
 from ..utils import utils
@@ -45,7 +46,7 @@ class ROVPP_Simulator(Parser):
 
     def _run(self,
              percents=[1,2,3,4,5,10,20,40,60,80,99],
-             num_trials=1000,
+             num_trials=100,
              exr_bash=None,
              attack_types=Attack_Types.__members__.values(),
              policies=Non_Default_Policies.__members__.values()):
@@ -67,7 +68,7 @@ class ROVPP_Simulator(Parser):
         # The reason we run tqdm off the number of trials
         # And not number of data points is so that someone can input the
         # deterministic trial number and have it jump straight to that trial
-        # In addition - the reason we have multiple bars is so that we can
+        # In addition - tnhe reason we have multiple bars is so that we can
         # display useful stats using the bar
 
         with ASes_Table(clear=True) as db:
@@ -97,10 +98,16 @@ class ROVPP_Simulator(Parser):
             utils.rows_to_db(rows, csv_path, atk_vic_Table)
 
         ases_dict = {x.Input_Table.name: x.ases for x in tables.tables}
-        
+        set_ases_dict = {x.Input_Table.name: x.set_ases for x in tables.tables}
+        list_ases_dict = {x.Input_Table.name: x.list_ases for x in tables.tables}
+        for table in tables.tables:
+            table.Input_Table.execute(f"DROP TABLE IF EXISTS {table.Input_Table.name}")
+            table.Input_Table._create_tables()
+        tables.close()
         iterable = [(ases_dict,
                     [dp.tests[i].attack.attacker_asn for i in range(0, len(dp.tests), len(policies))],
-                    dp.percent) for dp in data_pts]
+                    dp.percent,
+                    set_ases_dict, list_ases_dict) for dp in data_pts]
         with ProcessPoolExecutor(max_workers=cpu_count()) as executor:
             mp_dps = list(executor.map(self.set_adopting_ases, iterable))
         tables.write_to_postgres(mp_dps, self.csv_dir)
@@ -131,8 +138,13 @@ class ROVPP_Simulator(Parser):
 
         tables.close()
 
+    def execute_sql(self, sqls):
+        with Database() as db:
+            for sql in sqls:
+                db.execute(sql)
+
     def set_adopting_ases(self, iterable):#subtable_ases_dict, tests, percent):
-        subtable_ases_dict, attackers, percent = iterable
+        subtable_ases_dict, attackers, percent, subtable_ases_sets, subtable_ases_lists = iterable
 
 
         """
@@ -145,26 +157,23 @@ doing it with massive dict comp:
         """
 
         # Note: tried doing different logic for possible attackers tables, made it longer
-        for ases_dict in subtable_ases_dict.values():
-            pass
+        #   -consider writing to random file first – test first with tests to see how many minutes saved
+#        -or just randomly select the start value – yes, do this.
+#        -jk not true randomness
+#        -presaving to a list saves nothing with this many random nums
+        rows = {t_name: [] for t_name in subtable_ases_dict}
 
-        new_percents_attackers = []
-        for attacker in attackers:
-            maybe_adopters = len(ases_dict) - (1 if attacker in ases_dict else 0)
-            num_adopters = maybe_adopters * percent // 100
-            new_percents_attackers.append((num_adopters / maybe_adopters, attacker))
-
-        for ases_dict in subtable_ases_dict.values():
-            for _as in ases_dict:
-                ases_dict[_as] = str(list(random() < new_percent and _as != attacker for (new_percent, attacker) in new_percents_attackers))[1:-1]
-        return subtable_ases_dict
-"""
-                ases_dict[_as] = [False] * len(attackers)
-            for i, attacker in enumerate(attackers):
-                maybe_adopters = len(ases_dict) - (1 if attacker in ases_dict else 0)
+        for t_name, ases_dict in subtable_ases_dict.items():
+            cur_rows = rows[t_name]
+            subtable_set = subtable_ases_sets[t_name]
+            subtable_list = subtable_ases_lists[t_name]
+            new_percents_attackers = []
+            for attacker in attackers:
+                maybe_adopters = len(ases_dict) - (1 if attacker in subtable_set else 0)
                 num_adopters = maybe_adopters * percent // 100
-                new_percent = num_adopters / maybe_adopters
-                for j, (_as, as_types) in enumerate(ases_dict.items()):
-                    if rands[i + j] < new_percent and _as != attacker:
-                        as_types[i] = True
-        return subtable_ases_dict"""
+                new_percents_attackers.append((num_adopters / maybe_adopters, attacker))
+
+            for _as in subtable_list:
+                cur_rows.append((_as, str(list(random() < new_percent and _as != attacker for (new_percent, attacker) in new_percents_attackers))[1:-1]))
+
+        return rows
