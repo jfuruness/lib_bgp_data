@@ -25,7 +25,7 @@ in the database. This is done through a series of steps.
 
 Design Choices (summarizing from above):
     -Only the five attribute table found on the front of asrank are parsed
-    -Multiprocessing is used 
+    -Multiprocessing is used
 
 Possible Future Extensions:
     -Add test cases
@@ -74,7 +74,7 @@ class ASRankWebsiteParser(Parser):
         super(ASRankWebsiteParser, self).__init__(**kwargs)
         self._total_rows = self._find_total_rows()
 
-        # Clear the ASRankTable before every run 
+        # Clear the ASRankTable before every run
         with ASRankTable(clear=True) as _:
             pass
 
