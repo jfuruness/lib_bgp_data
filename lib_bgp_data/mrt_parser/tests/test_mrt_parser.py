@@ -202,17 +202,23 @@ class Test_MRT_Parser:
         # Get a few MRT files
         mrt_files = self.test_multiprocess_download(urls)
         # Get expected amount of lines from the files
-        total_lines = self._get_total_number_of_lines(mrt_files)
+        expected_lines = self._get_total_number_of_lines(mrt_files)
+        print(str(expected_lines))
         with Database() as db:
             # Parse files
             parser._multiprocess_parse_dls(3, mrt_files, True)
             # Make sure all files were inserted
-            assert (select_all := db.get_count()) == total_lines
+            db_lines = db.execute("SELECT COUNT(*) FROM mrt_announcements")
+            # TODO: Fix this
+            # Last test gave AssertionError: assert [RealDictRow([('count', 41123484)])] == 41123484
+            # Numbers are the same, so fix it.
+            lines = db_lines[0].items()
+            assert lines['count'] == expected_lines
             # Make sure nothing is null
             lines = ["SELECT * FROM mrt_announcements WHERE prefix IS NULL",
-                    "SELECT * FROM mrt_announcements WHERE as_path IS NULL",
-                    "SELECT * FROM mrt_announcements WHERE origin IS NULL",
-                    "SELECT * FROM mrt_announcements WHERE time IS NULL"]
+                     "SELECT * FROM mrt_announcements WHERE as_path IS NULL",
+                     "SELECT * FROM mrt_announcements WHERE origin IS NULL",
+                     "SELECT * FROM mrt_announcements WHERE time IS NULL"]
             for line in lines:
                 assert len(db.execute(lines)) == 0
             return db.get_all()
