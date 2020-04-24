@@ -36,7 +36,7 @@ class ASRankTable(Generic_Table):
 
     __slots__ = []
 
-    name = 'asrank'
+    name = 'asrank_table'
 
     def _create_tables(self):
         """Creates new table if it doesn't already exist. The contents will
@@ -44,7 +44,7 @@ class ASRankTable(Generic_Table):
         in the datebase may be out of date.
         """
 
-        sql = """CREATE UNLOGGED TABLE IF NOT EXISTS asrank (
+        sql = """CREATE UNLOGGED TABLE IF NOT EXISTS asrank_table (
               as_rank bigint,
               as_number bigint,
               organization varchar (250),
@@ -56,6 +56,6 @@ class ASRankTable(Generic_Table):
     def create_index(self):
         """Creates an index on top 100 AS numbers."""
 
-        sql = """CREATE INDEX IF NOT EXISTS asrank_index ON as_rank
+        sql = """CREATE INDEX IF NOT EXISTS asrank_index ON asrank_table
                   USING BTREE(as_number) WHERE as_rank <= 100;"""
         self.cursor.execute(sql)

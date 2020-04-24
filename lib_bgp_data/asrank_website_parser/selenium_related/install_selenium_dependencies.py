@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-"""This python file runs installs the newest version 
-of chrome and chromedriver if chromedriver doesn't 
+"""This python file runs installs the newest version
+of chrome and chromedriver if chromedriver doesn't
 exist within the chromedrivers folder.
 """
 
@@ -13,13 +13,12 @@ __email__ = "abhinna.adhikari@uconn.edu"
 __status__ = "Development"
 
 import logging
-import os
 
 from ...utils import utils
 
 
 def install_selenium_driver():
-    """Downloads all the dependencies necessary for selenium as well 
+    """Downloads all the dependencies necessary for selenium as well
     as the newest version of chrome and chromedriver.
     """
 

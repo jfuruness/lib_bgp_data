@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from bs4 import BeautifulSoup
 import os
+
+from bs4 import BeautifulSoup
 
 
 def open_custom_html(url: str):

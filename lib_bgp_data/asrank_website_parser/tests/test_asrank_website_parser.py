@@ -12,7 +12,7 @@ __maintainer__ = "Abhinna Adhikari"
 __email__ = "abhinna.adhikari@uconn.edu"
 __status__ = "Development"
 
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 import pytest
 
 from ..asrank_website_parser import ASRankWebsiteParser
@@ -44,7 +44,7 @@ class TestASRankWebsiteParser:
         with ASRankTable() as asrank:
             assert asrank.get_count() == 0
 
-    def test_produce_url_page_1_rows_1000(self):
+    def test_produce_url(self):
         """Tests producing asrank.caida.org urls."""
 
         page_num = 1
@@ -59,7 +59,7 @@ class TestASRankWebsiteParser:
         First run _find_total_rows that uses sel_driver's get_page method
         to use selenium driver to dynamically get the html. Also run
         _find_total_rows that mocks sel_driver's get_page method to get the
-        custom html. 
+        custom html.
         """
 
         total_rows = ASRankWebsiteParser()._find_total_rows()
@@ -75,7 +75,7 @@ class TestASRankWebsiteParser:
     def test_parse_row(self):
         """Tests that the row is correctly parsed.
 
-        Use custom html to produce the tds_lst to parse. 
+        Use custom html to produce the tds_lst to parse.
         """
 
         tds_lst = produce_tds_lst()
@@ -86,7 +86,7 @@ class TestASRankWebsiteParser:
 
         # Each element within the row should be a string
         for elem in parsed_row:
-            assert type(elem) == str
+            assert isinstance(elem) == str
 
         # The fourth element (country) should only have 2 letters
         assert len(parsed_row[3]) == 2
@@ -111,8 +111,7 @@ class TestASRankWebsiteParser:
         with ASRankTable() as asrank:
             assert parser.rows_per_page == len(asrank.get_all())
 
-    #@pytest.mark.skip(reason="Still need to do")
-    @pytest.mark.slow(reason="Needs to query and then parse the many pages of the website")
+    @pytest.mark.slow(reason="Needs to query website many times")
     def test_run(self):
         """Tests the _run function
 

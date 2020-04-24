@@ -6,8 +6,8 @@
 The purpose of this class is to simplify the use of
 chromedriver by abstracting the various functions
 and initialization into an easy-to-use class/ context manager.
-chromedriver must be found at the path, driver_path class 
-variable, within the SeleniumDriver class. 
+chromedriver must be found at the path, driver_path class
+variable, within the SeleniumDriver class.
 
 Design Choices (summarizing from above):
     -Allow the class to be initialized as a context manager
@@ -28,7 +28,7 @@ __status__ = "Development"
 import logging
 import os
 
-from selenium.common.exceptions import TimeoutException, WebDriverException
+from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.common.by import By
@@ -48,7 +48,7 @@ class SeleniumDriver:
     """
 
     __slots__ = ['_driver']
-    
+
     driver_path = '/usr/bin/chromedriver'
     retries = 3
 
@@ -132,5 +132,4 @@ class SeleniumDriver:
     def close(self):
         """Close the selenium driver instance."""
 
-        if self._driver:
-            self._driver.quit()
+        self._driver.quit()
