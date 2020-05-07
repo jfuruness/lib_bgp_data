@@ -1906,7 +1906,7 @@ On Redhat the steps can be found here:
 [https://developers.redhat.com/blog/2018/08/13/install-python3-rhel/](https://developers.redhat.com/blog/2018/08/13/install-python3-rhel/)
 NOTE: If you are installing it on an OS other than ubuntu, I do not think the install script will work. Good luck doing it all manually.
 
-Note: if you are using our machine ahlocal, there are some very weird permission errors. Due to SE Linux and the gateway, etc, sudo cannot access your home directory. I have tried using ```export HOME=/root``` and other solutions to no avail. No one seems to be able to figure it out. No one seems to care either, and I have told the higher ups and coding is the priority. To run this I would install it in a top level directory like /ext and install it by using ```sudo su``` and continuing from there. I'm sure this is not completely secure so hopefully this will get fixed in the future but no one seems to know how to do that lol.
+Note: if you are using our machine ahlocal, ahdev, or  one similar, YOU MUST BE ROOT! I've been told that's the way to do it by the higher ups, I know it is not secure. Do ```sudo su``` to become root.
 
 Once you have virtualenv installed, run 
 ```bash
