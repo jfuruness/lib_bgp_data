@@ -848,7 +848,7 @@ ROAs_Parser().parse_roas()
 ```
 
 #### From the Command Line
-Depending on the permissions of your system, and whether or not you pip installed the package with sudo, you might be able to run the ROAs Parser with:
+Depending on the permissions of your system, and whether or not you installed the package with sudo, you might be able to run the ROAs Parser with:
 
 ```lib_bgp_data --roas_parser```
 
@@ -1915,11 +1915,15 @@ source ./env/bin/activate
 ```
 You now have a python virtual environment. You should still be a super user.
 Then, if you are not installing for development, run:
+
+NOTE: THIS VERSION HAS BEEN OUT OF DATE FOR A WHILE, TO GET LATEST UPDATES INSTALL DEVELOPMENT VERSION
 ```bash
 pip3 install wheel --upgrade
 pip3 install lib_bgp_data --upgrade
 ```
 This will install the package and all of it's python dependencies.
+
+NOTE: THIS VERSION IS UP TO DATE BUT NOT STABLE, STABLE PACKAGE IS COMING
 
 If you want to install the project for development:
 ```bash
