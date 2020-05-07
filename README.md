@@ -1917,7 +1917,7 @@ You now have a python virtual environment. You should still be a super user.
 Then, if you are not installing for development, run:
 ```bash
 pip3 install wheel --upgrade
-pip3 install lib_bgp_data --upgrade --force
+pip3 install lib_bgp_data --upgrade
 ```
 This will install the package and all of it's python dependencies.
 
