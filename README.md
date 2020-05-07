@@ -1932,7 +1932,7 @@ cd lib_bgp_data
 pip3 install wheel --upgrade
 pip3 install -r requirements.txt --upgrade
 python3 setup.py sdist bdist_wheel
-python3 setup.py develop --force
+python3 setup.py develop
 ```
 
 There are lots of other dependencies, but they will be installed automatically the first time they are needed. If not, manual install links are below:
