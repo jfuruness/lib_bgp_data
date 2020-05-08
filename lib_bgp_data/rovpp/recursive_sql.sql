@@ -1,8 +1,14 @@
 #https://stackoverflow.com/a/17262097
 --RAW DATA:
+
+------NOTE: NEED TO JOIN ON LIST INDEX AND POLICY VAL AS WELL OR IT WONT WORK!!!
+
 with recursive tr(asn, received_from_asn) as (
-      select t.asn, t.received_from_asn, t.prefix, t.origin, 1 as path_length
-      from rovpp_extrapolator_rib_out t UNION ALL
+      select t.asn, t.received_from_asn, t.prefix, t.origin, 1 as path_length, q.list_index, q.policy_val
+      from rovpp_extrapolator_rib_out t
+        INNER JOIN attacker_victims q
+            ON q.attacker_prefix = t.prefix OR q.victim_prefix = t.prefix
+      UNION ALL
       select b.asn, tr.received_from_asn, tr.prefix, tr.origin, tr.path_length + 1
       from rovpp_extrapolator_rib_out b INNER join
            tr
@@ -35,6 +41,7 @@ INNER JOIN (
 where received_from_asn = 64512
     OR received_from_asn = 64513
     OR received_from_asn = 64514
+    OR path_length = 64
 ORDER BY path_length;
 
 
@@ -403,4 +410,5 @@ INNER JOIN (
 where received_from_asn = 64512
     OR received_from_asn = 64513
     OR received_from_asn = 64514
+    OR path_length = 64
 ORDER BY path_length;
