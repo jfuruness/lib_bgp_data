@@ -99,7 +99,7 @@ class ROVPP_Simulator(Parser):
             sql = """CREATE UNLOGGED TABLE IF NOT EXISTS attacker_victims AS(
     SELECT a.prefix AS attacker_prefix, a.as_path AS attacker_as_path, a.origin AS attacker_origin,
         v.prefix AS victim_prefix, v.as_path AS victim_as_path, v.origin as victim_origin,
-        a.list_index, a.policy_val, a.percent_iter
+        a.list_index, a.policy_val, a.percent_iter, a.attack_type
     FROM attackers a
     LEFT JOIN victims v ON v.list_index = a.list_index AND v.policy_val = a.policy_val
 );"""
