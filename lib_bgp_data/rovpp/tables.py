@@ -109,7 +109,9 @@ class Simulation_Announcements_Table(Generic_Table):
                  as_path bigint ARRAY,
                  origin bigint,
                  list_index integer,
-                 policy_val smallint
+                 policy_val smallint,
+                 attack_type smallint,
+                 percent_iter integer
                  );"""
         self.execute(sql)
         

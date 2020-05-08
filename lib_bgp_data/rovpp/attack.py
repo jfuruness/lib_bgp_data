@@ -25,9 +25,9 @@ class Attack_Generator:
         self.attacks = self.gen_attacks()
         self.test_index = 0
 
-    def get_attack(self, index, policy, attacker, victim, attack_type):
+    def get_attack(self, index, policy, attacker, victim, attack_type, percent_iter):
         attack = self.attacks[attack_type].pop()
-        attack.add_index_pol_attacker_victim(index, policy, attacker, victim)
+        attack.add_index_pol_attacker_victim_percent_iter(index, policy, attacker, percent_iter, victim)
         return attack
         
     def gen_attacks(self):
@@ -43,16 +43,16 @@ class Attack_Generator:
                 # Subprefix attacks
                 sub_atk_pref = ipaddress.ip_network(((i<<24) + (n<<10), 24))
                 sub_vic_pref = ipaddress.ip_network(((i<<24) + (n<<10), 22))
-                subprefix_atk = Attack(sub_atk_pref, sub_vic_pref)
+                subprefix_atk = Subprefix_Hijack(sub_atk_pref, sub_vic_pref)
                 atk_dict[Attack_Types.SUBPREFIX_HIJACK].append(subprefix_atk)
                 # Prefix attacks
                 pref_atk = ipaddress.ip_network((((i+1)<<24) + (n<<10), 22))
                 pref_vic = ipaddress.ip_network((((i+1)<<24) + (n<<10), 22))
-                prefix_attack = Attack(pref_atk, pref_vic)
+                prefix_attack = Prefix_Hijack(pref_atk, pref_vic)
                 atk_dict[Attack_Types.PREFIX_HIJACK].append(prefix_attack)
                 # Non compete attacks
                 non_comp_pref = ipaddress.ip_network((((i+2)<<24) + (n<<10), 22))
-                non_comp = Attack(non_comp_pref)
+                non_comp = Unannounced_Prefix_Hijack(non_comp_pref)
                 atk_dict[Attack_Types.UNANNOUNCED_PREFIX_HIJACK].append(non_comp)
         return atk_dict
 
@@ -63,16 +63,18 @@ class Attack:
         self.attacker_prefix = attacker_prefix
         self.victim_prefix = victim_prefix
 
-    def add_index_pol_attacker_victim(self,
-                                       list_index,
-                                       policy,
-                                       attacker_asn,
-                                       victim_asn=None):
+    def add_index_pol_attacker_victim_percent_iter(self,
+                                                   list_index,
+                                                   policy,
+                                                   attacker_asn,
+                                                   percent_iter,
+                                                   victim_asn=None):
         # list_index is the place to look in the list for
         self.list_index = list_index
         self.policy = policy
         self.attacker_asn = attacker_asn
         self.victim_asn = victim_asn
+        self.percent_iter = percent_iter
 
     @property
     def attacker_row(self):
@@ -80,7 +82,9 @@ class Attack:
                 "{" + str(self.attacker_asn) + "}",
                 self.attacker_asn,
                 self.list_index,
-                self.policy.value]
+                self.policy.value,
+                self.attack_type.value,
+                self.percent_iter]
 
     @property
     def victim_row(self):
@@ -91,4 +95,13 @@ class Attack:
                     "{" + str(self.victim_asn) + "}",
                     self.victim_asn,
                     self.list_index,
-                    self.policy.value]
+                    self.policy.value,
+                    self.attack_type.value,
+                    self.percent_iter]
+
+class Subprefix_Hijack(Attack):
+    attack_type = Attack_Types.SUBPREFIX_HIJACK
+class Prefix_Hijack(Attack):
+    attack_type = Attack_Types.PREFIX_HIJACK
+class Unannounced_Prefix_Hijack(Attack):
+    attack_type = Attack_Types.UNANNOUNCED_PREFIX_HIJACK

@@ -22,9 +22,9 @@ from ..base_classes import Enumerable_Enum
 class Attack_Types(Enum):
     """Types of scenarios for attacks"""
 
-    SUBPREFIX_HIJACK = "subprefix_hijack"
-    PREFIX_HIJACK = "prefix_hijack"
-    UNANNOUNCED_PREFIX_HIJACK = "no_competing_announcement_hijack"
+    SUBPREFIX_HIJACK = 0
+    PREFIX_HIJACK = 1
+    UNANNOUNCED_PREFIX_HIJACK = 2
 
 
 class Policies(Enum):
@@ -32,10 +32,10 @@ class Policies(Enum):
 
     DEFAULT = 0
     ROV = 1
-    ROVPP = 2
-    ROVPPB = 3
-    ROVPPBP = 4
-    ROVPPBIS = 5
+#    ROVPP = 2
+#    ROVPPB = 3
+#    ROVPPBP = 4
+#    ROVPPBIS = 5
 
 
 # This creates an enum that is for non bgp policies

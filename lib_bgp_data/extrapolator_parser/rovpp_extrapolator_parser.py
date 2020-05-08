@@ -50,13 +50,18 @@ class ROVPP_Extrapolator_Parser(Extrapolator_Parser):
 
         logging.debug("About to run the rovpp extrapolator")
 
+        # Should be moved to exr
+        with Database() as db:
+            sql = "SELECT MAX(list_index) AS max_list_index FROM attackers"
+            max_index = db.execute(sql)[0]["max_list_index"]
+
         bash_args = f"{self.install_location} -v 1"
         for table_name in table_names:
             bash_args += f" -t {table_name}"
-
+        bash_args += f" -s {max_index + 1}"  # +1 cause the exr devs r off by 1
+        logging.debug(bash_args)
         # Exr bash here for dev only
         utils.run_cmds(exr_bash if exr_bash else bash_args)
-
         # Gets rib out. Basically returns only more specific prefixes
         with ROVPP_Extrapolator_Rib_Out_Table(clear=True) as _db:
             _db.fill_table()

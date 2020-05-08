@@ -18,6 +18,7 @@ from copy import deepcopy
 from multiprocessing import cpu_count
 import os
 from random import random
+import logging
 
 import numpy as np
 from tqdm import trange
@@ -33,8 +34,9 @@ from .tables import Tests_Table
 
 from ..base_classes import Parser
 from ..relationships_parser import Relationships_Parser
-from ..relationships_parser.tables import ASes_Table
 from ..utils import utils
+# Done this way to fix circular imports
+from .. import extrapolator_parser as exr
 
 
 class ROVPP_Simulator(Parser):
@@ -44,10 +46,10 @@ class ROVPP_Simulator(Parser):
     """
 
     def _run(self,
-             percents=[1,2,3,4,5,10,20,40,60,80,99],
+             percents=[1],#,2],#,3,4,5,10,20,40,60,80,99],
              num_trials=1,
              exr_bash=None,
-             attack_types=Attack_Types.__members__.values(),
+             attack_types=[Attack_Types.SUBPREFIX_HIJACK],#Attack_Types.__members__.values(),
              policies=Non_Default_Policies.__members__.values()):
         """Runs ROVPP simulation.
 
@@ -69,9 +71,6 @@ class ROVPP_Simulator(Parser):
         # deterministic trial number and have it jump straight to that trial
         # In addition - the reason we have multiple bars is so that we can
         # display useful stats using the bar
-
-        with ASes_Table(clear=True) as db:
-            db.fill_table()
 
         attack_generator = Attack_Generator()
         # Generate all the tests to run at once
@@ -95,7 +94,16 @@ class ROVPP_Simulator(Parser):
                                        [Attackers_Table, Victims_Table]):
             csv_path = os.path.join(self.csv_dir, atk_vic_Table.name)
             utils.rows_to_db(rows, csv_path, atk_vic_Table)
-
+        with Database() as db:
+            self.execute("DROP TABLE IF EXISTS attacker_victims")
+            sql = """CREATE UNLOGGED TABLE IF NOT EXISTS attacker_victims AS(
+    SELECT a.prefix AS attacker_prefix, a.as_path AS attacker_as_path, a.origin AS attacker_origin,
+        v.prefix AS victim_prefix, v.as_path AS victim_as_path, v.origin as victim_origin,
+        a.list_index, a.policy_val, a.percent_iter
+    FROM attackers a
+    LEFT JOIN victims v ON v.list_index = a.list_index AND v.policy_val = a.policy_val
+);"""
+            self.execute(sql)
         ases_dict = {x.Input_Table.name: x.ases for x in tables.tables}
         table_classes = {x.Input_Table.name: x.Input_Table.__class__ for x in tables.tables}
         iterable = [(ases_dict,
@@ -118,16 +126,14 @@ class ROVPP_Simulator(Parser):
         with ProcessPoolExecutor(max_workers=cpu_count()) as executor:
             list(executor.map(exec_sql, zip(drop_sqls, create_sqls)))
             
-#        tables.write_to_postgres(mp_dps, self.csv_dir)
-        return
-        input("!")
-
-        # Store test data
-        1/0
+#       i tables.write_to_postgres(mp_dps, self.csv_dir)
+        logging.info("Running exr")
         # Run extrapolator - feed as input the policy nums to run
+        exr.ROVPP_Extrapolator_Parser(**self.kwargs).run(table_names=[k for k,v in table_classes.items()])
         # inputs normally exr_bash, exr_kwargs, self.percent, pbars
         # Make ribs out table properly
-
+        return
+#        input("!")
 
         # Clear the table that stores all trial info
         with Simulation_Results_Table(clear=True) as _:

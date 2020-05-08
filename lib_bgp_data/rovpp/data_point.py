@@ -46,8 +46,8 @@ class Data_Point(Parser):
                                                      adopt_policy,
                                                      attacker,
                                                      victim,
-                                                     attack_type)
-
+                                                     attack_type,
+                                                     self.percent_iter)
                 self.tests.append(Test(attack_type, attack, adopt_policy))
             attack_generator.test_index += 1
 

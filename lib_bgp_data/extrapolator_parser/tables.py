@@ -53,7 +53,6 @@ class ROVPP_Extrapolator_Rib_Out_Table(Generic_Table):
                           FROM rovpp_extrapolation_results rovpp
                   INNER JOIN {input_name} input_table
                       ON input_table.prefix = rovpp.prefix);"""
-
             self.execute(sql)
         # Now we can get all the less specific prefixes that do not have
         # a corresponding prefix in the more specific prefixes

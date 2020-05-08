@@ -121,11 +121,11 @@ class ASes_Table(Generic_Table):
 
         logging.debug("Initializing ases table")
         sql = """CREATE UNLOGGED TABLE IF NOT EXISTS ases AS (
-                 SELECT customer_as AS asn, ARRAY[]::BOOLEAN[] AS as_types FROM (
-                     SELECT DISTINCT customer_as FROM provider_customers
-                     UNION SELECT DISTINCT provider_as FROM provider_customers
-                     UNION SELECT DISTINCT peer_as_1 FROM peers
-                     UNION SELECT DISTINCT peer_as_2 FROM peers) union_temp
+                 SELECT asn AS asn, ARRAY[]::BOOLEAN[] AS as_types FROM (
+                     SELECT DISTINCT customer_as AS asn FROM provider_customers
+                     UNION SELECT DISTINCT provider_as AS asn FROM provider_customers
+                     UNION SELECT DISTINCT peer_as_1 AS asn FROM peers
+                     UNION SELECT DISTINCT peer_as_2 AS asn FROM peers) union_temp
                  );"""
         self.execute(sql)
 
