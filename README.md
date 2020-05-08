@@ -848,7 +848,7 @@ ROAs_Parser().parse_roas()
 ```
 
 #### From the Command Line
-Depending on the permissions of your system, and whether or not you pip installed the package with sudo, you might be able to run the ROAs Parser with:
+Depending on the permissions of your system, and whether or not you installed the package with sudo, you might be able to run the ROAs Parser with:
 
 ```lib_bgp_data --roas_parser```
 
@@ -1906,7 +1906,7 @@ On Redhat the steps can be found here:
 [https://developers.redhat.com/blog/2018/08/13/install-python3-rhel/](https://developers.redhat.com/blog/2018/08/13/install-python3-rhel/)
 NOTE: If you are installing it on an OS other than ubuntu, I do not think the install script will work. Good luck doing it all manually.
 
-Note: if you are using our machine ahlocal, there are some very weird permission errors. Due to SE Linux and the gateway, etc, sudo cannot access your home directory. I have tried using ```export HOME=/root``` and other solutions to no avail. No one seems to be able to figure it out. No one seems to care either, and I have told the higher ups and coding is the priority. To run this I would install it in a top level directory like /ext and install it by using ```sudo su``` and continuing from there. I'm sure this is not completely secure so hopefully this will get fixed in the future but no one seems to know how to do that lol.
+Note: if you are using our machine ahlocal, ahdev, or  one similar, YOU MUST BE ROOT! I've been told that's the way to do it by the higher ups, I know it is not secure. Do ```sudo su``` to become root.
 
 Once you have virtualenv installed, run 
 ```bash
@@ -1915,11 +1915,15 @@ source ./env/bin/activate
 ```
 You now have a python virtual environment. You should still be a super user.
 Then, if you are not installing for development, run:
+
+NOTE: THIS VERSION HAS BEEN OUT OF DATE FOR A WHILE, TO GET LATEST UPDATES INSTALL DEVELOPMENT VERSION
 ```bash
 pip3 install wheel --upgrade
-pip3 install lib_bgp_data --upgrade --force
+pip3 install lib_bgp_data --upgrade
 ```
 This will install the package and all of it's python dependencies.
+
+NOTE: THIS VERSION IS UP TO DATE BUT NOT STABLE, STABLE PACKAGE IS COMING
 
 If you want to install the project for development:
 ```bash
@@ -1928,7 +1932,7 @@ cd lib_bgp_data
 pip3 install wheel --upgrade
 pip3 install -r requirements.txt --upgrade
 python3 setup.py sdist bdist_wheel
-python3 setup.py develop --force
+python3 setup.py develop
 ```
 
 There are lots of other dependencies, but they will be installed automatically the first time they are needed. If not, manual install links are below:
