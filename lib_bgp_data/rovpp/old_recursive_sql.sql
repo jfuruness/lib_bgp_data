@@ -2,165 +2,20 @@
 --RAW DATA:
 
 ------NOTE: NEED TO JOIN ON LIST INDEX AND POLICY VAL AS WELL OR IT WONT WORK!!!
-WITH possible_policies_vals AS (
-    SELECT ARRAY_AGG(policy_val::smallint)
-        FROM
-    (SELECT DISTINCT policy_val
-        FROM attacker_victims) w
-)
-
-
-WITH RECURSIVE tr(
-    og_asn, asn, received_from_asn,
-    prefix, origin, as_path, list_index, policy_val)
-AS (
-  SELECT asn AS og_asn, asn, received_from_asn, prefix,
-         origin, ARRAY[asn]::bigint[] as as_path,
-         list_index, policy_val
-    FROM rovpp_extrapolator_rib_out
-  UNION
-  SELECT tr.og_asn, tr.received_from_asn,
-         (CASE 
-            WHEN COALESCE(ARRAY_LENGTH(tr.as_path, 1)) <=64
-          THEN t.received_from_asn
-            ELSE
-               NULL
-           END),
-         tr.prefix,
-         tr.origin,
-         (CASE
-            WHEN t.asn IS NOT NULL
-          THEN ARRAY_APPEND(tr.as_path, t.asn)
-            ELSE tr.as_path
-          END),
-         tr.list_index,
-         tr.policy_val
-    FROM tr
-        LEFT OUTER JOIN rovpp_extrapolator_rib_out t
-            ON (t.asn = tr.received_from_asn
-                AND tr.list_index = t.list_index
-                AND tr.policy_val = t.policy_val)
-          WHERE tr.received_from_asn IS NOT NULL
-)
-SELECT tr.og_asn, tr.asn AS end_state,
-       tr.prefix, tr.origin,
-       tr.as_path,
-       --attacker victim stuff
-       av.attacker_prefix, av.attacker_origin,
-       av.victim_prefix, av.victim_origin,
-       av.list_index, av.policy_val, av.percent_iter, av.attack_type,
-       --all ases stuff
-       all_ases.t_name AS table_name,
-        --must add 1 cause postgres arrays start at 1
-       all_ases.as_types[av.list_index + 1] AS adopting_or_not,
-       all_ases.as_types[av.list_index + 1]::int * av.policy_val AS adopted_policy
-    FROM tr
-INNER JOIN attacker_victims av
-    ON av.list_index = tr.list_index AND av.policy_val = tr.policy_val
-FULL OUTER JOIN (
-    --Why is this like this?
-    --because first we want each asn per test
-    --to get that we must unnest the asns, but we want to preserve the list index
-    --so we use with ordinality
-    --https://stackoverflow.com/questions/8760419/postgresql-unnest-with-element-number
-    --but it gets worse. Because we add each policy for each list index,
-    --we must unnest again. Insane in the membrane
-
-    SELECT partial_unnest.asn,
-           partial_unnest.as_type,
-           partial_unnest.list_index,
-           UNNEST(possible_policy_vals) as policy_val
-    FROM (
-        SELECT all_ases.asn,
-               q.as_type,
-               q.list_index_one_added - 1 AS list_index,  --minus 1 because postgres starts at 1
-               possible_policy_vals
-        FROM (
-            SELECT * FROM (
-                SELECT 0 AS t_name, edge_ases.asn, edge_ases.as_types
-                    FROM edge_ases) edge_ases_w_name
-            UNION ALL
-            SELECT * FROM (
-                SELECT 1 AS t_name, etc_ases.asn, etc_ases.as_types
-                    FROM etc_ases) etc_ases_w_name
-            UNION ALL
-            SELECT * FROM (
-                SELECT 2 AS t_name, top_100_ases.asn, top_100_ases.as_types
-                    FROM top_100_ases) top_100_ases_w_name
-            ) all_ases
-            ---NOTE: this can be written with implicit cross join lateral
-            ---but this if more verbose
-            LEFT JOIN LATERAL UNNEST(all_ases.as_types)
-                WITH ORDINALITY AS q(as_type, list_index_one_added)
-                    ON TRUE
-            ) partial_unnest
-        ) unnested_ases
- ON unnested_ases.asn = tr.og_asn
-    AND unnested_ases.list_index = tr.list_index
-    AND unnested_ases.policy_val = tr.policy_val
-WHERE tr.received_from_asn IS NULL;
-
-
-
-
-
-
-
-
-
-with recursive tr(og_asn, asn, received_from_asn, prefix, origin, as_path, list_index, policy_val) as (
-      select t.asn AS og_asn, t.asn, t.received_from_asn, t.prefix, t.origin, ARRAY[t.asn]::bigint[] as as_path, t.list_index, t.policy_val
-      from rovpp_extrapolator_rib_out t
-      UNION
-      select tr.og_asn, b.asn, tr.received_from_asn, tr.prefix, tr.origin, ARRAY_APPEND(tr.as_path, b.asn) AS as_path, b.list_index, b.policy_val
-      from tr
-        LEFT OUTER JOIN rovpp_extrapolator_rib_out b
-           on b.received_from_asn = tr.asn AND b.list_index = tr.list_index AND b.policy_val = tr.policy_val  -- must do like this or else it joins on other trials
-        WHERE COALESCE(ARRAY_LENGTH(tr.as_path, 1), 0) <= 64 AND tr.received_from_asn IS NOT NULL
-     )
-select tr.og_asn, tr.asn AS end_asn, tr.prefix, tr.origin, tr.as_path,
-        av.attacker_prefix, av.attacker_origin,
-        av.victim_prefix, av.victim_origin,
-        av.list_index, av.policy_val, av.percent_iter, av.attack_type,
-        all_ases.t_name AS table_name,
-        all_ases.as_types[av.list_index + 1] AS adopting_or_not,
-        all_ases.as_types[av.list_index + 1]::int * av.policy_val AS adopted_policy  --add one to list index, postgres arrays start at 1 UGH
-    from tr
-INNER JOIN attacker_victims av
-    ON av.attacker_prefix = tr.prefix OR av.victim_prefix = tr.prefix
-FULL OUTER JOIN (
-    SELECT * FROM (
-        SELECT 0 AS t_name, edge_ases.asn, edge_ases.as_types
-            FROM edge_ases) edge_ases_w_name
-    UNION ALL
-    SELECT * FROM (
-        SELECT 1 AS t_name, etc_ases.asn, etc_ases.as_types
-            FROM etc_ases) etc_ases_w_name
-    UNION ALL
-    SELECT * FROM (
-        SELECT 2 AS t_name, top_100_ases.asn, top_100_ases.as_types
-            FROM top_100_ases) top_100_ases_w_name
-    ) all_ases ON all_ases.asn = tr.asn
-WHERE
-    tr.received_from_asn IS NULL
-    OR COALESCE(ARRAY_LENGTH(tr.as_path, 1), 0) = 64
-ORDER BY COALESCE(ARRAY_LENGTH(tr.as_path, 1), 0);
-
-
-------NOTE: must do this first since you must for each trial find the total numbe of ases. Only afterwards can you aggregate
---TRIAL DATA:
 
 with recursive tr(asn, received_from_asn) as (
-      select t.asn, t.received_from_asn, t.prefix, t.origin, ARRAY[t.asn]::bigint[] as as_path, t.list_index, t.policy_val
+      select t.asn, t.received_from_asn, t.prefix, t.origin, 1 as path_length, q.list_index, q.policy_val
       from rovpp_extrapolator_rib_out t
+        INNER JOIN attacker_victims q
+            ON q.attacker_prefix = t.prefix OR q.victim_prefix = t.prefix
       UNION ALL
-      select b.asn, tr.received_from_asn, tr.prefix, tr.origin, ARRAY_APPEND(tr.as_path, b.asn) AS as_path, b.list_index, b.policy_val
+      select b.asn, tr.received_from_asn, tr.prefix, tr.origin, tr.path_length + 1
       from rovpp_extrapolator_rib_out b INNER join
            tr
-           on b.received_from_asn = tr.asn AND b.list_index = tr.list_index AND b.policy_val = tr.policy_val  -- must do like this or else it joins on other trials
-        WHERE COALESCE(ARRAY_LENGTH(tr.as_path, 1), 0) <= 64
+           on b.received_from_asn = tr.asn
+        WHERE tr.path_length <= 64
      )
-select tr.asn, tr.received_from_asn, tr.prefix, tr.origin, tr.as_path,
+select tr.asn, tr.received_from_asn, tr.prefix, tr.origin, tr.path_length,
         av.attacker_prefix, av.attacker_origin,
         av.victim_prefix, av.victim_origin,
         av.list_index, av.policy_val, av.percent_iter, av.attack_type,
@@ -170,7 +25,7 @@ select tr.asn, tr.received_from_asn, tr.prefix, tr.origin, tr.as_path,
     from tr
 INNER JOIN attacker_victims av
     ON av.attacker_prefix = tr.prefix OR av.victim_prefix = tr.prefix
-FULL OUTER JOIN (
+INNER JOIN (
     SELECT * FROM (
         SELECT 0 AS t_name, edge_ases.asn, edge_ases.as_types
             FROM edge_ases) edge_ases_w_name
@@ -186,12 +41,31 @@ FULL OUTER JOIN (
 where received_from_asn = 64512
     OR received_from_asn = 64513
     OR received_from_asn = 64514
-    OR COALESCE(ARRAY_LENGTH(as_path, 1), 0) = 64
-ORDER BY COALESCE(ARRAY_LENGTH(as_path, 1), 0);
+    OR path_length = 64
+ORDER BY path_length;
 
 
 
 
+--TRIAL DATA:
+with recursive tr(asn, received_from_asn) as (
+      select t.asn, t.received_from_asn, t.prefix, t.origin, 1 as path_length
+      from rovpp_extrapolator_rib_out t UNION ALL
+      select b.asn, tr.received_from_asn, tr.prefix, tr.origin, tr.path_length + 1
+      from rovpp_extrapolator_rib_out b INNER join
+           tr
+           on b.received_from_asn = tr.asn
+        WHERE tr.path_length <= 64
+     )
+select av.attack_type,
+       all_ases.t_name,
+       av.attacker_origin,
+       av.attacker_prefix,
+       av.victim_origin,
+       av.victim_prefix,
+       av.policy_val,
+       av.list_val,
+       av.percent_iter,
        --collateral info
 
 

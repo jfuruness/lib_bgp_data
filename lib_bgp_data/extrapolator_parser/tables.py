@@ -72,9 +72,12 @@ class ROVPP_Extrapolator_Rib_Out_Table(Generic_Table):
         # And if we propogate everything at once, it doesn't matter
         self.execute(f"DROP TABLE IF EXISTS rovpp_extrapolator_rib_out")
         sql = f"""CREATE UNLOGGED TABLE rovpp_extrapolator_rib_out AS (
-              SELECT * FROM {more_specific_results_table}
-              UNION
-              SELECT * FROM {only_victim_results_table});"""
+              SELECT * FROM (
+                SELECT * FROM {more_specific_results_table}
+                  UNION
+                SELECT * FROM {only_victim_results_table}) results
+              INNER JOIN attacker_victims av
+                ON av.attacker_prefix = results.prefix OR av.victim_prefix = results.prefix);"""
         self.execute(sql)
 
         # Delete all unnessecary tables

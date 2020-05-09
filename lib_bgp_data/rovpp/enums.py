@@ -31,10 +31,10 @@ class Policies(Enum):
     """The possible routing policies"""
 
     DEFAULT = 0
-    ROV = 1
+#    ROV = 1
 #    ROVPP = 2
 #    ROVPPB = 3
-#    ROVPPBP = 4
+    ROVPPBP = 4
 #    ROVPPBIS = 5
 
 
