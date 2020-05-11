@@ -121,4 +121,3 @@ GROUP BY
     av.attacker_prefix = tr.prefix AND av.attacker_origin = tr.origin,  --hijacked start
     av.victim_prefix = tr.prefix AND av.victim_origin = tr.origin,  --prefix start
     tr.end_state;
-
