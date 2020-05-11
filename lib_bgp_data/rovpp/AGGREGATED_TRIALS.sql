@@ -120,6 +120,15 @@ SELECT
           THEN a.total
     ELSE 0
       END) AS no_rib,
+    SUM (CASE
+      WHEN a.end_state IS NULL
+          THEN a.total
+    ELSE 0
+      END) + SUM (CASE
+      WHEN a.end_state = 64512
+          THEN a.total
+    ELSE 0
+      END) AS disconnected,
     SUM(a.total) AS total_ases
 FROM aggregated_raw a
     GROUP BY 
