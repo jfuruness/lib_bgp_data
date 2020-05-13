@@ -1,25 +1,23 @@
 <!DOCTYPE html>
 
 <html>
-
 <head>
-    <meta charset="utf-8">
-    <!--[if IE]><meta http-equiv="X-UA-Compatible" content="IE=edge" /><![endif]-->
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>BGPStream Event #230097</title>
-    <link href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css" rel="stylesheet">
-    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
-    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
-    <!--[if lt IE 9]>
+<meta charset="utf-8"/>
+<!--[if IE]><meta http-equiv="X-UA-Compatible" content="IE=edge" /><![endif]-->
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<title>BGPStream Event #236282</title>
+<link href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css" rel="stylesheet"/>
+<!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+<!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+<!--[if lt IE 9]>
     <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
     <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
     <![endif]-->
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
-    <script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
-    
-    <script                 src="/static/sortable/js/sortable.min.js"></script>
-    <link rel="stylesheet" href="/static/sortable/css/sortable-theme-bootstrap.css" />
-    <!-- google-analytics -->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+<script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+<script src="/static/sortable/js/sortable.min.js"></script>
+<link href="/static/sortable/css/sortable-theme-bootstrap.css" rel="stylesheet">
+<!-- google-analytics -->
 <script>
   (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
   (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
@@ -31,14 +29,12 @@
 
 </script>
 <!-- google-analytics -->
-
-    
-        <link rel="stylesheet" href="/static/ammap/ammap.css" type="text/css">
-        <script src="/static/ammap/ammap.js" type="text/javascript"></script>
-        <!-- map file should be included after ammap.js -->
-		<script src="/static/ammap/maps/js/worldLow.js" type="text/javascript"></script>
-		<script src="/static/ammap/themes/black.js" type="text/javascript"></script>
-        <script>
+<link href="/static/ammap/ammap.css" rel="stylesheet" type="text/css"/>
+<script src="/static/ammap/ammap.js" type="text/javascript"></script>
+<!-- map file should be included after ammap.js -->
+<script src="/static/ammap/maps/js/worldLow.js" type="text/javascript"></script>
+<script src="/static/ammap/themes/black.js" type="text/javascript"></script>
+<script>
 			/*
 			        		although ammap has methos like getAreaCenterLatitude and getAreaCenterLongitude,
 			        		they are not suitable in quite a lot of cases as the center of some countries
@@ -1081,87 +1077,49 @@
 				map.write("mapdiv");
 			});
 		</script>
-
-
-</head>
-
+</link></head>
 <body>
-
-
-  
-
-
-  
 <div class="container">
 <p>
-    <img src="/static/BGPmon-OpenDNS-Logo1.png">
+<img src="/static/BGPmon-OpenDNS-Logo1.png"/>
 </p>
 </div>
 <div class="container">
 <!-- <nav class="navbar navbar-inverse navbar-fixed-top"> -->
 <nav class="navbar navbar-default" role="navigation" style="margin-top:10px;">
-    <div class="container">
-        <div class="navbar-header">
-        <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
-            <span class="sr-only">Toggle navigation</span>
-            <span class="icon-bar"></span>
-            <span class="icon-bar"></span>
-            <span class="icon-bar"></span>
-        </button>
-        <a class="navbar-brand" href="/">BGPStream</a>
-        </div>
-            <div id="navbar" class="collapse navbar-collapse">
-                <ul class="nav navbar-nav">
-                    <li><a href="/about/">About</a></li>
-                    <li><a href="/contact/">Contact</a></li>
-                </ul>
-            </div><!--/.nav-collapse -->
-    </div>
+<div class="container">
+<div class="navbar-header">
+<button aria-controls="navbar" aria-expanded="false" class="navbar-toggle collapsed" data-target="#navbar" data-toggle="collapse" type="button">
+<span class="sr-only">Toggle navigation</span>
+<span class="icon-bar"></span>
+<span class="icon-bar"></span>
+<span class="icon-bar"></span>
+</button>
+<a class="navbar-brand" href="/">BGPStream</a>
+</div>
+<div class="collapse navbar-collapse" id="navbar">
+<ul class="nav navbar-nav">
+<li><a href="/about/">About</a></li>
+<li><a href="/contact/">Contact</a></li>
+</ul>
+</div><!--/.nav-collapse -->
+</div>
 </nav>
 </div>
 <div class="container">
-
-
-    
-        <h3>Possible BGP hijack</h3>
-        Beginning at 2020-03-29 16:43:57 UTC, we detected a possible BGP hijack.
-        <p>
-        Prefix 2804:47ac::/32, is normally announced by AS267070 Fibranet Juiz de Fora Serviços de Telecomunicações, BR.
-        </p>
-        <p>
-        But beginning at 2020-03-29 16:43:57, the same prefix (2804:47ac::/32) was also announced by ASN 135636.
-        </p>
-        <p>
-        This was detected by 2 BGPMon peers.
-        </p>
-        <table class="table">
-            <th>Expected</th>
-            <tr><td>Start time: 2020-03-29 16:43:57 UTC</td></tr>
-            <tr><td>Expected prefix: 2804:47ac::/32</td></tr>
-            <tr><td>Expected ASN: 267070 (Fibranet Juiz de Fora Serviços de Telecomunicações, BR)</td></tr>
-        </table>
-        <table class="table">
-            <th>Event Details</th>
-            <tr><td>Detected advertisement: 2804:47ac::/32</td></tr>
-            <tr><td>Detected Origin ASN 135636 (RACKH-AS-AP Rackh Lintas Asia, pt, ID)</td></tr>
-            <tr><td>Detected AS Path 11170 36213 24482 55655 55655 55655 135636</td></tr>
-            <tr><td>Detected by number of BGPMon peers: 2</td></tr>
-        </table>
-    
-
-
+<h3>
+    Beginning at 2020-05-12 23:12:00, we detected an outage for ASN 262447 (IMG BRASIL TELECOMUNICACOES LTDA, BR).
+    </h3>
+<table class="table">
+<tr><td>Start time: 2020-05-12 23:12:00 UTC</td></tr>
+<tr><td>Number of Prefixes Affected: 336224 (62%)</td></tr>
+</table>
 <h2>Watch the replay of this event</h2>
-
-
-
-<div id="bgplay" style='width:1100px; margin: 0 auto;'></div>
-
-
-
-<script src='/static/bgplay/static/widget/bgplayjs-main-widget.js'></script>
+<div id="bgplay" style="width:1100px; margin: 0 auto;"></div>
+<script src="/static/bgplay/static/widget/bgplayjs-main-widget.js"></script>
 <script>
     var bgplay_config = {
-        "eventid" : '230097',
+        "eventid" : '236282',
         "ignoreReannouncements": "TRUE",
 
         "unix_timestamps": "TRUE",
@@ -1178,16 +1136,9 @@
     );
 
 </script>
-
 <p>
-    <a href="http://bgplayjs.com">About BGPlay</a>
+<a href="http://bgplayjs.com">About BGPlay</a>
 </p>
 </div>
-
-
-
-
 </body>
-
 </html>
-

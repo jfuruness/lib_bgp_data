@@ -5,7 +5,7 @@
 <meta charset="utf-8"/>
 <!--[if IE]><meta http-equiv="X-UA-Compatible" content="IE=edge" /><![endif]-->
 <meta content="width=device-width, initial-scale=1" name="viewport"/>
-<title>BGPStream Event #236282</title>
+<title>BGPStream Event #236265</title>
 <link href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css" rel="stylesheet"/>
 <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
 <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
@@ -1107,19 +1107,36 @@
 </nav>
 </div>
 <div class="container">
-<h3>
-    Beginning at 2020-05-12 23:12:00, we detected an outage for ASN 262447 (IMG BRASIL TELECOMUNICACOES LTDA, BR).
-    </h3>
+<h3>Possible BGP hijack </h3>
+        Beginning at 2020-05-12 16:17:58, we detected a possible BGP hijack.
+        <p>
+        Prefix 170.25.0.0/16, Normally announced by AS13591 Mexico Red de Telecomunicaciones, S. de R.L. de C.V., MX
+        </p>
+<p>
+        Starting at 2020-05-12 16:17:58, a more specific route (170.25.223.104/31) was announced by ASN 577.
+        </p>
+<p>
+        This was detected by 3 BGPMon peers.
+        </p>
 <table class="table">
-<tr><td>Start time: 2020-05-12 23:12:00 UTC</td></tr>
-<tr><td>Number of Prefixes Affected: 958215 (71%)</td></tr>
+<th>Expected</th>
+<tr><td>Start time: 2020-05-12 16:17:58 UTC</td></tr>
+<tr><td>Expected prefix: 184.234.238.216/32</td></tr>
+<tr><td>Expected ASN: 13591 <img src="https://portal.bgpmon.net/images/flags/mx.gif"/>   (Mexico Red de Telecomunicaciones, S. de R.L. de C.V., MX)</td></tr>
+</table>
+<table class="table">
+<th>Event Details</th>
+<tr><td>Detected advertisement: 184.234.238.216/32</td></tr>
+<tr><td>Detected Origin ASN 577 <img src="https://portal.bgpmon.net/images/flags/ca.gif"/> (BACOM, CA)</td></tr>
+<tr><td>Detected AS Path 498597 451507 267666 359476 266302 123818 472575</td></tr>
+<tr><td>Detected by number of BGPMon peers: 126082</td></tr>
 </table>
 <h2>Watch the replay of this event</h2>
 <div id="bgplay" style="width:1100px; margin: 0 auto;"></div>
 <script src="/static/bgplay/static/widget/bgplayjs-main-widget.js"></script>
 <script>
     var bgplay_config = {
-        "eventid" : '236282',
+        "eventid" : '236265',
         "ignoreReannouncements": "TRUE",
 
         "unix_timestamps": "TRUE",

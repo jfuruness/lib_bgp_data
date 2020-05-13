@@ -5,7 +5,6 @@
 For specifics on each test, see docstrings under each function.
 """
 
-
 __authors__ = ["Justin Furuness", "Tony Zheng"]
 __credits__ = ["Justin Furuness", "Tony Zheng"]
 __Lisence__ = "BSD"
@@ -13,79 +12,72 @@ __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
-
 import pytest
 from unittest.mock import Mock, patch
 from itertools import chain, combinations
-from ..bgpstream_website_parser import BGPStream_Website_Parser
+from ..bgpstream_website_parser import utils, BGPStream_Website_Parser
 from ..tables import Hijacks_Table, Leaks_Table, Outages_Table
 from ..data_classes import Hijack, Leak, Outage
 from ..event_types import Event_Types
 from ...utils import utils
-from ...database import Database
+from ...database import Database, Generic_Table
 from bs4 import BeautifulSoup as Soup
 from time import strftime, gmtime, time
-from .open_custom_HTML import open_custom_HTML
+import re
+
+########################
+### Helper Functions ###
+########################
 
 def generate_event_combos():
-    """Returns possible combinations of events to be parsed"""
+    """Returns all possible combinations of Hijacks, Leaks, and Outages"""
     # https://stackoverflow.com/questions/1482308/how-to-get-all-subsets-of-a-set-powerset
     events = Event_Types.list_values()
-    return chain.from_iterable(combinations(events, r) for r in range(len(events) + 1))
+    return chain.from_iterable(combinations(events, r)
+                               for r in range(len(events) + 1))
 
-def generate_params(custom: bool):
-    """Generator for all possible parameter combinations.
-       If testing on custom HTML, a more appropriate row_limit is used."""
-    limits = [None, 3, 999999] if custom else [None, 100, 999999]
+def generate_params():
+    """Generates all combinations of parameters parser can be ran with.
+       Used for parametrizing test_run."""
+    params = []
 
-    for combination in generate_event_combos():
-        for row_limit in [None, 100, 999999]:
-            for IPV in combinations([True, False], 2):
-                yield (row_limit, *IPV, combination)
+    # custom HTML or run normally, pulling from bgpstream.com
+    for custom in [False, True]:
+        # all combinations of Hijacks, Leaks, Outages
+        for combination in generate_event_combos():
+            # No row limit, a fitting row limit, or too high row limit
+            for row_limit in [None, 5, 999999]:
+                # Only IPV4, only IPV6, or both, or neither
+                for IPV4, IPV6 in combinations([True, False], 2):
+                    params.append((custom, row_limit, IPV4, IPV6, combination))
+    return params
 
-def table_list():
-    for table in [Hijacks_Table(), Leaks_Table(), Outages_Table()]:
-        yield table
-
-def fresh_tables():
-    """Recreates tables so that they have no data in them"""
-    with Database() as _db:
-        for table in table_list():
-            name = table.name
-            _db.execute(f'DROP TABLE IF EXISTS {name}')
-            table._create_tables()
+def type_table_list():
+    """Convenient for associating the the data type to its table"""
+    for _type, table in zip(Event_Types.list_values(),
+                           [Hijacks_Table, Leaks_Table, Outages_Table]):
+        yield _type, table
 
 def row_count():
-    with Database() as _db:
-        return _db.execute("""SELECT(SELECT COUNT(*) FROM hijacks) +
-                                    (SELECT COUNT(*) FROM leaks) +
-                                    (SELECT COUNT(*) FROM outages) AS count""")[0]['count']
+    """Returns the number of rows across all 3 tables"""
+    count = 0
+    for _type, table in type_table_list():
+        with table() as t:
+            count += t.get_count()
+    return count
 
+@pytest.fixture
+def parser():
+    return BGPStream_Website_Parser()
 
-def IPV_check(IPV: bool, event_type: str):
-    """Returns True if there exists rows with IPV in event_type table."""
-    # setting the table name and prefix column for sql query
-    if event_type == Event_Types.HIJACK.value:
-        name = Hijacks_Table().name
-        prefix = Hijacks_Table().prefix_column
-    elif event_type == Event_Types.LEAK.value:
-        name = Leaks_Table().name
-        prefix = Leaks_Table().prefix_column
-
-    with Database() as _db:
-        count = 0
-        try:
-            count +=  _db.execute(f'SELECT COUNT({prefix}) FROM {name} WHERE family({prefix}) = {IPV}')[0]['count']
-        except:
-            return False
-        return count > 0
 
 @pytest.mark.bgpstream_website_parser
 class Test_BGPStream_Website_Parser:
     """Tests all local functions within the BGPStream_Website_Parser class."""
 
-    @pytest.mark.slow(reason="Needs to query website many times")
-    def test_run(self):
+    @pytest.mark.slow(reason="Runs the parser many times. Will take hours.")
+    @pytest.mark.parametrize('custom, row_limit, IPV4, IPV6, combination', generate_params())
+    def test_run(self, parser, custom, row_limit, IPV4, IPV6, combination, setup):
         """Tests _run function
 
         Should use every possible combination of parameters with your own
@@ -94,82 +86,39 @@ class Test_BGPStream_Website_Parser:
         assert that the output is approximately what you expect (for instance,
         more than 0 hijacks, shouldn't have empty fields, etc.
         """
+        # beginning every test with empty tables
+        for _type, table in type_table_list():
+            with table(clear=True) as t:
+                pass
 
-        parser = BGPStream_Website_Parser()
+        if custom:
+            with patch('lib_bgp_data.utils.utils.get_tags') as mock:
+                mock.side_effect = setup.open_custom_HTML
+                parser._run(row_limit, IPV4, IPV6, combination)
+        else:
+            parser._run(row_limit, IPV4, IPV6, combination)
 
-        for params in generate_params(False):
-            # recreates tables as empty
-            fresh_tables()
-            parser._run(*params)
+        if row_limit:
+            assert row_count() <= row_limit
 
-            row_count = row_count()
+        for _type, table in type_table_list():
+            for IPV, num in zip([IPV4, IPV6], [4, 6]):
+                with table() as t:
+                    # checks unselected IPV are not in tables
+                    if not IPV and _type != Event_Types.OUTAGE.value:
+                       sql = f'SELECT COUNT({t.prefix_column}) FROM {t.name}\
+                                WHERE family({t.prefix_column}) = {num}'
+                       assert t.get_count(sql) == 0
 
-            row_limit = params[0]
-            IPV4 = 4 if params[1] else False
-            IPV6 = 6 if params[2] else False
-            data_types = params[3]
+                    # check unselected data types are not in tables
+                    if _type not in combination:
+                        assert t.get_count() == 0
 
-            # if a row limit was set, the number of events parsed should be less than or equal to limit
-            if row_limit:
-                assert row_count <= row_limit
-
-            for IPV in [IPV4, IPV6]:
-                for event in data_types:
-                    # Hijacks can have IPV4 and IPV6, so if either are selected for parsing, IPV_check should return True
-                    if IPV and event == Event_Types.HIJACK.value:
-                        assert IPV_check(IPV, event)
-                    # Leaks only have IPV4
-                    elif IPV == 4 and event == Event_Types.LEAK.value:
-                        assert IPV_check(IPV, event)
-                    # Otherwise, the IPV is not selected for parsing, it's a combination of Leaks and IPV6,
-                    # Or outages that have no prefixes
-                    else:
-                        assert not IPV_check(IPV, event)
-
-
-    @patch('lib_bgp_data.utils.utils.get_tags', autospec=True)
-    def test_run_custom(self, mock_get_tags):
-        mock_get_tags.side_effect = open_custom_HTML
-
-        parser = BGPStream_Website_Parser()
-
-        for params in generate_params(True):
-            fresh_tables()
-            parser._run(*params)
-
-            row_limit = params[0]
-            IPV4 = params[1]
-            IPV6 = params[2]
-            data_types = params[3]
-
-            if row_limit == 3:
-                assert row_count() == 3
-            else:
-                required_count = 0
-                # there are 2 hijacks, 1 leak, and 4 outages in the custom HTML
-                for event, count in zip(Event_Types.list_values(), [2, 1, 4]):
-                    if event in data_types:
-                        required_count += count
-                assert required_count == row_count()
-
-                # if all rows are parsed, also check for IPV filtering
-                with Database() as _db:
-                    sql = 'SELECT * FROM {} WHERE event_number = {}'
-
-                    # if IPV4 is parsed, check that these events, which have IPV4 prefixes, are in the tables
-                    if IPV4:
-                        if Event_Types.HIJACK.value in data_types:
-                            assert len(_db.execute(sql.format(Hijacks_Table().name, 229087))) == 1
-                        if Event_Types.LEAK.value in data_types:
-                            assert len(_db.execute(sql.format(Leaks_Table().name, 229100))) == 1
-
-                    # if IPV6 is parsed, check that this hijack was inserted
-                    if IPV6:
-                        if Event_Types.HIJACK.value in data_Types:
-                            assert len(_db.execute(sql.format(Hijacks_Table().name, 230097))) == 1
-
-
-    def test_get_rows(self):
+                    print(t.get_count())
+            
+    @pytest.mark.parametrize('row_limit', [None, 5, 999999])
+    @pytest.mark.parametrize('custom', [True, False])
+    def test_get_rows(self, parser, row_limit, custom, setup):
         """Tests get rows func
 
         For real website, hidden file in this dir:
@@ -180,27 +129,23 @@ class Test_BGPStream_Website_Parser:
         NOTE: try using mock to insert your own html. If that doesn't work,
         add a keyword arg to the get rows func.
         """
-        parser = BGPStream_Website_Parser()
+        if custom:
+            with patch('lib_bgp_data.utils.utils.get_tags') as mock:
+                mock.side_effect = setup.open_custom_HTML
+                rows = utils.get_tags('https://bgpstream.com', 'tr')
+                num_parsed_rows = len(parser._get_rows(row_limit))
+        else:
+            rows = utils.get_tags('https://bgpstream.com', 'tr')
+            num_parsed_rows = len(parser._get_rows(row_limit))
 
-        # test row_limits and if the row_limit should be used
-        row_limits = [(None, False), (20, True), (999999, False)]
+        # if no row limit or row limit is too high, should be total - 10
+        if row_limit is None or row_limit > len(rows):
+            assert num_parsed_rows == len(rows) - 10
+        # otherwise, it should be the row limit
+        else:
+            assert num_parsed_rows == row_limit
 
-        for l in row_limits:
-            rows = utils.get_tags("https://bgpstream.com", "tr")
-            if l[1]:
-                assert len(parser._get_rows(l[0])) == l[0]
-            else:
-                assert len(parser._get_rows(l[0])) == len(rows) - 10
-
-        # checks with custom HTML that has 1 hijack, 1 outage, and 1 leak
-        with patch('lib_bgp_data.utils.utils.get_tags') as mock_get_tag:
-            mock_get_tag.side_effect = open_custom_HTML
-            assert len(parser._get_rows(None)) == 3
-            assert len(parser._get_rows(2)) == 2
-            assert len(parser._get_rows(999999)) == 3
-
-
-    def test_get_row_front_page_info(self):
+    def test_get_row_front_page_info(self, parser, setup):
         """Tests the get_row_front_page_info function
 
         Should insert three different dummy rows and make sure
@@ -208,18 +153,26 @@ class Test_BGPStream_Website_Parser:
         try a row with and without contry/flag.
         Prob should parametize this function.
         """
-        tags = open_custom_HTML('./test_HTML/page.html', 'tr')[:3]
+        for event in setup.events:
+            _type, start, end, url, event_num = \
+            parser._get_row_front_page_info(event['row'])
 
-        parser = BGPStream_Website_Parser()
-        outage_info = ('Outage', '2020-03-18 22:31:00+00:00', '2020-03-18 22:34:00+00:00', '/event/229106', '229106')
-        leak_info = ('BGP Leak', '2020-03-18 20:26:10+00:00', 'None', '/event/229100', '229100')
-        hijack_info = ('Possible Hijack', '2020-03-18 17:41:23+00:00', 'None', '/event/229087', '229087')
-        infos = [outage_info, leak_info, hijack_info]
+            # there are subtle differences between how
+            # bgpstream_website_parser and data_classes parses this info.
+            # For constistency sake, search for returned text in HTML
 
-        for i in range(len(tags)):
-            assert parser._get_row_front_page_info(tags[i]) == infos[i]
+            # you can omit the 'find_all' method call
+            # tag(*args) is equivalent to tag.find_all(*args)
+            assert len(event['row'](string=re.compile(_type))) != 0
+            # slicing removes the '+00:00' that is added in the function
+            assert len(event['row'](string=re.compile(start[:-6]))) != 0
+            if end != 'None':
+                assert len(event['row'](string=re.compile(end[:-6]))) != 0
 
-    def test_generate_known_events(self):
+            assert len(event['row'](href=re.compile(url))) != 0
+            assert len(event['row'](href=re.compile(event_num))) != 0
+
+    def test_generate_known_events(self, parser):
         """Tests the generate_known_events function
 
         Fill hijack, leak, and outage table with dummy info
@@ -227,21 +180,28 @@ class Test_BGPStream_Website_Parser:
         Make sure it doesn't fail if one of the tables is empty either.
         Parametize is prob required.
         """
-        # inserts a dummy event into hijack, tests if generate_known_events gets dummy event, deletes dummy event
+        # insert rows with this info
         test_event_number = 1
-        test_start_time = strftime('%Y-%m-%d %H:%M:%S', gmtime(time() - 86400))
-        test_end_time = strftime('%Y-%m-%d %H:%M:%S', gmtime(time()))
+        test_start_time = strftime('%Y-%m-%d %H:%M:%S', gmtime(time() - 86400)) + '+00:00'
+        test_end_time = strftime('%Y-%m-%d %H:%M:%S', gmtime(time())) + '+00:00'
 
-        for _Table_Class in [Hijacks_Table, Leaks_Table, Outages_Table]:
-            with _Table_Class() as _db:
-                _db.execute(f"""INSERT INTO {_db.name}(event_number, start_time, end_time)
-                            VALUES(%s, %s::timestamp with time zone, %s::timestamp with time zone)""",
-                            [test_event_number, test_start_time, test_end_time])
-        events = BGPStream_Website_Parser()._generate_known_events()
-        assert events[test_event_number] == (test_start_time + '+00:00', test_end_time + '+00:00')
+        for _type, table in type_table_list():
+            with table(clear=True) as t:
+                # insert an event into each table
+                t.execute(f"""INSERT INTO {t.name}
+                              (event_number, start_time, end_time)
+                              VALUES(%s, %s::timestamp with time zone,
+                                         %s::timestamp with time zone)""",
+                          [test_event_number, test_start_time, test_end_time])
 
-        for _Table_Class in [Hijacks_Table, Leaks_Table, Outages_Table]:
-            with _Table_Class() as _db:
-                _db.execute(f"DELETE FROM {_db.name} WHERE event_number={test_event_number}")
+                # event_numbers need to be distinct because dict keys
+                test_event_number += 1
+
+        # check that event was properly generated
+        events = parser._generate_known_events()
+        for event_number in range(1, 4):
+            assert events[event_number] == (test_start_time, test_end_time)
+
+
 
 

@@ -70,11 +70,14 @@ class Data:
         self._temp_row = {}
         # Gets the common elements and stores them in temp_row
         # Gets the html of the page for that specific event
-        as_info, extended_children = self._parse_common_elements(row)
-        # Parses uncommon elements and stores them in temp_row
-        self._parse_uncommon_info(as_info, extended_children)
-        # Formats the temp_row and appends it to the list of events
-        self.data.append(self._format_temp_row())
+        try:
+            as_info, extended_children = self._parse_common_elements(row)
+            # Parses uncommon elements and stores them in temp_row
+            self._parse_uncommon_info(as_info, extended_children)
+            # Formats the temp_row and appends it to the list of events
+            self.data.append(self._format_temp_row())
+        except AttributeError:
+            logging.debug('ERROR IN THIS ROW. WILL NOT BE APPENDED')
 
     
     def db_insert(self, IPV4=True, IPV6=False):
@@ -92,7 +95,7 @@ class Data:
 
         with self.table() as db_table:
             # Removes unwanted prefixes
-            if hasattr(db_table, "prefix_colum"):
+            if hasattr(db_table, "prefix_column"):
                 db_table.filter_by_IPV_family(IPV4,
                                               IPV6,
                                               db_table.prefix_column)
@@ -213,13 +216,15 @@ class Hijack(Data):
             extended_children[end - 6].string).group(1).strip()
         self._temp_row["more_specific_prefix"] = self._ip_regex.search(
             extended_children[end - 4].string).group(1).strip()
+
         self._temp_row["detected_as_path"] = self._nums_regex.search(
-            extended_children[end - 2].string.strip()).group(1)
+            extended_children[end - 2].string.strip()).group(1) 
         self._temp_row["detected_as_path"] = str([int(s) for s in
             self._temp_row.get("detected_as_path").split(' ')])
         self._temp_row["detected_as_path"] =\
             self._temp_row.get("detected_as_path"
                                ).replace('[', '{').replace(']', '}')
+
         self._temp_row["detected_by_bgpmon_peers"] = self._nums_regex.search(
             extended_children[end - 1].string.strip()).group(1)
         logging.debug("Parsed Hijack Row")
@@ -298,6 +303,6 @@ class Outage(Data):
             len(extended_children) - 1].string.strip()
         # Finds all the numbers within a string
         prefix_info = self._nums_regex.findall(prefix_string)
-        self._temp_row["number_prefixes_affected"] = prefix_info[0]
-        self._temp_row["percent_prefixes_affected"] = prefix_info[1]
+        self._temp_row["number_prefixes_affected"] = prefix_info[0].strip()
+        self._temp_row["percent_prefixes_affected"] = prefix_info[1].strip()
         logging.debug("Parsed Outage")
