@@ -67,11 +67,11 @@ class Generic_Table(Database):
 
         return self.execute(f"SELECT * FROM {self.name}")
 
-    def get_count(self, sql: str = None) -> int:
+    def get_count(self, sql: str = None, data: list = []) -> int:
         """Gets count from table"""
 
         sql = sql if sql else f"SELECT COUNT(*) FROM {self.name}"
-        return self.execute(sql)[0]["count"]
+        return self.execute(sql, data)[0]["count"]
 
 
     def clear_table(self):

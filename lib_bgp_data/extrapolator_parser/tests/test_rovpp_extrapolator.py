@@ -15,36 +15,23 @@ __status__ = "Development"
 
 import pytest
 
-from ..extrapolator_parser import Extrapolator_Parser
+from ..rovpp_extrapolator_parser import ROVPP_Extrapolator_Parser
 
 
 @pytest.mark.extrapolator
-class Test_Extrapolator:
+@pytest.mark.rovpp
+class Test_ROVPP_Extrapolator:
     """Tests all local functions within the Extrapolator class."""
 
     @pytest.mark.skip(reason="New hires, and not finished writing")
     def test_run(self):
         """Tests the run method of the extrapolator.
 
-        Feed in a relationship data set and small mrt file.
-        Should perform a system test where it checks the expected
-        output.
+        Run a system test
         Should also run input validation tests.
         """
 
         pass
-
-    @pytest.mark.skip(reason="New hires will work on this")
-    def test_input_validation(self):
-        """Tests the input validation of the extrapolator.
-
-        Try with and without:
-        Peers table
-        Provider Customers table
-        Input table
-        Installation.
-        (Probably should paremtize this function)
-        """
 
     @pytest.mark.skip(reason="New hires, and not finished writing")
     def test_install(self):

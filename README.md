@@ -848,7 +848,7 @@ ROAs_Parser().parse_roas()
 ```
 
 #### From the Command Line
-Depending on the permissions of your system, and whether or not you pip installed the package with sudo, you might be able to run the ROAs Parser with:
+Depending on the permissions of your system, and whether or not you installed the package with sudo, you might be able to run the ROAs Parser with:
 
 ```lib_bgp_data --roas_parser```
 
@@ -1822,62 +1822,6 @@ Other convenience funcs:
 
 Again please note: upon connection, it creates the tables. If clear is passed, it will clear them. After the context manager is over it will close the database.
 
-Initializing the Database using db_connection (which should always be used):
-
-
-| Parameter    | Default                             | Description                                                                                                       |
-|--------------|-------------------------------------|-------------------------------------------------------------------------------------------------------------------|
-| table | Database | What gets initialized |
-| logger         | ```Thread_Safe_Logger()```     | Logger used to log information |
-| clear | ```False``` | Clear table upon initialization. Leave for normal db usage | 
-| cursor_factory         | ```RealDictCursor```     | Format for how data is returned                                                                                         |
-> Note that any one of the above attributes can be changed or all of them can be changed in any combination
-
-To initialize Database with default values using db_connection:
-```python
-from lib_bgp_data import Database, db_connection
-with db_connection(Database) as db:
-    pass
-```                 
-To initialize the Database with logger on debug using db_connection:
-```python
-from logging import DEBUG
-from lib_bgp_data import Database, db_connection, Thread_Safe_Logger as Logger
-with db_connection(Database, Logger({"stream_level": DEBUG)) as db:
-    pass
-```
-To initialize the Database with a custom cursor factory other than RealDictCursor and custom logging:
-```python
-from logging import DEBUG
-from psycopg2.extras import NamedTupleCursor
-from lib_bgp_data import Database, db_connection, Thread_Safe_Logger as Logger
-with db_connection(Database,
-                   Logger({"stream_level": DEBUG),
-                   cursor_factory=NamedTupleCursor) as db:
-    pass
-```
-To get data from a query:
-```python
-from lib_bgp_data import Database, db_connection
-with db_connection(Database) as db:
-    data = db.execute("SELECT * FROM my_table WHERE my_val=%s", [1])
-```
-To execute multiple sql queries at once:
-```python
-from lib_bgp_data import Database, db_connection
-with db_connection(Database) as db:
-    sqls = ["SELECT * FROM my_table", "SELECT * FROM my_table2"]
-    data = db.multiprocess_execute(sqls)
-```
-To unhinge/rehinge database (disable writing to disk, then reenable it):
-```python
-from lib_bgp_data import Database, db_connection
-with db_connection(Database) as db:
-    db.unhinge_db()
-    # do intensive queries
-    db.rehinge_db()
-```
-
 ### Database Design Choices
 * [lib\_bgp\_data](#lib_bgp_data)
 * [Database Submodule](#database-submodule)
@@ -1962,7 +1906,7 @@ On Redhat the steps can be found here:
 [https://developers.redhat.com/blog/2018/08/13/install-python3-rhel/](https://developers.redhat.com/blog/2018/08/13/install-python3-rhel/)
 NOTE: If you are installing it on an OS other than ubuntu, I do not think the install script will work. Good luck doing it all manually.
 
-Note: if you are using our machine ahlocal, there are some very weird permission errors. Due to SE Linux and the gateway, etc, sudo cannot access your home directory. I have tried using ```export HOME=/root``` and other solutions to no avail. No one seems to be able to figure it out. No one seems to care either, and I have told the higher ups and coding is the priority. To run this I would install it in a top level directory like /ext and install it by using ```sudo su``` and continuing from there. I'm sure this is not completely secure so hopefully this will get fixed in the future but no one seems to know how to do that lol.
+Note: if you are using our machine ahlocal, ahdev, or  one similar, YOU MUST BE ROOT! I've been told that's the way to do it by the higher ups, I know it is not secure. Do ```sudo su``` to become root.
 
 Once you have virtualenv installed, run 
 ```bash
@@ -1971,11 +1915,15 @@ source ./env/bin/activate
 ```
 You now have a python virtual environment. You should still be a super user.
 Then, if you are not installing for development, run:
+
+NOTE: THIS VERSION HAS BEEN OUT OF DATE FOR A WHILE, TO GET LATEST UPDATES INSTALL DEVELOPMENT VERSION
 ```bash
 pip3 install wheel --upgrade
-pip3 install lib_bgp_data --upgrade --force
+pip3 install lib_bgp_data --upgrade
 ```
 This will install the package and all of it's python dependencies.
+
+NOTE: THIS VERSION IS UP TO DATE BUT NOT STABLE, STABLE PACKAGE IS COMING
 
 If you want to install the project for development:
 ```bash
@@ -1984,7 +1932,7 @@ cd lib_bgp_data
 pip3 install wheel --upgrade
 pip3 install -r requirements.txt --upgrade
 python3 setup.py sdist bdist_wheel
-python3 setup.py develop --force
+python3 setup.py develop
 ```
 
 There are lots of other dependencies, but they will be installed automatically the first time they are needed. If not, manual install links are below:
@@ -2239,18 +2187,36 @@ BSD License
 I added this section just so I would have to deal with less overhead with all the new hires that we were getting. To start with you will need to do some things to get started.
 
 1. Email Amir and Jeanette (if you don't know her email just email Amir) and get set up with payroll on ess.uconn.edu. When you submit your hours, you will also need to submit an excel spreadsheet of the times that you worked, and what you did during those hours. You can keep the descriptions short, for example: Aug 8 9am-5pm Worked on Roas parser. Whenever you work please update your hours so that you do not forget. Please remind me and I will get you access to this doc. Also note that all training is billable hours. We expect at least 10 hours a week, but if you have heavy or light weeks due to school everything is very flexible, certainly don't let this get in the way of your grades. Please just let me know in advance if you will be working less and have high priority tasks, and I'll redelegate them elsewhere.
+
 2. Email Professor Laurent with your public ssh key and password, cc Amir and myself, and make sure to ask for access and sudo power on ahlocal and ahdev. To log on to these servers, do:
 ```ssh -A jmf@csi-lab-ssh.engr.uconn.edu```
 ```ssh -A ahlocal```
 ```sudo -E su```
-Once you have cloned this repo (NOTE: DO NOT USE GLOBAL CONFIG!!):
-```git config user.email <youremail>```
-```git config user.name <"Your Name">```
+
+For the first time you log in:
+```bash
+cd /new_hires/
+mkdir <your_name>
+cd <your_name>
+git clone git@github.com:jfuruness/lib_bgp_data.git
+```
+NOTE: do NOT use global configurations
+```bash
+git config user.email <youremail>
+git config user.name <"Your Name">
+```
+
 Also note that you should code and run your programs on these servers. You should not do it on your local machine. Our servers are much faster than your laptop with much more memory, by a margin of more than 10X. Time is money. In addition, when there is a problem it will help me to debug if I can access your code and run it. We've also had problems in the past of code breaking when run on our environments that didn't break on laptops, and it had to be scrapped. I recommend using tmux in conjunction with vim.
+
 3. We will need to get you access to slack. Email me a reminder to do that, and to give you access to Jira. Any questions you may have, slack is the way to reach me.
-4. Once you have access to the Jira board, this is where we will keep track of what we need to do. Every week we have a "stand up" meeting, a short 15 minute meeting where we go over the progress we've made on the tickets we are working on, and any roadblocks we may have. Make sure to have pushed your code to your own branch before this meeting.
+
+4. Once you have access to the Jira board, this is where we will keep track of what we need to do. Every week we have a "stand up" meeting, a short 15 minute meeting where we go over the progress we've made on the tickets we are working on, and any roadblocks we may have. Make sure to have pushed your code to your own branch before this meeting. We will go over what you worked on, what you are working on, what you will work on, and any roadblocks.
+
 5. Read the Goa Rexford paper (ask for access) and I'd read this README for clarity on some things. Message me when this is done so that we can have a one on one discussion of our research and what you will be working on. Don't worry if this stuff is confusing, I did not get anything when I first started, it won't be a problem at all.
-6. That's about it! We are working on some exciting stuff and exciting papers. We usually publish a couple every year, so you are definitely working on some awesome stuff that will change the internet as we know it!
+
+6. Follow the installation instructions. Install the repo you cloned.
+
+7. That's about it! We are working on some exciting stuff and exciting papers. We usually publish a couple every year, so you are definitely working on some awesome stuff that will change the internet as we know it!
 
 ## TODO/Possible Future Improvements
    * [lib\_bgp\_data](#lib_bgp_data)

@@ -27,6 +27,7 @@ from .rpki_validator import RPKI_Validator_Wrapper, RPKI_Validator_Parser
 #from .api import create_app
 from .extrapolator_parser import Extrapolator_Parser
 from .database import Database, Postgres, Generic_Table
+from .rovpp import ROVPP_Simulator
 #from .forecast import Forecast
 
 class NotSudo(Exception):

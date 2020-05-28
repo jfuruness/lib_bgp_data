@@ -42,6 +42,7 @@ class Relationships_Parser(Parser):
 
         # Fills these rov++ specific tables
         with ASes_Table(clear=True) as _as_table:
+            _as_table.clear_table()
             _as_table.fill_table()
         # creates and closes table
         with AS_Connectivity_Table(clear=True) as _conn_table:

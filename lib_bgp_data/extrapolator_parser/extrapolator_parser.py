@@ -35,7 +35,7 @@ class Extrapolator_Parser(Parser):
 
     default_results_table = "exr_results"
     default_depref_table = "exr_results_depref"
-    bgp_install_location = "/usr/bin/bgp-extrapolator"
+    branch = "master"
 
     def _run(self, input_table="filtered_mrt_announcements"):
         """Runs the bgp-extrapolator and verifies input.
@@ -43,30 +43,30 @@ class Extrapolator_Parser(Parser):
         Installs if necessary. See README for in depth instructions.
         """
 
-        self._input_validation(input_table)
+        self._input_validation([input_table])
 
         logging.info("About to run the forecast extrapolator")
 
         # People who are in charge of extrapolator need to change this
-        bash_args = ("bgp-extrapolator"
+        bash_args = (f"{self.install_location}"
                      f" -a {input_table}"
                      f" -r {Extrapolator.default_results_table}"
                      f" -d {Extrapolator.default_depref_table}")
         utils.run_cmds(bash_args)
 
-    def _input_validation(self, input_table: str):
+    def _input_validation(self, input_tables: list):
         """Validates proper tables exist and exr is installed"""
 
         logging.debug("Validating install")
-        if not os.path.exists(Extrapolator.bgp_install_location):
-            self.install()
+        self.install()
 
         logging.debug("Validating table exist that extrapolator needs")
         with Database() as db:
-            sql = "SELECT * FROM {} LIBSD 1;"
+            sql = "SELECT * FROM {} LIMIT 1;"
 
-            assert len(db.execute(sql.format(input_table))) > 0,\
-                f"{input_table} is empty and is necessary for extrapolator"
+            for input_table in input_tables:
+                assert len(db.execute(sql.format(input_table))) > 0,\
+                    f"{input_table} is empty and is necessary for extrapolator"
 
             for table in [Peers_Table.name, Provider_Customers_Table.name]:
                 if len(db.execute(sql.format(table))) == 0:
@@ -81,10 +81,10 @@ class Extrapolator_Parser(Parser):
     def install(self):
         """Installs extrapolator and dependencies"""
 
-        logging.warning("It appears that the extrapolator is not installed.")
-        logging.warning("Installing extrapolator now")
+        logging.warning("Due to unstable branches, installing extrapolator now")
         self._install_dependencies()
         self._install_extrapolator()
+        logging.info("Installation complete")
 
     def _install_dependencies(self):
         """Installs dependencies that the extrapolator needs"""
@@ -107,8 +107,19 @@ class Extrapolator_Parser(Parser):
         """Installs extrapolator and moves it to /usr/bin"""
 
         cmds = ["git clone https://github.com/c-morris/BGPExtrapolator.git",
-                "cd BGPExtrapolator",
-                f"make -j{cpu_count()}",
-                "sudo make install",
-                f"cp bgp-extrapolator {Extrapolator.bgp_install_location}"]
+                "cd BGPExtrapolator"]
+        # Sometimes dev team moves stuff to other branches
+        if self.branch:
+            cmds += [f"git checkout {self.branch}"]
+
+        cmds += [f"make -j{cpu_count()}",
+                 "sudo make",
+                 f"cp bgp-extrapolator {self.install_location}"]
+
         utils.run_cmds(cmds)
+
+    @property
+    def install_location(self):
+        """Returns install location for the extrapolator"""
+
+        return f"/usr/bin/{self.branch}_extrapolator"

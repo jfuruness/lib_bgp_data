@@ -18,7 +18,7 @@ import multiprocessing_logging
 
 from ..database.config import set_global_section_header
 
-def config_logging(level=logging.INFO, section=None):
+def config_logging(level=logging.INFO, section=None, reconfigure=False):
     """Configures logging to log to a file"""
 
     try:
@@ -28,7 +28,7 @@ def config_logging(level=logging.INFO, section=None):
 
     # Makes log path and returns it
     path = _get_log_path(global_section_header)
-    if len(logging.root.handlers) != 2:
+    if len(logging.root.handlers) != 2 or reconfigure:
         logging.root.handlers = []
         logging.basicConfig(level=level,
                             format='%(asctime)s-%(levelname)s: %(message)s',
@@ -39,7 +39,7 @@ def config_logging(level=logging.INFO, section=None):
         multiprocessing_logging.install_mp_handler()
 
 def _get_log_path(section):
-    fname = f"{section}_{datetime.now().strftime('%Y_%M_%d')}.log"
+    fname = f"{section}_{datetime.now().strftime('%Y_%m_%d')}.log"
     log_dir = "/var/log/lib_bgp_data/"
     if not os.path.exists(log_dir):
         os.makedirs(log_dir)

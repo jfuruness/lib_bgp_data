@@ -105,17 +105,11 @@ class ASes_Table(Generic_Table):
     name = "ases"
 
     def _create_tables(self):
-        """Creates tables if they do not exists.
+        sql = f"""CREATE UNLOGGED TABLE IF NOT EXISTS {self.name}(
+              asn BIGINT,
+              as_types BOOLEAN[]);"""
+        self.execute(sql)
 
-        Called during intialization of the database class.
-        """
-
-        sql = """CREATE UNLOGGED TABLE IF NOT EXISTS ases (
-                 asn bigint,
-                 as_type smallint,
-                 impliment BOOLEAN
-                 );"""
-        self.cursor.execute(sql)
 
     def fill_table(self):
         """Populates the ases table with data from the tables
@@ -125,15 +119,13 @@ class ASes_Table(Generic_Table):
 
         make_sure_tables_exist([Peers_Table, Provider_Customers_Table])
 
-        self.clear_table()
         logging.debug("Initializing ases table")
         sql = """CREATE UNLOGGED TABLE IF NOT EXISTS ases AS (
-                 SELECT customer_as AS asn, 'bgp' AS as_type,
-                    FALSE AS impliment FROM (
-                     SELECT DISTINCT customer_as FROM provider_customers
-                     UNION SELECT DISTINCT provider_as FROM provider_customers
-                     UNION SELECT DISTINCT peer_as_1 FROM peers
-                     UNION SELECT DISTINCT peer_as_2 FROM peers) union_temp
+                 SELECT asn AS asn, ARRAY[]::BOOLEAN[] AS as_types FROM (
+                     SELECT DISTINCT customer_as AS asn FROM provider_customers
+                     UNION SELECT DISTINCT provider_as AS asn FROM provider_customers
+                     UNION SELECT DISTINCT peer_as_1 AS asn FROM peers
+                     UNION SELECT DISTINCT peer_as_2 AS asn FROM peers) union_temp
                  );"""
         self.execute(sql)
 

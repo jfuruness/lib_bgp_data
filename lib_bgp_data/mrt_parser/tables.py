@@ -43,7 +43,7 @@ class MRT_Announcements_Table(Generic_Table):
         Called during initialization of the database class.
         """
 
-        sql = """CREATE UNLOGGED TABLE IF NOT EXISTS mrt_announcements (
+        sql = f"""CREATE UNLOGGED TABLE IF NOT EXISTS {self.name} (
                  prefix cidr,
                  as_path bigint ARRAY,
                  origin bigint,
