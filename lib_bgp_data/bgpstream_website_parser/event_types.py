@@ -15,6 +15,7 @@ __status__ = "Development"
 
 from ..base_classes import Enumerable_Enum
 
+
 class Event_Types(Enumerable_Enum):
     """Possible bgpstream.com event types"""
 

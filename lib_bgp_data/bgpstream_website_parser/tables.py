@@ -30,7 +30,6 @@ __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
 import logging
-from time import strftime, gmtime
 
 from ..database import Generic_Table
 
@@ -45,7 +44,6 @@ class Data_Table(Generic_Table):
     """
 
     __slots__ = []
-
 
     def create_index(self):
         """Creates an index on the times for later table creations"""
@@ -100,7 +98,7 @@ class Hijacks_Table(Data_Table):
               );"""
         self.cursor.execute(sql)
 
-    
+
 class Leaks_Table(Data_Table):
     """Leak Table class, inherits from Database.
 
@@ -109,7 +107,7 @@ class Leaks_Table(Data_Table):
 
     __slots__ = []
 
-    name = "leaks"    
+    name = "leaks"
     prefix_column = "leaked_prefix"
 
     def _create_tables(self):
@@ -135,6 +133,7 @@ class Leaks_Table(Data_Table):
               );"""
         self.cursor.execute(sql)
 
+
 class Outages_Table(Data_Table):
     """Outage Table class, inherits from Database.
 
@@ -144,7 +143,7 @@ class Outages_Table(Data_Table):
     __slots__ = []
 
     name = "outages"
-    
+
     def _create_tables(self):
         """Creates tables if they do not exist"""
 

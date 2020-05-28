@@ -16,6 +16,7 @@ __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
 from ..utils import utils
+from ..utils.logger import config_logging
 
 
 class MRT_Installer:
@@ -63,10 +64,10 @@ class MRT_Installer:
         """Installs bgpdump and all dependencies"""
 
         cmds = ["git clone https://github.com/RIPE-NCC/bgpdump.git",
-               "cd bgpdump/",
-               "sh ./bootstrap.sh",
-               "./bgpdump -T",
-               "sudo cp bgpdump /usr/bin/bgpdump" ]
+                "cd bgpdump/",
+                "sh ./bootstrap.sh",
+                "./bgpdump -T",
+                "sudo cp bgpdump /usr/bin/bgpdump"]
         utils.run_cmds(cmds)
         utils.run_cmds("sudo cp bgpdump /usr/local/bin/bgpdump")
 
@@ -92,8 +93,6 @@ class MRT_Installer:
     @utils.delete_files("lzma-dev/")
     def _install_lzma_dev(self):
         """Installs lzma-dev, needed for bgpscanner"""
-
-        
 
         cmds = ["mkdir lzma-dev",
                 "cd lzma-dev/",

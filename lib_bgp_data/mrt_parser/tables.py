@@ -23,8 +23,6 @@ __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
-import logging
-
 from ..database import Generic_Table
 
 

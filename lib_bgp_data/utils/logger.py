@@ -18,6 +18,7 @@ import multiprocessing_logging
 
 from ..database.config import set_global_section_header
 
+
 def config_logging(level=logging.INFO, section=None, reconfigure=False):
     """Configures logging to log to a file"""
 
@@ -37,6 +38,7 @@ def config_logging(level=logging.INFO, section=None, reconfigure=False):
 
         logging.captureWarnings(True)
         multiprocessing_logging.install_mp_handler()
+
 
 def _get_log_path(section):
     fname = f"{section}_{datetime.now().strftime('%Y_%m_%d')}.log"
