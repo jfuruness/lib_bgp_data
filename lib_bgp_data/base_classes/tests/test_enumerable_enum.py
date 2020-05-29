@@ -6,7 +6,6 @@ For specifics on each test, see docstrings under each function.
 """
 
 import pytest
-
 from ..enumerable_enum import Enumerable_Enum
 
 
@@ -21,8 +20,13 @@ __status__ = "Development"
 class Test_Enumerable_Enum:
     """Tests all local functions within the Enumerable_enum class."""
 
-    @pytest.mark.skip(reason="work for new hires")
     def test_list_values(self):
         """Test that the values of the enum are listed"""
 
-        pass
+        class Foo(Enumerable_Enum):
+            STRING = 'x'
+            INT = 1
+            FLOAT = 3.14
+            LIST = ['x', 'y', 'z', 1, 2, 3]
+
+        assert Foo.list_values() == ['x', 1, 3.14, ['x', 'y', 'z', 1, 2, 3]]
