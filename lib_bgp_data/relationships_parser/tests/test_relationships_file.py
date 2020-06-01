@@ -101,10 +101,10 @@ class Test_Relationships_File:
        
         # Patch the utils.download and utils.unzip_bz2 methods and then run 
         # the parse_file method
-        dl = ('lib_bgp_data.relationships_parser.relationships_file.utils.'
-              'download_file')
-        uz = ('lib_bgp_data.relationships_parser.relationships_file.utils.'
-              'unzip_bz2')
+        dl = ("lib_bgp_data.relationships_parser.relationships_file.utils."
+              "download_file")
+        uz = ("lib_bgp_data.relationships_parser.relationships_file.utils."
+              "unzip_bz2")
         with patch(dl) as dl_mock, patch(uz) as uz_mock:
             dl_mock.side_effect = self._custom_download_file
             uz_mock.side_effect = self._custom_unzip_bz2
@@ -113,19 +113,15 @@ class Test_Relationships_File:
         # Check the database and assure we have expected outputs for both
         # the peers table and the providers_customers table
         with Peers_Table() as db:
-            expected = [
-                {'peer_as_1': 1, 'peer_as_2': 11537},
-                {'peer_as_1': 1, 'peer_as_2': 44222}
-            ]
+            expected = [{"peer_as_1": 1, "peer_as_2": 11537},
+                        {"peer_as_1": 1, "peer_as_2": 44222}]
             result = [dict(row) for row in db.get_all()]
             assert expected == result
         
         with Provider_Customers_Table() as db:
-            expected = [
-                {'provider_as': 1, 'customer_as': 21616},
-                {'provider_as': 1, 'customer_as': 34732},
-                {'provider_as': 1, 'customer_as': 41387}
-            ]
+            expected = [{"provider_as": 1, "customer_as": 21616},
+                        {"provider_as": 1, "customer_as": 34732},
+                        {"provider_as": 1, "customer_as": 41387}]
             result = [dict(row) for row in db.get_all()]
             assert expected == result
 
@@ -151,14 +147,14 @@ class Test_Relationships_File:
         downloaded
         """
 
-        test_path = '/tmp/test_Relationships_Parser/1.decompressed'
-        prep_path = '.ex_rel_file.decompressed'
-        with open(test_path, 'w') as test, open(prep_path, 'r') as prep:
+        test_path = "/tmp/test_Relationships_Parser/1.decompressed"
+        prep_path = ".ex_rel_file.decompressed"
+        with open(test_path, "w") as test, open(prep_path, "r") as prep:
             for line in prep.readlines():
                 test.write(line) 
     
     def _custom_unzip_bz2(self, path):
         """Returns the path of where the unzipped file would be"""
 
-        return '/tmp/test_Relationships_Parser/1.decompressed'
+        return "/tmp/test_Relationships_Parser/1.decompressed"
 
