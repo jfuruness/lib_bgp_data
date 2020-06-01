@@ -114,17 +114,17 @@ class Test_Relationships_File:
         # the peers table and the providers_customers table
         with Peers_Table() as db:
             expected = [
-                {'peer_as_1' : 1, 'peer_as_2' : 11537},
-                {'peer_as_1' : 1, 'peer_as_2' : 44222}
+                {'peer_as_1': 1, 'peer_as_2': 11537},
+                {'peer_as_1': 1, 'peer_as_2': 44222}
             ]
             result = [dict(row) for row in db.get_all()]
             assert expected == result
         
         with Provider_Customers_Table() as db:
             expected = [
-                {'provider_as' : 1, 'customer_as' : 21616},
-                {'provider_as' : 1, 'customer_as' : 34732},
-                {'provider_as' : 1, 'customer_as' : 41387}
+                {'provider_as': 1, 'customer_as': 21616},
+                {'provider_as': 1, 'customer_as': 34732},
+                {'provider_as': 1, 'customer_as': 41387}
             ]
             result = [dict(row) for row in db.get_all()]
             assert expected == result
