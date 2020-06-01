@@ -148,7 +148,7 @@ class Test_Relationships_File:
 
     def _custom_download_file(self, url, path):
         """Writes the example file to where the file would normally be 
-        downloaded.
+        downloaded
         """
 
         test_path = '/tmp/test_Relationships_Parser/1.decompressed'
