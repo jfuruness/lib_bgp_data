@@ -33,7 +33,7 @@ __credits__ = ["Justin Furuness", "James Breslin"]
 __Lisence__ = "BSD"
 __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
-__status__ = "Development"
+__status__ = "Production"
 
 
 def make_sure_tables_exist(table_classes: list):
