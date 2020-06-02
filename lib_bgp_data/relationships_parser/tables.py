@@ -54,7 +54,6 @@ def make_sure_tables_exist(table_classes: list):
         Relationships_Parser().run()
 
 
-
 class Provider_Customers_Table(Generic_Table):
     """Class with database functionality.
 
@@ -74,6 +73,7 @@ class Provider_Customers_Table(Generic_Table):
               customer_as bigint
               );"""
         self.execute(sql)
+
 
 class Peers_Table(Generic_Table):
     """Class with database functionality.
@@ -95,6 +95,7 @@ class Peers_Table(Generic_Table):
               );"""
         self.execute(sql)
 
+
 class ASes_Table(Generic_Table):
     """Class with database functionality.
 
@@ -110,12 +111,10 @@ class ASes_Table(Generic_Table):
               as_types BOOLEAN[]);"""
         self.execute(sql)
 
-
     def fill_table(self):
         """Populates the ases table with data from the tables
         peers and provider_customers.
         """
-
 
         make_sure_tables_exist([Peers_Table, Provider_Customers_Table])
 
