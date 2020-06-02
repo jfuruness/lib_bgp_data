@@ -23,6 +23,7 @@ import warnings
 from datetime import datetime
 from ..logger import config_logging, _get_log_path
 
+
 @pytest.mark.logging
 class Test_Logging:
     """Tests all local functions within the logger.py file."""
@@ -42,14 +43,14 @@ class Test_Logging:
             global_section_header = set_global_section_header(section)
         # Make a test logger
         config_logging()
-        # Get the path of the log file 
+        # Get the path of the log file
         path = _get_log_path(global_section_header)
         # Clear it
         open(path, 'w').close()
         # Prepare to capture stdout
         output = io.StringIO()
         # Try to catch a warning
-        with contextlib.redirect_stdout(output): 
+        with contextlib.redirect_stdout(output):
             self._send_warning()
         # Check that stdout is not none
         assert output.getvalue() is not None
@@ -69,9 +70,6 @@ class Test_Logging:
         with open(path, 'r') as f:
             assert f.read() == ''
             f.close()
-        
-        
-          
 
     def test_get_log_path(self):
         """Tests get log path func
@@ -90,9 +88,9 @@ class Test_Logging:
 ##################
 
     def _send_warning(self):
-    """Sends warning to logger"""
+        """Sends warning to logger"""
         logging.warning("Test warning")
-    
+
     def _send_info(self):
-    """Sends info to logger. Logger should not log this"""
+        """Sends info to logger. Logger should not log this"""
         logging.info("Test info. You should not see this.")
