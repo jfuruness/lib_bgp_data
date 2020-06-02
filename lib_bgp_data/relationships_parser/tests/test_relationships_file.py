@@ -20,6 +20,7 @@ __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Production"
 
+
 @pytest.mark.relationships_parser
 class Test_Relationships_File:
     """Tests all local functions within the Relationships File class."""
@@ -75,7 +76,7 @@ class Test_Relationships_File:
         # Assume rovpp == False for table attributes call, since it makes
         # no difference for testing this method
         _exp_table_attr = {Rel_Types.PROVIDER_CUSTOMERS:
-                               Provider_Customers_Table,
+                           Provider_Customers_Table,
                            Rel_Types.PEERS: Peers_Table}
 
         _grep, _csvs, _table_attr = self.rel_file._get_rel_attributes()
