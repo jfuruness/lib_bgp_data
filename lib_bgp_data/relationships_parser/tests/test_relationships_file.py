@@ -98,8 +98,8 @@ class Test_Relationships_File:
         We use a small example relationship file, for which we know the
         expected output. We check that the data in the db is equivalent to
         what we expect."""
-       
-        # Patch the utils.download and utils.unzip_bz2 methods and then run 
+
+        # Patch the utils.download and utils.unzip_bz2 methods and then run
         # the parse_file method
         dl = ("lib_bgp_data.relationships_parser.relationships_file.utils."
               "download_file")
@@ -109,7 +109,7 @@ class Test_Relationships_File:
             dl_mock.side_effect = self._custom_download_file
             uz_mock.side_effect = self._custom_unzip_bz2
             self.rel_file.parse_file()
-        
+
         # Check the database and assure we have expected outputs for both
         # the peers table and the providers_customers table
         with Peers_Table() as db:
@@ -117,7 +117,7 @@ class Test_Relationships_File:
                         {"peer_as_1": 1, "peer_as_2": 44222}]
             result = [dict(row) for row in db.get_all()]
             assert expected == result
-        
+
         with Provider_Customers_Table() as db:
             expected = [{"provider_as": 1, "customer_as": 21616},
                         {"provider_as": 1, "customer_as": 34732},
@@ -143,7 +143,7 @@ class Test_Relationships_File:
         return peer_count, cust_prov_count
 
     def _custom_download_file(self, url, path):
-        """Writes the example file to where the file would normally be 
+        """Writes the example file to where the file would normally be
         downloaded
         """
 
@@ -151,10 +151,9 @@ class Test_Relationships_File:
         prep_path = ".ex_rel_file.decompressed"
         with open(test_path, "w") as test, open(prep_path, "r") as prep:
             for line in prep.readlines():
-                test.write(line) 
-    
+                test.write(line)
+
     def _custom_unzip_bz2(self, path):
         """Returns the path of where the unzipped file would be"""
 
         return "/tmp/test_Relationships_Parser/1.decompressed"
-
