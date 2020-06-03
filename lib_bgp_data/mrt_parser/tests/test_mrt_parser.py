@@ -100,14 +100,10 @@ class Test_MRT_Parser:
                              (MRT_Sources, 2, Collectors.collectors_2.value),
                              (MRT_Sources, 3, Collectors.collectors_3.value),
                              ([], 0, Collectors.collectors_0.value),
-                             ([MRT_Sources.ROUTE_VIEWS], 22, {}),
-                             # Site displays 23 collectors, but test
-                             # set to 22 purposely due to jinx
-                             ([MRT_Sources.RIPE], 20, {}),
-                             # For ripe, 3 displayed collectors are
-                             # not working.
-                             (MRT_Sources, 42, {})])
-                             # 42 = sum of all collectors
+                             ([MRT_Sources.ROUTE_VIEWS], 26, {}),
+                             ([MRT_Sources.RIPE], 21, {}),
+                             (MRT_Sources, 47, {})])
+                             # 47 = sum of all collectors
     def test_get_caida_mrt_urls(self, sources, collectors, api_param):
         """Tests getting caida data.
 
@@ -137,11 +133,11 @@ class Test_MRT_Parser:
         assert len(urls) == collectors
 
     @pytest.mark.parametrize("sources, collectors, api_param",
-                        [(MRT_Sources, 47, {})]) 
+                        [(MRT_Sources, 52, {})]) 
     def test_get_mrt_urls(self, sources, collectors, api_param):
         """Tests getting url data.
 
-        Assert that there is 47 total collectors. Also test param mods.
+        Assert that there is 52 total collectors. Also test param mods.
         Probably should parametize this function.
         """
         # Create the parser
@@ -180,9 +176,8 @@ class Test_MRT_Parser:
         # Sanity check
         assert len(no_multi) == len(mrt_files)
         return mrt_files
- 
-    @pytest.mark.mt_parse
-    def test_multiprocess_parse_dls(self):
+    
+    def test_multiprocess_parse_dls(self, scanner = True):
         """Test multiprocess parsing of files
 
         NOTE: Run this with just a few quick URLs
@@ -206,25 +201,14 @@ class Test_MRT_Parser:
         print(str(expected_lines))
         with Database() as db:
             # Parse files
-            parser._multiprocess_parse_dls(3, mrt_files, True)
+            parser._multiprocess_parse_dls(3, mrt_files, scanner)
             # Make sure all files were inserted
             db_lines = db.execute("SELECT COUNT(*) FROM mrt_announcements")
-            # TODO: Fix this
-            # Last test gave AssertionError: assert [RealDictRow([('count', 41123484)])] == 41123484
-            # Numbers are the same, so fix it.
-            lines = db_lines[0].items()
-            assert lines['count'] == expected_lines
-            # Make sure nothing is null
-            lines = ["SELECT * FROM mrt_announcements WHERE prefix IS NULL",
-                     "SELECT * FROM mrt_announcements WHERE as_path IS NULL",
-                     "SELECT * FROM mrt_announcements WHERE origin IS NULL",
-                     "SELECT * FROM mrt_announcements WHERE time IS NULL"]
-            for line in lines:
-                assert len(db.execute(lines)) == 0
-            return db.get_all()
+            lines = db_lines[0]['count']
+            assert lines == expected_lines
+            # Ok, return result
+            return lines
         
-
-    @pytest.mark.skip(reason="New hire work")
     @pytest.mark.slow
     def test_bgpscanner_vs_bgpdump_parse_dls(self):
         """Tests bgpscanner vs bgpdump
@@ -241,9 +225,11 @@ class Test_MRT_Parser:
         Also, don't wait while the test is running. Be working on other
         tasks, as this will take hours and hours.
         """
+        scanner = self.test_multiprocess_parse_dls(True)
+        dump = self.test_multiprocess_parse_dls(False)
+        assert scanner == dump
 
-        pass
-
+    @pytest.mark.filter
     def test_filter_and_clean_up_db(self):
         """Tests that this function runs without error.
 
@@ -252,8 +238,10 @@ class Test_MRT_Parser:
         # Make our parser
         parser = MRT_Parser()
         # Do what is necessary to create a table to filter and clean.
-        urls = self.test_get_mrt_urls()
-        files = parser._multiprocess_download(5, urls[:10])
+        urls = self.test_get_mrt_urls([MRT_Sources.ROUTE_VIEWS],
+                                      3,
+                                      Collectors.collectors_3.value)
+        files = parser._multiprocess_download(5, urls)
         parser._multiprocess_parse_dls(5, files, True)
         # Hope that we don't run into an error here.
         parser._filter_and_clean_up_db(True, True)
