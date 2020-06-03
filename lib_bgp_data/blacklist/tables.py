@@ -25,14 +25,12 @@ class Blacklist_Table(Generic_Table):
 
     def _create_tables(self):
         """ Creates the table if it does not exist"""
-        sql = "CREATE UNLOGGED TABLE IF NOT EXISTS blacklist (
-               asn bigint) ;"
+        sql = "CREATE UNLOGGED TABLE IF NOT EXISTS blacklist (asn integer) ;"
 
         self.execute(sql)
 
     def _create_index(self):
         """Creates indexes to be used on the table"""
         logging.debug("Created index for blacklist")
-        sql = "CREATE INDEX IF NOT EXISTS blacklist_index ON blacklist
-               USING HASH(asn)"
+        sql = "CREATE INDEX IF NOT EXISTS blacklist_index ON blacklist USING HASH(asn)"
         self.execute(sql)
