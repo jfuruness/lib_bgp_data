@@ -8,8 +8,8 @@ Note that we do NOT test the parse_roas function, because this is
 essentially a database operation and is checked in another file
 """
 
-__authors__ = ["Justin Furuness", "Nicholas Shpetner"]
-__credits__ = ["Justin Furuness", "Nicholas Shpetner"]
+__authors__ = ["Justin Furuness", "Nicholas Shpetner", "Samarth Kasbawala"]
+__credits__ = ["Justin Furuness", "Nicholas Shpetner", "Samarth Kasbawala"]
 __Lisence__ = "BSD"
 __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
@@ -17,6 +17,8 @@ __status__ = "Development"
 
 import pytest
 
+from datetime import datetime
+from unittest.mock import Mock, patch
 from ..roas_parser import ROAs_Parser
 from ..roas_parser import ROAs_Collector
 from ...database import Database
@@ -60,6 +62,7 @@ class Test_ROAs_Parser:
             # Makes sure that there is an index
             assert len(indexes) > 0
 
+
     def OFFtest_get_json_roas(self):
         """Tests the _get_json_roas function of the roas collector.
 
@@ -97,7 +100,32 @@ class Test_ROAs_Parser:
             assert formatted_roa[1] == roa["prefix"]
             # Checks for the max length
             assert formatted_roa[2] == int(roa["maxLength"])
+            # Make sure 4th column is of type datetime
+            assert isinstance(formatted_roa[3], datetime)
 
+    def test_run(self):
+        """Tests the _run function"""
+        
+        # Get formatted roas
+        formatted_roas = self.parser._format_roas(self.parser._get_json_roas())
+
+        # Patch the format roas function in the _run function because we want
+        # to have consistent time stamps. Every time the format roas function
+        # is run, the timestamps for each row will change
+        func_path = ("lib_bgp_data.roas_parser.roas_parser.ROAs_Parser."
+                     "_format_roas")
+        with patch(func_path, return_value=formatted_roas) as mock:
+            # Parses the roas and inserts them into the database
+            self.parser.run()
+        
+        # Get the roas from the database
+        with Database() as db:
+            db_roas = [list(row.values()) 
+                       for row in db.execute("SELECT * FROM roas")]
+        
+        # Make sure the the formatted roas match the roas in the database        
+        assert db_roas == formatted_roas
+ 
     def test_warnings(self):
         """Checks deprecation warnings
 
