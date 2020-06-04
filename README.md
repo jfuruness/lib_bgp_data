@@ -1895,6 +1895,16 @@ sudo apt-get install libpq-dev
 ```
 Then install postgres 12 (see [Postgres Installation](#postgres-installation))
 
+
+####VERY IMPORTANT: You must be a super user always (both installation and running anything). We purposefully circumvent security measures because that's what they told us to do.
+
+####IF YOU ARE NOT A SUPER USER, NOTHING WILL WORK
+to become a super user:
+```sudo -E su```
+
+
+
+
 If you are on a machine that has SELinux, you are going to need to run this in a python environment. On Ubuntu, the steps are as follows
 NOTE: We now use python3.8. Make sure that you are using python 3.8.
 ```bash
@@ -1924,11 +1934,6 @@ pip3 install lib_bgp_data --upgrade
 This will install the package and all of it's python dependencies.
 
 NOTE: THIS VERSION IS UP TO DATE BUT NOT STABLE, STABLE PACKAGE IS COMING
-
-VERY IMPORTANT: You must be a super user always (both installation and running anything). We purposefully circumvent security measures because that's what they told us to do. 
-IF YOU ARE NOT A SUPER USER, NOTHING WILL WORK
-to become a super user:
-```sudo -E su```
 
 If you want to install the project for development:
 ```bash
