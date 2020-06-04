@@ -29,6 +29,7 @@ from ..tables import MRT_Announcements_Table
 from ...utils import utils
 from ...database import Database
 
+
 @pytest.mark.mrt_parser
 class Test_MRT_Parser:
     """Tests all functions within the mrt parser class."""
@@ -96,14 +97,13 @@ class Test_MRT_Parser:
             assert len(urls) == collectors
 
     @pytest.mark.parametrize("sources, collectors, api_param",
-                            [(MRT_Sources, 1, Collectors.collectors_1.value),
-                             (MRT_Sources, 2, Collectors.collectors_2.value),
-                             (MRT_Sources, 3, Collectors.collectors_3.value),
-                             ([], 0, Collectors.collectors_0.value),
-                             ([MRT_Sources.ROUTE_VIEWS], 26, {}),
-                             ([MRT_Sources.RIPE], 21, {}),
-                             (MRT_Sources, 47, {})])
-                             # 47 = sum of all collectors
+                             [(MRT_Sources, 1, Collectors.collectors_1.value),
+                              (MRT_Sources, 2, Collectors.collectors_2.value),
+                              (MRT_Sources, 3, Collectors.collectors_3.value),
+                              ([], 0, Collectors.collectors_0.value),
+                              ([MRT_Sources.ROUTE_VIEWS], 27, {}),
+                              ([MRT_Sources.RIPE], 21, {}),
+                              (MRT_Sources, 48, {})])
     def test_get_caida_mrt_urls(self, sources, collectors, api_param):
         """Tests getting caida data.
 
@@ -119,21 +119,21 @@ class Test_MRT_Parser:
         # Create a parser
         test_parser = MRT_Parser()
         # Get our URLS
-        urls = test_parser._get_caida_mrt_urls(self._start, 
+        urls = test_parser._get_caida_mrt_urls(self._start,
                                                self._end,
                                                sources,
                                                api_param)
         # If we have no sources, then urls should be empty.
         if MRT_Sources.RIPE not in sources and MRT_Sources.ROUTE_VIEWS not in sources:
-           assert urls == []
+            assert urls == []
         # Verify we have valid URLs
         for url in urls:
-           assert validators.url(url)
+            assert validators.url(url)
         # Verify expected collectors == #urls
         assert len(urls) == collectors
 
     @pytest.mark.parametrize("sources, collectors, api_param",
-                        [(MRT_Sources, 52, {})]) 
+                             [(MRT_Sources, 53, {})])
     def test_get_mrt_urls(self, sources, collectors, api_param):
         """Tests getting url data.
 
@@ -143,14 +143,17 @@ class Test_MRT_Parser:
         # Create the parser
         test_parser = MRT_Parser()
         # Call get mrt urls
-        urls = test_parser._get_mrt_urls(self._start, self._end, api_param, sources)
+        urls = test_parser._get_mrt_urls(self._start,
+                                         self._end,
+                                         api_param,
+                                         sources)
         # Ensure we have proper URLs
         for url in urls:
             assert validators.url(url)
         assert len(urls) == collectors
         return urls
-    
-    def test_multiprocess_download(self, url_arg = None):
+
+    def test_multiprocess_download(self, url_arg=None):
         """Test multiprocess downloading of files
 
         NOTE: Run this with just a few quick URLs
@@ -162,9 +165,10 @@ class Test_MRT_Parser:
         # Create the parser
         parser = MRT_Parser()
         # Get URLs
-        urls = url_arg if url_arg is not None else self.test_get_mrt_urls([MRT_Sources.ROUTE_VIEWS], 
-                                                                           3,
-                                                                           Collectors.collectors_3.value)
+        urls = url_arg if url_arg is not None else(
+               self.test_get_mrt_urls([MRT_Sources.ROUTE_VIEWS],
+                                      3,
+                                      Collectors.collectors_3.value))
         # Get MRT files
         mrt_files = parser._multiprocess_download(3, urls)
         # Test all files were downloaded correctly
@@ -176,8 +180,8 @@ class Test_MRT_Parser:
         # Sanity check
         assert len(no_multi) == len(mrt_files)
         return mrt_files
-    
-    def test_multiprocess_parse_dls(self, scanner = True):
+
+    def test_multiprocess_parse_dls(self, scanner=True):
         """Test multiprocess parsing of files
 
         NOTE: Run this with just a few quick URLs
@@ -208,7 +212,7 @@ class Test_MRT_Parser:
             assert lines == expected_lines
             # Ok, return result
             return lines
-        
+
     @pytest.mark.slow
     def test_bgpscanner_vs_bgpdump_parse_dls(self):
         """Tests bgpscanner vs bgpdump
@@ -229,7 +233,6 @@ class Test_MRT_Parser:
         dump = self.test_multiprocess_parse_dls(False)
         assert scanner == dump
 
-    @pytest.mark.filter
     def test_filter_and_clean_up_db(self):
         """Tests that this function runs without error.
 
@@ -246,7 +249,7 @@ class Test_MRT_Parser:
         # Hope that we don't run into an error here.
         parser._filter_and_clean_up_db(True, True)
 
-    def  test_parse_files(self):
+    def test_parse_files(self):
         """Test that the parse files function
 
         Should raise a warning and parse correctly. Use API Params
@@ -255,9 +258,9 @@ class Test_MRT_Parser:
         # Make a parser
         parser = MRT_Parser()
         # Call and see if we get a deprecated warn.
-        kwargs = dict({'start': self._start, 'end': self._end, 
+        kwargs = dict({'start': self._start, 'end': self._end,
                        'api_param_mods': {}, 'download_threads': 1,
-                       'parse_threads': 1, 'IPV4': True, 'IPV6': False, 
+                       'parse_threads': 1, 'IPV4': True, 'IPV6': False,
                        'bgpscanner': True, 'sources': []})
         with pytest.deprecated_call():
             parser.parse_files(**kwargs)
