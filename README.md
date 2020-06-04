@@ -1925,8 +1925,14 @@ This will install the package and all of it's python dependencies.
 
 NOTE: THIS VERSION IS UP TO DATE BUT NOT STABLE, STABLE PACKAGE IS COMING
 
+VERY IMPORTANT: You must be a super user always (both installation and running anything). We purposefully circumvent security measures because that's what they told us to do. 
+IF YOU ARE NOT A SUPER USER, NOTHING WILL WORK
+to become a super user:
+```sudo -E su```
+
 If you want to install the project for development:
 ```bash
+sudo -E su
 git clone https://github.com/jfuruness/lib_bgp_data.git
 cd lib_bgp_data
 pip3 install wheel --upgrade
