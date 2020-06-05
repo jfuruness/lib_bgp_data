@@ -1907,6 +1907,7 @@ to become a super user:
 
 If you are on a machine that has SELinux, you are going to need to run this in a python environment. On Ubuntu, the steps are as follows
 NOTE: We now use python3.8. Make sure that you are using python 3.8.
+ALSO NOTE: sometimes installing virtualenv will fail, if your default python version is 3.8, that's fine
 ```bash
 sudo apt-get install python3-pip
 sudo python3.8 -m pip3 install virtualenv 
@@ -1937,7 +1938,7 @@ NOTE: THIS VERSION IS UP TO DATE BUT NOT STABLE, STABLE PACKAGE IS COMING
 
 If you want to install the project for development:
 ```bash
-sudo -E su
+sudo -E su (Unless you are already a super user, then skip this step)
 git clone https://github.com/jfuruness/lib_bgp_data.git
 cd lib_bgp_data
 pip3 install wheel --upgrade
