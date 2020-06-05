@@ -1962,7 +1962,7 @@ Note that now that you have installed every part of lib_bgp_data, you can test i
 
 ```pip3 install lib_bgp_data --upgrade --force --install-option test```
 
-to test the install. 
+to test the install. NOTE: NO YOU CAN'T. This is out of date, we are still in the process of fixing these tests
 
 To test the development package, cd into the root directory and run pytest.
 
