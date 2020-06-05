@@ -1896,10 +1896,10 @@ sudo apt-get install libpq-dev
 Then install postgres 12 (see [Postgres Installation](#postgres-installation))
 
 
-#### VERY IMPORTANT: You must be a super user always (both installation and running anything). We purposefully circumvent security measures because that's what they told us to do.
+#### VERY IMPORTANT: You must be root always (both installation and running anything). We purposefully circumvent security measures because that's what they told us to do.
 
-#### IF YOU ARE NOT A SUPER USER, NOTHING WILL WORK
-to become a super user:
+#### IF YOU ARE NOT ROOT, NOTHING WILL WORK
+to become root:
 ```sudo -E su```
 
 
@@ -1938,7 +1938,7 @@ NOTE: THIS VERSION IS UP TO DATE BUT NOT STABLE, STABLE PACKAGE IS COMING
 
 If you want to install the project for development:
 ```bash
-sudo -E su (Unless you are already a super user, then skip this step)
+sudo -E su (Unless you are already root, then skip this step)
 git clone https://github.com/jfuruness/lib_bgp_data.git
 cd lib_bgp_data
 pip3 install wheel --upgrade
