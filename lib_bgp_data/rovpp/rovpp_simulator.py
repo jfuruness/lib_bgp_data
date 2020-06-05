@@ -46,10 +46,10 @@ class ROVPP_Simulator(Parser):
     """
 
     def _run(self,
-             percents=[80],#[1],#,2],#,3,4,5,10,20,40,60,80,99],
-             num_trials=1,
+             percents=[1,2,3,4,5,10,20,40,60,80,99],
+             num_trials=2,
              exr_bash=None,
-             attack_types=[Attack_Types.SUBPREFIX_HIJACK],#Attack_Types.__members__.values(),
+             attack_types=Attack_Types.__members__.values(),
              policies=Non_Default_Policies.__members__.values()):
         """Runs ROVPP simulation.
 

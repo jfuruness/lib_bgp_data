@@ -65,4 +65,5 @@ class ROVPP_Extrapolator_Parser(Extrapolator_Parser):
         utils.run_cmds(exr_bash if exr_bash else bash_args)
         # Gets rib out. Basically returns only more specific prefixes
         with ROVPP_Extrapolator_Rib_Out_Table(clear=True) as _db:
+            logging.info("Extrapolation complete, writing ribs out tables")
             _db.fill_table()

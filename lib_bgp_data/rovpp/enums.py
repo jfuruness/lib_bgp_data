@@ -31,11 +31,11 @@ class Policies(Enum):
     """The possible routing policies"""
 
     DEFAULT = 0
-#    ROV = 1
-#    ROVPP = 2
-#    ROVPPB = 3
-    ROVPPBP = 4
-#    ROVPPBIS = 5
+    ROV = 1
+    ROVPP = 2
+    ROVPPB = 3
+#    ROVPPBP = 4
+    ROVPPBIS = 5
 
 
 # This creates an enum that is for non bgp policies
