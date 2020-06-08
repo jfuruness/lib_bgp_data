@@ -3,7 +3,11 @@
 
 """This module contains the blacklist parser
 
-The purpose of this class is to download a list of blacklisted ASNs from UCEPROTECT's level 2 and 3 blacklists, Spamhaus's ASN blacklist, and the results from a MIT paper, and insert them into a database. For more information on sources, please see the readme at github.com/nickup9/blacklist_parser
+The purpose of this class is to download a list of blacklisted ASNs
+from UCEPROTECT's level 2 and 3 blacklists, Spamhaus's ASN blacklist,
+and the results from a MIT paper, and insert them into a database.
+For more information on sources, please see the readme at
+github.com/nickup9/blacklist_parser
 """
 __author__ = "Nicholas Shpetner"
 __credits__ = ["Nicholas Shpetner"]
@@ -22,8 +26,9 @@ from .tables import Blacklist_Table
 from ..base_classes import Parser
 from ..utils import utils
 
+
 class Blacklist_Parser(Parser):
-    
+
     __slots__ = []
 
     def _run(self):
@@ -40,10 +45,10 @@ class Blacklist_Parser(Parser):
 
     def _get_blacklists(self):
         """Gets blacklists from UCE level 2, UCE level 3, spamhaus, and the
-        MIT paper, makes a dict for each source, and attaches the 
+        MIT paper, makes a dict for each source, and attaches the
         blacklist of each source into the respective key as a string
         """
-        sources = {'uce2':'http://wget-mirrors.uceprotect.net/rbldnsd-all/dnsbl-2.uceprotect.net.gz', 'uce3':'http://wget-mirrors.uceprotect.net/rbldnsd-all/dnsbl-3.uceprotect.net.gz', 'spamhaus':'https://www.spamhaus.org/drop/asndrop.txt', 'mit':'https://raw.githubusercontent.com/ctestart/BGP-SerialHijackers/master/prediction_set_with_class.csv'}
+        sources = {'uce2': 'http://wget-mirrors.uceprotect.net/rbldnsd-all/dnsbl-2.uceprotect.net.gz', 'uce3': 'http://wget-mirrors.uceprotect.net/rbldnsd-all/dnsbl-3.uceprotect.net.gz', 'spamhaus': 'https://www.spamhaus.org/drop/asndrop.txt', 'mit': 'https://raw.githubusercontent.com/ctestart/BGP-SerialHijackers/master/prediction_set_with_class.csv'}
         output_str = dict()
         for typ in sources.keys():
             output_str[typ] = ''
@@ -79,7 +84,7 @@ class Blacklist_Parser(Parser):
             if output == 'mit':
                 parsed[output] = []
                 fake_file = StringIO(outputs[output])
-                mit_reader = csv.DictReader(fake_file, delimiter = ',')
+                mit_reader = csv.DictReader(fake_file, delimiter=',')
                 for row in mit_reader:
                     if row['HardVotePred'] == '1':
                         parsed[output].append(row['ASN'])
@@ -93,7 +98,8 @@ class Blacklist_Parser(Parser):
         return parsed
 
     def _format_dict(self, parsed: dict):
-        """Takes a dict, with the header as the keys, and converts into a formatted list for input into database"""
+        """Takes a dict, with the header as the keys, and converts into
+        a formatted list for input into database"""
         # Constructor for list
         unformatted = []
         formatted = []

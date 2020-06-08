@@ -16,6 +16,7 @@ from ..blacklist_parser import Blacklist_Parser
 from ..tables import Blacklist_Table
 from ...database import Database
 
+
 @pytest.mark.blacklist_parser
 class Test_Blacklist_Parser:
     """Tests functions within the Blacklist Parser class."""
@@ -27,10 +28,11 @@ class Test_Blacklist_Parser:
             _db.execute("DROP TABLE IF EXISTS blacklist")
 
     def test_run(self):
-        """Test that should make sure that there are no errors and that the table is populated with the correct amount of ASNs"""
+        """Test that should make sure that there are no errors and that
+        the table is populated with the correct amount of ASNs"""
         # Run the parser
         self.parser.run()
-        # Get the raw data. Done right after running parser for 
+        # Get the raw data. Done right after running parser for
         # better precision.
         raw_dict = (self.parser._parse_lists(
                      self.parser._get_blacklists()))
@@ -39,7 +41,7 @@ class Test_Blacklist_Parser:
         table_sizes = []
         with Database() as db:
             # Columns in table
-            sources = ['uce2','uce3','spamhaus','mit']
+            sources = ['uce2', 'uce3', 'spamhaus', 'mit']
             # This loop will go through each column and ensure that
             # the column is not empty and save the size of column to
             # table_sizes.
