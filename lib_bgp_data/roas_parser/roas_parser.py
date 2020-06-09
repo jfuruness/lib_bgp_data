@@ -18,8 +18,6 @@ __status__ = "Development"
 from copy import deepcopy
 import re
 import warnings
-import pytz
-from datetime import datetime
 from .tables import ROAs_Table
 from ..base_classes import Parser
 from ..utils import utils
@@ -34,7 +32,7 @@ class ROAs_Parser(Parser):
         """Downloads and stores roas from a json
 
         For more in depth explanation see README"""
-        
+
         with ROAs_Table(clear=True) as _roas_table:
             roas = self._format_roas(self._get_json_roas())
             # Inserts the data into a CSV and then the database
@@ -77,10 +75,11 @@ class ROAs_Parser(Parser):
                       stacklevel=2)
         self.run(self, **kwargs)
 
+
 class ROAs_Collector(ROAs_Parser):
     def __init__(self, **kwargs):
         warnings.warn(("ROAs_Collector is depreciated. "
                        "Use Roas_Parser instead"),
-                       DeprecationWarning,
-                       stacklevel=1)
+                      DeprecationWarning,
+                      stacklevel=1)
         super(ROAs_Collector, self).__init__(**kwargs)

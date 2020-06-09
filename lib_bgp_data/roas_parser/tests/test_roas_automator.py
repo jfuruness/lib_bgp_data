@@ -5,7 +5,7 @@
 
 For specific on each test see the docstrings under each function. Note that
 the _backup_table function is not tested since we can only test its
-functionality by restoring from the backup. 
+functionality by restoring from the backup.
 """
 
 __authors__ = ["Samarth Kasbawala"]
@@ -52,7 +52,7 @@ class Test_ROAs_Automator:
 
         # Populate the database
         self.parser.run()
-        
+
         with ROAs_Table() as _roas_table:
 
             # Get the data in the table and make a backup
@@ -111,13 +111,13 @@ class Test_ROAs_Automator:
         print(self.automator.csv_dir)
 
         with ROAs_Table() as db:
-            
+
             backup_path = ("lib_bgp_data.roas_parser.roas_automator."
                            "ROAs_Automator._backup_table")
             restore_path = ("lib_bgp_data.roas_parser.roas_automator."
                             "ROAs_Automator._restore_table")
 
-            with patch(backup_path) as b_mock, patch(restore_path) as r_mock: 
+            with patch(backup_path) as b_mock, patch(restore_path) as r_mock:
                 b_mock.side_effect = self._custom_backup
                 r_mock.side_effect = self._custom_restore
 
@@ -136,13 +136,13 @@ class Test_ROAs_Automator:
 ########################
 
     def _custom_backup(self, table_name):
-        bash = f"sudo -i -u postgres << EOF\n"
+        bash = "sudo -i -u postgres << EOF\n"
         bash += f"pg_dump -Fc -t {table_name} test > {table_name}_test.sql.gz\n"
-        bash += f"EOF"
+        bash += "EOF"
         utils.run_cmds(bash)
 
     def _custom_restore(self, table_name):
-        bash = f"sudo -i -u postgres << EOF\n"
+        bash = "sudo -i -u postgres << EOF\n"
         bash += f"pg_restore -d test {table_name}_test.sql.gz\n"
-        bash += f"EOF"
+        bash += "EOF"
         utils.run_cmds(bash)

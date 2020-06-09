@@ -23,8 +23,10 @@ from .roas_parser import ROAs_Parser
 from ..base_classes import Parser
 from ..utils import utils
 
+
 class TableIsEmpty(Exception):
     pass
+
 
 class ROAs_Automator(ROAs_Parser):
     def _run(self):
@@ -40,7 +42,8 @@ class ROAs_Automator(ROAs_Parser):
             # create a new backup
             try:
                 count = _roas_table.get_count()
-                if count == 0: raise TableIsEmpty()
+                if count == 0:
+                    raise TableIsEmpty()
             except (psycopg2.errors.UndefinedTable, TableIsEmpty):
                 try:
                     _roas_table.clear_table()
@@ -73,17 +76,16 @@ class ROAs_Automator(ROAs_Parser):
     def _backup_table(self, table_name):
         """This function runs the command to backup the roas table"""
 
-        bash = f"sudo -i -u postgres << EOF\n"
+        bash = "sudo -i -u postgres << EOF\n"
         bash += f"pg_dump -Fc -t {table_name} bgp > {table_name}.sql.gz\n"
-        bash += f"EOF"
+        bash += "EOF"
         utils.run_cmds(bash)
 
     def _restore_table(self, table_name):
         """This function runs the command to restore the table from the
         backup"""
- 
-        bash = f"sudo -i -u postgres << EOF\n"
-        bash += f"pg_restore -d bgp {table_name}.sql.gz\n"
-        bash += f"EOF"
-        utils.run_cmds(bash)
 
+        bash = "sudo -i -u postgres << EOF\n"
+        bash += f"pg_restore -d bgp {table_name}.sql.gz\n"
+        bash += "EOF"
+        utils.run_cmds(bash)

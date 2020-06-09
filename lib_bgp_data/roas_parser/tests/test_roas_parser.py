@@ -23,6 +23,7 @@ from ..roas_parser import ROAs_Parser
 from ..roas_parser import ROAs_Collector
 from ...database import Database
 
+
 @pytest.mark.roas_parser
 class Test_ROAs_Parser:
     """Tests all functions within the ROAs Parser class."""
@@ -104,7 +105,7 @@ class Test_ROAs_Parser:
 
     def test_run(self):
         """Tests the _run function"""
-        
+
         # Get formatted roas
         formatted_roas = self.parser._format_roas(self.parser._get_json_roas())
 
@@ -116,15 +117,15 @@ class Test_ROAs_Parser:
         with patch(func_path, return_value=formatted_roas) as mock:
             # Parses the roas and inserts them into the database
             self.parser.run()
-        
+
         # Get the roas from the database
         with Database() as db:
-            db_roas = [list(row.values()) 
+            db_roas = [list(row.values())
                        for row in db.execute("SELECT * FROM roas")]
-        
-        # Make sure the the formatted roas match the roas in the database        
+
+        # Make sure the the formatted roas match the roas in the database
         assert db_roas == formatted_roas
- 
+
     def test_warnings(self):
         """Checks deprecation warnings
 
