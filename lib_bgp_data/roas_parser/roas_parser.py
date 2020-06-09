@@ -34,7 +34,7 @@ class ROAs_Parser(Parser):
         """Downloads and stores roas from a json
 
         For more in depth explanation see README"""
-
+        
         with ROAs_Table(clear=True) as _roas_table:
             roas = self._format_roas(self._get_json_roas())
             # Inserts the data into a CSV and then the database
@@ -67,7 +67,7 @@ class ROAs_Parser(Parser):
         return [[int(re.findall(r'\d+', roa["asn"])[0]),  # Gets ASN
                  roa["prefix"],
                  int(roa["maxLength"]),
-                 datetime.now(pytz.utc)]    # Adds time column
+                 utils.now()]    # Adds time column
                 for roa in unformatted_roas]
 
     def parse_roas(self, **kwargs):
