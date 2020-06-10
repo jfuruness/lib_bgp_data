@@ -3,7 +3,7 @@
 
 """This file contains tests for the roas_automator.py file
 
-For specific on each test see the docstrings under each function. Note that
+For specifics on each test see the docstrings under each function. Note that
 the _backup_table function is not tested since we can only test its
 functionality by restoring from the backup.
 """
@@ -108,8 +108,8 @@ class Test_ROAs_Automator:
                                           for row in db.get_all()]
 
     def test_successive_runs(self):
-        print(self.automator.csv_dir)
-
+        """Tests for successive insertions into the table"""
+ 
         with ROAs_Table() as db:
 
             backup_path = ("lib_bgp_data.roas_parser.roas_automator."
@@ -128,8 +128,7 @@ class Test_ROAs_Automator:
                                    self.automator.csv_dir])
                 self.automator._run()
                 third = db.get_count()
-                assert first < second
-                assert second < third
+                assert first < second < third
 
 ########################
 ### Helper Functions ###
