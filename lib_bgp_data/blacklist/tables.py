@@ -28,5 +28,5 @@ class Blacklist_Table(Generic_Table):
 
     def _create_tables(self):
         """ Creates the table if it does not exist"""
-        sql = """CREATE UNLOGGED TABLE IF NOT EXISTS blacklist (uce2 integer, uce3 integer, spamhaus integer, mit integer) ;"""
+        sql = """CREATE UNLOGGED TABLE IF NOT EXISTS blacklist (asn integer, source text) ;"""
         self.execute(sql)

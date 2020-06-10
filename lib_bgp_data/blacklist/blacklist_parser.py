@@ -100,31 +100,8 @@ class Blacklist_Parser(Parser):
     def _format_dict(self, parsed: dict):
         """Takes a dict, with the header as the keys, and converts into
         a formatted list for input into database"""
-        # Constructor for list
-        unformatted = []
         formatted = []
-        largest = 0
-        # For each key in parsed dict, add items of key to list as list
-        for source in parsed:
-            unformatted.append(parsed[source])
-        # For each list in unformatted list, do the following:
-        # See if this is the largest list we've worked with
-        # Convert items from str to int
-        for lst in range(len(unformatted)):
-            largest = max(largest, len(unformatted[lst]))
-            for i in range(len(unformatted[lst])):
-                unformatted[lst][i] = int(unformatted[lst][i])
-        # Now to format the list for use with rows_to_db, we gotta turn
-        # it 90 degrees, if you could visualize that. We make a list
-        # of lists, where each sublist is a row for our DB, and the
-        # sublist has the ASNs in the order [uce2, uce3, spamhaus, mit]
-        # If a source has no more data, we put None
-        for i in range(largest):
-            buff = []
-            for lst in range(len(unformatted)):
-                if len(unformatted[lst]) > i:
-                    buff.append(unformatted[lst][i])
-                else:
-                    buff.append(None)
-            formatted.append(buff)
+        for key in parsed.keys():
+            for asn in parsed[key]:
+                formatted.append([asn, key])
         return formatted

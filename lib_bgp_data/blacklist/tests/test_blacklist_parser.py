@@ -41,18 +41,18 @@ class Test_Blacklist_Parser:
         table_sizes = []
         with Database() as db:
             # Columns in table
-            sources = ['uce2', 'uce3', 'spamhaus', 'mit']
+            lists = ['uce2', 'uce3', 'spamhaus', 'mit']
             # This loop will go through each column and ensure that
             # the column is not empty and save the size of column to
             # table_sizes.
-            for source in sources:
-                sql = "SELECT " + source + " FROM blacklist"
-                raw_list = db.execute(sql)
-                # List comprehension to remove None in column
-                asn_list = [asn for asn in raw_list if asn[source]]
+            for l in lists:
+                # formatting string
+                l = "'" + l + "'"
+                sql = "SELECT * FROM blacklist WHERE source =" + l
+                asn_list = db.execute(sql)
                 assert len(asn_list) > 0
                 table_sizes.append(len(asn_list))
         # Ensure that # of asns in raw data = size of columns.
-        # This has/will fail sometimes, but that is due to
+        # This has/will fail(ed) sometimes, but that is due to
         # data provider inconsistencies/updates, from what I know.
         assert raw_sizes == table_sizes
