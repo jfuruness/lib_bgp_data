@@ -39,7 +39,17 @@ class Test_Blacklist_Parser:
             assert raw_data[l] is not ' '
             assert raw_data[l] is not None
         return raw_data
-            
+
+    def test_parse_lists(self):
+        """This test makes sure that the blacklists were parsed
+        correctly, i.e. each key's items in dict are a list of strs
+        of format ####### instead of AS#######"""
+        parsed = self.parser._parse_lists(self.test_get_blacklists())
+        for key in parsed.keys():
+            for item in parsed[key]:
+                assert type(item) is str
+                assert len(item) > 0
+                assert item[:2] is not 'AS'
 
     def test_run(self):
         """Test that should make sure that there are no errors and that
