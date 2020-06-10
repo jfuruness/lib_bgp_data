@@ -50,6 +50,18 @@ class Test_Blacklist_Parser:
                 assert type(item) is str
                 assert len(item) > 0
                 assert item[:2] is not 'AS'
+        return parsed
+
+    def test_format_dict(self):
+        """This test makes sure that the list before conversion to csv
+        is formatted correctly, i.e. a list of [asn, source]"""
+        formatted = self.parser._format_dict(self.test_parse_lists())
+        for entry in formatted:
+            assert type(entry[0]) is str
+            assert len(entry[0]) > 0
+            assert entry[1] in self.lists
+            assert len(entry) == 2
+        return formatted
 
     def test_run(self):
         """Test that should make sure that there are no errors and that
@@ -58,8 +70,7 @@ class Test_Blacklist_Parser:
         self.parser.run()
         # Get the raw data. Done right after running parser for
         # better precision.
-        raw_dict = (self.parser._parse_lists(
-                     self.parser._get_blacklists()))
+        raw_dict = (self.test_parse_lists())
         # Get # of ASNs in each source
         raw_sizes = [len(raw_dict[source]) for source in raw_dict]
         table_sizes = []
