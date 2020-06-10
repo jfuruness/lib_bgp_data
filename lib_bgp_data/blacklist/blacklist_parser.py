@@ -34,10 +34,13 @@ class Blacklist_Parser(Parser):
     def _run(self):
         """Downloads and stores ASNs to table blacklist with columns uce2, uce3, spamhaus, and mit. Due to constraints when executing SQL, columns will be the size of the column with the most data, with None acting as filler forthe smaller columns where that source has no more ASNs on blacklist"""
         with Blacklist_Table(clear=True) as _blacklist_table:
+            # Get and format asns
             raw = (self._parse_lists(self._get_blacklists()))
             asns = self._format_dict(raw)
+            # Insert into csv then add to db
             _csv_dir = f"{self.csv_dir}/blacklist.csv"
             utils.rows_to_db(asns, _csv_dir, Blacklist_Table)
+            # Create an index on the asns
 
 ######################
 ###Helper Functions###
