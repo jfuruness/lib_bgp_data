@@ -54,7 +54,6 @@ class Test_ROAs_Automator:
         self.parser.run()
 
         with ROAs_Table() as _roas_table:
-
             # Get the data in the table and make a backup
             roas = _roas_table.get_all()
             self._custom_backup(_roas_table.name)
@@ -103,14 +102,14 @@ class Test_ROAs_Automator:
             self.automator.run()
 
             # Get the roas from the database and assert the roas match
-            with ROAs_Table() as db:
+            with ROAs_Table() as _roas_table:
                 assert formatted_roas == [list(row.values())
-                                          for row in db.get_all()]
+                                          for row in _roas_table.get_all()]
 
     def test_successive_runs(self):
         """Tests for successive insertions into the table"""
  
-        with ROAs_Table() as db:
+        with ROAs_Table() as _roas_table:
 
             backup_path = ("lib_bgp_data.roas_parser.roas_automator."
                            "ROAs_Automator._backup_table")
@@ -121,14 +120,30 @@ class Test_ROAs_Automator:
                 b_mock.side_effect = self._custom_backup
                 r_mock.side_effect = self._custom_restore
 
-                first = db.get_count()
-                self.automator._run()
-                second = db.get_count()
+                # Get the number of entries in the table, should be 0 at start
+                first = _roas_table.get_count()
+                assert first == 0
+
+                # Fill teh table and check that there are entries in the table
+                self.automator.run()
+                second = _roas_table.get_count()
+                assert first < second
+
+                # Make these directories again, will get deleted once run is
+                # called. Delete the table and assert that the table dne. We
+                # want to see if the restore works in the run function.
                 utils.clean_paths([self.automator.path,
                                    self.automator.csv_dir])
-                self.automator._run()
-                third = db.get_count()
-                assert first < second < third
+                _roas_table.clear_table() 
+                with pytest.raises(psycopg2.errors.UndefinedTable):
+                    _roas_table.get_all()
+
+                # Insert more roas into the table. If the restore works,
+                # there should be more entries after this run call
+                self.automator.run()
+                third = _roas_table.get_count()
+                assert second < third
+                assert (third - second) > 10000
 
 ########################
 ### Helper Functions ###
