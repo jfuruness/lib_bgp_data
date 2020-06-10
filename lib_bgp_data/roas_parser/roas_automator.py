@@ -3,7 +3,7 @@
 
 """This module contains the ROAs_Automator
 
-The purpose of this class is to run the roas_parser and insert them into the
+The purpose of this class is to parse the roas and insert them into the
 database. This class will properly check to see if the database needs to be
 restored and will create a backup each time the _run method is called.
 """
