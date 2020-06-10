@@ -24,8 +24,22 @@ class Test_Blacklist_Parser:
     def setup(self):
         """Parser setup and table deleted before every test"""
         self.parser = Blacklist_Parser()
+        # List of sources:
+        self.lists = ['uce2', 'uce3', 'spamhaus', 'mit']
         with Database() as _db:
             _db.execute("DROP TABLE IF EXISTS blacklist")
+
+    def test_get_blacklists(self):
+        """This test makes sure that all blacklists were recieved and
+        that there is some content or data."""
+        raw_data = self.parser._get_blacklists()
+        for l in self.lists:
+            # Make sure we got something
+            assert raw_data[l] is not ''
+            assert raw_data[l] is not ' '
+            assert raw_data[l] is not None
+        return raw_data
+            
 
     def test_run(self):
         """Test that should make sure that there are no errors and that
@@ -40,12 +54,10 @@ class Test_Blacklist_Parser:
         raw_sizes = [len(raw_dict[source]) for source in raw_dict]
         table_sizes = []
         with Database() as db:
-            # Columns in table
-            lists = ['uce2', 'uce3', 'spamhaus', 'mit']
             # This loop will go through each column and ensure that
             # the column is not empty and save the size of column to
             # table_sizes.
-            for l in lists:
+            for l in self.lists:
                 # formatting string
                 l = "'" + l + "'"
                 sql = "SELECT * FROM blacklist WHERE source =" + l
@@ -55,4 +67,5 @@ class Test_Blacklist_Parser:
         # Ensure that # of asns in raw data = size of columns.
         # This has/will fail(ed) sometimes, but that is due to
         # data provider inconsistencies/updates, from what I know.
-        assert raw_sizes == table_sizes
+        errstring = 'This may fail due to source inconsistency.'
+        assert raw_sizes == table_sizes, errstring
