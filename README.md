@@ -1408,6 +1408,7 @@ with RPKI_Validator_Wrapper(table_input="table_name_of_prefix_origins") as _rpki
 ```
 
 If you want to make any query to the API, see below.
+Also note: for a list of queriable endpoints: https://rpki-validator.ripe.net/swagger-ui.html#/Input32validation
 ```python
 from lib_bgp_data import RPKI_Validator_Wrapper
 # This will create the file for upload, and upload it to the validator
