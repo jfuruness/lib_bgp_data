@@ -48,7 +48,7 @@ class ROAs_Table(Generic_Table):
               asn bigint,
               prefix cidr,
               max_length integer,
-              created_at timestamptz
+              created_at bigint
               ) ;"""
         self.execute(sql)
 

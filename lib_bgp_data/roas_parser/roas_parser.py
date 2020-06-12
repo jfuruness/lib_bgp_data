@@ -65,7 +65,7 @@ class ROAs_Parser(Parser):
         return [[int(re.findall(r'\d+', roa["asn"])[0]),  # Gets ASN
                  roa["prefix"],
                  int(roa["maxLength"]),
-                 utils.now()]    # Adds time column
+                 utils.now().timestamp()]    # Adds time column
                 for roa in unformatted_roas]
 
     def parse_roas(self, **kwargs):
