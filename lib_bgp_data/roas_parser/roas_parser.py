@@ -17,6 +17,7 @@ __status__ = "Development"
 
 from copy import deepcopy
 import re
+import time
 import warnings
 from .tables import ROAs_Table
 from ..base_classes import Parser
@@ -65,7 +66,7 @@ class ROAs_Parser(Parser):
         return [[int(re.findall(r'\d+', roa["asn"])[0]),  # Gets ASN
                  roa["prefix"],
                  int(roa["maxLength"]),
-                 utils.now().timestamp()]    # Adds time column
+                 int(time.time())]    # Adds time column
                 for roa in unformatted_roas]
 
     def parse_roas(self, **kwargs):
