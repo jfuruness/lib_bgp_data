@@ -42,10 +42,8 @@ class ROVPP_Simulator(Parser):
         In depth explanation at top of module.
         """
 
-        url = ("http://data.caida.org/datasets/as-relationships/serial-2/"
-               "20200601.as-rel2.txt.bz2")
         # Gets relationships table
-        Relationships_Parser(**self.kwargs).run(url=url)
+        Relationships_Parser(**self.kwargs).run()
 
         # Clear the table that stores all trial info
         with Simulation_Results_Table(clear=True) as _:

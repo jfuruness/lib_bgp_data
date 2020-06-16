@@ -59,8 +59,6 @@ class ASes_Subtable(Generic_Table):
             ases.remove(attacker)
         ases_to_set = len(ases) * percent // 100
 
-        print(percent)
-        print(len(ases))
         assert ases_to_set > 0, "0 ases adopting?? Can't be right"
 
         if deterministic:

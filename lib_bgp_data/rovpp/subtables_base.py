@@ -43,6 +43,7 @@ class Subtables(Input_Subtables, Output_Subtables):
 
     def fill_tables(self):
         for table in self.tables:
+            table.Input_Table.clear_table()
             table.Input_Table.fill_table(self.names)
 
     def close(self):
