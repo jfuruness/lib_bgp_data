@@ -35,6 +35,8 @@ class MRT_Announcements_Table(Generic_Table):
 
     name = "mrt_announcements"
 
+    columns = ["prefix", "as_path", "origin", "time"]
+
     def _create_tables(self):
         """Creates tables if they do not exist.
 

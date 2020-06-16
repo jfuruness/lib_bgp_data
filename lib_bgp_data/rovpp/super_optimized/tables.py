@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 """This module contains ROVPP_ASes_Table and Subprefix_Hijack_Temp_Table
+
 These two classes inherits from the Database class. The Database class
 does allow for the conection to a database upon initialization. Also
 upon initialization the _create_tables function is called to initialize
@@ -13,6 +14,7 @@ used when combining with the roas table, which does a parallel seq_scan,
 thus any indexes are not used since they are not efficient. Each table
 follows the table name followed by a _Table since it inherits from the
 database class.
+
 Possible future improvements:
     -Add test cases
 """
@@ -24,9 +26,13 @@ __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
+import ipaddress
 import logging
 from random import sample
 
+from tqdm import tqdm
+
+from .attack import Attack
 from .enums import Non_Default_Policies, Policies, Attack_Types
 from .enums import AS_Types, Data_Plane_Conditions as DP_Conds
 from .enums import Control_Plane_Conditions as CP_Conds
@@ -36,10 +42,84 @@ from ..mrt_parser.tables import MRT_Announcements_Table
 from ..relationships_parser.tables import AS_Connectivity_Table, ASes_Table
 # Done this way to avoid circular imports
 
-class Attackers_Table(MRT_Announcements_Table):
+class Tests_Table(Generic_Table):
+    name = "tests"
+
+    def fill_table(self, policies, attack_types, possible_attackers):
+        """Creates a table of all prefix and policy adoption pairs
+
+        The list index goes up by 1 every time
+        The policy index goes up to the max policy then back to 0
+        """
+
+        atk_dict = {k: [] for k in attack_types}
+
+        assert len(atk_dict) <= 3, "Must mod this func for more attacks"
+
+        for i in range(0, 254, len(atk_dict)):
+            for n in range(254):
+                # Cameron wrote prefix generation code
+                # Should generate prefixes that do not overlap with each other
+
+                # Subprefix attacks
+                if Attack_Types.SUBPREFIX_HIJACK in attack_types:
+                    sub_atk_pref = ipaddress.ip_network(((i<<24) + (n<<16), 24))
+                    sub_vic_pref = ipaddress.ip_network(((i<<24) + (n<<16), 16))
+                    subprefix_atk = Attack(sub_atk_pref, sub_vic_pref)
+                    atk_dict[Attack_Types.SUBPREFIX_HIJACK].append(subprefix_atk)
+                # Prefix attacks
+                if Attack_Types.PREFIX_HIJACK in attack_types:
+                    pref_atk = ipaddress.ip_network((((i+1)<<24) + (n<<16), 24))
+                    pref_vic = ipaddress.ip_network((((i+1)<<24) + (n<<16), 24))
+                    prefix_attack = Attack(pref_atk, pref_vic)
+                    atk_dict[Attack_Types.PREFIX_HIJACK].append(prefix_attack)
+                # Non compete attacks
+                if Attack_Types.UNANNOUNCED_PREFIX_HIJACK in attack_types:
+                    non_comp_pref = ipaddress.ip_network((((i+2)<<24) + (n<<16), 16))
+                    non_comp = Attack(non_comp_pref)
+                    atk_dict[Attack_Types.UNANNOUNCED_PREFIX_HIJACK].append(non_comp)
+
+        num_attacks = len(atk_dict[Attack_Types.SUBPREFIX_HIJACK])
+
+        # Must create attacker victim pairs here equal to number of attacks - len policies
+        attacker_victim_pairs = [sample(possible_attackers, k=2)
+                                 for x in range(num_attacks * len(atk_dict))]
+
+
+        with tqdm(total=num_attacks * len(atk_dict), desc="Generating attacks") as pbar:
+
+            # There is prob a way to do it in a for loop but whatever
+            list_index = 0
+            attack_index = 0
+            while attack_index < num_attacks - len(policies):
+                for attack_type in atk_dict:
+                    attacker_victim_pair = attacker_victim_pairs[list_index]
+                    for i, policy_value in enumerate([x.value for x in policies]):
+                        attack = atk_dict[attack_type][attack_index + i]
+                        attack.add_info(list_index, policy_value, attack_type, attacker_victim_pair)
+                        pbar.update()
+                    list_index += 1
+                attack_index += len(policies)
+
+
+class Simulation_Announcements_Table(Generic_Table):
+    def _create_tables(self):
+        sql = f"""CREATE UNLOGGED TABLE IF NOT EXISTS {self.name} (
+                 prefix cidr,
+                 as_path bigint ARRAY,
+                 origin bigint,
+                 list_index integer,
+                 policy_val smallint,
+                 attack_type smallint,
+                 percent_iter integer
+                 );"""
+        self.execute(sql)
+        
+
+class Attackers_Table(Simulation_Announcements_Table):
     name = "attackers"
 
-class Victims_Table(MRT_Announcements_Table):
+class Victims_Table(Simulation_Announcements_Table):
     name = "victims"
 
 # Fix this later
@@ -48,43 +128,6 @@ from ..extrapolator_parser.tables import ROVPP_Extrapolator_Rib_Out_Table
 #################
 ### Subtables ###
 #################
-
-class ASes_Subtable(Generic_Table):
-
-    def set_adopting_ases(self, percent, attacker, deterministic):
-        """Sets ases to impliment"""
-
-        ases = set([x["asn"] for x in self.get_all()])
-        if attacker in ases:
-            ases.remove(attacker)
-        ases_to_set = len(ases) * percent // 100
-
-        print(percent)
-        print(len(ases))
-        assert ases_to_set > 0, "0 ases adopting?? Can't be right"
-
-        if deterministic:
-            ases = list(ases)
-            ases.sort()
-            adopting_ases = sample(ases, k=ases_to_set)
-            percent_s_str = " OR asn = ".join("%s" for AS in adopting_ases)
-            sql = """UPDATE {self.name} SET adopting = FALSE
-                  WHERE asn = {percent_s_str}"""
-            self.execute(sql, adopting_ases)
-        else:
-            sql = """UPDATE {0} SET adopting = TRUE
-                    FROM (SELECT * FROM {0}
-                             WHERE {0}.asn != {1}
-                             ORDER BY RANDOM() LIMIT {2}
-                             ) b
-                   WHERE b.asn = {0}.asn
-                   ;""".format(self.name, attacker, ases_to_set)
-            self.execute(sql)
-
-    def change_routing_policies(self, policy):
-        sql = f"""UPDATE {self.name} SET as_type = {policy.value}
-                 WHERE adopting = TRUE;"""
-        self.execute(sql)
 
 class Subtable_Rib_Out(Generic_Table):
 
@@ -97,7 +140,7 @@ class Subtable_Rib_Out(Generic_Table):
                 ON a.asn = b.asn);"""
         self.execute(sql)
 
-class Top_100_ASes_Table(ASes_Subtable):
+class Top_100_ASes_Table(ASes_Table):
     """Class with database functionality.
     In depth explanation at the top of the file."""
 
@@ -126,9 +169,7 @@ class Top_100_ASes_Table(ASes_Subtable):
         ases_str = " OR asn = ".join([str(x) for x in ases])
         # TODO deadlines so fuck it
         sql = f"""CREATE UNLOGGED TABLE IF NOT EXISTS {self.name} AS (
-                 SELECT a.asn,
-                    {Policies.DEFAULT.value} AS as_type,
-                    FALSE as adopting
+                 SELECT a.asn, ARRAY[]::BOOLEAN[] AS as_types
                 FROM {ASes_Table.name} a WHERE asn = {ases_str}
                  );"""              
         self.cursor.execute(sql)
@@ -138,7 +179,7 @@ class Top_100_ASes_Rib_Out_Table(Top_100_ASes_Table, Subtable_Rib_Out):
     name = "top_100_ases_rib_out"
 
 
-class Edge_ASes_Table(ASes_Subtable):
+class Edge_ASes_Table(ASes_Table):
     """Class with database functionality.
     In depth explanation at the top of the file."""
 
@@ -152,9 +193,7 @@ class Edge_ASes_Table(ASes_Subtable):
 
     def fill_table(self, *args):
         sql = f"""CREATE UNLOGGED TABLE IF NOT EXISTS edge_ases AS (
-                     SELECT r.asn,
-                        {Policies.DEFAULT.value} AS as_type,
-                        FALSE as adopting
+                     SELECT r.asn, ARRAY[]::BOOLEAN[] AS as_types
                          FROM {ASes_Table.name} r
                          INNER JOIN {AS_Connectivity_Table.name} c
                             ON c.asn = r.asn
@@ -166,7 +205,7 @@ class Edge_ASes_Rib_Out_Table(Edge_ASes_Table, Subtable_Rib_Out):
     name = "edge_ases_rib_out"
 
 
-class Etc_ASes_Table(ASes_Subtable):
+class Etc_ASes_Table(ASes_Table):
     """Class with database functionality.
     In depth explanation at the top of the file."""
 
@@ -180,9 +219,7 @@ class Etc_ASes_Table(ASes_Subtable):
 
     def fill_table(self, table_names):
         sql = f"""CREATE UNLOGGED TABLE IF NOT EXISTS {self.name} AS (
-                 SELECT ra.asn,
-                    {Policies.DEFAULT.value} AS as_type,
-                    FALSE as adopting
+                 SELECT ra.asn, ARRAY[]::BOOLEAN[] AS as_types
                      FROM {ASes_Table.name} ra"""
         table_names = [x for x in table_names if x != self.name]
         if len(table_names) > 0:
@@ -203,6 +240,7 @@ class Etc_ASes_Rib_Out_Table(Etc_ASes_Table, Subtable_Rib_Out):
 
 class Simulation_Results_Table(Database):
     """Class with database functionality.
+
     In depth explanation at the top of the file."""
 
     __slots__ = ['attacker_asn', 'attacker_prefix', 'victim_asn',
@@ -218,6 +256,7 @@ class Simulation_Results_Table(Database):
 
     def _create_tables(self):
         """Creates tables if they do not exist.
+
         Called during initialization of the database class.
         """
 

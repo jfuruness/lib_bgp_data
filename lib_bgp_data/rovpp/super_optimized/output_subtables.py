@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 """Contains classes for tables output by extrapolator
+
 See README for in depth explanation
 """
 

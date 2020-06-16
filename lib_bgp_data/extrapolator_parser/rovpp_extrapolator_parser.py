@@ -38,7 +38,8 @@ class ROVPP_Extrapolator_Parser(Extrapolator_Parser):
     __slots__ = []
 
 #    branch = "ribs"
-    branch = "merge_ribs_newv3"
+#    branch = "merge_ribs_newv3"
+    branch = "rovpp3.1.3"
 
     def _run(self, table_names, exr_bash=None):
         """Runs the bgp-extrapolator and verifies input.
@@ -52,14 +53,14 @@ class ROVPP_Extrapolator_Parser(Extrapolator_Parser):
         logging.debug("About to run the rovpp extrapolator")
 
         # Should be moved to exr
-        with Database() as db:
-            sql = "SELECT MAX(list_index) AS max_list_index FROM attackers"
-            max_index = db.execute(sql)[0]["max_list_index"]
+#        with Database() as db:
+#            sql = "SELECT MAX(list_index) AS max_list_index FROM attackers"
+#            max_index = db.execute(sql)[0]["max_list_index"]
 
         bash_args = f"{self.install_location} -v 1"
         for table_name in table_names:
             bash_args += f" -t {table_name}"
-        bash_args += f" -s {max_index + 1}"  # +1 cause the exr devs r off by 1
+#        bash_args += f" -s {max_index + 1}"  # +1 cause the exr devs r off by 1
         logging.debug(bash_args)
         # Exr bash here for dev only
         utils.run_cmds(exr_bash if exr_bash else bash_args)

@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 """This module contains enums of attack/defend scenarios
+
 See README for in depth explanation"""
 
 __author__ = "Justin Furuness"
@@ -21,9 +22,9 @@ from ..base_classes import Enumerable_Enum
 class Attack_Types(Enum):
     """Types of scenarios for attacks"""
 
-    SUBPREFIX_HIJACK = "subprefix_hijack"
-    PREFIX_HIJACK = "prefix_hijack"
-    UNANNOUNCED_PREFIX_HIJACK = "no_competing_announcement_hijack"
+    SUBPREFIX_HIJACK = 0
+    PREFIX_HIJACK = 1
+    UNANNOUNCED_PREFIX_HIJACK = 2
 
 
 class Policies(Enum):
@@ -33,7 +34,7 @@ class Policies(Enum):
     ROV = 1
     ROVPP = 2
     ROVPPB = 3
-    ROVPPBP = 4
+#    ROVPPBP = 4
     ROVPPBIS = 5
 
 
@@ -41,7 +42,7 @@ class Policies(Enum):
 _non_default_policies_dict = {x[0]: x[1].value
                               for x in Policies.__members__.items()
                               if x[1].value != Policies.DEFAULT.value}
-Non_Default_Policies = Enum('Non_Default_Policies', _non_default_policies_dict)
+Non_Default_Policies = Enumerable_Enum('Non_Default_Policies', _non_default_policies_dict)
 
 ########################
 ### Statistics Enums ###

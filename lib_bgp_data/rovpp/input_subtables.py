@@ -2,9 +2,7 @@
 # -*- coding: utf-8 -*-
 
 """Contains class Input_Subtables
-
 These subtables act as input to the extrapolator
-
 In depth explanation in README
 """
 
@@ -17,47 +15,54 @@ __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
 import logging
-import os
-from random import random
 
-from ..relationships_parser.tables import ASes_Table
-from ..utils import utils
 
 class Input_Subtables:
     """Contains subtable functionality for pre exr functions"""
 
-    def set_adopting_ases(self, percent, attacker):
-        for subtable in self.tables:
-            subtable.set_adopting_ases(percent, attacker)
+    def fill_input_tables(self):
+        for subtable in self.input_tables:
+            subtable.clear_table()
+            subtable.fill_input_table(self.tables)
 
-    def write_to_postgres(self, mp_dps, csv_dir):
+    def set_adopting_ases(self, percent_iter, attack, seeded):
         for subtable in self.tables:
-            subtable.write_to_postgres(mp_dps, csv_dir)
+            subtable.set_adopting_ases(percent_iter, attack, seeded, self.names)
+
+    def change_routing_policies(self, policy):
+        """Changes the routing policy for that percentage of ASes"""
+
+        logging.debug("About to change the routing policies")
+        for sub_table in self.tables:
+            sub_table.change_routing_policies(policy)
+
+    @property
+    def possible_attackers(self):
+        possible_attacker_ases = []
+        # For all tables where possible attacker is true
+        for _table in self.tables:
+            possible_attacker_ases.extend(_table.get_possible_attackers())
+        return possible_attacker_ases
+
 
 class Input_Subtable:
     """Subtable class for ease of use"""
 
-    def set_adopting_ases(self, percent, attacker):
-        maybe_adopters = len(self.ases) - (1 if attacker in self.ases else 0)
-        num_adopters = maybe_adopters * percent // 100
-        new_percent = num_adopters / maybe_adopters
-        for _as, as_types in self.ases.items():
-            as_types.append(random() < new_percent and _as != attacker)
+    def set_adopting_ases(self, iteration_num, attack, deterministic, names):
+        # Cleared instead of updated due to speed
+        self.Input_Table.clear_table()
+        self.Input_Table.fill_table(names)
+        self.Input_Table.set_adopting_ases(self.percents[iteration_num],
+                                           attack.attacker_asn,
+                                           deterministic)
 
-    def extend_ases(self, ases_dict):
-        for _as, as_types in ases_dict.items():
-            self.ases[_as].extend(as_types)
+    def change_routing_policies(self, policy):
+        if self.permanent_policy is not None:
+            policy = self.permanent_policy
+        self.Input_Table.change_routing_policies(policy)
 
-    def write_to_postgres(self, mp_dps, csv_dir):
-        print("Writing")
-
-        self.ases = {x: "{" for x in self.ases}
-        mp_dicts = []
-        for x in mp_dps:
-            mp_dicts.append(x[self.Input_Table.name])
-        for _as in self.ases:
-            for mp_ases_dict in mp_dicts:
-                self.ases[_as] += mp_ases_dict[_as] + ","
-        rows = [[k, v[:-1] + "}"] for k, v in self.ases.items()]
-        csv_path = os.path.join(csv_dir, f"{self.Input_Table.name}.csv")
-        utils.rows_to_db(rows, csv_path, self.Input_Table.__class__)
+    def get_possible_attackers(self):
+        possible_attackers = []
+        if self.possible_attacker:
+            possible_attackers = [x["asn"] for x in self.Input_Table.get_all()]
+        return possible_attackers

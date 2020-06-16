@@ -73,6 +73,7 @@ class Rel_File(File):
             # Grep the CSV based on relationship information into a CSV
             utils.run_cmds(f"cat {self.path} | {grep[key]} > {csvs[key]}")
             # Inserts the CSV into the database
+            input(csvs[key] + str(tables[key]))
             utils.csv_to_db(tables[key], csvs[key], clear_table=True)
         # Deletes the old paths
         utils.delete_paths([self.path, self.csv_dir])

@@ -63,6 +63,7 @@ class Provider_Customers_Table(Generic_Table):
     __slots__ = []
 
     name = "provider_customers"
+    columns = ["provider_as", "customer_as"]
 
     def _create_tables(self):
         """Creates tables if they do not exist.
@@ -83,6 +84,7 @@ class Peers_Table(Generic_Table):
     __slots__ = []
 
     name = "peers"
+    columns = ["peer_as_1", "peer_as_2"]
 
     def _create_tables(self):
         """Creates tables if they do not exist.

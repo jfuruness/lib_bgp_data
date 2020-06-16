@@ -17,7 +17,9 @@ from .enums import Policies
 
 class Multiline_TQDM:
     """Class that allows for larger descriptions using multiline tqdm
+
     Note that this is specifically for this simulator
+
     See https://github.com/tqdm/tqdm/issues/630#issuecomment-469085742
     """
 

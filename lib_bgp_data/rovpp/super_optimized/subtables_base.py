@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 """Contains the base class subtables
+
 Used for splitting the input/output into separate tables
 so that we can get data on different parts of the internet
 """
@@ -42,8 +43,12 @@ class Subtables(Input_Subtables, Output_Subtables):
                 table.connect()
 
     def fill_tables(self):
+        self.possible_attackers = []
         for table in self.tables:
+            table.Input_Table.clear_table()
             table.Input_Table.fill_table(self.names)
+            table.ases = {x["asn"]: [] for x in table.Input_Table.get_all()}
+            self.possible_attackers.extend(table.ases.keys() if table.possible_attacker else [])
 
     def close(self):
         for table in self.tables:

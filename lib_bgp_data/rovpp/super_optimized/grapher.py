@@ -126,6 +126,7 @@ def threadme_bb(data_points, h_type, name, pol_name_dict, pol, as_type, val_strs
 
 class ROVPP_Simulator:
     """This class simulates ROVPP.
+
     In depth explanation at the top of the file
     """
 
@@ -150,6 +151,7 @@ class ROVPP_Simulator:
                  deterministic=False,
                  deterministic_trial=None):
         """Runs ROVPP simulation.
+
         In depth explanation at top of module.
         """
 
