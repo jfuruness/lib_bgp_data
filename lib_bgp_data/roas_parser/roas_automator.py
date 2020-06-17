@@ -142,6 +142,7 @@ class ROAs_Automator(ROAs_Parser):
             try:
                 table.clear_table()
                 self._restore_table(temp=True)
+                table.create_index()
             except:
                 # If there are any errors trying to restore the table,
                 # the backup was not successful
