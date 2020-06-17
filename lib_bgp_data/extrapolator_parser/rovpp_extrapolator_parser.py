@@ -39,7 +39,8 @@ class ROVPP_Extrapolator_Parser(Extrapolator_Parser):
 
 #    branch = "ribs"
 #    branch = "merge_ribs_newv3"
-    branch = "rovpp3.1.3"
+#    branch = "rovpp3.1.3"
+    branch = "rovpp_tbl_chg"
 
     def _run(self, table_names, exr_bash=None):
         """Runs the bgp-extrapolator and verifies input.

@@ -76,8 +76,10 @@ class ROVPP_Extrapolator_Rib_Out_Table(Generic_Table):
                 SELECT * FROM {more_specific_results_table}
                   UNION
                 SELECT * FROM {only_victim_results_table}) results
-              INNER JOIN attacker_victims av
-                ON av.attacker_prefix = results.prefix OR av.victim_prefix = results.prefix);"""
+              --used to hvae this for super optimized version but no longer needed
+              --INNER JOIN attacker_victims av
+              --  ON av.attacker_prefix = results.prefix OR av.victim_prefix = results.prefix
+                );"""
         self.execute(sql)
 
         # Delete all unnessecary tables

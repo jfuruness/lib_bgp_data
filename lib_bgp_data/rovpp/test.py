@@ -25,7 +25,7 @@ class Test:
         self.adopt_policy = adopt_policy
         self.tables = subtables
 
-    def run(self, subtables, exrbash, exr_kwargs, percent, pbars):
+    def run(self, subtables, exrbash, exr_kwargs, percent, p_iter, pbars):
         """Simulates a test:
         the scenario is usually an attack type, Ex: subprefix hijack
         the adopt policy is the policy that (percent) percent of the internet
@@ -55,5 +55,10 @@ class Test:
                            exr_kwargs.get("section"),
                            reconfigure=True)
 
+
         # Stores the run's data
-        subtables.store(self.attack, self.scenario, self.adopt_policy, percent)
+        subtables.store(self.attack,
+                        self.scenario,
+                        self.adopt_policy,
+                        percent,
+                        p_iter)

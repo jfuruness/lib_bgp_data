@@ -33,7 +33,12 @@ class Data_Point(Parser):
 
     def get_data(self, exr_bash, exr_kwargs, pbars, atk_types, pols, seeded):
         for test in self.get_possible_tests(atk_types, pols, seeded):
-            test.run(self.tables, exr_bash, exr_kwargs, self.percent, pbars)
+            test.run(self.tables,
+                     exr_bash,
+                     exr_kwargs,
+                     self.percent,
+                     self.percent_iter,
+                     pbars)
 
     def get_possible_tests(self, attack_types, policies, seeded, set_up=True):
         for attack_type in attack_types:

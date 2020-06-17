@@ -21,7 +21,7 @@ from .tables import Simulation_Results_Table
 from ..extrapolator_parser.tables import ROVPP_Extrapolator_Rib_Out_Table
 
 class Output_Subtables:
-    def store(self, attack, scenario, adopt_policy, percent):
+    def store(self, attack, scenario, adopt_policy, percent, percent_iter):
         # Gets all the asn data
         with ROVPP_Extrapolator_Rib_Out_Table() as _db:
             ases = {x["asn"]: x for x in _db.get_all()}
@@ -29,15 +29,29 @@ class Output_Subtables:
         for table in self.tables:
             table.Rib_Out_Table.clear_table()
             table.Rib_Out_Table.fill_rib_out_table()
-            table.store_output(ases, attack, scenario, adopt_policy, percent)
+            table.store_output(ases,
+                               attack,
+                               scenario,
+                               adopt_policy,
+                               percent,
+                               percent_iter,
+                               [x.Rib_Out_Table.name for x in self.tables])
 
 
 class Output_Subtable:
-    def store_output(self, all_ases, attack, scenario, adopt_policy, percent):
+    def store_output(self,
+                     all_ases,
+                     attack,
+                     scenario,
+                     adopt_policy,
+                     percent,
+                     percent_iter,
+                     table_names):
         subtable_ases = {x["asn"]: x for x in self.Rib_Out_Table.get_all()}
         # We don't want to track the attacker, faster than filtering dict comp
-        if attack.attacker_asn in subtable_ases:
-            del subtable_ases[attack.attacker_asn]
+        for uncountable_asn in [attack.attacker_asn, attack.victim_asn]:
+            if uncountable_asn in subtable_ases:
+                del subtable_ases[uncountable_asn]
 
         with Simulation_Results_Table() as db:
             db.insert(self.table.name,
@@ -45,10 +59,14 @@ class Output_Subtable:
                       scenario,
                       adopt_policy,
                       percent,
+                      percent_iter,
                       self._get_traceback_data(subtable_ases, all_ases),
-                      self._get_control_plane_data(attack))
+                      self._get_control_plane_data(attack),
+                      self._get_visible_hijack_data(table_names))
 
     def _get_traceback_data(self, subtable_ases, all_ases):
+
+        # NOTE: this can easily be changed to SQL. See super optimized folder.
         conds = {x: {y: 0 for y in AS_Types.list_values()}
                  for x in Data_Plane_Conditions.list_values()}
 
@@ -59,7 +77,7 @@ class Output_Subtable:
             # SHOULD NEVER BE LONGER THAN 64
             for i in range(64):
                 if (condition := as_data["received_from_asn"]) in conds:
-                    conds[condition][og_as_data["adopting"]] += 1
+                    conds[condition][og_as_data["impliment"]] += 1
                     looping = False
                     break
                 else:
@@ -68,6 +86,25 @@ class Output_Subtable:
             # NEEDED FOR EXR DEVS
             if looping:
                 self._print_loop_debug_data(all_ases, og_asn, og_as_data)
+        return conds
+
+    def _get_visible_hijack_data(self, t_names):
+
+        # NOTE: this will automatically remove attackersand victims
+        # Since they will have nothing in their rib
+        conds = {}
+        # all_ases = " UNION ALL ".join(f"SELECT * FROM {x}" for x in t_names)
+
+        for adopt_val in AS_Types.__members__.values():
+            sql = f"""SELECT COUNT(*) FROM
+                    {self.Rib_Out_Table.name} og
+                    INNER JOIN {ROVPP_Extrapolator_Rib_Out_Table.name} all_ases
+                        ON og.received_from_asn = all_ases.asn
+                    INNER JOIN attackers
+                        ON attackers.prefix = all_ases.prefix
+                            AND attackers.origin = all_ases.origin
+                    WHERE og.as_type = {adopt_val.value}"""
+            conds[adopt_val] = self.Rib_Out_Table.get_count(sql)
         return conds
 
     def _print_loop_debug_data(self, all_ases, og_asn, og_as_data):
@@ -92,7 +129,7 @@ class Output_Subtable:
         for adopt_val in AS_Types.list_values():
             sql = (f"SELECT COUNT(*) FROM {self.Rib_Out_Table.name}"
                    " WHERE prefix = %s AND origin = %s "
-                   f" AND adopting = {bool(adopt_val)}")
+                   f" AND impliment = {bool(adopt_val)}")
             conds[C_Plane_Conds.RECEIVED_ATTACKER_PREFIX_ORIGIN.value][adopt_val] =\
                 self.Rib_Out_Table.get_count(sql, [attack.attacker_prefix,
                                                    attack.attacker_asn])
@@ -106,7 +143,7 @@ class Output_Subtable:
 
             no_rib_sql = """SELECT COUNT(*) FROM {0}
                          LEFT JOIN {1} ON {0}.asn = {1}.asn
-                         WHERE {1}.asn IS NULL AND {0}.adopting = {2}
+                         WHERE {1}.asn IS NULL AND {0}.impliment = {2}
                          """.format(self.Input_Table.name,
                                     self.Rib_Out_Table.name,
                                     bool(adopt_val))

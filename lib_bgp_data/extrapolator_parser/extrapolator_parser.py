@@ -81,6 +81,8 @@ class Extrapolator_Parser(Parser):
     def install(self):
         """Installs extrapolator and dependencies"""
 
+        if os.path.exists(self.install_location):
+            return
         logging.warning("Due to unstable branches, installing extrapolator now")
         self._install_dependencies()
         self._install_extrapolator()

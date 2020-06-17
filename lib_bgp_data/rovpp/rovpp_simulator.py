@@ -31,8 +31,8 @@ class ROVPP_Simulator(Parser):
     """
 
     def _run(self,
-             percents=list(range(5, 31, 5)),
-             num_trials=100,
+             percents=[1],# list(range(5, 31, 5)),
+             num_trials=2,
              exr_bash=None,
              seeded=False,
              seeded_trial=None,
