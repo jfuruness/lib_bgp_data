@@ -43,9 +43,12 @@ __status__ = "Development"
 
 class Runner:
     table_list = [Hijacks_Table, Leaks_Table, Outages_Table]
-    backup_dir = '/ext/lib_bgp_data/lib_bgp_data/bgpstream_website_parser/backups/'
+    backup_dir = '/var/lib/bgpstream_website_parser/backups/'
 
     def run(self):
+        if not os.path.exists(self.backup_dir):
+            os.mkdir(self.backup_dir)
+
         for table in self.table_list:
             backup = f'{table.name}.sql.gz'
             with table() as t:
