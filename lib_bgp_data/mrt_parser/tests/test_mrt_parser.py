@@ -42,8 +42,10 @@ class Test_MRT_Parser:
         differ.
         """
         # Set times for testing purposes
-        self._start = utils.get_default_start()
-        self._end = utils.get_default_end()
+        self._start = 1592351995
+        # 6/16/2020, 23:59:55
+        self._end = 1592438399
+        # 6/17/2020, 23:59:59
 
     # This test passes (as of 4 Apr 2020)
     # However, it is recommended to test on a machine where dependencies
