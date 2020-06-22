@@ -65,7 +65,7 @@ class Test_ROAs_Automator:
         assert os.path.exists(self.automator.temp_backup) is False
 
         # Create a file that has the name of the temporary backup file
-        utils.run_cmds(f"touch {self.automator.temp_backup}")
+        subprocess.run(f"touch {self.automator.temp_backup}", shell=True)
         assert os.path.exists(self.automator.temp_backup) 
 
         # Overwrite the previous backup with the temporary one
@@ -288,7 +288,8 @@ class Test_ROAs_Automator:
         # Make a temporary backup
         cmd = (f"sudo -i -u postgres "
                f"pg_dump -Fc -t roas test > {self.automator.temp_backup}")
-        utils.run_cmds(cmd)
+        subprocess.run(cmd, check=True, capture_output=True, shell=True,
+                       text=True)
 
         # Restore the table from the temporary backup we just made
         with ROAs_Table() as table:
@@ -316,5 +317,6 @@ class Test_ROAs_Automator:
             cmd += f"pg_restore -d test {self.automator.temp_backup}"
         else:
             cmd += f"pg_restore -d test {self.automator.prev_backup}"
-        utils.run_cmds(cmd)
+        subprocess.run(cmd, check=True, capture_output=True, shell=True,
+                       text=True)
 
