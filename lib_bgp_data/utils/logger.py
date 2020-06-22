@@ -24,6 +24,11 @@ def config_logging(level=logging.INFO, section=None, reconfigure=False):
 
 
     if len(logging.root.handlers) != 2 or reconfigure:
+        if reconfigure:
+            # Must remove handlers here, or else it will leave them open
+            for handler in logging.root.handlers[:]:
+                handler.close()
+                logging.root.removeHandler(handler)
         try:
             from ..database.config import global_section_header
         except ImportError:
