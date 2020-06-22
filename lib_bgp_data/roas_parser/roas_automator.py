@@ -71,6 +71,7 @@ class ROAs_Automator(ROAs_Parser):
                 if os.path.exists(self.prev_backup):
                     table.clear_table()
                     self._restore_table()
+                    table.create_index()
             finally:
                 # Get the roas that need to be inserted into the table
                 roas = self._format_roas(self._get_json_roas())
@@ -115,11 +116,24 @@ class ROAs_Automator(ROAs_Parser):
                         # Raise a backup error
                         raise BackupError()
 
-                except (subprocess.CalledProcessError, BackupError):
-                    # TODO: Enter this except block if there is an error
-                    # creating the backup. Will add functionality so that an
-                    # email is sent if the backups fail.
-                    pass
+                except subprocess.CalledProcessError as e:
+                    time = utils.now()
+                    subject = f"Roas Backup Error at {time}"
+                    body = ("There was an error backing up the roas table. "
+                            "Below are the outputs\n"
+                            f"STD_OUT Message: {e.stdout}\n"
+                            f"STD_ERR Message: {e.stderr}")
+                    utils.send_email(subject, body)
+
+                except BackupError:
+                    time = utils.now()
+                    subject = f"Roas Backup Error at {time}"
+                    body = ("There was an error backing up the roas table. "
+                            "The backup file was not created correctly, so "
+                            "the previous backup was not overwritten. The "
+                            "pg_dump and pg_restore commands did not provide "
+                            "an error.")
+                    utils.send_email(subject, body)
 
 ########################
 ### Helper Functions ###
@@ -135,7 +149,8 @@ class ROAs_Automator(ROAs_Parser):
         # Make a temporary backup
         cmd = (f"sudo -i -u postgres "
                f"pg_dump -Fc -t roas bgp > {self.temp_backup}")
-        utils.run_cmds(cmd)
+        subprocess.run(cmd, check=True, capture_output=True,
+                       shell=True, text=True)
 
         # Restore the table from the temporary backup we just made
         with ROAs_Table() as table:
@@ -164,11 +179,13 @@ class ROAs_Automator(ROAs_Parser):
             cmd += f"pg_restore -d bgp {self.temp_backup}"
         else:
             cmd += f"pg_restore -d bgp {self.prev_backup}"
-        utils.run_cmds(cmd)
+        subprocess.run(cmd, check=True, capture_output=True,
+                       shell=True, text=True) 
 
     def _overwrite(self):
         """This function overwrites the previous backup"""
 
         cmd = f"mv {self.temp_backup} {self.prev_backup}"
-        utils.run_cmds(cmd)
+        subprocess.run(cmd, check=True, capture_output=True,
+                       shell=True, text=True) 
 
