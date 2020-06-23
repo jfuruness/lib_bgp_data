@@ -53,7 +53,8 @@ setup(
         'psycopg2>=2.8.4',
         'matplotlib',
         'multiprocessing_logging',
-        'selenium>=3.141.0'
+        'selenium>=3.141.0',
+        'tikzplotlib',
     ],
     classifiers=[
         'Environment :: Console',

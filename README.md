@@ -2185,9 +2185,11 @@ Thanks to all of these blogs, stack overflow posts, etc. for their help in solvi
 * [https://github.com/tqdm/tqdm/issues/484](https://github.com/tqdm/tqdm/issues/484)  
 * [https://stackoverflow.com/a/3160819/8903959](https://stackoverflow.com/a/3160819/8903959)  
 * [https://stackoverflow.com/a/39281387](https://stackoverflow.com/a/39281387)
-* [https://stackoverflow.com/a/1482316](https://stackoverflow.com/a/1482316)https://stackoverflow.com/a/1482316
+* [https://stackoverflow.com/a/1482316](https://stackoverflow.com/a/1482316)
+* https://stackoverflow.com/a/1482316
 * https://stackoverflow.com/a/19640319
-* 
+* https://stackoverflow.com/a/47930319/8903959
+* https://stackoverflow.com/a/5419488/8903959
 
 ## License
    * [lib\_bgp\_data](#lib_bgp_data)
