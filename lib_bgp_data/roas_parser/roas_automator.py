@@ -19,10 +19,10 @@ of data, we try creating a backup again. We try to make a backup at most three
 times. If a backup cannot be made for some reason, we do not overwrite the
 previous backup.
 
-This automator is designed to be run nightly on our server using cron.
+If the backup fails, an email will be sent, notifying the user of any errors
+if pg_dump or pg_restore have any.
 
-FEATURE TO ADD: Upon a failed backup, the script will send an email detailing
-the error.
+This automator is designed to be run nightly on our server using cron.
 """
 
 __authors__ = ["Samarth Kasbawala"]
