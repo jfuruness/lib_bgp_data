@@ -67,5 +67,5 @@ class Control_Plane_Conditions(Enumerable_Enum):
 class AS_Types(Enumerable_Enum):
     """Ases either adopt or don't"""
 
-    NON_ADOPTING = 0
+    COLLATERAL = 0
     ADOPTING = 1

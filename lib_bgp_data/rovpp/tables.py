@@ -298,11 +298,11 @@ class Simulation_Results_Table(Database):
         # Had to do it, things where so insanely long unreadable
 
         # Splits dicts up for readability
-        traceback_non_adopting = {k: type_dict[AS_Types.NON_ADOPTING.value]
+        traceback_non_adopting = {k: type_dict[AS_Types.COLLATERAL.value]
                                   for k, type_dict in traceback_data.items()}
         traceback_adopting = {k: type_dict[AS_Types.ADOPTING.value]
                               for k, type_dict in traceback_data.items()}
-        cp_non_adopting = {k: type_dict[AS_Types.NON_ADOPTING.value]
+        cp_non_adopting = {k: type_dict[AS_Types.COLLATERAL.value]
                            for k, type_dict in c_plane_data.items()}
         cp_adopting = {k: type_dict[AS_Types.ADOPTING.value]
                        for k, type_dict in c_plane_data.items()}
@@ -347,7 +347,7 @@ class Simulation_Results_Table(Database):
             cp_adopting[CP_Conds.NO_RIB.value]]
 
         v_hjack_info = [visible_hijack_data[x] for x in 
-                               [AS_Types.ADOPTING, AS_Types.NON_ADOPTING]]
+                               [AS_Types.ADOPTING, AS_Types.COLLATERAL]]
 
         self.execute(sql, test_info + trace_info + cplane_info + v_hjack_info)
 
@@ -391,7 +391,7 @@ class Simulation_Results_Agg_Table(Generic_Table):
         
             FROM {Simulation_Results_Table.name}
         );"""
-       self.execute(sql) 
+        self.execute(sql) 
 
 class Simulation_Results_Avg_Table(Generic_Table):
     name = "simulation_results_avg"
@@ -447,4 +447,4 @@ class Simulation_Results_Avg_Table(Generic_Table):
             adopt_pol,
             percent
         );"""
-       self.execute(sql) 
+        self.execute(sql) 
