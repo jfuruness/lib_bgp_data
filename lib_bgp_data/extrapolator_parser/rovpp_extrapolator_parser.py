@@ -37,8 +37,6 @@ class ROVPP_Extrapolator_Parser(Extrapolator_Parser):
 
     __slots__ = []
 
-#    branch = "ribs"
-#    branch = "merge_ribs_newv3"
 #    branch = "rovpp3.1.3"
     branch = "rovpp_tbl_chg"
 
