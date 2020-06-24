@@ -35,7 +35,12 @@ class Policies(Enum):
     ROVPPB = 3
     ROVPPBP = 4
     ROVPPBIS = 5
-
+    BGP = 6
+    ROVPP_V0 = 7
+    ROVPP_LITE = 8
+    ROVPPB_LITE = 9
+    ROVPPBP_LITE = 10
+    ROVPPBIS_LITE = 11
 
 # This creates an enum that is for non bgp policies
 _non_default_policies_dict = {x[0]: x[1].value
