@@ -35,6 +35,7 @@ class ROVPP_Simulator(Parser):
              num_trials=2,
              exr_bash=None,
              seeded=False,
+             seed=0,
              seeded_trial=None,
              attack_types=Attack_Types.__members__.values(),
              adopt_policy_types=Non_Default_Policies.__members__.values()):
@@ -65,8 +66,10 @@ class ROVPP_Simulator(Parser):
         # display useful stats using the bar
 
         with Multiline_TQDM(len(trials)) as pbars:
+            if seeded and seed != 0:
+                random.seed(seed)
             for trial in trials:
-                if seeded:
+                if seeded and seed == 0:
                     random.seed(trial)
                 for data_pt in data_pts:
                     data_pt.get_data(exr_bash,
