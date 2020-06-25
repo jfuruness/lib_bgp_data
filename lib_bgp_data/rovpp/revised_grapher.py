@@ -105,6 +105,9 @@ class Simulation_Grapher(Parser):
     def populate_policy_lines(self, percents_to_graph):
         """Generates all the possible lines on all graphs and fills data"""
         pols, percents, subtables, attacks = self.get_possible_graph_attrs()
+        for policy in pols:
+            err_msg = "Must add line style for that policy in get_graph_labels"
+            assert policy in self.get_graph_labels(), err_msg
         if percents_to_graph is not None:
             percents = [x for x in percents if x in percents_to_graph]
         policy_lines_dict = self.get_policy_lines(pols,
@@ -177,31 +180,17 @@ class Simulation_Grapher(Parser):
         # https://stackoverflow.com/a/5419488/8903959
         print(f"Writing {'tkiz' if tkiz else 'png'} {file_count}/{total}\r", end="")
         sys.stdout.flush()
-        # policy name | name in graph | line style | line marker | line color
-        # NOTE: there's enough of these that this should prob be a class
-        labels_dict = {"ROV": ("ROV", "-", ".", "b"),
-                       "ROVPP": ("ROV++v1", "--", "1", "g"),
-                       "ROVPPB": ("ROV++v2a", "-.", "*", "r"),
-                       "ROVPPBP": ("ROV++v3", ":", "x", "c"),
-                       "ROVPPBIS": ("ROV++v2", "solid", "d", "m"),
-                       "ROVPP_V0": ("ROVPP_V0", "dotted", "2", "y"),
-                       "BGP": ("BGP", "dashdot", "3", "k"),
-                       "ROVPP_LITE": ("ROV++v1_LIGHT", "dashed", "4", "g"),
-                       # NOTE: this is messed up, fix it, matplotlib is OUT OF COLORS
-                       "ROVPPB_LITE": ("ROV++v2a_LIGHT", "-.", "*", "b"),
-                       "ROVPPBP_LITE": ("ROV++v3_LIGHT", ":", "x", "r"),
-                       "ROVPPBIS_LITE": ("ROV++v2_LIGHT", "solid", "d", "y"),
-                       }
+        labels_dict = self.get_graph_labels()
         fig, ax = plt.subplots()
         for line in lines:
-            label, style, marker, color = labels_dict[line.policy]
+            label = labels_dict[line.policy]
             ax.errorbar(line.data[Graph_Values.X],
                         line.data[Graph_Values.Y],
         #                yerr=line.data[Graph_Values.YERR],
-                        label=label,
-                        ls=style,
-                        marker=marker,
-                        color=color)
+                        label=label.name,
+                        ls=label.style,
+                        marker=label.marker,
+                        color=label.color)
         ax.set_ylabel("Percent_" + line.line_type)
         ax.set_xlabel(f"Percent adoption")
         ax.set_title(f"{subtable} and {attack_type}")
@@ -217,6 +206,27 @@ class Simulation_Grapher(Parser):
     def tar_graphs(self):
         with tarfile.open(self.graph_path + ".tar.gz", "w:gz") as tar:
             tar.add(self.graph_path, arcname=os.path.basename(self.graph_path))
+
+    def get_graph_labels(self):
+        return {"ROV": Label("ROV", "-", ".", "b"),
+                "ROVPP": Label("ROV++v1", "--", "1", "g"),
+                "ROVPPB": Label("ROV++v2a", "-.", "*", "r"),
+                "ROVPPBP": Label("ROV++v3", ":", "x", "c"),
+                "ROVPPBIS": Label("ROV++v2", "solid", "d", "m"),
+                "ROVPP_V0": Label("ROVPP_V0", "dotted", "2", "y"),
+                "BGP": Label("BGP", "dashdot", "3", "k"),
+                "ROVPP_LITE": Label("ROV++v1_LIGHT", "dashed", "4", "g"),
+                "ROVPPB_LITE": Label("ROV++v2a_LIGHT", "dotted", "x", "r"),
+                "ROVPPBP_LITE": Label("ROV++v3_LIGHT", "-", "*", "c"),
+                "ROVPPBIS_LITE": Label("ROV++v2_LIGHT", "-.", ".", "m"),
+                }
+
+class Label:
+    def __init__(self, name, style, marker, color):
+        self.name = name
+        self.style = style
+        self.marker = marker
+        self.color = color
 
 class Line_Type(Enum):
     DATA_PLANE_HIJACKED = "trace_hijacked_{}"
