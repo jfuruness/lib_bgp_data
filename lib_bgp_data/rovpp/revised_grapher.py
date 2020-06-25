@@ -37,7 +37,7 @@ __status__ = "Development"
 class Simulation_Grapher(Parser):
     graph_path = "/tmp/graphs"
 
-    def _run(self, percents_to_graph=None):
+    def _run(self, percents_to_graph=None, test=True, tkiz=False):
         if os.path.exists(self.graph_path):
             shutil.rmtree(self.graph_path)
         os.makedirs(self.graph_path)
@@ -46,12 +46,8 @@ class Simulation_Grapher(Parser):
         self.generate_agg_tables()
         scenarios_dict = self.populate_policy_lines(percents_to_graph)
         total = 0
-        for tkiz in [True, False]:
-            for scenario, policies_dict in scenarios_dict.items():
-                for policy_list in self.powerset_of_policies(policies_dict.keys()):
-                    total += 1
-        
-#        with tqdm(total=total, desc="graphing") as pbar:
+        graphs = list(self.graph_permutations(scenarios_dict, test, tkiz))
+
         with utils.Pool(None, 1, "graph pool") as p:
             line_types = []
             subtables = []
@@ -59,35 +55,46 @@ class Simulation_Grapher(Parser):
             all_lines = []
             tkiz_l = []
             save_paths = []
-            for tkiz in [True, False]:
-                for scenario, policies_dict in scenarios_dict.items():
-                    line_type, subtable, attack_type = scenario
-                    for policy_list in self.powerset_of_policies(policies_dict.keys()):
-                        lines = [v for k, v in policies_dict.items()
-                                 if k in set(policy_list)]
-                        line_types.append(line_type)
-                        subtables.append(subtable)
-                        attack_types.append(attack_type)
-                        all_lines.append(lines)
-                        tkiz_l.append(tkiz)
-                        tkiz_folder = "tkiz" if tkiz else "pngs"
-                        save_path = os.path.join(self.graph_path,
-                                                 tkiz_folder,
-                                                 attack_type,
-                                                 subtable,
-                                                 line_type)
-                        if not os.path.exists(save_path):
-                            os.makedirs(save_path)
-                        save_paths.append(save_path)
+            for tkiz, line_type, subtable, attack_type, policy_list, policies_dict in graphs:
+                lines = [v for k, v in policies_dict.items() if k in set(policy_list)]
+                line_types.append(line_type)
+                subtables.append(subtable)
+                attack_types.append(attack_type)
+                all_lines.append(lines)
+                tkiz_l.append(tkiz)
+                tkiz_folder = "tkiz" if tkiz else "pngs"
+                save_path = os.path.join(self.graph_path,
+                                         tkiz_folder,
+                                         attack_type,
+                                         subtable,
+                                         line_type)
+                if not os.path.exists(save_path):
+                    os.makedirs(save_path)
+                save_paths.append(save_path)
             p.map(self.write_graph,
                   line_types,
                   subtables,
                   attack_types,
                   all_lines,
-                  [total] * total,
+                  [len(graphs)] * len(graphs),
                   tkiz_l,
                   save_paths)
         self.tar_graphs()
+
+    def graph_permutations(self, scenarios_dict, test, graph_tkiz):
+        for tkiz in [True, False]:
+			# Removing this when we don't want tikz
+            if graph_tkiz is False and tkiz is True:
+                continue
+            for scenario, policies_dict in scenarios_dict.items():
+                line_type, subtable, attack_type = scenario
+                if test:
+                    powerset = [list(policies_dict.keys())]
+                else:
+                    powerset = self.powerset_of_policies(policies_dict.keys())
+                for policy_list in powerset:
+                    yield tkiz, line_type, subtable, attack_type, policy_list, policies_dict
+ 
 
     def generate_agg_tables(self):
         for Table in [Simulation_Results_Agg_Table,
@@ -179,11 +186,11 @@ class Simulation_Grapher(Parser):
                        "ROVPPBIS": ("ROV++v2", "solid", "d", "m"),
                        "ROVPP_V0": ("ROVPP_V0", "dotted", "2", "y"),
                        "BGP": ("BGP", "dashdot", "3", "k"),
-                       "ROVPP_LITE": ("ROV++v1_LIGHT", "dashed", "4", "w"),
+                       "ROVPP_LITE": ("ROV++v1_LIGHT", "dashed", "4", "g"),
                        # NOTE: this is messed up, fix it, matplotlib is OUT OF COLORS
-                       "ROVPPB_LITE": ("ROV++v2a", "-.", "*", "b"),
-                       "ROVPPBP_LITE": ("ROV++v3", ":", "x", "r"),
-                       "ROVPPBIS_LITE": ("ROV++v2", "solid", "d", "y"),
+                       "ROVPPB_LITE": ("ROV++v2a_LIGHT", "-.", "*", "b"),
+                       "ROVPPBP_LITE": ("ROV++v3_LIGHT", ":", "x", "r"),
+                       "ROVPPBIS_LITE": ("ROV++v2_LIGHT", "solid", "d", "y"),
                        }
         fig, ax = plt.subplots()
         for line in lines:
@@ -261,8 +268,8 @@ class Policy_Line:
             results = db.execute(sql)
         for result in results:
             if result["percent"] in set(self.percents):
-                self.data[Graph_Values.X].append(int(result["percent"] * 100))
-                self.data[Graph_Values.Y].append(float(result[self.line_type]))
+                self.data[Graph_Values.X].append(int(result["percent"]))
+                self.data[Graph_Values.Y].append(float(result[self.line_type]) * 100)
 #                self.data[Graph_Values.YERR].append(float(
 #                    result[self.conf_line_type]))
 
