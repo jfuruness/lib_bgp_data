@@ -177,9 +177,14 @@ class Simulation_Grapher(Parser):
                        "ROVPPB": ("ROV++v2a", "-.", "*", "r"),
                        "ROVPPBP": ("ROV++v3", ":", "x", "c"),
                        "ROVPPBIS": ("ROV++v2", "solid", "d", "m"),
-                       "new1": ("new1name", "dotted", "2", "y"),
-                       "new2": ("new2name", "dashdot", "3", "k"),
-                       "new3": ("new3name", "dashed", "4", "w")}
+                       "ROVPP_V0": ("ROVPP_V0", "dotted", "2", "y"),
+                       "BGP": ("BGP", "dashdot", "3", "k"),
+                       "ROVPP_LITE": ("ROV++v1_LIGHT", "dashed", "4", "w"),
+                       # NOTE: this is messed up, fix it, matplotlib is OUT OF COLORS
+                       "ROVPPB_LITE": ("ROV++v2a", "-.", "*", "b"),
+                       "ROVPPBP_LITE": ("ROV++v3", ":", "x", "r"),
+                       "ROVPPBIS_LITE": ("ROV++v2", "solid", "d", "y"),
+                       }
         fig, ax = plt.subplots()
         for line in lines:
             label, style, marker, color = labels_dict[line.policy]
