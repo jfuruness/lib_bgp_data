@@ -69,7 +69,7 @@ class Test_RPKI_Validator_Parser:
         different func because this unit test will take hours.
         """
         with ROV_Validity_Table() as db:
-            MRT_Parser()._run()
+            MRT_Parser().run()
                 
             print('TABLES')
             for i in db.execute("SELECT * FROM information_schema.tables WHERE table_schema='public'"):
