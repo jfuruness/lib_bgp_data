@@ -30,6 +30,7 @@ from .database import Database, Postgres, Generic_Table
 from .rovpp import ROVPP_Simulator, Simulation_Grapher
 #from .forecast import Forecast
 from .hijack_end_time_parser import Hijack_End_Time_Parser
+from .hurricane_website_parser import Hurricane_Website_Parser
 
 class NotSudo(Exception):
     pass
