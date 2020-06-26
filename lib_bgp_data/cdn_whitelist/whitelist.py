@@ -1,9 +1,15 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-"""This submodule uses PeeringDB's API to generate a whitelist of ASNs that
-belong to major CDNs. The selection of CDNs is quite arbitrary: CDNs with at
-least 50 exchanges are included.
+"""This submodule generates the autonomous system numbers registered to 
+companies that serve content delivery networks using Hacker Target's API. 
+I have found this to be this API to be the most reliable and 
+simplest way to get ASNs for a company.
+
+(Note: The API only allows 100 lookups per day for free.)
+
+The list of CDNs is in cdns.txt. It's a handpicked list. Sometimes companies
+aren't very tight on branding and register ASNs under a different name.
 """
 
 __authors__ = ["Tony Zheng"]
@@ -13,9 +19,7 @@ __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
-import logging
-import time
-import resource
+import os
 
 from requests import Session
 
@@ -24,78 +28,33 @@ from ..utils import utils
 from .tables import Whitelist_Table
 
 class Whitelist(Parser):
-    # self.path, self.csv_dir, and self.run()
     
     def _run(self):
-        api = 'http://stat.ripe.net/data/ris-asns/data.json?list_asns=true'
-        asn_lookup = 'https://stat.ripe.net/data/as-overview/data.json?resource=AS'
-
         whitelist = []
-        logging.warning('HEELO>?????????') 
-        headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3440.106 Safari/537.36',}
-        s = Session()
-        s.headers.update(headers)
-        r = s.get(api)
-        r.raise_for_status()
-        enc = r.apparent_encoding
-        logging.warning(enc)
-        data = r.json()
-        r.close()
 
-        asns = data['data']['asns']
+        api = 'https://api.hackertarget.com/aslookup/?q='
+        with Session() as session: 
 
-        #count = 0
-        #start = time.time()
+            path_here = os.path.dirname(os.path.realpath(__file__))
+            cdn_list_path = path_here + '/cdns.txt'
+            with open(cdn_list_path, 'r') as f:
+        
+                for cdn in f:
 
-        asns = [asn_lookup + str(n) for n in asns]
+                    # in case there's a blank line
+                    if not cdn.strip():
+                        continue
 
-        resource.setrlimit(resource.RLIMIT_NOFILE, (110000, 110000))
-        logging.warning('started')
-        results = grequests.map((grequests.get(u) for u in asns))
+                    cdn = cdn.strip()
+                    response = session.get(api + cdn)
+                    response.raise_for_status()
 
-        print(results)
+                    for line in response.text.split('\n'):
+                        asn = line.split(',')[0].replace('"', '')
+                        whitelist.append([cdn, asn])
 
-        for result in results:
-            if 'holder' in result.keys():
-                if 'cloudflare' in data['holder'].lower():
-                    whitelist.append(data['resource'])
-
-
-"""        for asn in asns:
-            r = s.get(asn_lookup + str(asn))
-            r.raise_for_status()
-            r.encoding = 'ascii'
-            info = r.json()
-            r.close()
-            data = info['data']
-            if 'holder' in data.keys():
-                if 'cloudflare' in data['holder'].lower():
-                    whitelist.append(asn)
-            count += 1
-            if count % 50 == 0:
-                logging.warning('Running: ', count)
-                elapsed = time.time() - start
-                logging.warning(f'Took {elapsed} for 50 ASNs')
-
-        logging.warning(whitelist)
-"""
-"""        asns = []
-        api_endpoint = 'https://www.peeringdb.com/api/net?info_type=Content&depth=1'
-        # pagination is required because limit of 250 per request
-        count = 0
-        while True:
-            r = requests.get(api_endpoint + f'&skip={count}')
-            r.raise_for_status()
-            data = r.json()
-            r.close()
-            # no more data returned
-            if not data['data']:
-                break
-            count += 250
-
-            for network in data['data']:
-                if len(network['netixlan_set']) > 50:
-                    asns.append([network['name'], network['asn']])
-            
-        utils.rows_to_db(asns, os.path.join(self.csv_dir, 'whitelist.csv'), Whitelist_Table, clear_table=True)
-"""                    
+                    response.close()
+        
+            utils.rows_to_db(whitelist, self.csv_dir, Whitelist_Table)
+ 
+       

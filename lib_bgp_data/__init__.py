@@ -26,6 +26,7 @@ from .rpki_validator import RPKI_Validator_Wrapper, RPKI_Validator_Parser
 from .extrapolator_parser import Extrapolator_Parser
 from .database import Database, Postgres, Generic_Table
 #from .forecast import Forecast
+from .cdn_whitelist import Whitelist
 
 class NotSudo(Exception):
     pass
