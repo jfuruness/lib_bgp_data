@@ -61,7 +61,7 @@ class ASes_Subtable(Generic_Table):
 
         # Again this is bad code, and bad simulation practice,
         # but it's what Amir wants
-        if percent == 0
+        if percent == 0:
             if "edge" in self.name:
                 ases_to_set = 1
             else:

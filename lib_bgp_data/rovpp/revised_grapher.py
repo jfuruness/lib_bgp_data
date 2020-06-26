@@ -57,6 +57,15 @@ class Simulation_Grapher(Parser):
             save_paths = []
             for tkiz, line_type, subtable, attack_type, policy_list, policies_dict in graphs:
                 lines = [v for k, v in policies_dict.items() if k in set(policy_list)]
+                # They want this hardcoded in, whatever
+                if (line_type == Line_Type.DATA_PLANE_HIJACKED.value.format("adopting")
+                    and subtable == "edge_ases"
+                    and attack_type == "subprefix_hijack"):
+                    hardcoded_line = scenarios_dict[("hidden_hijacks_adopting",
+                                                    "edge_ases",
+                                                    "subprefix_hijack")]["ROV"]
+                    hardcoded_line.policy = "rov_hidden_hijack_adopting"
+                    lines.append(hardcoded_line)
                 line_types.append(line_type)
                 subtables.append(subtable)
                 attack_types.append(attack_type)
@@ -219,6 +228,10 @@ class Simulation_Grapher(Parser):
                 "ROVPPB_LITE": Label("ROV++v2a_LIGHT", "dotted", "x", "r"),
                 "ROVPPBP_LITE": Label("ROV++v3_LIGHT", "-", "*", "c"),
                 "ROVPPBIS_LITE": Label("ROV++v2_LIGHT", "-.", ".", "m"),
+                "rov_hidden_hijack_adopting": Label("ROV_hidden_hijacks",
+                                                    "dashed",
+                                                    "1",
+                                                    "g"),
                 }
 
 class Label:
