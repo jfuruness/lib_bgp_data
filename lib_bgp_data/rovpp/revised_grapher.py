@@ -3,6 +3,7 @@
 
 """Does graphign"""
 
+from copy import deepcopy
 from enum import Enum
 from itertools import chain, combinations
 import os
@@ -64,6 +65,7 @@ class Simulation_Grapher(Parser):
                     hardcoded_line = scenarios_dict[("hidden_hijacks_adopting",
                                                     "edge_ases",
                                                     "subprefix_hijack")]["ROV"]
+                    hardcoded_line = deepcopy(hardcoded_line)
                     hardcoded_line.policy = "rov_hidden_hijack_adopting"
                     lines.append(hardcoded_line)
                 line_types.append(line_type)
@@ -200,16 +202,16 @@ class Simulation_Grapher(Parser):
                         ls=label.style,
                         marker=label.marker,
                         color=label.color)
-        ax.set_ylabel("Percent_" + line.line_type)
+        ax.set_ylabel("Percent_" + line_type)
         ax.set_xlabel(f"Percent adoption")
         ax.set_title(f"{subtable} and {attack_type}")
         ax.legend()
         plt.tight_layout()
         policies = "_".join(x.policy for x in lines)
         if tkiz:
-            tikzplotlib.save(os.path.join(save_path, f"{policies}.tex"))
+            tikzplotlib.save(os.path.join(save_path, f"{len(policies)}_{policies}.tex"))
         else:
-            plt.savefig(os.path.join(save_path, f"{policies}.png"))
+            plt.savefig(os.path.join(save_path, f"{len(policies)}_{policies}.png"))
         plt.close(fig)
 
     def tar_graphs(self):
