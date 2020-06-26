@@ -66,7 +66,7 @@ class Hurricane_Website_Parser(Parser):
 
         with Hurricane_Table(clear=True) as table:
             # Get the prefixes from the hijacks table
-            prefixes =  self._get_prefixes()[:10]
+            prefixes =  self._get_prefixes()
             # Get the rows that need to be inserted from bgp.he.net
             rows = self._get_rows(prefixes)
             # Inserts the data into a CSV and then the database
