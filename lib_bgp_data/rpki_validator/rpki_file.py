@@ -16,16 +16,14 @@ import time
 import gzip
 import http.server
 from pathos.multiprocessing import ProcessingPool
-from psutil import process_iter
-from signal import SIGTERM
 import socketserver
 import urllib
 
 from .tables import Unique_Prefix_Origins_Table
 from ..utils import utils
 
-__authors__ = ["Justin Furuness", "Cameron Morris"]
-__credits__ = ["Cameron Morris", "Justin Furuness"]
+__authors__ = ["Justin Furuness", "Cameron Morris, Tony Zheng"]
+__credits__ = ["Cameron Morris", "Justin Furuness, Tony Zheng"]
 __Lisence__ = "BSD"
 __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
@@ -76,6 +74,7 @@ class RPKI_File:
     def spawn_process(self):
         """Spawns file serving process"""
 
+        utils.kill_port(self.port)
         self._process = ProcessingPool()
         self._process.apipe(self._serve_file)
         logging.debug("Served RPKI File")
@@ -83,11 +82,13 @@ class RPKI_File:
     def close(self):
         """Closes file process"""
 
+        utils.kill_port(self.port, wait=False)
         self._process.close()
         self._process.terminate()
         self._process.join()
         self._process.clear()
-        utils.delete_paths(RPKI_File.hosted_name)
+        # changed to absolute path
+        utils.delete_paths(self._dir + self.hosted_name)
         logging.debug("Closed RPKI File")
         
 ########################

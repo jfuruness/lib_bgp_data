@@ -5,13 +5,15 @@
 For specifics on each test, see docstrings under each function.
 """
 
+from time import sleep
+
 import pytest
+
 from ..rpki_validator_parser import RPKI_Validator_Parser
 from ..rpki_validator_wrapper import RPKI_Validator_Wrapper
 from ..tables import ROV_Validity_Table
 from ...mrt_parser.mrt_parser import MRT_Parser
 from ...utils import utils
-from time import sleep
 
 
 __authors__ = ["Justin Furuness, Tony Zheng"]
@@ -67,27 +69,60 @@ class Test_RPKI_Validator_Parser:
         different func because this unit test will take hours.
         """
         with ROV_Validity_Table() as db:
-            db.execute('CREATE SCHEMA IF NOT EXISTS public')
             MRT_Parser()._run()
-            # parser doesn't accept kwargs so rename table to the default
-            db.execute('ALTER TABLE mrt_announcements RENAME TO mrt_rpki')
-            RPKI_Validator_Parser()._run()
+                
+            print('TABLES')
+            for i in db.execute("SELECT * FROM information_schema.tables WHERE table_schema='public'"):
+                print(i['table_name'])
+            RPKI_Validator_Parser(table_input='mrt_announcements')._run()
+            print('RPKI_Validator finished')
+            print('TABLES')
+            for i in db.execute("SELECT * FROM information_schema.tables WHERE table_schema='public'"):
+                print(i['table_name'])
+            """            
+            try:
+                #db.execute('CREATE SCHEMA IF NOT EXISTS public')
+                MRT_Parser()._run()
+                print('MRT Parser finished')
+                # rpki_validator_parser doesn't accept kwargs so rename table to the default
 
-            sql = 'SELECT COUNT(*) FROM mrt_rpki'
+                #db.execute('ALTER TABLE test.mrt_announcements RENAME TO mrt_rpki')
+
+
+            except Exception as e:
+                print(e)
+            """
+            """
+            except Exception as e:
+                print(e)
+                print('SCHEMAS:')
+                for i in db.execute('SELECT schema_name FROM information_schema.schemata'):
+                    print(i['schema_name'])
+
+
+            print('TABLES')
+            for i in db.execute("SELECT * FROM information_schema.tables WHERE table_schema='public'"):
+                print(i['table_name'])
+                        
+            sql = 'SELECT COUNT(*) FROM rov_validity'
             initial_count = db.get_count(sql)
 
+            print('initial count: ', initial_count)
+
             # no mrt announcements missing
-            for pair in db.execute('SELECT * FROM mrt_rpki'):
+            for pair in db.execute('SELECT * FROM mrt_announcements'):
                 prefix = pair['prefix']
                 origin = pair['origin']
-                count =  db.get_count('SELECT * FROM mrt_rpki WHERE'
+                count =  db.get_count('SELECT * FROM mrt_announcements WHERE'
                                    f'prefix = {prefix} AND origin = {origin}')
                 # asserts for existance and removal of dupes
                 assert count == 1
+
+            print('Finished checking for single existence')
 
             # no new data
             sleep(120)
             final_count = db.get_count(sql)
             assert initial_count == final_count
-
-            
+            print('test finished')
+            """

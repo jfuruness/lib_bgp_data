@@ -33,7 +33,7 @@ class RPKI_Validator_Parser(Parser):
     def _run(self):
         """Downloads and stores roas from a json"""
 
-        with RPKI_Validator_Wrapper() as _rpki_validator:
+        with RPKI_Validator_Wrapper(**self.kwargs) as _rpki_validator:
             # First we wait for the validator to load the data
             _rpki_validator.load_trust_anchors()
             # Writes validator to database
