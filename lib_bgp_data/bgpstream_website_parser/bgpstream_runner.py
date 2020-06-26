@@ -20,7 +20,8 @@ sudo crontab -e
 
 Then add this line:
 0 4 * * * /ext/env/bin/python /ext/lib_bgp_data/lib_bgp_data/bgpstream_website_parser/bgpstream_runner.py
-
+0 4 * * * /ext/env/bin/lib_bgp_data --bgpstream_website_runner
+/new_hires/tony/env/bin/lib_bgp_data --relationships_parser
 For other machines, this is a helpful article:
 https://medium.com/@gavinwiener/how-to-schedule-a-python-script-cron-job-dea6cbf69f4e
 """
@@ -33,6 +34,8 @@ import psycopg2
 from lib_bgp_data.bgpstream_website_parser.bgpstream_website_parser import BGPStream_Website_Parser
 from lib_bgp_data.bgpstream_website_parser.tables import Hijacks_Table, Leaks_Table, Outages_Table
 
+from base_classes import Parser
+
 __author__ = "Tony Zheng"
 __credits__ = ["Tony Zheng"]
 __Lisence__ = "BSD"
@@ -41,11 +44,12 @@ __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
 
-class Runner:
+class Runner: BGPStream_Website_Runner(Parser):
     table_list = [Hijacks_Table, Leaks_Table, Outages_Table]
     backup_dir = '/var/lib/bgpstream_website_parser/backups/'
 
     def run(self):
+        # making the backup directory if doesn't exist. usually first time running
         if not os.path.exists(self.backup_dir):
             os.mkdir(self.backup_dir)
 
@@ -98,6 +102,7 @@ class Runner:
 
     def restore(self, backup):
         self.pg_cmd(f'pg_restore -c --if-exists -d bgp {backup}')
+        # check restore is successful
 
     def pg_cmd(self, cmd: str):
         check_call(f'sudo -i -u postgres {cmd}', shell=True)
