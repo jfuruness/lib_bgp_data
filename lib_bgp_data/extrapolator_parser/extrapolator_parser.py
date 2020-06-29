@@ -78,10 +78,10 @@ class Extrapolator_Parser(Parser):
 #########################
 
     @utils.delete_files("BGPExtrapolator/")
-    def install(self):
+    def install(self, force=False):
         """Installs extrapolator and dependencies"""
 
-        if os.path.exists(self.install_location):
+        if os.path.exists(self.install_location) and force is False:
             return
         logging.warning("Due to unstable branches, installing extrapolator now")
         self._install_dependencies()

@@ -59,6 +59,17 @@ class ASes_Subtable(Generic_Table):
             ases.remove(attacker)
         ases_to_set = len(ases) * percent // 100
 
+        # Again this is bad code, and bad simulation practice,
+        # but it's what Amir wants
+        if percent == 0:
+            if "edge" in self.name:
+                ases_to_set = 1
+            else:
+                ases_to_set = 0
+        if percent == 100:
+            ases_to_set -= 1
+
+
         assert ases_to_set > 0, "0 ases adopting?? Can't be right"
 
         if deterministic:
@@ -66,7 +77,7 @@ class ASes_Subtable(Generic_Table):
             ases.sort()
             adopting_ases = sample(ases, k=ases_to_set)
             percent_s_str = " OR asn = ".join("%s" for AS in adopting_ases)
-            sql = """UPDATE {self.name} SET impliment = FALSE
+            sql = """UPDATE {self.name} SET impliment = TRUE
                   WHERE asn = {percent_s_str}"""
             self.execute(sql, adopting_ases)
         else:

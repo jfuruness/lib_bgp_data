@@ -23,7 +23,7 @@ from .tables import Simulation_Results_Table
 
 from ..base_classes import Parser
 from ..relationships_parser import Relationships_Parser
-
+from .. import extrapolator_parser as exr
 
 class ROVPP_Simulator(Parser):
     """This class simulates ROVPP.
@@ -42,6 +42,9 @@ class ROVPP_Simulator(Parser):
         """Runs ROVPP simulation.
         In depth explanation at top of module.
         """
+
+        # forces new install of extrapolator
+        exr.ROVPP_Extrapolator_Parser(**self.kwargs).install(force=True)
 
         # Gets relationships table
         Relationships_Parser(**self.kwargs).run()

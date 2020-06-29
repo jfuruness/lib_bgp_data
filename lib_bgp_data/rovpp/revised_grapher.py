@@ -3,6 +3,7 @@
 
 """Does graphign"""
 
+from copy import deepcopy
 from enum import Enum
 from itertools import chain, combinations
 import os
@@ -37,7 +38,7 @@ __status__ = "Development"
 class Simulation_Grapher(Parser):
     graph_path = "/tmp/graphs"
 
-    def _run(self, percents_to_graph=None):
+    def _run(self, percents_to_graph=None, test=True, tkiz=False):
         if os.path.exists(self.graph_path):
             shutil.rmtree(self.graph_path)
         os.makedirs(self.graph_path)
@@ -46,12 +47,8 @@ class Simulation_Grapher(Parser):
         self.generate_agg_tables()
         scenarios_dict = self.populate_policy_lines(percents_to_graph)
         total = 0
-        for tkiz in [True, False]:
-            for scenario, policies_dict in scenarios_dict.items():
-                for policy_list in self.powerset_of_policies(policies_dict.keys()):
-                    total += 1
-        
-#        with tqdm(total=total, desc="graphing") as pbar:
+        graphs = list(self.graph_permutations(scenarios_dict, test, tkiz))
+
         with utils.Pool(None, 1, "graph pool") as p:
             line_types = []
             subtables = []
@@ -59,35 +56,56 @@ class Simulation_Grapher(Parser):
             all_lines = []
             tkiz_l = []
             save_paths = []
-            for tkiz in [True, False]:
-                for scenario, policies_dict in scenarios_dict.items():
-                    line_type, subtable, attack_type = scenario
-                    for policy_list in self.powerset_of_policies(policies_dict.keys()):
-                        lines = [v for k, v in policies_dict.items()
-                                 if k in set(policy_list)]
-                        line_types.append(line_type)
-                        subtables.append(subtable)
-                        attack_types.append(attack_type)
-                        all_lines.append(lines)
-                        tkiz_l.append(tkiz)
-                        tkiz_folder = "tkiz" if tkiz else "pngs"
-                        save_path = os.path.join(self.graph_path,
-                                                 tkiz_folder,
-                                                 attack_type,
-                                                 subtable,
-                                                 line_type)
-                        if not os.path.exists(save_path):
-                            os.makedirs(save_path)
-                        save_paths.append(save_path)
+            for tkiz, line_type, subtable, attack_type, policy_list, policies_dict in graphs:
+                lines = [v for k, v in policies_dict.items() if k in set(policy_list)]
+                # They want this hardcoded in, whatever
+                if (line_type == Line_Type.DATA_PLANE_HIJACKED.value.format("adopting")
+                    and subtable == "edge_ases"
+                    and attack_type == "subprefix_hijack"):
+                    hardcoded_line = scenarios_dict[("hidden_hijacks_adopting",
+                                                    "edge_ases",
+                                                    "subprefix_hijack")]["ROV"]
+                    hardcoded_line = deepcopy(hardcoded_line)
+                    hardcoded_line.policy = "rov_hidden_hijack_adopting"
+                    lines.append(hardcoded_line)
+                line_types.append(line_type)
+                subtables.append(subtable)
+                attack_types.append(attack_type)
+                all_lines.append(lines)
+                tkiz_l.append(tkiz)
+                tkiz_folder = "tkiz" if tkiz else "pngs"
+                save_path = os.path.join(self.graph_path,
+                                         tkiz_folder,
+                                         attack_type,
+                                         subtable,
+                                         line_type)
+                if not os.path.exists(save_path):
+                    os.makedirs(save_path)
+                save_paths.append(save_path)
             p.map(self.write_graph,
                   line_types,
                   subtables,
                   attack_types,
                   all_lines,
-                  [total] * total,
+                  [len(graphs)] * len(graphs),
                   tkiz_l,
                   save_paths)
         self.tar_graphs()
+
+    def graph_permutations(self, scenarios_dict, test, graph_tkiz):
+        for tkiz in [True, False]:
+			# Removing this when we don't want tikz
+            if graph_tkiz is False and tkiz is True:
+                continue
+            for scenario, policies_dict in scenarios_dict.items():
+                line_type, subtable, attack_type = scenario
+                if test:
+                    powerset = [list(policies_dict.keys())]
+                else:
+                    powerset = self.powerset_of_policies(policies_dict.keys())
+                for policy_list in powerset:
+                    yield tkiz, line_type, subtable, attack_type, policy_list, policies_dict
+ 
 
     def generate_agg_tables(self):
         for Table in [Simulation_Results_Agg_Table,
@@ -98,6 +116,9 @@ class Simulation_Grapher(Parser):
     def populate_policy_lines(self, percents_to_graph):
         """Generates all the possible lines on all graphs and fills data"""
         pols, percents, subtables, attacks = self.get_possible_graph_attrs()
+        for policy in pols:
+            err_msg = "Must add line style for that policy in get_graph_labels"
+            assert policy in self.get_graph_labels(), err_msg
         if percents_to_graph is not None:
             percents = [x for x in percents if x in percents_to_graph]
         policy_lines_dict = self.get_policy_lines(pols,
@@ -170,46 +191,57 @@ class Simulation_Grapher(Parser):
         # https://stackoverflow.com/a/5419488/8903959
         print(f"Writing {'tkiz' if tkiz else 'png'} {file_count}/{total}\r", end="")
         sys.stdout.flush()
-        # policy name | name in graph | line style | line marker | line color
-        # NOTE: there's enough of these that this should prob be a class
-        labels_dict = {"ROV": ("ROV", "-", ".", "b"),
-                       "ROVPP": ("ROV++v1", "--", "1", "g"),
-                       "ROVPPB": ("ROV++v2a", "-.", "*", "r"),
-                       "ROVPPBP": ("ROV++v3", ":", "x", "c"),
-                       "ROVPPBIS": ("ROV++v2", "solid", "d", "m"),
-                       "ROVPP_V0": ("ROVPP_V0", "dotted", "2", "y"),
-                       "BGP": ("BGP", "dashdot", "3", "k"),
-                       "ROVPP_LITE": ("ROV++v1_LIGHT", "dashed", "4", "w"),
-                       # NOTE: this is messed up, fix it, matplotlib is OUT OF COLORS
-                       "ROVPPB_LITE": ("ROV++v2a", "-.", "*", "b"),
-                       "ROVPPBP_LITE": ("ROV++v3", ":", "x", "r"),
-                       "ROVPPBIS_LITE": ("ROV++v2", "solid", "d", "y"),
-                       }
+        labels_dict = self.get_graph_labels()
         fig, ax = plt.subplots()
         for line in lines:
-            label, style, marker, color = labels_dict[line.policy]
+            label = labels_dict[line.policy]
             ax.errorbar(line.data[Graph_Values.X],
                         line.data[Graph_Values.Y],
         #                yerr=line.data[Graph_Values.YERR],
-                        label=label,
-                        ls=style,
-                        marker=marker,
-                        color=color)
-        ax.set_ylabel("Percent_" + line.line_type)
+                        label=label.name,
+                        ls=label.style,
+                        marker=label.marker,
+                        color=label.color)
+        ax.set_ylabel("Percent_" + line_type)
         ax.set_xlabel(f"Percent adoption")
         ax.set_title(f"{subtable} and {attack_type}")
         ax.legend()
         plt.tight_layout()
         policies = "_".join(x.policy for x in lines)
         if tkiz:
-            tikzplotlib.save(os.path.join(save_path, f"{policies}.tex"))
+            tikzplotlib.save(os.path.join(save_path, f"{len(policies)}_{policies}.tex"))
         else:
-            plt.savefig(os.path.join(save_path, f"{policies}.png"))
+            plt.savefig(os.path.join(save_path, f"{len(policies)}_{policies}.png"))
         plt.close(fig)
 
     def tar_graphs(self):
         with tarfile.open(self.graph_path + ".tar.gz", "w:gz") as tar:
             tar.add(self.graph_path, arcname=os.path.basename(self.graph_path))
+
+    def get_graph_labels(self):
+        return {"ROV": Label("ROV", "-", ".", "b"),
+                "ROVPP": Label("ROV++v1", "--", "1", "g"),
+                "ROVPPB": Label("ROV++v2a", "-.", "*", "r"),
+                "ROVPPBP": Label("ROV++v3", ":", "x", "c"),
+                "ROVPPBIS": Label("ROV++v2", "solid", "d", "m"),
+                "ROVPP_V0": Label("ROVPP_V0", "dotted", "2", "y"),
+                "BGP": Label("BGP", "dashdot", "3", "k"),
+                "ROVPP_LITE": Label("ROV++v1_LIGHT", "dashed", "4", "g"),
+                "ROVPPB_LITE": Label("ROV++v2a_LIGHT", "dotted", "x", "r"),
+                "ROVPPBP_LITE": Label("ROV++v3_LIGHT", "-", "*", "c"),
+                "ROVPPBIS_LITE": Label("ROV++v2_LIGHT", "-.", ".", "m"),
+                "rov_hidden_hijack_adopting": Label("ROV_hidden_hijacks",
+                                                    "dashed",
+                                                    "1",
+                                                    "g"),
+                }
+
+class Label:
+    def __init__(self, name, style, marker, color):
+        self.name = name
+        self.style = style
+        self.marker = marker
+        self.color = color
 
 class Line_Type(Enum):
     DATA_PLANE_HIJACKED = "trace_hijacked_{}"
@@ -261,8 +293,8 @@ class Policy_Line:
             results = db.execute(sql)
         for result in results:
             if result["percent"] in set(self.percents):
-                self.data[Graph_Values.X].append(int(result["percent"] * 100))
-                self.data[Graph_Values.Y].append(float(result[self.line_type]))
+                self.data[Graph_Values.X].append(int(result["percent"]))
+                self.data[Graph_Values.Y].append(float(result[self.line_type]) * 100)
 #                self.data[Graph_Values.YERR].append(float(
 #                    result[self.conf_line_type]))
 
