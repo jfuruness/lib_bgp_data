@@ -89,7 +89,7 @@ class Multiline_TQDM:
         # Descriptions
         descs = [f"Scenario: {scenario.value if scenario else ''}",
                  f"Adopt Policy: {adopt_pol_name}",
-                 f"Adoption Percentage: {percent if percent else ''}",
+                 f"Adoption Percentage: {percent if percent is not None else ''}",
                  f"Attacker: {attack.attacker_asn if attack else ''}",
                  f"Victim: {attack.victim_asn if attack else ''}",
                  f"Extrapolator Running: {exr_running}"]

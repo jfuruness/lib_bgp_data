@@ -71,7 +71,7 @@ class ASes_Subtable(Generic_Table):
 
 
         if percent > 0:
-            assert ases_to_set > 0, "0 ases adopting?? Can't be right"
+            assert ases_to_set > 0, f"{percent}|{len(ases)}|{self.name}"
         if ases_to_set == 0:
             return
 
