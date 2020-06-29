@@ -70,7 +70,10 @@ class ASes_Subtable(Generic_Table):
             ases_to_set -= 1
 
 
-        assert ases_to_set > 0, "0 ases adopting?? Can't be right"
+        if percent > 0:
+            assert ases_to_set > 0, "0 ases adopting?? Can't be right"
+        if ases_to_set == 0:
+            return
 
         if deterministic:
             ases = list(ases)
