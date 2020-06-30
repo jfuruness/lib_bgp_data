@@ -19,6 +19,8 @@ import logging
 from multiprocessing import cpu_count
 import os
 
+import psycopg2
+
 from .extrapolator_parser import Extrapolator_Parser
 from ..rovpp.tables import Attackers_Table, Victims_Table
 from .tables import ROVPP_Extrapolator_Rib_Out_Table
@@ -59,11 +61,17 @@ class ROVPP_Extrapolator_Parser(Extrapolator_Parser):
         bash_args = f"{self.install_location} -v 1"
         for table_name in table_names:
             bash_args += f" -t {table_name}"
+        with Database() as db:
+            db.execute("DROP TABLE IF EXISTS rovpp_extrapolation_results")
 #        bash_args += f" -s {max_index + 1}"  # +1 cause the exr devs r off by 1
         logging.debug(bash_args)
         # Exr bash here for dev only
         utils.run_cmds(exr_bash if exr_bash else bash_args)
         # Gets rib out. Basically returns only more specific prefixes
         with ROVPP_Extrapolator_Rib_Out_Table(clear=True) as _db:
+            try:
+                assert _db.get_count("SELECT COUNT(*) FROM rovpp_extrapolation_results") > 0
+            except psycopg2.errors.UndefinedTable:
+                raise Exception("Extrapolator failed to populate rovpp_extrapolation_results")
             logging.info("Extrapolation complete, writing ribs out tables")
             _db.fill_table()
