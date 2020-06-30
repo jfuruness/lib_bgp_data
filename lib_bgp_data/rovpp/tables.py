@@ -404,6 +404,7 @@ class Simulation_Results_Agg_Table(Generic_Table):
                 (trace_hijacked_collateral::decimal - visible_hijacks_collateral::decimal)::decimal / trace_total_collateral::decimal AS hidden_hijacks_collateral
         
             FROM {Simulation_Results_Table.name}
+            WHERE trace_total_adopting > 0 AND trace_total_collateral > 0
         );"""
         self.execute(sql) 
 
