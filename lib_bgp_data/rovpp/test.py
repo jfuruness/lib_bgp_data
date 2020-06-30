@@ -46,7 +46,7 @@ class Test:
                            reconfigure=True)
             
         # Runs the rov++ extrapolator
-        exr.ROVPP_Extrapolator_Parser(**exr_kwargs).run(self.tables.names, exrbash)
+        exr.ROVPP_Extrapolator_Parser(**exr_kwargs)._run(self.tables.names, exr_bash=exrbash)
 
         pbars.update_extrapolator()
 
