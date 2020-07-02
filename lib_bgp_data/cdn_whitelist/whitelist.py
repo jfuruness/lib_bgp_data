@@ -1,12 +1,29 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-"""This submodule generates the autonomous system numbers registered to 
+"""
+This submodule generates the autonomous system numbers registered to 
 companies that serve content delivery networks using Hacker Target's API. 
-I have found this to be this API to be the most reliable and 
-simplest way to get ASNs for a company.
+I have found this to be the most reliable and simplest way to get ASNs for a
+company.
 
-(Note: The API only allows 100 lookups per day for free.)
+Notably, they allow 100 lookups per day for free. Getting all the ASNs for one
+company counts as one lookup.
+
+There are several tools that a quick google search returns, however most of
+them don't return all the ASNs for a company, or some companies don't show up
+in search, or can't search for the company by name. I'll list them here:
+utratools.com
+mxtoolbox.com
+dnschecker.org
+spyse.com
+ipinfo.io
+
+Using the different IRR's APIs is convuluted. They each maintain a different
+one. RIPE's database lookup tool says it can lookup across all the IRRs but
+when I try, I just get errors. Also to get the ASN, you first need to search
+by organisation, then get the organisation id, then perform an inverse search
+for ASNs using that organisation id.
 
 The list of CDNs is in cdns.txt. It's a handpicked list. Sometimes companies
 aren't very tight on branding and register ASNs under a different name.
