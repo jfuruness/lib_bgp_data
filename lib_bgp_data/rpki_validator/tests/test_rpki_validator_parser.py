@@ -12,7 +12,8 @@ import pytest
 from ..rpki_validator_parser import RPKI_Validator_Parser
 from ..rpki_validator_wrapper import RPKI_Validator_Wrapper
 from ..tables import ROV_Validity_Table
-from ...mrt_parser.mrt_parser import MRT_Parser
+from ...mrt_parser import MRT_Parser
+from ...mrt_parser import MRT_Sources
 from ...utils import utils
 
 
@@ -69,7 +70,12 @@ class Test_RPKI_Validator_Parser:
         different func because this unit test will take hours.
         """
         with ROV_Validity_Table() as db:
-            MRT_Parser().run()
+
+            # use only one collector and remove isolario for speed
+            mods = {'collectors[]': ['route-views2', 'rrc03']}
+            no_isolario = [MRT_Sources.RIPE, MRT_Sources.ROUTE_VIEWS]
+            
+            MRT_Parser()._run(api_param_mods=mods, sources=no_isolario)
                 
             print('TABLES')
             for i in db.execute("SELECT * FROM information_schema.tables WHERE table_schema='public'"):
