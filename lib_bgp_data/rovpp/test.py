@@ -19,7 +19,11 @@ from .. import extrapolator_parser as exr
 from ..utils.logger import config_logging
 
 class Test:
+    """Test class that defines a specific scenario to be run"""
+
     def __init__(self, scenario, attack, adopt_policy, subtables):
+        """Saves the test information"""
+
         self.scenario = scenario
         self.attack = attack
         self.adopt_policy = adopt_policy

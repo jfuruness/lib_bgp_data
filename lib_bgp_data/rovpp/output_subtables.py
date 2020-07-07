@@ -21,7 +21,11 @@ from .tables import Simulation_Results_Table
 from ..extrapolator_parser.tables import ROVPP_Extrapolator_Rib_Out_Table
 
 class Output_Subtables:
+    """Subtables that deal with the output functions from the extrapolator"""
+
     def store(self, attack, scenario, adopt_policy, percent, percent_iter):
+        """Stores data"""
+
         # Gets all the asn data
         with ROVPP_Extrapolator_Rib_Out_Table() as _db:
             ases = {x["asn"]: x for x in _db.get_all()}
@@ -39,6 +43,8 @@ class Output_Subtables:
 
 
 class Output_Subtable:
+    """Specific subtable that deals with extrapolator output"""
+
     def store_output(self,
                      all_ases,
                      attack,
@@ -47,12 +53,16 @@ class Output_Subtable:
                      percent,
                      percent_iter,
                      table_names):
+        """Stores output in the simulation results table"""
+
+        # All ases for that subtable
         subtable_ases = {x["asn"]: x for x in self.Rib_Out_Table.get_all()}
         # We don't want to track the attacker, faster than filtering dict comp
         for uncountable_asn in [attack.attacker_asn, attack.victim_asn]:
             if uncountable_asn in subtable_ases:
                 del subtable_ases[uncountable_asn]
 
+        # Insert the trial data into the simulation results table
         with Simulation_Results_Table() as db:
             db.insert(self.table.name,
                       attack,
@@ -65,6 +75,7 @@ class Output_Subtable:
                       self._get_visible_hijack_data(table_names))
 
     def _get_traceback_data(self, subtable_ases, all_ases):
+        """Gets the data plane data through tracing back"""
 
         # NOTE: this can easily be changed to SQL. See super optimized folder.
         conds = {x: {y: 0 for y in AS_Types.list_values()}
@@ -75,6 +86,7 @@ class Output_Subtable:
             asn, as_data = og_asn, og_as_data
             looping = True
             # SHOULD NEVER BE LONGER THAN 64
+            # Done to catch extrapolator loops
             for i in range(64):
                 if (condition := as_data["received_from_asn"]) in conds:
                     conds[condition][og_as_data["impliment"]] += 1
@@ -89,6 +101,7 @@ class Output_Subtable:
         return conds
 
     def _get_visible_hijack_data(self, t_names):
+        """Gets visible hijacks using sql for speed"""
 
         # NOTE: this will automatically remove attackersand victims
         # Since they will have nothing in their rib
@@ -108,6 +121,8 @@ class Output_Subtable:
         return conds
 
     def _print_loop_debug_data(self, all_ases, og_asn, og_as_data):
+        """Prints debug information for whenever the exr breaks"""
+
         loop_str_list = []
         loop_asns_set = set()
         asn, as_data = og_asn, og_as_data
@@ -123,6 +138,8 @@ class Output_Subtable:
                 loop_asns_set.add(asn)
 
     def _get_control_plane_data(self, attack):
+        """Gets control plane data using sql for speed"""
+
         conds = {x: {y: 0 for y in AS_Types.list_values()}
                  for x in C_Plane_Conds.list_values()}
 

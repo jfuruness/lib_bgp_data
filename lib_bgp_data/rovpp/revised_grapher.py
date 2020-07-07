@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-"""Does graphign"""
+"""Does graphing"""
 
 from copy import deepcopy
 from enum import Enum
@@ -36,6 +36,8 @@ __status__ = "Development"
 
 
 class Simulation_Grapher(Parser):
+    """Graphs output of the simulation"""
+
     graph_path = "/tmp/graphs"
 
     def _run(self, percents_to_graph=None, test=True, tkiz=False):

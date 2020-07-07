@@ -21,11 +21,15 @@ class Input_Subtables:
     """Contains subtable functionality for pre exr functions"""
 
     def fill_input_tables(self):
+        """Fills all the subtables"""
+
         for subtable in self.input_tables:
             subtable.clear_table()
             subtable.fill_input_table(self.tables)
 
     def set_adopting_ases(self, percent_iter, attack, seeded):
+        """Sets adopting ases"""
+
         for subtable in self.tables:
             subtable.set_adopting_ases(percent_iter, attack, seeded, self.names)
 
@@ -38,6 +42,12 @@ class Input_Subtables:
 
     @property
     def possible_attackers(self):
+        """Returns all possible attackers
+
+        Note that some subtables will yeild no attackers, which is why
+        this function is neccessary. For example, no top level ASes are
+        allowed to become hijackers"""
+
         possible_attacker_ases = []
         # For all tables where possible attacker is true
         for _table in self.tables:
@@ -49,7 +59,9 @@ class Input_Subtable:
     """Subtable class for ease of use"""
 
     def set_adopting_ases(self, iteration_num, attack, deterministic, names):
-        # Cleared instead of updated due to speed
+        """Sets adopting ases"""
+
+        # Cleared instead of updated due to speed, much faster
         self.Input_Table.clear_table()
         self.Input_Table.fill_table(names)
         self.Input_Table.set_adopting_ases(self.percents[iteration_num],
@@ -57,11 +69,15 @@ class Input_Subtable:
                                            deterministic)
 
     def change_routing_policies(self, policy):
+        """Changes routing policies of the subtable"""
+
         if self.permanent_policy is not None:
             policy = self.permanent_policy
         self.Input_Table.change_routing_policies(policy)
 
     def get_possible_attackers(self):
+        """Returns possible attackers for this subtable"""
+
         possible_attackers = []
         if self.possible_attacker:
             possible_attackers = [x["asn"] for x in self.Input_Table.get_all()]
