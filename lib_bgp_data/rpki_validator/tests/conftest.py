@@ -12,8 +12,12 @@ def test_table(scope='session'):
                   prefix cidr
                   );"""
         _db.execute(sql)
+
+        # insert a valid and an invalid prefix-origin pair
+        # the second is the invalid one
         sql = f"""INSERT INTO {test_table_name} (origin, prefix)
-                  VALUES ('1', '192.168.1.0/24')"""
+                  VALUES ('0', '58.181.75.0/24'),
+                         ('1', '58.181.75.0/24')"""
         _db.execute(sql)
     return test_table_name
 

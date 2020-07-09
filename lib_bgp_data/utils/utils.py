@@ -32,6 +32,7 @@ import requests
 import urllib
 import shutil
 from psutil import process_iter
+from signal import SIGTERM
 
 
 # This decorator deletes paths before and after func is called
@@ -361,8 +362,7 @@ def kill_port(port: int, wait: bool = True):
             if conns.laddr.port == port:
                 proc.send_signal(SIGTERM) # or SIGKILL
                 # Sometimes the above doesn't do it's job
-                utils.run_cmds(("sudo kill -9 $(lsof -t -i:"
-                                f"{port})"))
+                run_cmds(f"sudo kill -9 $(lsof -t -i: {port})")
                 if wait:
                     time.sleep(120)
 

@@ -88,16 +88,22 @@ class Test_RPKI_Validator_Wrapper:
         B: That there are five of them
         """
 
-        path = f'{self.path}_get_validation_status'
-        start = time.time()
+        # shouldn't take forever
+        with wrapper as validator:
 
-        # eliminate time taken for other than sleep
-        with patch(path) as mock_complete:
-            mock_complete.return_value = True
-            wrapper.load_trust_anchors()
+            start = time.time()
+            validator.load_trust_anchors()
+            print(f'Time elapsed: {time.time() - start}')
+            """
+            p = Process(target = validator.load_trust_anchors)
+            p.start()
+            # 45 minutes
+            p.join(2700)
 
-        assert time.time() - start > 90
-
+            assert not p.is_alive()
+            p.terminate()
+            p.join()
+            """
     @pytest.mark.slow
     def test_make_query(self, wrapper):
         """Initializes the RPKI Validator and tests make_query function
@@ -186,34 +192,29 @@ class Test_RPKI_Validator_Wrapper:
         paths = RPKI_Validator_Wrapper.rpki_db_paths + \
                 [RPKI_Validator_Wrapper.rpki_package_path] + \
                 [RPKI_Validator_Wrapper.rpki_run_path]
+
         for p in paths:
             assert path.exists(p)
 
-        # brittle. if they change their files, this will break
+        # in the hidden .conf folder, the respective modified files
+        # are shaved down to just the lines that are changed.
+        # check that all of these lines are correctly in the installed files
         test_path = path.dirname(path.realpath(__file__))
         test_path = path.join(test_path, '.conf')
 
-        install_path = path.join(RPKI_Validator_Wrapper.rpki_package_path, 'conf')
- 
-        file1 = 'application.properties'
-        with open(path.join(test_path, file1), 'r') as f1,\
-             open(path.join(install_path, file1), 'r') as f2:
-            lines1 = f1.readlines()
-            lines2 = f2.readlines()
-            for i in range(len(lines1)):
-                # version line that changes very often
-                if i != 41:
-                    assert lines1[i] == lines2[i], f"{lines1[i]}, {lines2[i]}"
+        install_path = path.join(RPKI_Validator_Wrapper.rpki_package_path,
+                                'conf')
 
-        file2 = 'application-defaults.properties'
-        with open(path.join(test_path, file2), 'r') as f1,\
-            open(path.join(install_path, file2), 'r') as f2:
-            lines1 = f1.readlines()
-            lines2 = f2.readlines()
-            for i in range(len(lines1)):
-                if i != 40:
-                    assert lines1[i] == lines2[i]
- 
+        f1 = 'application.properties'
+        f2 = 'application-defaults.properties'
+        for file_name in [f1, f2]:
+            with open(path.join(test_path, file_name)) as correct_file,\
+                 open(path.join(install_path, file_name)) as install_file:
+
+                installed_file_lines = install_file.readlines()
+                for line in correct_file:
+                    assert line in installed_file_lines
+
     def test_rpki_download_validator(self):
         """Tests _download_validator
 
@@ -291,3 +292,5 @@ class Test_RPKI_Validator_Wrapper:
             with pytest.raises(ValueError):
                 for a in absentees:
                     file_contents.index(a)
+
+

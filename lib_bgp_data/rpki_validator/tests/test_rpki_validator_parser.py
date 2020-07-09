@@ -41,10 +41,14 @@ class Test_RPKI_Validator_Parser:
         are valid into a test table. Then we can confirm that the output
         is what we expect.
         """
+        
         with ROV_Validity_Table() as db:
-            print(db.execute(f'SELECT * FROM {test_table}'))
-            assert False
-            
+            RPKI_Validator_Parser()._run(table=test_table)
+            sql_val = f'SELECT validity FROM rov_validity WHERE origin = 0'
+            sql_inval = f'SELECT validity FROM rov_validity WHERE origin = 1'
+
+            assert db.execute(sql_val)[0]['validity'] == 1
+            assert db.execute(sql_inval)[0]['validity'] == -2
 
     def test__format_asn_dict(self, parser):
         """Tests the format asn_dict function
@@ -71,64 +75,29 @@ class Test_RPKI_Validator_Parser:
         """
         with ROV_Validity_Table() as db:
 
-            # use only one collector and remove isolario for speed
+            # use only one collector and remove isolario to make it a  little faster
             mods = {'collectors[]': ['route-views2', 'rrc03']}
             no_isolario = [MRT_Sources.RIPE, MRT_Sources.ROUTE_VIEWS]
             
             MRT_Parser()._run(api_param_mods=mods, sources=no_isolario)
                 
-            print('TABLES')
-            for i in db.execute("SELECT * FROM information_schema.tables WHERE table_schema='public'"):
-                print(i['table_name'])
-            RPKI_Validator_Parser(table_input='mrt_announcements')._run()
-            print('RPKI_Validator finished')
-            print('TABLES')
-            for i in db.execute("SELECT * FROM information_schema.tables WHERE table_schema='public'"):
-                print(i['table_name'])
-            """            
-            try:
-                #db.execute('CREATE SCHEMA IF NOT EXISTS public')
-                MRT_Parser()._run()
-                print('MRT Parser finished')
-                # rpki_validator_parser doesn't accept kwargs so rename table to the default
+            RPKI_Validator_Parser()._run(table='mrt_announcements')
 
-                #db.execute('ALTER TABLE test.mrt_announcements RENAME TO mrt_rpki')
-
-
-            except Exception as e:
-                print(e)
-            """
-            """
-            except Exception as e:
-                print(e)
-                print('SCHEMAS:')
-                for i in db.execute('SELECT schema_name FROM information_schema.schemata'):
-                    print(i['schema_name'])
-
-
-            print('TABLES')
-            for i in db.execute("SELECT * FROM information_schema.tables WHERE table_schema='public'"):
-                print(i['table_name'])
-                        
             sql = 'SELECT COUNT(*) FROM rov_validity'
             initial_count = db.get_count(sql)
 
-            print('initial count: ', initial_count)
-
-            # no mrt announcements missing
+            # no mrt announcements missing in rov_validity
             for pair in db.execute('SELECT * FROM mrt_announcements'):
                 prefix = pair['prefix']
                 origin = pair['origin']
-                count =  db.get_count('SELECT * FROM mrt_announcements WHERE'
-                                   f'prefix = {prefix} AND origin = {origin}')
+                count =  db.get_count('SELECT * FROM rov_validity WHERE '
+                                   f"prefix = '{prefix}' AND origin = {origin}")
                 # asserts for existance and removal of dupes
                 assert count == 1
-
-            print('Finished checking for single existence')
 
             # no new data
             sleep(120)
             final_count = db.get_count(sql)
             assert initial_count == final_count
-            print('test finished')
-            """
+
+
