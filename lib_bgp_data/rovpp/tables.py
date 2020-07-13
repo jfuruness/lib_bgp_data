@@ -37,9 +37,13 @@ from ..relationships_parser.tables import AS_Connectivity_Table, ASes_Table
 # Done this way to avoid circular imports
 
 class Attackers_Table(MRT_Announcements_Table):
+    """Attackers table that contains the attackers announcements"""
+
     name = "attackers"
 
 class Victims_Table(MRT_Announcements_Table):
+    """Victims table that contains the victims announcements"""
+
     name = "victims"
 
 # Fix this later
@@ -50,17 +54,19 @@ from ..extrapolator_parser.tables import ROVPP_Extrapolator_Rib_Out_Table
 #################
 
 class ASes_Subtable(Generic_Table):
+    """Ases subtable (generic type of subtable)"""
 
     def set_adopting_ases(self, percent, attacker, deterministic):
         """Sets ases to impliment"""
 
         ases = set([x["asn"] for x in self.get_all()])
+        # The attacker cannot adopt
         if attacker in ases:
             ases.remove(attacker)
+        # Number of adopting ases
         ases_to_set = len(ases) * percent // 100
 
-        # Again this is bad code, and bad simulation practice,
-        # but it's what Amir wants
+        # I don't agree with this way of coding it, but this came from up above
         if percent == 0:
             if "edge" in self.name:
                 ases_to_set = 1
@@ -75,6 +81,9 @@ class ASes_Subtable(Generic_Table):
         if ases_to_set == 0:
             return
 
+        # Using seeded randomness
+        # NOTE: this should be changed. SQL can use a seed.
+        # Updates ases to be adopting
         if deterministic:
             ases = list(ases)
             ases.sort()
@@ -94,11 +103,14 @@ class ASes_Subtable(Generic_Table):
             self.execute(sql)
 
     def change_routing_policies(self, policy):
+        """Change the adopting ases routing policies"""
+
         sql = f"""UPDATE {self.name} SET as_type = {policy.value}
                  WHERE impliment = TRUE;"""
         self.execute(sql)
 
 class Subtable_Rib_Out(Generic_Table):
+    """The rib out table for whatever subtable. Rib out from the extrapolator"""
 
     def fill_rib_out_table(self):
         sql = f"""CREATE UNLOGGED TABLE IF NOT EXISTS {self.name} AS (
@@ -151,7 +163,7 @@ class Top_100_ASes_Rib_Out_Table(Top_100_ASes_Table, Subtable_Rib_Out):
 
 
 class Edge_ASes_Table(ASes_Subtable):
-    """Class with database functionality.
+    """Subtable that consists of only edge ases
     In depth explanation at the top of the file."""
 
     __slots__ = []
@@ -366,6 +378,8 @@ class Simulation_Results_Table(Database):
         self.execute(sql, test_info + trace_info + cplane_info + v_hjack_info)
 
 class Simulation_Results_Agg_Table(Generic_Table):
+    """Table used to aggregate the results for graphing"""
+
     name = "simulation_results_agg"
 
     def fill_table(self):
@@ -409,6 +423,8 @@ class Simulation_Results_Agg_Table(Generic_Table):
         self.execute(sql) 
 
 class Simulation_Results_Avg_Table(Generic_Table):
+    """Table used to get the confidence intervals for graphing"""
+
     name = "simulation_results_avg"
 
     def fill_table(self):

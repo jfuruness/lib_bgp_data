@@ -43,6 +43,8 @@ class Multiline_TQDM:
             pbar.update()
 
     def update_extrapolator(self):
+        """Sets the extrapolator to no longer be running"""
+
         self.set_desc(self.scenario,
                       self.adopt_pol,
                       self.percent,

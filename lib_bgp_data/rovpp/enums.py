@@ -54,7 +54,11 @@ Non_Default_Policies = Enum('Non_Default_Policies', _non_default_policies_dict)
 
 
 class Data_Plane_Conditions(Enumerable_Enum):
-    """Possible outcomes from data plane conditions"""
+    """Possible outcomes from data plane conditions
+
+    All announcements should traceback to one of these
+
+    If it does not, the code will error"""
 
     BHOLED = 64512
     HIJACKED = 64513

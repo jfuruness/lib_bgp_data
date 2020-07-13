@@ -53,9 +53,11 @@ class ROVPP_Simulator(Parser):
         with Simulation_Results_Table(clear=True) as _:
             pass
 
+        # Gets the subdivisions of the internet to track
         tables = Subtables(percents)
         tables.fill_tables()
 
+        # All data points that we want to graph
         data_pts = [Data_Point(tables, i, percent, self.csv_dir)
                     for i, percent in enumerate(percents)]
 
