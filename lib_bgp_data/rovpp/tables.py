@@ -66,8 +66,7 @@ class ASes_Subtable(Generic_Table):
         # Number of adopting ases
         ases_to_set = len(ases) * percent // 100
 
-        # Again this is bad code, and bad simulation practice,
-        # but it's what Amir wants
+        # I don't agree with this way of coding it, but this came from up above
         if percent == 0:
             if "edge" in self.name:
                 ases_to_set = 1
