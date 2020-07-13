@@ -94,7 +94,7 @@ class Test_Relationships_File:
         assert self.rel_file._get_table_attributes() == output
 
     def test_parse_file(self):
-        """This uses a hidden relationship file to test the grep commands
+        """This uses an example relationship file to test the grep commands
 
         We use a small example relationship file, for which we know the
         expected output. We check that the data in the db is equivalent to
@@ -144,15 +144,18 @@ class Test_Relationships_File:
         return peer_count, cust_prov_count
 
     def _custom_download_file(self, url, path):
-        """Writes the example file to where the file would normally be
+        """Writes a test file to where the file would normally be
         downloaded
         """
 
         test_path = "/tmp/test_Relationships_Parser/1.decompressed"
-        prep_path = ".ex_rel_file.decompressed"
-        with open(test_path, "w") as test, open(prep_path, "r") as prep:
-            for line in prep.readlines():
-                test.write(line)
+        test_file = ["1|11537|0|bgp\n",
+                     "1|21616|-1|bgp\n",
+                     "1|34732|-1|bgp\n",
+                     "1|41387|-1|bgp\n",
+                     "1|44222|0|bgp"]
+        with open(test_path, "w") as test:
+            test.writelines(test_file)
 
     def _custom_unzip_bz2(self, path):
         """Returns the path of where the unzipped file would be"""
