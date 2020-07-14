@@ -17,6 +17,10 @@ __status__ = "Development"
 
 
 import pytest
+import os
+from .test_mrt_file import Test_MRT_File
+from ..mrt_installer import MRT_Installer
+from ...utils import utils
 
 @pytest.mark.mrt_parser
 class Test_MRT_Installer:
@@ -35,7 +39,34 @@ class Test_MRT_Installer:
             -potentially borrow test from test_mrt_file for this
         """
 
-        pass
+        
+        # TODO: How to uninstall lzma-dev
+        cmds = ["sudo apt -y remove meson",
+                "sudo apt -y remove zlib1g",
+                "sudo apt -y remove zlib1g-dev",
+                "sudo apt-get -y remove libbz2-dev",
+                "sudo apt-get -y remove liblzma-dev",
+                "sudo apt-get -y remove liblz4-dev",
+                "sudo apt-get -y remove ninja-build",
+                "pip3 uninstall meson",
+                "sudo apt-get -y remove cmake"]
+        utils.run_cmds(cmds)
+        pkgs = ["meson",
+                "zlib1g:",
+                "zlib1g-dev",
+                "libbz2-dev",
+                "liblzma-dev",
+                "liblz4-dev",
+                "ninja-build",
+                "cmake "]
+       for pkg in pkgs:
+            out = os.popen("dpkg -l | grep -F '" + pkg + "'").read()
+            assert out == ''
+       test_installer = MRT_Installer()
+       test_installer._install_bgpscaner_deps()
+       for pkg in pkgs:
+            out = os.popen("dpkg -l | grep -F '" + pkg + "'").read()
+            assert out is not ''
 
     @pytest.mark.skip(reason="New hire will work on this")
     def test_install_bgpscanner(self):
@@ -53,8 +84,13 @@ class Test_MRT_Installer:
             -potentially create an MRT file that has malformed announcements?
             -if you have trouble with this please contact me
         """
+        installer = MRT_Installer()
+        filetest = Test_MRT_File()
+        self.test_install_dependencies()
+        installer._install_bgpscanner()
+        filetest.test_bgpscanner_regex()
+        
 
-        pass
 
     @pytest.mark.skip(reason="New hire will work on this")
     def test_install_bgpdump(self):
@@ -69,5 +105,10 @@ class Test_MRT_Installer:
 
         """
 
-        pass
+        installer = MRT_Installer()
+        filetest = Test_MRT_File()
+        cmds = ["sudo rm -r -f /usr/bin/bgpdump", 
+                "sudo rm -r -f /usr/local/bin/bgpdump"]
+        installer._install_bgpdump()
+        filetest.test_bgpdump_regex()
 
