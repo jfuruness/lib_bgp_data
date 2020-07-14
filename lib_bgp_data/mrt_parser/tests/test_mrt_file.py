@@ -34,7 +34,7 @@ class Test_MRT_File:
         with using bgpdump.
 
         NOTE: We actually need to do this for all of them. Why? Because
-        incidentally bgpscanner is by defualt different than bgpdump. 
+        incidentally bgpscanner is by defualt different than bgpdump.
         bgpscanner does not include malformed announcements, bgpdump
         does. When we install it, we change this feature. However,
         few files will have this problem, so we need to run it over all
@@ -145,7 +145,7 @@ class Test_MRT_File:
         # Make sure not AS pathes contain sets
         with Database() as db:
             assert db.execute("SELECT COUNT(*) FROM mrt_announcements"
-                )[0]["count"] > 0
+                              )[0]["count"] > 0
             sql = "SELECT as_path FROM mrt_announcements;"
             # Check for sets by looking for the set notation
             assert "{" not in str(db.execute(sql))
