@@ -8,8 +8,8 @@ Note that if tests are failing, the self.start and self.end may need
 updating to be more recent. Possibly same with the api_param_mods.
 """
 
-__authors__ = ["Justin Furuness"]
-__credits__ = ["Justin Furuness"]
+__authors__ = ["Justin Furuness", "Nicholas Shpetner"]
+__credits__ = ["Justin Furuness", "Nicholas Shpetner"]
 __Lisence__ = "BSD"
 __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
