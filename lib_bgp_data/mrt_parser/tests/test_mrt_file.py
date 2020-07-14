@@ -17,12 +17,12 @@ from ..tables import MRT_Announcements_Table
 from ...database import Database
 from ...utils import utils
 
-__authors__ = ["Matt Jaccino", "Justin Furuness"]
+__authors__ = ["Matt Jaccino", "Justin Furuness", "Nicholas Shpetner"]
 __credits__ = ["Matt Jaccino", "Justin Furuness"]
 __Lisence__ = "BSD"
 __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
-__status__ = "Development"
+__status__ = "Production"
 
 
 @pytest.mark.mrt_parser
