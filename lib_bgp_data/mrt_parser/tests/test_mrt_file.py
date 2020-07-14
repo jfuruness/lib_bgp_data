@@ -10,7 +10,6 @@ For specifics on each test, see the docstrings under each function.
 from subprocess import check_call
 
 import pytest
-import os
 from .expected_output import Expected_Output
 from ..mrt_file import MRT_File
 from ..mrt_parser import MRT_Parser
