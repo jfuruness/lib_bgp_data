@@ -14,7 +14,6 @@ import os
 import time
 
 from pathos.multiprocessing import ProcessingPool
-from shutil import rmtree
 from tqdm import trange
 import urllib
 

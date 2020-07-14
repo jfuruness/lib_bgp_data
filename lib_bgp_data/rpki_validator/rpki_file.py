@@ -88,7 +88,7 @@ class RPKI_File:
         self._process.join()
         self._process.clear()
         # changed to absolute path
-        utils.delete_paths(self._dir + self.hosted_name)
+        utils.delete_paths(os.path.join(self._dir, self.hosted_name))
         logging.debug("Closed RPKI File")
         
 ########################
