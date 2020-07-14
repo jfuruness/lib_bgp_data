@@ -10,7 +10,8 @@ For specifics on each test, see the docstrings under each function.
 from subprocess import check_call
 
 import pytest
-
+import os
+from .expected_output import Expected_Output
 from ..mrt_file import MRT_File
 from ..mrt_parser import MRT_Parser
 from ..tables import MRT_Announcements_Table
@@ -57,13 +58,12 @@ class Test_MRT_File:
         # Make sure both entries are identical
         assert _scanner_entries == _dump_entries
 
-    @pytest.mark.xfail(reason="Need to fix so that still passes if pytest not called in this dir")
     def test_bgpscanner_regex(self):
         """This will test if the method '_bgpscanner_args' uses correct
         regex to get desired output from a file.
         """
-
-        1/0
+        expected = Expected_Output()
+        scanout = expected.get_scanner()
         # because doesn't delete files properlydon't let it run at all
 
         args = ' | cut -d "|" -f1,2,3,10 | sed -n "s/[=|+|-]|\([0|1|2|3|4|5'
@@ -76,7 +76,8 @@ class Test_MRT_File:
         expected_out = "1.2.3.0/24\t{12345, 6789, 0123, 12345, 67890}"
         expected_out += "\t67890\t1234567890"
         # Pipe the example output through the args and output to a new file
-        sys_call = "cat .bgpscanner_out.txt" + args + " > bgpscanner_reg.txt"
+        sys_call = "echo '" + scanout + "' | "
+        sys_call += "cat - " + args + " > bgpscanner_reg.txt"
         check_call(sys_call, shell=True)
         # Use this file to compare to the expected output
         with open("bgpscanner_reg.txt", 'r') as reg:
@@ -99,14 +100,13 @@ class Test_MRT_File:
         # Make sure these values match
         assert lines == entries
 
-    @pytest.mark.xfail(reason="Need to fix so that still passes if pytest not called in this dir")
     def test_bgpdump_regex(self):
         """This will test if the method '_bgpdump_args' uses correct regex
         to get desired output from a file.
         """
-        1/0
         # because doesn't delete files properlydon't let it run at all
-
+        expected = Expected_Output()
+        dumpout = expected.get_dump()
         args = ' | cut -d "|" -f2,6,7 | sed -e "/{.*}/d" -e "s/\(.*|.*|\)'
         args += '\(.*$\)/\\1{\\2}/g" -e "s/ /, /g" -e "s/|/\t/g"'
         args += ' -e "s/\([[:digit:]]\+\)}/\\1}\t\\1/g"'
@@ -115,7 +115,8 @@ class Test_MRT_File:
         expected_out = "1234567890\t12.34.56.0/24\t{12345, 67890, "
         expected_out += "1234, 5678, 90}\t90"
         # Pipe the example output through the args and output to a new file
-        sys_call = "cat .bgpdump_out.txt" + args + " > bgpdump_reg.txt"
+        sys_call = "echo '" + dumpout + "' | "
+        sys_call += "cat - " + args + " > bgpdump_reg.txt"
         check_call(sys_call, shell=True)
         # Use this file to compare to the expected output
         with open("bgpdump_reg.txt", 'r') as reg:
