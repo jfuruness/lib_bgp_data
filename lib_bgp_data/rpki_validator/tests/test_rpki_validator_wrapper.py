@@ -88,22 +88,21 @@ class Test_RPKI_Validator_Wrapper:
         B: That there are five of them
         """
 
-        # shouldn't take forever
         with wrapper as validator:
-
-            start = time.time()
-            validator.load_trust_anchors()
-            print(f'Time elapsed: {time.time() - start}')
-            """
             p = Process(target = validator.load_trust_anchors)
+            # set this to close child processes
+            p.daemon = True
             p.start()
-            # 45 minutes
-            p.join(2700)
-
+            # finish within 25 minutes
+            p.join(1500)
             assert not p.is_alive()
+
+            # closing the multiprocessing
+            p.close()
             p.terminate()
             p.join()
-            """
+            p.clear()
+ 
     @pytest.mark.slow
     def test_make_query(self, wrapper):
         """Initializes the RPKI Validator and tests make_query function
