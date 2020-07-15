@@ -95,18 +95,14 @@ class Simulation_Grapher(Parser):
         self.tar_graphs()
 
     def graph_permutations(self, scenarios_dict, test, graph_tkiz):
-        for tkiz in [True, False]:
-			# Removing this when we don't want tikz
-            if graph_tkiz is False and tkiz is True:
-                continue
-            for scenario, policies_dict in scenarios_dict.items():
-                line_type, subtable, attack_type = scenario
-                if test:
-                    powerset = [list(policies_dict.keys())]
-                else:
-                    powerset = self.powerset_of_policies(policies_dict.keys())
-                for policy_list in powerset:
-                    yield tkiz, line_type, subtable, attack_type, policy_list, policies_dict
+        for scenario, policies_dict in scenarios_dict.items():
+            line_type, subtable, attack_type = scenario
+            if test:
+                powerset = [list(policies_dict.keys())]
+            else:
+                powerset = self.powerset_of_policies(policies_dict.keys())
+            for policy_list in powerset:
+                yield graph_tkiz, line_type, subtable, attack_type, policy_list, policies_dict
  
 
     def generate_agg_tables(self):
@@ -186,7 +182,7 @@ class Simulation_Grapher(Parser):
                     total,
                     tkiz,
                     save_path):
-        """Write the graph for whatever subset of liens you have"""
+        """Write the graph for whatever subset of lines you have"""
 
         # https://stackoverflow.com/a/47930319/8903959
         file_count = sum(len(files) for _, _, files in os.walk(self.graph_path))
@@ -199,7 +195,7 @@ class Simulation_Grapher(Parser):
             label = labels_dict[line.policy]
             ax.errorbar(line.data[Graph_Values.X],
                         line.data[Graph_Values.Y],
-        #                yerr=line.data[Graph_Values.YERR],
+                        yerr=line.data[Graph_Values.YERR],
                         label=label.name,
                         ls=label.style,
                         marker=label.marker,
@@ -297,7 +293,5 @@ class Policy_Line:
             if result["percent"] in set(self.percents):
                 self.data[Graph_Values.X].append(int(result["percent"]))
                 self.data[Graph_Values.Y].append(float(result[self.line_type]) * 100)
-#                self.data[Graph_Values.YERR].append(float(
-#                    result[self.conf_line_type]))
-
+                self.data[Graph_Values.YERR].append(float(result[self.conf_line_type]))
 
