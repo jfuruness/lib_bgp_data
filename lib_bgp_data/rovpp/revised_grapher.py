@@ -27,8 +27,8 @@ from ..base_classes import Parser
 from ..database import Database
 from ..utils import utils
 
-__author__ = "Justin Furuness"
-__credits__ = ["Justin Furuness"]
+__authors__ = ["Justin Furuness", "Samarth Kasbawala"]
+__credits__ = ["Justin Furuness", "Samarth Kasbawala"]
 __Lisence__ = "BSD"
 __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
@@ -92,6 +92,53 @@ class Simulation_Grapher(Parser):
                   [len(graphs)] * len(graphs),
                   tkiz_l,
                   save_paths)
+
+        # Hard coded graph for ROV policy. There should be one graph for each
+        # subtable and each attack has three subtables. I know this is really
+        # janky but this was what was easiest for me to code
+        rov_lines = {'etc_ases': [],
+                     'top_100_ases': [],
+                     'edge_ases': []}
+        line_types = ['c_plane_hijacked_adopting',
+                      'c_plane_hijacked_collateral',
+                      'trace_hijacked_adopting',
+                      'trace_hijacked_collateral']
+        for subtable in rov_lines.keys():
+            for line_type in line_types:
+                rov_lines[subtable].append((line_type,
+                                            scenarios_dict[(line_type,
+                                                            subtable,
+                                                            'subprefix_hijack')]['ROV']))
+        labels_dict = self.get_graph_labels()
+        for subtable, lines in rov_lines.items():
+            fig, ax = plt.subplots()
+            for line_type, line in lines:
+                label = labels_dict['rov_' + line_type]
+                ax.errorbar(line.data[Graph_Values.X],
+                            line.data[Graph_Values.Y],
+                            yerr=line.data[Graph_Values.YERR],
+                            label=label.name,
+                            ls=label.style,
+                            marker=label.marker,
+                            color=label.color)
+            ax.set_ylabel("Hijack %")
+            ax.set_xlabel("% adoption")
+            ax.legend()
+            plt.tight_layout()
+            plt.rcParams.update({'font.size': 14})
+            save_path = os.path.join(self.graph_path,
+                                     "tkiz" if tkiz else "pngs",
+                                     "subprefix_hijack",
+                                     subtable,
+                                     "rov_hijacks")
+            if not os.path.exists(save_path):
+                os.makedirs(save_path)
+            if tkiz:
+                tikzplotlib.save(os.path.join(save_path, "rov_hijacks_percent.tex"))
+            else:
+                plt.savefig(os.path.join(save_path, "rov_hijacks_percent.png"))
+            plt.close()
+                
         self.tar_graphs()
 
     def graph_permutations(self, scenarios_dict, test, graph_tkiz):
@@ -205,6 +252,7 @@ class Simulation_Grapher(Parser):
         #ax.set_title(f"{subtable} and {attack_type}")
         ax.legend()
         plt.tight_layout()
+        plt.rcParams.update({'font.size': 14})
         policies = "_".join(x.policy for x in lines)
         if tkiz:
             tikzplotlib.save(os.path.join(save_path, f"{len(policies)}_{policies}.tex"))
@@ -232,6 +280,22 @@ class Simulation_Grapher(Parser):
                                                     "dashed",
                                                     "1",
                                                     "g"),
+                "rov_c_plane_hijacked_adopting": Label("ROV_Adopting_ctrl",
+                                                       "dashed",
+                                                       ".",
+                                                       "b"),
+                "rov_c_plane_hijacked_collateral": Label("ROV_Collateral_ctrl",
+                                                         "dashed",
+                                                         ".",
+                                                         "r"),
+                "rov_trace_hijacked_adopting": Label("ROV_Adopting_data",
+                                                     "dashed",
+                                                     ".",
+                                                     "g"),
+                "rov_trace_hijacked_collateral": Label("ROV_Collateral_data",
+                                                       "dashed",
+                                                       ".",
+                                                       "y"),
                 }
 
 class Label:
@@ -293,5 +357,5 @@ class Policy_Line:
             if result["percent"] in set(self.percents):
                 self.data[Graph_Values.X].append(int(result["percent"]))
                 self.data[Graph_Values.Y].append(float(result[self.line_type]) * 100)
-                self.data[Graph_Values.YERR].append(float(result[self.conf_line_type]))
+                self.data[Graph_Values.YERR].append(float(result[self.conf_line_type]) * 100)
 
