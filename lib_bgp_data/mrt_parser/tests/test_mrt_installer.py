@@ -26,8 +26,7 @@ from ...utils import utils
 class Test_MRT_Installer:
     """Tests all functions within the mrt installer class."""
 
-
-    @pytest.mark.skip(reason="New hire will work on this")
+    @pytest.mark.install
     def test_install_dependencies(self):
         """Tests installation of dependencies
 
@@ -42,7 +41,7 @@ class Test_MRT_Installer:
         
         # TODO: How to uninstall lzma-dev
         cmds = ["sudo apt -y remove meson",
-                "sudo apt -y remove zlib1g",
+                # "sudo apt -y remove zlib1g", commented out due to essential
                 "sudo apt -y remove zlib1g-dev",
                 "sudo apt-get -y remove libbz2-dev",
                 "sudo apt-get -y remove liblzma-dev",
@@ -51,24 +50,29 @@ class Test_MRT_Installer:
                 "pip3 uninstall meson",
                 "sudo apt-get -y remove cmake"]
         utils.run_cmds(cmds)
-        pkgs = ["meson",
-                "zlib1g:",
-                "zlib1g-dev",
-                "libbz2-dev",
-                "liblzma-dev",
-                "liblz4-dev",
-                "ninja-build",
-                "cmake "]
-       for pkg in pkgs:
-            out = os.popen("dpkg -l | grep -F '" + pkg + "'").read()
+        bin_pkgs = ["meson",
+                #"zlib1g:",
+                "cmake"]
+        dpkg_pkgs = ["zlib1g-dev",
+                     "libbz2-dev",
+                     "liblzma-dev",
+                     "liblz4-dev"]
+        for pkg in bin_pkgs:
+            out = os.popen("ls /usr/bin | grep " +  pkg).read()
             assert out == ''
-       test_installer = MRT_Installer()
-       test_installer._install_bgpscaner_deps()
-       for pkg in pkgs:
-            out = os.popen("dpkg -l | grep -F '" + pkg + "'").read()
+        for pkg in dpkg_pkgs:
+            out = os.popen("dpkg -l | grep " + pkg).read()
+            assert out == ''
+        test_installer = MRT_Installer()
+        test_installer._install_bgpscanner_deps()
+        for pkg in bin_pkgs:
+            out = os.popen("ls /usr/bin | grep " + pkg).read()
+            assert out is not ''
+        for pkg in dpkg_pkgs:
+            out = os.popen("dpkg -l | grep " + pkg).read()
             assert out is not ''
 
-    @pytest.mark.skip(reason="New hire will work on this")
+    @pytest.mark.install_scanner
     def test_install_bgpscanner(self):
         """Tests installation of bgpscanner and dependencies
 
@@ -91,8 +95,7 @@ class Test_MRT_Installer:
         filetest.test_bgpscanner_regex()
         
 
-
-    @pytest.mark.skip(reason="New hire will work on this")
+    @pytest.mark.dump
     def test_install_bgpdump(self):
         """Tests installation of bgpdump and dependencies
 
