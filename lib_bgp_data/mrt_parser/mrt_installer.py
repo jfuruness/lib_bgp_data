@@ -66,10 +66,10 @@ class MRT_Installer:
         cmds = ["git clone https://github.com/RIPE-NCC/bgpdump.git",
                 "cd bgpdump/",
                 "sh ./bootstrap.sh",
+                "make",
                 "./bgpdump -T",
-                "sudo cp bgpdump /usr/bin/bgpdump"]
+                "sudo cp bgpdump /usr/local/bin/bgpdump"]
         utils.run_cmds(cmds)
-        utils.run_cmds("sudo cp bgpdump /usr/local/bin/bgpdump")
 
 ###################################
 ### bgpscanner Helper Functions ###
@@ -143,7 +143,9 @@ class MRT_Installer:
                 "sudo ninja install",
                 "sudo ldconfig",
                 "cd ../../",
-                "cp bgpscanner/build/bgpscanner /usr/bin/bgpscanner"]
+                # fail: bgpscanner/build/bgpscanner doesn't exist.
+                # ...wait, what? This all worked on my machine!
+                "sudo cp bgpscanner/build/bgpscanner /usr/bin/bgpscanner"]
         utils.run_cmds(cmds)
 
         # Our second server runs from here, so we need to:
