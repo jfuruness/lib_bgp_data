@@ -93,53 +93,79 @@ class Simulation_Grapher(Parser):
                   tkiz_l,
                   save_paths)
 
+        self.rov_data_v_ctrl(scenarios_dict, tkiz)
+        self.tar_graphs()
+
+
+    def rov_data_v_ctrl(self, scenarios_dict, tkiz):
         # Hard coded graph for ROV policy. There should be one graph for each
         # subtable and each attack has three subtables. I know this is really
         # janky but this was what was easiest for me to code
-        rov_lines = {'etc_ases': [],
-                     'top_100_ases': [],
-                     'edge_ases': []}
+
+        # Get the graph attributes
+        (policies, percents, subtables, attack_types) = self.get_possible_graph_attrs()
+
+        # Empty dictionary to hold the lines for each graph
+        rov_lines = {}
+
+        # Each attack type will be a key in the rov_lines dictionary. The
+        # value for each key will be another dictionary that contains the lines
+        # to be graphed for each subtable
+        for attack_type in attack_types:
+            rov_lines[attack_type] = {subtable: [] for subtable in subtables}
+
+        # These are the ROV policy line types we are interested in graphing
         line_types = ['c_plane_hijacked_adopting',
                       'c_plane_hijacked_collateral',
                       'trace_hijacked_adopting',
                       'trace_hijacked_collateral']
-        for subtable in rov_lines.keys():
-            for line_type in line_types:
-                rov_lines[subtable].append((line_type,
-                                            scenarios_dict[(line_type,
-                                                            subtable,
-                                                            'subprefix_hijack')]['ROV']))
+
+        # The scenarios dictionary should already contain the lines we want to
+        # graph, we just need to get them and append the lines to their
+        # appropriate list in the dictionary 
+        for attack, attack_dict in rov_lines.items():
+            for subtable in attack_dict.keys():
+                for line_type in line_types:
+                    line = scenarios_dict[(line_type, subtable, attack)]['ROV']
+                    line.policy = 'rov_' + line_type
+                    attack_dict[subtable].append(line)
+
+        # Graph the lines. This code is very similar to the write_graphs
+        # method. However, custom axis labels are needed and the method
+        # uses predefined axis labels. Also, the write graphs function prints
+        # out how many pngs have been written. Since this graph isn't in the
+        # output of graph permutations, the printed updates won't be accurate.
         labels_dict = self.get_graph_labels()
-        for subtable, lines in rov_lines.items():
-            fig, ax = plt.subplots()
-            for line_type, line in lines:
-                label = labels_dict['rov_' + line_type]
-                ax.errorbar(line.data[Graph_Values.X],
-                            line.data[Graph_Values.Y],
-                            yerr=line.data[Graph_Values.YERR],
-                            label=label.name,
-                            ls=label.style,
-                            marker=label.marker,
-                            color=label.color)
-            ax.set_ylabel("Hijack %")
-            ax.set_xlabel("% adoption")
-            ax.legend()
-            plt.tight_layout()
-            plt.rcParams.update({'font.size': 14})
-            save_path = os.path.join(self.graph_path,
-                                     "tkiz" if tkiz else "pngs",
-                                     "subprefix_hijack",
-                                     subtable,
-                                     "rov_hijacks")
-            if not os.path.exists(save_path):
-                os.makedirs(save_path)
-            if tkiz:
-                tikzplotlib.save(os.path.join(save_path, "rov_hijacks_percent.tex"))
-            else:
-                plt.savefig(os.path.join(save_path, "rov_hijacks_percent.png"))
-            plt.close()
-                
-        self.tar_graphs()
+        for attack, attack_dict in rov_lines.items():
+            for subtable, lines in attack_dict.items():
+                fig, ax = plt.subplots()
+                for line in lines:
+                    label = labels_dict[line.policy]
+                    ax.errorbar(line.data[Graph_Values.X],
+                                line.data[Graph_Values.Y],
+                                yerr=line.data[Graph_Values.YERR],
+                                label=label.name,
+                                ls=label.style,
+                                marker=label.marker,
+                                color=label.color)
+                ax.set_ylabel("Hijack %")
+                ax.set_xlabel("% adoption")
+                ax.legend()
+                plt.tight_layout()
+                plt.rcParams.update({'font.size': 14})
+                save_path = os.path.join(self.graph_path,
+                                         "tkiz" if tkiz else "pngs",
+                                         attack,
+                                         subtable,
+                                         ("rov_cntrl_plane_v_data_plane_"
+                                          "adopting_and_collateral"))
+                if not os.path.exists(save_path):
+                    os.makedirs(save_path)
+                if tkiz:
+                    tikzplotlib.save(os.path.join(save_path, "rov_hijacks_percent.tex"))
+                else:
+                    plt.savefig(os.path.join(save_path, "rov_hijacks_percent.png"))
+                plt.close()
 
     def graph_permutations(self, scenarios_dict, test, graph_tkiz):
         for scenario, policies_dict in scenarios_dict.items():
