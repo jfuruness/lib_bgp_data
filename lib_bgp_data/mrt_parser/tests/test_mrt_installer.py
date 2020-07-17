@@ -39,9 +39,7 @@ class Test_MRT_Installer:
         """
 
         
-        # TODO: How to uninstall lzma-dev
         cmds = ["sudo apt -y remove meson",
-                # "sudo apt -y remove zlib1g", commented out due to essential
                 "sudo apt -y remove zlib1g-dev",
                 "sudo apt-get -y remove libbz2-dev",
                 "sudo apt-get -y remove liblzma-dev",
@@ -51,7 +49,6 @@ class Test_MRT_Installer:
                 "sudo apt-get -y remove cmake"]
         utils.run_cmds(cmds)
         bin_pkgs = ["meson",
-                #"zlib1g:",
                 "cmake"]
         dpkg_pkgs = ["zlib1g-dev",
                      "libbz2-dev",
