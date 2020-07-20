@@ -78,6 +78,12 @@ class MRT_Parser(Parser):
             IPV6 defaults to False, so IP6 results are not included
         """
 
+        # If start/end not default:
+        logging.warning(("Caida api doesn't work as you'd expect."
+                         " There are bugs. To ensure a good run, epoch times"
+                         " must start 5 seconds before day, and end 1 second"
+                         " before the end of the day"))
+
         # Gets urls of all mrt files needed
         urls = self._get_mrt_urls(start, end, api_param_mods, sources)
         logging.debug(f"Total files {len(urls)}")
