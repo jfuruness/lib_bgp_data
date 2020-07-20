@@ -17,12 +17,12 @@ from ..tables import MRT_Announcements_Table
 from ...database import Database
 from ...utils import utils
 
-__authors__ = ["Matt Jaccino", "Justin Furuness"]
+__authors__ = ["Matt Jaccino", "Justin Furuness", "Nicholas Shpetner"]
 __credits__ = ["Matt Jaccino", "Justin Furuness"]
 __Lisence__ = "BSD"
 __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
-__status__ = "Development"
+__status__ = "Production"
 
 
 @pytest.mark.mrt_parser
@@ -34,7 +34,7 @@ class Test_MRT_File:
         with using bgpdump.
 
         NOTE: We actually need to do this for all of them. Why? Because
-        incidentally bgpscanner is by defualt different than bgpdump. 
+        incidentally bgpscanner is by defualt different than bgpdump.
         bgpscanner does not include malformed announcements, bgpdump
         does. When we install it, we change this feature. However,
         few files will have this problem, so we need to run it over all
@@ -65,9 +65,9 @@ class Test_MRT_File:
         scanout = expected.get_scanner()
         # because doesn't delete files properlydon't let it run at all
 
-        args = ' | cut -d "|" -f1,2,3,10 | sed -n "s/[=|+|-]|\([0|1|2|3|4|5'
-        args += '|6|7|8|9|%|\.|\:|a|b|c|d|e|f|/]\+\)|\([^{]*[[:space:]]\)*'
-        args += '\([^{]*\)|\(.*\)/\\1\\t{\\2\\3}\\t\\3\\t\\4/p"'
+        args = r' | cut -d "|" -f1,2,3,10 | sed -n "s/[=|+|-]|\([0|1|2|3|4|5'
+        args += r'|6|7|8|9|%|\.|\:|a|b|c|d|e|f|/]\+\)|\([^{]*[[:space:]]\)*'
+        args += r'\([^{]*\)|\(.*\)/\1\t{\2\3}\t\3\t\4/p"'
         args += ' | sed -e "s/ /, /g"'
         # I've added an example of BGPScanner output in this directory called
         # '.bgpscanner_out.txt', which I will use to compare to the
@@ -106,9 +106,9 @@ class Test_MRT_File:
         # because doesn't delete files properlydon't let it run at all
         expected = Expected_Output()
         dumpout = expected.get_dump()
-        args = ' | cut -d "|" -f2,6,7 | sed -e "/{.*}/d" -e "s/\(.*|.*|\)'
-        args += '\(.*$\)/\\1{\\2}/g" -e "s/ /, /g" -e "s/|/\t/g"'
-        args += ' -e "s/\([[:digit:]]\+\)}/\\1}\t\\1/g"'
+        args = r' | cut -d "|" -f2,6,7 | sed -e "/{.*}/d" -e "s/\(.*|.*|\)'
+        args += r'\(.*$\)/\1{\2}/g" -e "s/ /, /g" -e "s/|/\t/g"'
+        args += r' -e "s/\([[:digit:]]\+\)}/\1}\t\1/g"'
         # I've added an example of BGPDump's output in this directory called
         # '.bgpdump_out.txt', which I will use to compare to the desired output
         expected_out = "1234567890\t12.34.56.0/24\t{12345, 67890, "
@@ -145,7 +145,7 @@ class Test_MRT_File:
         # Make sure not AS pathes contain sets
         with Database() as db:
             assert db.execute("SELECT COUNT(*) FROM mrt_announcements"
-                )[0]["count"] > 0
+                              )[0]["count"] > 0
             sql = "SELECT as_path FROM mrt_announcements;"
             # Check for sets by looking for the set notation
             assert "{" not in str(db.execute(sql))
