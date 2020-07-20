@@ -51,14 +51,23 @@ class Blacklist_Parser(Parser):
         MIT paper, makes a dict for each source, and attaches the
         blacklist of each source into the respective key as a string
         """
+
+
+        # TODO: If UCEPROTECT blank, retry
+        # Download sources to file, and then read from file instead of reading from string, makes more sense/readable
+        # For UCEPROTECT, try to specifiy content type
+
         sources = {'uce2': 'http://wget-mirrors.uceprotect.net/rbldnsd-all/dnsbl-2.uceprotect.net.gz', 'uce3': 'http://wget-mirrors.uceprotect.net/rbldnsd-all/dnsbl-3.uceprotect.net.gz', 'spamhaus': 'https://www.spamhaus.org/drop/asndrop.txt', 'mit': 'https://raw.githubusercontent.com/ctestart/BGP-SerialHijackers/master/prediction_set_with_class.csv'}
         output_str = dict()
-        for typ in sources.keys():
+        for typ in sources.():
             output_str[typ] = ''
         # For each source in the sources dict, GET url and save string
         # to dict.
-        for source in sources.keys():
+        for source in sources():
             downloaded_file = requests.get(sources[source])
+            # if not downloaded_file.ok or 
+            # TODO: Note: for whatever reason, UCE protect is not letting me wget or request right now, returning a 404.
+            # Hopefully this is just due to the favicon, but they might be preventing scraping.
             # UCEPROTECT is inconsistent in that sometimes a python
             # requested file will sometimes come as a txt, sometimes
             # as a tarball that needs to be unzipped. We check this:
@@ -79,7 +88,7 @@ class Blacklist_Parser(Parser):
         parsed = dict()
         # For each source in outputs, parse for ASNs and save ASNs as
         # list for each source in dict.
-        for output in outputs.keys():
+        for output in outputs:
             # If not a mit csv, just regex to find ASNs.
             if output != 'mit':
                 parsed[output] = re.findall(r'AS\d+', outputs[output])
@@ -93,7 +102,8 @@ class Blacklist_Parser(Parser):
                         parsed[output].append(row['ASN'])
         # For each key in parsed dictionary, remove duplicates and
         # remove 'AS' from infront of ASN.
-        for key in parsed.keys():
+        for key in parsed.:
+            # TODO: Save values to sets so we don't need to worry about duplicates.
             parsed[key] = list(dict.fromkeys(parsed[key]))
             # Remove AS from the the numbers
             for i in range(len(parsed[key])):
@@ -104,7 +114,7 @@ class Blacklist_Parser(Parser):
         """Takes a dict, with the header as the keys, and converts into
         a formatted list for input into database"""
         formatted = []
-        for key in parsed.keys():
+        for key in parsed:
             for asn in parsed[key]:
                 formatted.append([asn, key])
         return formatted
