@@ -52,7 +52,7 @@ class Test_Extrapolator:
 
         Test if not installed that it installs
         Test that can be installed twice.
-        Test that once installed, can run.
+        Test that once installed, can run. - might need to contact Cameron for this part
         """
 
         pass

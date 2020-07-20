@@ -46,4 +46,6 @@ class Test_ROVPP_Extrapolator_Ribs_Out_Table(Generic_Table_Test):
         Make sure output is as expected. Should be ribs out.
 
         Also make sure that tables are destroyed afterwards
+
+        Run any other checks you can think of to find bugs
         """

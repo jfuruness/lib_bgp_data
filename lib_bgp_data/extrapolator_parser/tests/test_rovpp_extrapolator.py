@@ -29,6 +29,9 @@ class Test_ROVPP_Extrapolator:
 
         Run a system test
         Should also run input validation tests.
+        Make sure that if the extrapolator fails to populate it errors
+        Make sure that if the table exists beforehand that it is dropped
+        Make sure that the ribs out table is populated
         """
 
         pass
@@ -36,6 +39,9 @@ class Test_ROVPP_Extrapolator:
     @pytest.mark.skip(reason="New hires, and not finished writing")
     def test_install(self):
         """Tests that the extrapolator is installed.
+
+        Note: maybe just inherit from the other test class for this?
+        Same test but different branch that gets installed
 
         Test if not installed that it installs
         Test that can be installed twice.

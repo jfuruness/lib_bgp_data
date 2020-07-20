@@ -58,7 +58,9 @@ class Data_Plane_Conditions(Enumerable_Enum):
 
     All announcements should traceback to one of these
 
-    If it does not, the code will error"""
+    If it does not, the code will error
+
+    Picked because these are reserved asn's"""
 
     BHOLED = 64512
     HIJACKED = 64513
