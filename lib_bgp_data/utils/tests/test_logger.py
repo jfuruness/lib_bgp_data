@@ -51,7 +51,7 @@ class Test_Logging:
         output = io.StringIO()
         # Try to catch a warning
         with contextlib.redirect_stdout(output):
-            self._send_warning()
+            logging.warning("Test warning")
         # Check that stdout is not none
         assert output.getvalue() is not None
         # Check file is not none
@@ -65,7 +65,7 @@ class Test_Logging:
         # Get the new path
         path = _get_log_path("test")
         # Send info
-        self._send_info()
+        logging.info("Test info. You should not see this.")
         # Check to see that it's empty
         with open(path, 'r') as f:
             assert f.read() == ''
@@ -82,15 +82,3 @@ class Test_Logging:
         assert os.path.exists("/var/log/lib_bgp_data")
         assert log_path == os.path.join("/var/log/lib_bgp_data", fname)
         return log_path
-
-##################
-#Helper Functions#
-##################
-
-    def _send_warning(self):
-        """Sends warning to logger"""
-        logging.warning("Test warning")
-
-    def _send_info(self):
-        """Sends info to logger. Logger should not log this"""
-        logging.info("Test info. You should not see this.")
