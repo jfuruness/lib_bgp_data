@@ -206,7 +206,7 @@ class Simulation_Grapher(Parser):
                         color=label.color)
         ax.set_ylabel("Percent_" + line_type)
         ax.set_xlabel(f"Percent adoption")
-        ax.set_title(f"{subtable} and {attack_type}")
+        #ax.set_title(f"{subtable} and {attack_type}")
         ax.legend()
         plt.tight_layout()
         policies = "_".join(x.policy for x in lines)
@@ -228,10 +228,10 @@ class Simulation_Grapher(Parser):
                 "ROVPPBIS": Label("ROV++v2", "solid", "d", "m"),
                 "ROVPP_V0": Label("ROVPP_V0", "dotted", "2", "y"),
                 "BGP": Label("BGP", "dashdot", "3", "k"),
-                "ROVPP_LITE": Label("ROV++v1_LIGHT", "dashed", "4", "g"),
-                "ROVPPB_LITE": Label("ROV++v2a_LIGHT", "dotted", "x", "r"),
-                "ROVPPBP_LITE": Label("ROV++v3_LIGHT", "-", "*", "c"),
-                "ROVPPBIS_LITE": Label("ROV++v2_LIGHT", "-.", ".", "m"),
+                "ROVPP_LITE": Label("ROV++v1_Lite", "dashed", "4", "g"),
+                "ROVPPB_LITE": Label("ROV++v2a_Lite", "dotted", "x", "r"),
+                "ROVPPBP_LITE": Label("ROV++v3_Lite", "-", "*", "c"),
+                "ROVPPBIS_LITE": Label("ROV++v2_Lite", "-.", ".", "m"),
                 "rov_hidden_hijack_adopting": Label("ROV_hidden_hijacks",
                                                     "dashed",
                                                     "1",

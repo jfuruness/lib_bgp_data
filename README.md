@@ -1,5 +1,7 @@
 # lib\_bgp\_data
-This package contains multiple submodules that are used to gather and manipulate real data in order to simulate snapshots of the internet. The purpose of this is to test different security policies to determine their accuracy, and hopefully find ones that will create a safer, more secure, internet as we know it.
+This package contains functionality to gather internet data from various sources. This internet data can then be used to simulate the internet with theoretical simulations to test new security policies (the simulation_framwork), or to simulate what would have happened in the real world if an Autonomous System used our security policies (The forecast). The purpose of this is to test different security policies to determine their accuracy, and hopefully find ones that will create a safer, more secure, internet as we know it.
+
+Note that this has expanded far beyond what we had originally intended, and this README could use a serious refactor to make it more usable.
 
 *disclaimer: If a submodule is in development, that means that it unit tests are in the process of being written*
 
@@ -16,7 +18,7 @@ This package contains multiple submodules that are used to gather and manipulate
     * [RPKI Validator Parser](#rpki-validator-submodule)
     * [What if Analysis Parser](#what-if-analysis-submodule)
     * [API Submodule](#api-submodule)
-    * [ROVPP Submodule](#rovpp-submodule)
+    * [Simulation_Framework](#simulation-framework)
     * [Utils](#utils)
     * [Database](#database-submodule)
     * [Logging](#logging-submodule)
@@ -32,7 +34,44 @@ This package contains multiple submodules that are used to gather and manipulate
 * [FAQ](#faq)
 ## Package Description
 * [lib\_bgp\_data](#lib_bgp_data)
-This README is split up into several subsections for each of the submodules included in this package. Each subsection has it's own descriptions, usage instructions, etc. The [Forecast Submodule](#forecast-submodule) subsection details how all of the submodules combine to completely simulate the internet. For an overall view of how the project will work, see below:
+
+This README is split up into several subsections for each of the submodules included in this package. Each subsection has it's own descriptions, usage instructions, etc. All these different submodules are used in three ways:
+
+1. The [Forecast Submodule](#forecast-submodule). For this, we download real data from the internet, and using this data, can determine what would have happened to any given AS if they had deployed ROV or other ROV variants.
+2. The  [Simulation_Framework](#simulation-framework). For this, we use the real internet topology and simulate using many different adoption scenarios, trials, etc. to determine what would happen if a percentage of the internet adopted new security policies that we are trying to publish such as ROV++.
+3. The deployment project, very much in development. This project is basically the forecast project, except it takes as input the RIB in of the AS that it is forecasting, and does it's analysis in real time
+
+## Forecast Submodule
+* [lib\_bgp\_data](#lib_bgp_data)
+* [Short Description](#forecast-short-description)
+* [Long Description](#forecast-long-description)
+* [Usage](#forecast-usage)
+* [Table Schema](#forecast-table-schema)
+* [Design Choices](#forecast-design-choices)
+* [Todo and Possible Future Improvements](#todopossible-future-improvements)
+
+NOTE: To focus on other projects, this project was abandoned before there was a stable working version, in the middle of a serious refactor/optimization. Because of that, the Forecast service doesn't work, even though it did at one point.
+
+Status: Abandoned
+
+### Forecast Short description
+* [lib\_bgp\_data](#lib_bgp_data)
+* [Forecast Submodule](#forecast-submodule)
+
+This submodule runs all of the parsers to get a days worth of data for the ROV forecast.
+### Forecast Long description
+* [lib\_bgp\_data](#lib_bgp_data)
+* [Forecast Submodule](#forecast-submodule)
+
+This submodule basically follows the steps in the  [Package Description](#package-description) except for a couple of minor variations.
+
+1. If fresh_install is passed in as True, then a fresh install is installed.
+2. If test is passed in as true, the MRT announcements are filtered down to just one prefix to make it easier to test the package.
+3. db.vacuum_analyze_checkpoint is called 3 times. Once before joining the mrt announcements with roas, once before running the what if analysis, and at the end of everything. The purpose of this is to save storage space, create statistics on all of the tables, and write to disk. This helps the query planner when planning table joins and massively decreases runtime.
+
+Other than that, please refer to the below:
+
+For an overall view of how the project will work, see below:
 
 **![](https://docs.google.com/drawings/u/0/d/sx3R9HBevCu5KN2luxDuOzw/image?w=864&h=650&rev=1621&ac=1&parent=1fh9EhU9yX9X4ylwg_K-izE2T7C7CK--X-Vfk1qqd1sc)**
 Picture link: https://docs.google.com/document/d/1fh9EhU9yX9X4ylwg_K-izE2T7C7CK--X-Vfk1qqd1sc/edit?usp=sharing
@@ -50,36 +89,6 @@ Please note: These steps are not necessarily linear, as much of this is done in 
 8.  Using the bgpstream.com data from the [BGPStream Website Parser](#bgpstream-website-submodule) and the [RPKI Validator](#rpki-validator-submodule) data we can tell if an announcement would have been blocked or not, and whether or not that announcement would have been blocked correctly. For example, if the rpki validator says that a prefix origin pair is invalid by asn, that means it would be blocked (for the invalid by asn policy). If that announcement also occurs in bgpstream.com as a hijacking, then we know that the prefix origin pair is a hijacking, and then we add one point to the hijacked and blocked column. That is an over simplification, but this calculation is done in the last submodule, the [What if Analysis](#what-if-analysis-submodule). The output of this data is for each AS, a table of how many announcements have been blocked and were hijacks, blocked and were not hijacks, not blocked but were hijacks, and not blocked and were not hijacks. This does joins on massive tables, and takes 1-10 minutes on our server.
 9. The [What if Analysis](#what-if-analysis-submodule) data as well as the [Extrapolator](#extrapolator-submodule) data is then available to query form a web interface through the [API](#api-submodule), the last last submodule. All of these steps are done in the submodule called [Main](#main-submodule), in which many of these steps are done in parallel for efficiency. These results are then displayed on our website at [https://sidr.engr.uconn.edu/](https://sidr.engr.uconn.edu/)
 10. The purpose of this is to determine the effect that these security policies would have on the internet and blocking hijacks (attacks). Now from the API it is possible to see what attacks (hijacks) where blocked correctly and incorrectly. It's also possible to see if other announcements where treated as a hijack and were incorrectly blocked. Using this it is possible to see how different security policies would affect your specific ASN
-
-## Forecast Submodule
-* [lib\_bgp\_data](#lib_bgp_data)
-* [Short Description](#forecast-short-description)
-* [Long Description](#forecast-long-description)
-* [Usage](#forecast-usage)
-* [Table Schema](#forecast-table-schema)
-* [Design Choices](#forecast-design-choices)
-* [Todo and Possible Future Improvements](#todopossible-future-improvements)
-
-NOTE: This submodule is not yet complete, and should not be used
-
-
-Status: Development
-### Forecast Short description
-* [lib\_bgp\_data](#lib_bgp_data)
-* [Forecast Submodule](#forecast-submodule)
-
-This submodule runs all of the parsers to get a days worth of data for the ROV forecast.
-### Forecast Long description
-* [lib\_bgp\_data](#lib_bgp_data)
-* [Forecast Submodule](#forecast-submodule)
-
-This submodule basically follows the steps in the  [Package Description](#package-description) except for a couple of minor variations.
-
-1. If fresh_install is passed in as True, then a fresh install is installed.
-2. If test is passed in as true, the MRT announcements are filtered down to just one prefix to make it easier to test the package.
-3. db.vacuum_analyze_checkpoint is called 3 times. Once before joining the mrt announcements with roas, once before running the what if analysis, and at the end of everything. The purpose of this is to save storage space, create statistics on all of the tables, and write to disk. This helps the query planner when planning table joins and massively decreases runtime.
-
-Other than that, please refer to the [Package Description](#package-description)
 
 ### Forecast Usage
 * [lib\_bgp\_data](#lib_bgp_data)
@@ -363,7 +372,7 @@ This submodule downloads and parses MRT Files. This is done through a series of 
     * sed is used because it is cross compatible and fast
         * Must use regex parser that can find/replace for array format
         * AS Sets are not parsed because they are unreliable, these are less than .5% of all announcements
-6. Parsed information is stored in csv files, and old files are deleted
+5. Parsed information is stored in csv files, and old files are deleted
     * This is handled by the MRT_File class
     * This is done because there is thirty to one hundred gigabytes
         * Fast insertion is needed, and bulk insertion is the fastest
@@ -371,7 +380,7 @@ This submodule downloads and parses MRT Files. This is done through a series of 
         * CSVs are more portable and don't rely on postgres versions
         * Binary file insertion relies on specific postgres instance
     * Old files are deleted to free up space
-7. CSV files are inserted into postgres using COPY, and then deleted
+6. CSV files are inserted into postgres using COPY, and then deleted
     * This is handled by MRT_File class
     * COPY is used for speedy bulk insertions
     * Files are deleted to save space
@@ -379,7 +388,8 @@ This submodule downloads and parses MRT Files. This is done through a series of 
         * There are not a lot of duplicates, so it's not worth the time
         * The overall project takes longer if duplicates are deleted
         * A duplicate has the same AS path and prefix
-8. VACUUM ANALYZE is then called to analyze the table for statistics
+7. VACUUM ANALYZE is then called to analyze the table for statistics
+
 ### MRT Announcements Usage
 * [lib\_bgp\_data](#lib_bgp_data)
 * [MRT Announcements Submodule](#mrt-announcements-submodule)
@@ -1681,6 +1691,7 @@ Status: Development
 * [lib\_bgp\_data](#lib_bgp_data)
 * [Utils](#utils)
 The utils folder contains a utils file that has many useful functions used across multiple files and submodules.
+
 ### Utils Features
 * [lib\_bgp\_data](#lib_bgp_data)
 * [Utils](#utils)
@@ -2231,7 +2242,7 @@ Also note that you should code and run your programs on these servers. You shoul
 
 6. Follow the installation instructions. Install the repo you cloned.
 
-7. That's about it! We are working on some exciting stuff and exciting papers. We usually publish a couple every year, so you are definitely working on some awesome stuff that will change the internet as we know it!
+7. That's about it! We are working on some exciting stuff and exciting papers. We usually publish every year, so you are definitely working on some awesome stuff that will change the internet as we know it!
 
 ## TODO/Possible Future Improvements
    * [lib\_bgp\_data](#lib_bgp_data)
