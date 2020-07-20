@@ -67,11 +67,11 @@ class Generic_Table(Database):
 
         return self.execute(f"SELECT * FROM {self.name}")
 
-    def get_count(self, sql: str = None) -> int:
+    def get_count(self, sql: str = None, data: list = []) -> int:
         """Gets count from table"""
 
         sql = sql if sql else f"SELECT COUNT(*) FROM {self.name}"
-        return self.execute(sql)[0]["count"]
+        return self.execute(sql, data)[0]["count"]
 
 
     def clear_table(self):
@@ -85,7 +85,7 @@ class Generic_Table(Database):
         """Copies table to a specified path"""
 
         logging.debug(f"Copying file from {self.name} to {path}")
-        self.execute(f"COPY {self.name} TO %s DELIBSDER '\t';", [path])
+        self.execute(f"COPY {self.name} TO %s DELIMITER '\t';", [path])
         logging.debug("Copy complete")
 
     def filter_by_IPV_family(self, IPV4: bool, IPV6: bool, col="prefix"):

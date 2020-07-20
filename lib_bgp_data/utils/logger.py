@@ -18,17 +18,24 @@ import multiprocessing_logging
 
 from ..database.config import set_global_section_header
 
-def config_logging(level=logging.INFO, section=None):
+
+def config_logging(level=logging.INFO, section=None, reconfigure=False):
     """Configures logging to log to a file"""
 
-    try:
-        from ..database.config import global_section_header
-    except ImportError:
-        global_section_header = set_global_section_header(section)
 
-    # Makes log path and returns it
-    path = _get_log_path(global_section_header)
-    if len(logging.root.handlers) != 2:
+    if len(logging.root.handlers) != 2 or reconfigure:
+        if reconfigure:
+            # Must remove handlers here, or else it will leave them open
+            for handler in logging.root.handlers[:]:
+                handler.close()
+                logging.root.removeHandler(handler)
+        try:
+            from ..database.config import global_section_header
+        except ImportError:
+            global_section_header = set_global_section_header(section)
+    
+        # Makes log path and returns it
+        path = _get_log_path(global_section_header)
         logging.root.handlers = []
         logging.basicConfig(level=level,
                             format='%(asctime)s-%(levelname)s: %(message)s',
@@ -37,6 +44,8 @@ def config_logging(level=logging.INFO, section=None):
 
         logging.captureWarnings(True)
         multiprocessing_logging.install_mp_handler()
+        logging.debug("initialized logger")
+
 
 def _get_log_path(section):
     fname = f"{section}_{datetime.now().strftime('%Y_%m_%d')}.log"

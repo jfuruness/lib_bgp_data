@@ -14,12 +14,11 @@ __status__ = "Development"
 from contextlib import contextmanager
 import csv
 from datetime import datetime, timedelta
-from enum import Enum
 import fileinput
 import functools
 import json
 import logging
-from multiprocessing import cpu_count, Queue, Process, Manager
+from multiprocessing import cpu_count
 import os
 from subprocess import check_call, DEVNULL
 import sys
@@ -30,11 +29,8 @@ from bz2 import BZ2Decompressor
 from pathos.multiprocessing import ProcessingPool
 import pytz
 import requests
-import time
 import urllib
 import shutil
-
-from ..database.config import set_global_section_header
 
 
 # This decorator deletes paths before and after func is called
@@ -57,6 +53,7 @@ def delete_files(files=[]):
         return function_that_runs_func
     return my_decorator
 
+
 @contextmanager
 def Pool(threads: int, multiplier: int, name: str):
     """Context manager for pathos ProcessingPool"""
@@ -70,6 +67,7 @@ def Pool(threads: int, multiplier: int, name: str):
     p.close()
     p.join()
     p.clear()
+
 
 def low_overhead_log(msg: str, level: int):
     """Heavy multiprocessed stuff should not log...
@@ -89,6 +87,7 @@ def low_overhead_log(msg: str, level: int):
     elif level == 10:
         print(msg)
 
+
 def write_to_stdout(msg: str, log_level: int, flush=True):
     # Note that we need log level here, since if we are doing
     # This only in heaavily parallel processes
@@ -106,11 +105,14 @@ def write_to_stdout(msg: str, log_level: int, flush=True):
 @contextmanager
 def progress_bar(msg: str, width: int):
     log_level = logging.root.level
-    write_to_stdout(f"{datetime.now()}: {msg} X/{width}", log_level, flush=False)
+    write_to_stdout(f"{datetime.now()}: {msg} X/{width}",
+                    log_level,
+                    flush=False)
     write_to_stdout("[%s]" % (" " * width), log_level)
     write_to_stdout("\b" * (width+1), log_level)
     yield
     write_to_stdout("]\n", log_level)
+
 
 def now():
     """Returns current time"""
@@ -123,9 +125,10 @@ def get_default_start() -> int:
     """Gets default start time, used in multiple places."""
 
     return int((now()-timedelta(days=2)).replace(hour=0,
-                                             minute=0,
-                                             second=0,
-                                             microsecond=0).timestamp() - 5)
+                                                 minute=0,
+                                                 second=0,
+                                                 microsecond=0
+                                                 ).timestamp() - 5)
 
 
 def get_default_end() -> int:
@@ -133,9 +136,11 @@ def get_default_end() -> int:
 
     # NOTE: Should use the default start for this method
     return int((now()-timedelta(days=2)).replace(hour=23,
-                                             minute=59,
-                                             second=59,
-                                             microsecond=59).timestamp())
+                                                 minute=59,
+                                                 second=59,
+                                                 microsecond=59
+                                                 ).timestamp())
+
 
 def download_file(url: str,
                   path: str,
@@ -146,7 +151,7 @@ def download_file(url: str,
     """Downloads a file from a url into a path."""
 
     log_level = logging.root.level
-    if progress_bar:  # mrt_parser or multithreaded app running, disable logging cause in child
+    if progress_bar:  # mrt_parser or multithreaded app running, disable log
         logging.root.handlers.clear()
         logging.shutdown()
     low_overhead_log(f"Downloading\n  Path:{path}\n Link:{url}\n", log_level)
@@ -175,6 +180,7 @@ def download_file(url: str,
                 logging.error(f"Failed download {url}\nDue to: {e}")
                 sys.exit(1)
 
+
 def incriment_bar(log_level: int):
     # Needed here because mrt_parser can't log
     if log_level <= 20:  # INFO
@@ -182,6 +188,7 @@ def incriment_bar(log_level: int):
         sys.stdout.flush()
     else:
         sys.stdout.flush()
+
 
 def delete_paths(paths):
     """Removes directory if directory, or removes path if path"""
@@ -304,6 +311,7 @@ def get_tags(url: str, tag: str):
 
     return tags
 
+
 def get_json(url: str, headers={}):
     """Gets the json from a url"""
 
@@ -314,6 +322,7 @@ def get_json(url: str, headers={}):
         # Gets data from the json in the url
         return json.loads(url.read().decode())
 
+
 def get_lines_in_file(filename: str) -> int:
     """Returns the number of lines in a given file"""
 
@@ -321,6 +330,7 @@ def get_lines_in_file(filename: str) -> int:
         for count, line in enumerate(f):
             pass
     return count + 1
+
 
 def run_cmds(cmds):
 
@@ -334,6 +344,7 @@ def run_cmds(cmds):
         logging.debug(f"Running: {cmd}")
         check_call(cmd, stdout=DEVNULL, stderr=DEVNULL, shell=True)
 
+
 def replace_line(path, prepend, line_to_replace, replace_with):
     """Replaces a line withing a file that has the path path"""
 
@@ -341,4 +352,3 @@ def replace_line(path, prepend, line_to_replace, replace_with):
     for line in fileinput.input(path, inplace=1):
         line = line.replace(*lines)
         sys.stdout.write(line)
-

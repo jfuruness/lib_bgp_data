@@ -16,6 +16,7 @@ import time
 from pathos.multiprocessing import ProcessingPool
 from psutil import process_iter
 from signal import SIGTERM
+from shutil import rmtree
 from tqdm import trange
 import urllib
 
@@ -43,6 +44,7 @@ class RPKI_Validator_Wrapper:
 
     # Sorry for the crazy naming scheme, must be done to avoid
     # having install file names in multiple locations
+    temp_install_path = "/tmp/temp_rpki_validator_install"
     rpki_package_path = RPKI_PACKAGE_PATH
     rpki_run_name = RPKI_RUN_NAME
     rpki_run_path = RPKI_PACKAGE_PATH + RPKI_RUN_NAME
@@ -224,7 +226,8 @@ class RPKI_Validator_Wrapper:
 
         config_logging(kwargs.get("stream_level", logging.DEBUG),
                        kwargs.get("section"))
-        utils.delete_paths(RPKI_Validator_Wrapper.rpki_package_path)
+        utils.delete_paths([RPKI_Validator_Wrapper.rpki_package_path,
+                            RPKI_Validator_Wrapper.temp_install_path])
 
         RPKI_Validator_Wrapper._download_validator()
         RPKI_Validator_Wrapper._change_file_hosted_location()
@@ -240,7 +243,9 @@ class RPKI_Validator_Wrapper:
         arin_tal = ("https://www.arin.net/resources/manage/rpki/"
                     "arin-ripevalidator.tal")
         # This is the java version they use so we will use it
-        cmds = ["sudo apt-get -y install openjdk-8-jre",
+        cmds = [f"mkdir {RPKI_Validator_Wrapper.temp_install_path}",
+                f"cd {RPKI_Validator_Wrapper.temp_install_path}",
+                "sudo apt-get -y install openjdk-8-jre",
                 f"wget {rpki_url}",
                 "tar -xvf rpki-validator-3-latest-dist.tar.gz",
                 "rm -rf rpki-validator-3-latest-dist.tar.gz",

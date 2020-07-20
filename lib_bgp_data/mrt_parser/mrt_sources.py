@@ -12,6 +12,7 @@ __status__ = "Development"
 
 from enum import Enum
 
+
 class MRT_Sources(Enum):
 
     RIPE = "ripe"

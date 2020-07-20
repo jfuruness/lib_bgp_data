@@ -28,7 +28,7 @@ if sys.version_info < (3, 8):
 setup(
     name='lib_bgp_data',
     packages=find_packages(),
-    version='0.3.0',
+    version='0.3.1',
     authors=['Justin Furuness', 'Matt Jaccino'],
     author_email='jfuruness@gmail.com',
     url='https://github.com/jfuruness/lib_bgp_data.git',
@@ -53,7 +53,8 @@ setup(
         'psycopg2>=2.8.4',
         'matplotlib',
         'multiprocessing_logging',
-        'jsonschema'
+        'selenium>=3.141.0',
+        'tikzplotlib',
     ],
     classifiers=[
         'Environment :: Console',

@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-"""This module contains enums placed here to avoid circular imports"""
-
-from enum import Enum
+"""This module contains enums of attack/defend scenarios
+See README for in depth explanation"""
 
 __author__ = "Justin Furuness"
 __credits__ = ["Justin Furuness"]
@@ -12,50 +11,72 @@ __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
-class Hijack_Types(Enum):
+from enum import Enum
+
+from ..base_classes import Enumerable_Enum
+###########################
+### Attack/Defend Enums ###
+###########################
+
+class Attack_Types(Enum):
+    """Types of scenarios for attacks"""
 
     SUBPREFIX_HIJACK = "subprefix_hijack"
     PREFIX_HIJACK = "prefix_hijack"
     UNANNOUNCED_PREFIX_HIJACK = "no_competing_announcement_hijack"
 
-# enum because strings shouldn't just be being passed around
-# This is for all the policies
+
 class Policies(Enum):
-    """The three types of routing policies"""
+    """The possible routing policies"""
 
     DEFAULT = 0
-#    BGP = 6 ######## SHOULD BE 6
     ROV = 1
     ROVPP = 2
     ROVPPB = 3
     ROVPPBP = 4
     ROVPPBIS = 5
+    BGP = 6
+    ROVPP_V0 = 7
+    ROVPP_LITE = 8
+    ROVPPB_LITE = 9
+    ROVPPBP_LITE = 10
+    ROVPPBIS_LITE = 11
 
 # This creates an enum that is for non bgp policies
-# NOTE: This is completely wrong
-_non_bgp_policies_dict = {x[0]: x[1].value
-                         for x in Policies.__members__.items()
-                         if x[1].value != Policies.DEFAULT.value}
-Non_BGP_Policies = Enum('Non_BGP_Policies', _non_bgp_policies_dict)
+_non_default_policies_dict = {x[0]: x[1].value
+                              for x in Policies.__members__.items()
+                              if x[1].value != Policies.DEFAULT.value}
+Non_Default_Policies = Enum('Non_Default_Policies', _non_default_policies_dict)
 
 ########################
 ### Statistics Enums ###
 ########################
 
-class Conditions(Enum):
+
+class Data_Plane_Conditions(Enumerable_Enum):
+    """Possible outcomes from data plane conditions
+
+    All announcements should traceback to one of these
+
+    If it does not, the code will error
+
+    Picked because these are reserved asn's"""
 
     BHOLED = 64512
     HIJACKED = 64513
     NOTHIJACKED = 64514
-    PREVENTATIVEHIJACKED = 64515
-    PREVENTATIVENOTHIJACKED = 64516
 
-class Control_Plane_Conditions(Enum):
+class Control_Plane_Conditions(Enumerable_Enum):
+    """Conditions you see in the control plane"""
+
     RECEIVED_ATTACKER_PREFIX_ORIGIN = "received_attacker_prefix_origin"
     RECEIVED_ONLY_VICTIM_PREFIX_ORIGIN = "recieved_only_victim_prefix_origin"
     RECEIVED_BHOLE = "received_blackhole"
     NO_RIB = "no_rib"
 
-class AS_Types(Enum):
-    NON_ADOPTING = 0
+
+class AS_Types(Enumerable_Enum):
+    """Ases either adopt or don't"""
+
+    COLLATERAL = 0
     ADOPTING = 1

@@ -34,7 +34,6 @@ class Data:
     __slots__ = ['_as_regex', '_nums_regex', '_ip_regex',
                  '_temp_row', 'data', '_columns', 'csv_path']
 
-    
     def __init__(self, csv_dir: str):
         """Initializes regexes and other important info."""
 
@@ -60,7 +59,6 @@ class Data:
         with self.table() as t:
             self._columns = t.columns
 
-    
     def append(self, row: bs4.element.Tag):
         """Parses, formats, and appends a row of data from bgpstream.com.
 
@@ -70,13 +68,15 @@ class Data:
         self._temp_row = {}
         # Gets the common elements and stores them in temp_row
         # Gets the html of the page for that specific event
-        as_info, extended_children = self._parse_common_elements(row)
-        # Parses uncommon elements and stores them in temp_row
-        self._parse_uncommon_info(as_info, extended_children)
-        # Formats the temp_row and appends it to the list of events
-        self.data.append(self._format_temp_row())
+        try:
+            as_info, extended_children = self._parse_common_elements(row)
+            # Parses uncommon elements and stores them in temp_row
+            self._parse_uncommon_info(as_info, extended_children)
+            # Formats the temp_row and appends it to the list of events
+            self.data.append(self._format_temp_row())
+        except AttributeError:
+            logging.debug('ERROR IN THIS ROW. WILL NOT BE APPENDED')
 
-    
     def db_insert(self, IPV4=True, IPV6=False):
         """Inserts the data into the database and formats it.
 
@@ -92,7 +92,7 @@ class Data:
 
         with self.table() as db_table:
             # Removes unwanted prefixes
-            if hasattr(db_table, "prefix_colum"):
+            if hasattr(db_table, "prefix_column"):
                 db_table.filter_by_IPV_family(IPV4,
                                               IPV6,
                                               db_table.prefix_column)
@@ -106,7 +106,6 @@ class Data:
 ### Helper Functions ###
 ########################
 
-    
     def _parse_common_elements(self, row: bs4.element.Tag):
         """Parses common tags and adds data to temp_row.
 
@@ -139,7 +138,6 @@ class Data:
         # Returns the as info and html for the page with more info
         return as_info, utils.get_tags(url, "td")
 
-    
     def _parse_as_info(self, as_info: str):
         """Performs regex on as_info to return AS number and AS name.
 
@@ -163,7 +161,6 @@ class Data:
                 return as_parsed.group("as_name2"),\
                     as_parsed.group("as_number2")
 
-    
     def _format_temp_row(self) -> list:
         """Formats row vals for input into the csv files.
 
@@ -193,7 +190,6 @@ class Hijack(Data):
 
     table = Hijacks_Table
 
-    
     def _parse_uncommon_info(self, as_info: str, extended_children: list):
         """Parses misc hijack row info."""
 
@@ -213,6 +209,7 @@ class Hijack(Data):
             extended_children[end - 6].string).group(1).strip()
         self._temp_row["more_specific_prefix"] = self._ip_regex.search(
             extended_children[end - 4].string).group(1).strip()
+
         self._temp_row["detected_as_path"] = self._nums_regex.search(
             extended_children[end - 2].string.strip()).group(1)
         self._temp_row["detected_as_path"] = str([int(s) for s in
@@ -220,6 +217,7 @@ class Hijack(Data):
         self._temp_row["detected_as_path"] =\
             self._temp_row.get("detected_as_path"
                                ).replace('[', '{').replace(']', '}')
+
         self._temp_row["detected_by_bgpmon_peers"] = self._nums_regex.search(
             extended_children[end - 1].string.strip()).group(1)
         logging.debug("Parsed Hijack Row")
@@ -234,7 +232,7 @@ class Leak(Data):
     __slots__ = []
 
     table = Leaks_Table
-    
+
     def _parse_uncommon_info(self, as_info: str, extended_children: list):
         """Parses misc leak row info."""
 
@@ -285,7 +283,7 @@ class Outage(Data):
     __slots__ = []
 
     table = Outages_Table
- 
+
     def _parse_uncommon_info(self, as_info: str, extended_children: list):
         """Parses misc outage row info."""
 
@@ -298,6 +296,6 @@ class Outage(Data):
             len(extended_children) - 1].string.strip()
         # Finds all the numbers within a string
         prefix_info = self._nums_regex.findall(prefix_string)
-        self._temp_row["number_prefixes_affected"] = prefix_info[0]
-        self._temp_row["percent_prefixes_affected"] = prefix_info[1]
+        self._temp_row["number_prefixes_affected"] = prefix_info[0].strip()
+        self._temp_row["percent_prefixes_affected"] = prefix_info[1].strip()
         logging.debug("Parsed Outage")
