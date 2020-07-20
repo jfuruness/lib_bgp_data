@@ -101,7 +101,7 @@ class Test_ROAs_Parser:
             # Checks for the max length
             assert formatted_roa[2] == int(roa["maxLength"])
             # Make sure 4th column is of type datetime
-            assert isinstance(formatted_roa[3], datetime)
+            assert isinstance(formatted_roa[3], int)
 
     def test_run(self):
         """Tests the _run function"""
