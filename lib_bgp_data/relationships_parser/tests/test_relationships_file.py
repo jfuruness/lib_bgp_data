@@ -6,18 +6,20 @@ For specifics on each test, see docstrings under each function.
 """
 
 import pytest
+from unittest.mock import Mock, patch
 from ..relationships_file import Rel_File, Rel_Types
 from ..relationships_parser import Relationships_Parser
 from ..tables import Provider_Customers_Table, Peers_Table
 from ...utils import utils
 
 
-__authors__ = ["Matt Jaccino", "Justin Furuness"]
-__credits__ = ["Matt Jaccino", "Justin Furuness"]
+__authors__ = ["Matt Jaccino", "Justin Furuness", "Samarth Kasbawala"]
+__credits__ = ["Matt Jaccino", "Justin Furuness", "Samarth Kasbawala"]
 __Lisence__ = "BSD"
 __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
-__status__ = "Development"
+__status__ = "Production"
+
 
 @pytest.mark.relationships_parser
 class Test_Relationships_File:
@@ -62,11 +64,11 @@ class Test_Relationships_File:
 
         # Grep call for finding peer relationships:
         # All lines not containing '-1' or '#', delimited by tabs
-        _peers_grep = ('grep -v "\-1" | grep -F -v "#" | cut -d "|" -f1,2'
+        _peers_grep = (r'grep -v "\-1" | grep -F -v "#" | cut -d "|" -f1,2'
                        ' | sed -e "s/|/\t/g"')
         # Grep call for finding customer-provder relationships:
         # All lines containing '-1' but not '#", delimited by tabs
-        _cust_prov_grep = ('grep "\-1" | grep -F -v "#" | cut -d "|"'
+        _cust_prov_grep = (r'grep "\-1" | grep -F -v "#" | cut -d "|"'
                            ' -f1,2 | sed -e "s/|/\t/g"')
         # Expected return value for 'grep' from this method
         _exp_grep = {Rel_Types.PROVIDER_CUSTOMERS: _cust_prov_grep,
@@ -74,7 +76,7 @@ class Test_Relationships_File:
         # Assume rovpp == False for table attributes call, since it makes
         # no difference for testing this method
         _exp_table_attr = {Rel_Types.PROVIDER_CUSTOMERS:
-                               Provider_Customers_Table,
+                           Provider_Customers_Table,
                            Rel_Types.PEERS: Peers_Table}
 
         _grep, _csvs, _table_attr = self.rel_file._get_rel_attributes()
@@ -91,15 +93,38 @@ class Test_Relationships_File:
         # Make sure calls give expected output.
         assert self.rel_file._get_table_attributes() == output
 
-    @pytest.mark.skip(reason="New hire will work on this")
     def test_parse_file(self):
-        """This uses a hidden relationship file to test the grep commands
+        """This uses an example relationship file to test the grep commands
 
         We use a small example relationship file, for which we know the
         expected output. We check that the data in the db is equivalent to
         what we expect."""
 
-        pass
+        # Patch the utils.download and utils.unzip_bz2 methods and then run
+        # the parse_file method
+        dl = ("lib_bgp_data.relationships_parser.relationships_file.utils."
+              "download_file")
+        uz = ("lib_bgp_data.relationships_parser.relationships_file.utils."
+              "unzip_bz2")
+        with patch(dl) as dl_mock, patch(uz) as uz_mock:
+            dl_mock.side_effect = self._custom_download_file
+            uz_mock.side_effect = self._custom_unzip_bz2
+            self.rel_file.parse_file()
+
+        # Check the database and assure we have expected outputs for both
+        # the peers table and the providers_customers table
+        with Peers_Table() as db:
+            expected = [{"peer_as_1": 1, "peer_as_2": 11537},
+                        {"peer_as_1": 1, "peer_as_2": 44222}]
+            result = [dict(row) for row in db.get_all()]
+            assert expected == result
+
+        with Provider_Customers_Table() as db:
+            expected = [{"provider_as": 1, "customer_as": 21616},
+                        {"provider_as": 1, "customer_as": 34732},
+                        {"provider_as": 1, "customer_as": 41387}]
+            result = [dict(row) for row in db.get_all()]
+            assert expected == result
 
 ########################
 ### Helper Functions ###
@@ -117,3 +142,22 @@ class Test_Relationships_File:
                 elif "|-1|" in line:
                     cust_prov_count += 1
         return peer_count, cust_prov_count
+
+    def _custom_download_file(self, url, path):
+        """Writes a test file to where the file would normally be
+        downloaded
+        """
+
+        test_path = "/tmp/test_Relationships_Parser/1.decompressed"
+        test_file = ["1|11537|0|bgp\n",
+                     "1|21616|-1|bgp\n",
+                     "1|34732|-1|bgp\n",
+                     "1|41387|-1|bgp\n",
+                     "1|44222|0|bgp"]
+        with open(test_path, "w") as test:
+            test.writelines(test_file)
+
+    def _custom_unzip_bz2(self, path):
+        """Returns the path of where the unzipped file would be"""
+
+        return "/tmp/test_Relationships_Parser/1.decompressed"

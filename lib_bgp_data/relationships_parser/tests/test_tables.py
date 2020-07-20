@@ -18,7 +18,7 @@ __credits__ = ["Matt Jaccino", "Justin Furuness"]
 __Lisence__ = "BSD"
 __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
-__status__ = "Development"
+__status__ = "Production"
 
 
 @pytest.mark.relationships_parser
@@ -32,6 +32,7 @@ class Test_Peers_Table(Generic_Table_Test):
 
     table_class = Peers_Table
 
+
 @pytest.mark.relationships_parser
 class Test_ASes_Table(Generic_Table_Test):
     """This will test all methods within the ASes_Table class."""
@@ -41,7 +42,6 @@ class Test_ASes_Table(Generic_Table_Test):
     def test_clear_table(self):
         """This will test the 'clear_table' method."""
 
-        
         # Communicate with database
         with ASes_Table() as _db:
             # Make sure the table exists before testing the method
@@ -96,6 +96,7 @@ class Test_ASes_Table(Generic_Table_Test):
         utils.delete_paths([rel_file.csv_dir, rel_file.path])
         return len(ases)
 
+
 @pytest.mark.relationships_parser
 class Test_AS_Connectivity_Table(Generic_Table_Test):
     """This will test all methods within the ROVPP_AS_Connectivity_Table
@@ -107,7 +108,6 @@ class Test_AS_Connectivity_Table(Generic_Table_Test):
 
     def test_fill_table(self):
         """This will test the fill_table method of the class"""
-
 
         # Make sure count is accurate
         with ASes_Table() as _ases_db:

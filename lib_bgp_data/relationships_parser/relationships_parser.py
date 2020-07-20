@@ -18,7 +18,7 @@ __credits__ = ["Justin Furuness", "Matt Jaccino"]
 __Lisence__ = "BSD"
 __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
-__status__ = "Development"
+__status__ = "Production"
 
 
 class Relationships_Parser(Parser):
@@ -35,7 +35,7 @@ class Relationships_Parser(Parser):
         """
 
         Provider_Customers_Table()
-        
+
         url = url if url else self._get_urls()[0]
         Rel_File(self.path, self.csv_dir, url).parse_file()
         utils.delete_paths([self.csv_dir, self.path])
