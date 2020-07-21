@@ -67,14 +67,19 @@ class ROVPP_Extrapolator_Parser(Extrapolator_Parser):
 #        bash_args += f" -s {max_index + 1}"  # +1 cause the exr devs r off by 1
         logging.debug(bash_args)
         # Exr bash here for dev only
-        utils.run_cmds(exr_bash if exr_bash else bash_args)
+        try:
+            utils.run_cmds(exr_bash if exr_bash else bash_args)
+        except Exception as e:
+            # Must die this hard so our sim fails
+            print(f"Extrapolator failed to populate rovpp_extrapolation_results: {e}")
+            sys.exit(1)
         # Gets rib out. Basically returns only more specific prefixes
         with ROVPP_Extrapolator_Rib_Out_Table(clear=True) as _db:
             try:
                 assert _db.get_count("SELECT COUNT(*) FROM rovpp_extrapolation_results") > 0
             except psycopg2.errors.UndefinedTable:
                 print("Extrapolator failed to populate rovpp_extrapolation_results")
-                sys.exit(1)
+                sys.exit(2)
                 raise Exception("Extrapolator failed to populate rovpp_extrapolation_results")
             logging.info("Extrapolation complete, writing ribs out tables")
             _db.fill_table()
