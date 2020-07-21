@@ -85,10 +85,25 @@ class MRT_Installer:
                 "sudo apt-get -y install libbz2-dev",
                 "sudo apt-get -y install liblzma-dev",
                 "sudo apt-get -y install liblz4-dev",
-                "sudo apt-get -y install ninja-build",
                 "pip3 install --user meson",
                 "sudo apt-get -y install cmake"]
         utils.run_cmds(cmds)
+        # Ninja has to be installed 'manually', as doing it using apt
+        # installs an older version that prevents this file from
+        # working.
+        # Instructions found at:
+        # https://www.claudiokuenzler.com/blog/756/install-newer-ninja-build-tools-ubuntu-14.04-trusty
+        # We begin by wgeting 1.8.2, sufficent for our needs
+        cmds = ["wget -q https://github.com/ninja-build/ninja/releases/download/v1.8.2/ninja-linux.zip",
+                # Unzip into /usr/local/bin
+                "sudo unzip ninja-linux.zip -d /usr/local/bin",
+                # We use update-alternatives to make a link from the
+                # ninja executable in /usr/local/bin/ninja to
+                # /etc/alternatives/ninja to /usr/bin/ninja, and apt
+                # will now 'recognize' ninja in /usr/bin
+                "sudo update-alternatives --install /usr/bin/ninja ninja /usr/local/bin/ninja 1 --force",
+                # Remove the zip file.
+                "rm -r ninja-linux.zip"]
 
     @utils.delete_files("lzma-dev/")
     def _install_lzma_dev(self):
