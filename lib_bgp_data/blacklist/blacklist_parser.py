@@ -21,6 +21,9 @@ import io
 import gzip
 import re
 import csv
+import time
+import sys
+import os
 from io import StringIO
 from .tables import Blacklist_Table
 from ..base_classes import Parser
@@ -35,12 +38,10 @@ class Blacklist_Parser(Parser):
         """Downloads and stores ASNs to table blacklist with columns uce2, uce3, spamhaus, and mit. Due to constraints when executing SQL, columns will be the size of the column with the most data, with None acting as filler forthe smaller columns where that source has no more ASNs on blacklist"""
         with Blacklist_Table(clear=True) as _blacklist_table:
             # Get and format asns
-            raw = (self._parse_lists(self._get_blacklists()))
+            raw = self._parse_lists(self._get_blacklists())
             asns = self._format_dict(raw)
-            # Insert into csv then add to db
             _csv_dir = f"{self.csv_dir}/blacklist.csv"
             utils.rows_to_db(asns, _csv_dir, Blacklist_Table)
-            # Create an index on the asns
 
 ######################
 ###Helper Functions###
@@ -49,38 +50,42 @@ class Blacklist_Parser(Parser):
     def _get_blacklists(self):
         """Gets blacklists from UCE level 2, UCE level 3, spamhaus, and the
         MIT paper, makes a dict for each source, and attaches the
-        blacklist of each source into the respective key as a string
+        blacklist of each source into the respective key as a path to file
         """
 
 
-        # TODO: If UCEPROTECT blank, retry
-        # Download sources to file, and then read from file instead of reading from string, makes more sense/readable
-        # For UCEPROTECT, try to specifiy content type
-
-        sources = {'uce2': 'http://wget-mirrors.uceprotect.net/rbldnsd-all/dnsbl-2.uceprotect.net.gz', 'uce3': 'http://wget-mirrors.uceprotect.net/rbldnsd-all/dnsbl-3.uceprotect.net.gz', 'spamhaus': 'https://www.spamhaus.org/drop/asndrop.txt', 'mit': 'https://raw.githubusercontent.com/ctestart/BGP-SerialHijackers/master/prediction_set_with_class.csv'}
-        output_str = dict()
-        for typ in sources.():
-            output_str[typ] = ''
-        # For each source in the sources dict, GET url and save string
+        # TODO: If UCEPROTECT blank, retry DONE
+        # Download sources to file, and then read from file instead of reading from string, makes more sense/readable DONE
+        # Why am I using an IP for UCE's mirrors? The various mirrors of UCE's blacklists are not consistent with one another:
+        # Some will return a gzip, some just ISO-8859 text, and some just don't work. So, to ensure consistency, I'm using IP here.
+        # This should return plaintext.
+        sources = {'uce2': 'http://72.13.86.154/rbldnsd-all/dnsbl-2.uceprotect.net.gz', 'uce3': 'http://72.13.86.154/rbldnsd-all/dnsbl-3.uceprotect.net.gz', 'spamhaus': 'https://www.spamhaus.org/drop/asndrop.txt', 'mit': 'https://raw.githubusercontent.com/ctestart/BGP-SerialHijackers/master/prediction_set_with_class.csv'}
+        output_path = dict()
+        # For each source in the sources dict, GET url, write response to path, and save path
         # to dict.
-        for source in sources():
+        for source in sources:
             downloaded_file = requests.get(sources[source])
-            # if not downloaded_file.ok or 
-            # TODO: Note: for whatever reason, UCE protect is not letting me wget or request right now, returning a 404.
-            # Hopefully this is just due to the favicon, but they might be preventing scraping.
-            # UCEPROTECT is inconsistent in that sometimes a python
-            # requested file will sometimes come as a txt, sometimes
-            # as a tarball that needs to be unzipped. We check this:
-            if downloaded_file.headers['Content-Type'] == 'application/octet-stream':
-                decompressed = gzip.decompress(downloaded_file.content)
-                # UCEPROTECT uses ISO-8859-1 for text, not utf-8
-                output_str[source] = decompressed.decode('ISO-8859-1')
-            else:
-                # We have a txt and save to dict directly
-                output_str[source] = downloaded_file.text
-        return output_str
+            # Now we'll check if we got a proper file, if not try 5 more times or until success
+            if not downloaded_file.ok or downloaded_file.content == '':
+                for i in range(0, 5):
+                     # Don't want to spam the page
+                     time.sleep(5)
+                     downloaded_file = requests.get(sources[source])
+                     if downloaded_file.ok and downloaded_file.content != '':
+                         break
+            if not downloaded_file.ok or downloaded_file.content == '':
+                print("Aborting: File from " + source + 
+                      " failed to download properly with status code" + 
+                      str(downloaded_file.status_code) + "and length" + 
+                      str(len(downloaded_file.content)))
+                sys.exit()
+            _path = f"{self.path}/" + source
+            with open(_path, 'w+') as f:
+                f.write(downloaded_file.text)
+                output_path[source] = _path
+        return output_path
 
-    def _parse_lists(self, outputs: dict):
+    def _parse_lists(self, sources: dict):
         """For each source in outputs, takes the string attached to
         the source and parses it for ASNs, then saves to dict with
         sources as keys with a list of ASNs
@@ -88,30 +93,31 @@ class Blacklist_Parser(Parser):
         parsed = dict()
         # For each source in outputs, parse for ASNs and save ASNs as
         # list for each source in dict.
-        for output in outputs:
+        for source in sources:
             # If not a mit csv, just regex to find ASNs.
-            if output != 'mit':
-                parsed[output] = re.findall(r'AS\d+', outputs[output])
+            if source != 'mit':
+                with open(sources[source], 'r') as f:
+                    output = f.read()
+                    asns = re.findall(r'AS\d+', output)
+                    for i, asn in enumerate(asns):
+                        asns[i] = asn.replace('AS', '')
+                    parsed[source] = set(asns)
+                    
             # If mit csv, use csv utilities to ID malicious ASNs.
-            if output == 'mit':
-                parsed[output] = []
-                fake_file = StringIO(outputs[output])
-                mit_reader = csv.DictReader(fake_file, delimiter=',')
-                for row in mit_reader:
-                    if row['HardVotePred'] == '1':
-                        parsed[output].append(row['ASN'])
-        # For each key in parsed dictionary, remove duplicates and
-        # remove 'AS' from infront of ASN.
-        for key in parsed.:
-            # TODO: Save values to sets so we don't need to worry about duplicates.
-            parsed[key] = list(dict.fromkeys(parsed[key]))
-            # Remove AS from the the numbers
-            for i in range(len(parsed[key])):
-                parsed[key][i] = parsed[key][i].replace('AS', '')
+            if source == 'mit':
+                parsed[source] = set()
+                with open(sources[source], newline = '') as csvfile:
+                    mit_reader = csv.DictReader(csvfile, delimiter=',')
+                    for row in mit_reader:
+                    # Index 54 is HardVotePred: If 1, MIT's classifier has flagged the ASN
+                    # as having a similar behavior to BGP serial hijackers.
+                    # If 0, the ASN was not flagged.
+                        if row['HardVotePred'] == '1':
+                            parsed[source].update(set(row['ASN']))
         return parsed
 
     def _format_dict(self, parsed: dict):
-        """Takes a dict, with the header as the keys, and converts into
+        """Takes a dict, with the source as the keys, and converts into
         a formatted list for input into database"""
         formatted = []
         for key in parsed:
