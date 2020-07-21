@@ -158,8 +158,6 @@ class MRT_Installer:
                 "sudo ninja install",
                 "sudo ldconfig",
                 "cd ../../",
-                # fail: bgpscanner/build/bgpscanner doesn't exist.
-                # ...wait, what? This all worked on my machine!
                 "sudo cp bgpscanner/build/bgpscanner /usr/bin/bgpscanner"]
         utils.run_cmds(cmds)
 
