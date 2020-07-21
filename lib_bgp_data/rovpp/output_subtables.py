@@ -145,25 +145,34 @@ class Output_Subtable:
 
         for adopt_val in AS_Types.list_values():
             sql = (f"SELECT COUNT(*) FROM {self.Rib_Out_Table.name}"
-                   " WHERE prefix = %s AND origin = %s "
-                   f" AND impliment = {bool(adopt_val)}")
+                   " WHERE prefix = %s AND origin = %s AND asn != %s"
+                   f" AND asn != %s AND impliment = {bool(adopt_val)}")
             conds[C_Plane_Conds.RECEIVED_ATTACKER_PREFIX_ORIGIN.value][adopt_val] =\
                 self.Rib_Out_Table.get_count(sql, [attack.attacker_prefix,
-                                                   attack.attacker_asn])
+                                                   attack.attacker_asn,
+                                                   attack.attacker_asn,
+                                                   attack.victim_asn])
             conds[C_Plane_Conds.RECEIVED_ONLY_VICTIM_PREFIX_ORIGIN.value][adopt_val] =\
                 self.Rib_Out_Table.get_count(sql, [attack.victim_prefix,
+                                                   attack.victim_asn,
+                                                   attack.attacker_asn,
                                                    attack.victim_asn])
             conds[C_Plane_Conds.RECEIVED_BHOLE.value][adopt_val] =\
                 self.Rib_Out_Table.get_count(sql, 
                     [attack.attacker_prefix,
-                     Data_Plane_Conditions.BHOLED.value])
+                     Data_Plane_Conditions.BHOLED.value,
+                     attack.attacker_asn,
+                     attack.victim_asn])
 
             no_rib_sql = """SELECT COUNT(*) FROM {0}
                          LEFT JOIN {1} ON {0}.asn = {1}.asn
                          WHERE {1}.asn IS NULL AND {0}.impliment = {2}
+                         AND {0}.asn != {3} AND {0}.asn != {4}
                          """.format(self.Input_Table.name,
                                     self.Rib_Out_Table.name,
-                                    bool(adopt_val))
+                                    bool(adopt_val),
+                                    attack.attacker_asn,
+                                    attack.victim_asn)
             conds[C_Plane_Conds.NO_RIB.value][adopt_val] =\
                 self.Rib_Out_Table.get_count(no_rib_sql)
 
