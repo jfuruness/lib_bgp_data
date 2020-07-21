@@ -48,9 +48,7 @@ class Test_Blacklist_Parser:
         parsed = parser._parse_lists(self.test_get_blacklists())
         for key in parsed.keys():
             for item in parsed[key]:
-                assert type(item) is str
-                assert len(item) > 0
-                assert item[:2] is not 'AS'
+                assert item.isdigit()
         return parsed
 
     def test_format_dict(self):
@@ -88,7 +86,4 @@ class Test_Blacklist_Parser:
                 assert len(asn_list) > 0
                 table_sizes.append(len(asn_list))
         # Ensure that # of asns in raw data = size of columns.
-        # This has/will fail(ed) sometimes, but that is due to
-        # data provider inconsistencies/updates, from what I know.
-        errstring = 'This may fail due to source inconsistency.'
-        assert raw_sizes == table_sizes, errstring
+        assert raw_sizes == table_sizes
