@@ -15,51 +15,30 @@ __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
- 
+
 import pytest
 import os
 from .test_mrt_file import Test_MRT_File
 from ..mrt_installer import MRT_Installer
 from ...utils import utils
 
+
 @pytest.mark.mrt_parser
 class Test_MRT_Installer:
     """Tests all functions within the mrt installer class."""
 
-    @pytest.mark.install
     def test_install_dependencies(self):
         """Tests installation of dependencies
-
-        First uninstall all dependencies listed.
-        Then install all of them
-        no files should be leftover
         Should be able to be called twice and not error
         Should test both bgpscanner and bgpdump to ensure they don't error
             -potentially borrow test from test_mrt_file for this
         """
-
-        
-        cmds = ["sudo apt -y remove meson",
-                "sudo apt -y remove zlib1g-dev",
-                "sudo apt-get -y remove libbz2-dev",
-                "sudo apt-get -y remove liblzma-dev",
-                "sudo apt-get -y remove liblz4-dev",
-                "sudo apt-get -y remove ninja-build",
-                "pip3 uninstall meson",
-                "sudo apt-get -y remove cmake"]
-        utils.run_cmds(cmds)
         bin_pkgs = ["meson",
-                "cmake"]
+                    "cmake"]
         dpkg_pkgs = ["zlib1g-dev",
                      "libbz2-dev",
                      "liblzma-dev",
                      "liblz4-dev"]
-        for pkg in bin_pkgs:
-            out = os.popen("ls /usr/bin | grep " +  pkg).read()
-            assert out == ''
-        for pkg in dpkg_pkgs:
-            out = os.popen("dpkg -l | grep " + pkg).read()
-            assert out == ''
         test_installer = MRT_Installer()
         test_installer._install_bgpscanner_deps()
         for pkg in bin_pkgs:
@@ -68,8 +47,12 @@ class Test_MRT_Installer:
         for pkg in dpkg_pkgs:
             out = os.popen("dpkg -l | grep " + pkg).read()
             assert out is not ''
+        assert os.popen("ls /usr/local/bin | grep ninja").read() is not ''
 
-    @pytest.mark.install_scanner
+    def test_debug_scaninstall(self):
+        test_installer = MRT_Installer()
+        test_installer._download_and_modify_bgpscanner()
+
     def test_install_bgpscanner(self):
         """Tests installation of bgpscanner and dependencies
 
@@ -90,15 +73,9 @@ class Test_MRT_Installer:
         self.test_install_dependencies()
         installer._install_bgpscanner()
         filetest.test_bgpscanner_regex()
-        
 
-    @pytest.mark.dump
     def test_install_bgpdump(self):
         """Tests installation of bgpdump and dependencies
-
-        First uninstall all dependencies listed.
-        Then install all of them
-        no files should be leftover
         Should be able to be called twice and not error
         Should test bgpdump to ensure it doesn't error
             -potentially borrow test from test_mrt_file for this
@@ -107,8 +84,6 @@ class Test_MRT_Installer:
 
         installer = MRT_Installer()
         filetest = Test_MRT_File()
-        cmds = ["sudo rm -r -f /usr/bin/bgpdump", 
-                "sudo rm -r -f /usr/local/bin/bgpdump"]
         installer._install_bgpdump()
+        print("Testing bgpdump")
         filetest.test_bgpdump_regex()
-
