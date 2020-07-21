@@ -18,6 +18,7 @@ __status__ = "Development"
 import logging
 from multiprocessing import cpu_count
 import os
+import sys
 
 import psycopg2
 
@@ -72,6 +73,8 @@ class ROVPP_Extrapolator_Parser(Extrapolator_Parser):
             try:
                 assert _db.get_count("SELECT COUNT(*) FROM rovpp_extrapolation_results") > 0
             except psycopg2.errors.UndefinedTable:
+                print("Extrapolator failed to populate rovpp_extrapolation_results")
+                sys.exit(1)
                 raise Exception("Extrapolator failed to populate rovpp_extrapolation_results")
             logging.info("Extrapolation complete, writing ribs out tables")
             _db.fill_table()
