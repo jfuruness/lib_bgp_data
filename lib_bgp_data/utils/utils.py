@@ -3,8 +3,8 @@
 
 """This package contains functions used across classes"""
 
-__authors__ = ["Justin Furuness", "Matt Jaccino", "Samarth Kasbawala"]
-__credits__ = ["Justin Furuness", "Matt Jaccino", "Samarth Kasbawala"]
+__authors__ = ["Justin Furuness", "Matt Jaccino"]
+__credits__ = ["Justin Furuness", "Matt Jaccino"]
 __Lisence__ = "BSD"
 __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
@@ -23,8 +23,6 @@ import os
 from subprocess import check_call, DEVNULL
 import sys
 import time
-import smtplib
-from email.message import EmailMessage
 
 from bs4 import BeautifulSoup as Soup
 from bz2 import BZ2Decompressor
@@ -354,22 +352,3 @@ def replace_line(path, prepend, line_to_replace, replace_with):
     for line in fileinput.input(path, inplace=1):
         line = line.replace(*lines)
         sys.stdout.write(line)
-
-def send_email(subject, body):
-    """Sends an email notification"""
-
-    # Get the adress and password from the environment variables
-    email_address = os.environ.get("BGP_EMAIL_USER")
-    password = os.environ.get("BGP_EMAIL_PASS")
-
-    # Build the message
-    message = EmailMessage()
-    message["Subject"] = subject
-    message["From"] = email_address
-    message["To"] = email_address
-    message.set_content(body)
-
-    # Send the message
-    with smtplib.SMTP_SSL("smtp.gmail.com", 465) as smtp:
-        smtp.login(email_address, password)
-        smtp.send_message(message)

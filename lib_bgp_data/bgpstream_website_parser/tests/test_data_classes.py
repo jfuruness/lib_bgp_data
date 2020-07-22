@@ -12,19 +12,15 @@ __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
-from unittest.mock import patch
-from itertools import combinations
-
 import pytest
+from unittest.mock import patch
 from bs4 import BeautifulSoup as Soup
-
 from ..data_classes import Data, Hijack, Leak, Outage
-from ..bgpstream_website_parser import BGPStream_Website_Parser
 from ..tables import Hijacks_Table, Leaks_Table, Outages_Table
 from ..event_types import Event_Types
+from itertools import combinations
 from .create_HTML import HTML_Creator
 from .test_tables import Test_Hijacks_Table, Test_Leaks_Table, Test_Outages_Table
-from ...utils import utils
 
 
 class Test_Data:
@@ -33,13 +29,35 @@ class Test_Data:
     NOTE: You may want to make this not a test class
     and simply have all other classes inherit it."""
 
-    # test_ is inserted by global section header
-    csv_dir = BGPStream_Website_Parser().csv_dir.replace('bgp', 'test')
+    @staticmethod
+    def init(event):
+        type_ = event['event_type']
+        if type_ == Event_Types.HIJACK.value:
+            return Hijack('/tmp/')
+        if type_ == Event_Types.LEAK.value:
+            return Leak('/tmp/')
+        if type_ == Event_Types.OUTAGE.value:
+            return Outage('/tmp/')
 
-    @pytest.fixture(autouse=True)
-    def delete_csv(self):
-        yield
-        utils.delete_paths(self.csv_dir)
+    @staticmethod
+    def uncommon_info(event):
+        type_ = event['event_type']
+        if type_ == Event_Types.HIJACK.value:
+            return ['expected_origin_name', 'expected_origin_number',
+                    'detected_origin_name', 'detected_origin_number',
+                    'expected_prefix', 'more_specific_prefix',
+                    'detected_as_path', 'detected_by_bgpmon_peers']
+
+        if type_ == Event_Types.LEAK.value:
+            return ['origin_as_name', 'origin_as_number',
+                    'leaker_as_name', 'leaker_as_number',
+                    'leaked_prefix', 'leaked_to_number', 'leaked_to_name',
+                    'example_as_path', 'detected_by_bgpmon_peers']
+
+        if type_ == Event_Types.OUTAGE.value:
+            return ['as_name', 'as_number',
+                    'number_prefixes_affected', 'percent_prefixes_affected']
+
 
     def test_append(self, setup):
         """Tests the append function
@@ -138,6 +156,7 @@ class Test_Data:
                 assert event['parsed_as_info1'] == d._parse_as_info(as_info[1])
                 assert event['parsed_as_info2'] == d._parse_as_info(as_info[3])
 
+
     def test_format_temp_row(self, setup):
         """Tests the format temp row func function
 
@@ -176,31 +195,4 @@ class Test_Data:
             for info in Test_Data.uncommon_info(event):
                 assert data._temp_row[info] == event[info]
 
-    @classmethod
-    def init(cls, event):
-        type_ = event['event_type']
-        if type_ == Event_Types.HIJACK.value:
-            return Hijack(cls.csv_dir)
-        if type_ == Event_Types.LEAK.value:
-            return Leak(cls.csv_dir)
-        if type_ == Event_Types.OUTAGE.value:
-            return Outage(cls.csv_dir)
 
-    @staticmethod
-    def uncommon_info(event):
-        type_ = event['event_type']
-        if type_ == Event_Types.HIJACK.value:
-            return ['expected_origin_name', 'expected_origin_number',
-                    'detected_origin_name', 'detected_origin_number',
-                    'expected_prefix', 'more_specific_prefix',
-                    'detected_as_path', 'detected_by_bgpmon_peers']
-
-        if type_ == Event_Types.LEAK.value:
-            return ['origin_as_name', 'origin_as_number',
-                    'leaker_as_name', 'leaker_as_number',
-                    'leaked_prefix', 'leaked_to_number', 'leaked_to_name',
-                    'example_as_path', 'detected_by_bgpmon_peers']
-
-        if type_ == Event_Types.OUTAGE.value:
-            return ['as_name', 'as_number',
-                    'number_prefixes_affected', 'percent_prefixes_affected']
