@@ -59,8 +59,8 @@ class Test_Parser:
         assert logging.root.level == logging.INFO
         path = '/tmp/test_Subparser'
         csv_dir = '/dev/shm/test_Subparser'
-        assert len(os.listdir(path)) == 0
-        assert len(os.listdir(csv_dir)) == 0
+        assert not os.listdir(path)
+        assert not os.listdir(csv_dir)
        
         # reset, otherwise logging can only be configured once
         logging.root.handlers = []
@@ -71,8 +71,8 @@ class Test_Parser:
         csv_dir = './csv'
         sp = Subparser(stream_level=stream_level, path=path, csv_dir=csv_dir)
         assert logging.root.level == logging.ERROR
-        assert len(os.listdir(path)) == 0
-        assert len(os.listdir(csv_dir)) == 0
+        assert not os.listdir(path)
+        assert not os.listdir(csv_dir)
 
     def assert_cleanup(self, parser):
         assert not os.path.exists(parser.path)
@@ -126,18 +126,23 @@ class Test_Parser:
         Attempt to have a class be able to be called with this. Make
         sure that it works.
         """
-        # This is the only way I've been able to to get it work
-        # It would not work defining a class here
-        # or writing a class in a new file
-        path = '../../bgpstream_website_parser/bgpstream_website_parser.py'
-        with open(path, 'r') as f:
+        # Add Foo_Parser to an existing parser file
+        # Run it, and assert its _run function is called
+
+        # this gets us up to /base_classes
+        p = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+
+        p = os.path.join(os.path.dirname(p), 'bgpstream_website_parser',
+            'bgpstream_website_parser.py')
+
+        with open(p, 'r') as f:
             og_cpy = f.read()
 
         sample = 'sample.txt'
         code = ("class Foo_Parser(Parser):\n\tdef _run(self):\n\t\t"
                 f"with open('{sample}', 'w+') as f: f.write('abc')")
 
-        with open(path, 'a') as f:
+        with open(p, 'a') as f:
             f.write('\n')
             f.write(code)
 
@@ -145,6 +150,8 @@ class Test_Parser:
         with open(sample, 'r') as f:
             assert f.read() == 'abc'
 
-        with open(path, 'w') as f:
+        with open(p, 'w') as f:
             f.write(og_cpy)
         os.remove(sample)
+
+
