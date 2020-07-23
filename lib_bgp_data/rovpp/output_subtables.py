@@ -70,13 +70,19 @@ class Output_Subtable:
                       adopt_policy,
                       percent,
                       percent_iter,
-                      self._get_traceback_data(subtable_ases, all_ases),
+                      self._get_traceback_data(subtable_ases, all_ases, table_names),
                       self._get_control_plane_data(attack),
                       self._get_visible_hijack_data(table_names))
 
-    def _get_traceback_data(self, subtable_ases, all_ases):
+    def _get_traceback_data(self, subtable_ases, all_ases, table_names):
         """Gets the data plane data through tracing back"""
-
+        
+        # Get visible hijack ASNs
+        visible_hijack_asns_data = self._get_visible_hijack_asns(table_names)
+        # Consolidate all ASNs into a single list
+        visible_hijack_asns = [x[0] for x in visible_hijack_asns_data[AS_Types.COLLATERAL]] + 
+                              [x[0] for x in visible_hijack_asns_data[AS_Types.ADOPTING]]
+        
         # NOTE: this can easily be changed to SQL. See super optimized folder.
         conds = {x: {y: 0 for y in AS_Types.list_values()}
                  for x in Data_Plane_Conditions.list_values()}
@@ -89,6 +95,10 @@ class Output_Subtable:
             # Done to catch extrapolator loops
             for i in range(64):
                 if (condition := as_data["received_from_asn"]) in conds:
+                    if condition == Data_Plane_Conditions.HIJACKED and not (og_asn in visible_hijack_asns):
+                        print("We found a hidden hijack!")
+                        print("ASN: " + og_asn)
+                        sys.exit(1)
                     conds[condition][og_as_data["impliment"]] += 1
                     looping = False
                     break
@@ -99,7 +109,27 @@ class Output_Subtable:
             if looping:
                 self._print_loop_debug_data(all_ases, og_asn, og_as_data)
         return conds
+        
+    def _get_visible_hijack_asns(self, t_names):
+        """Gets visible hijacks using sql for speed"""
 
+        # NOTE: this will automatically remove attackersand victims
+        # Since they will have nothing in their rib
+        conds = {}
+        # all_ases = " UNION ALL ".join(f"SELECT * FROM {x}" for x in t_names)
+
+        for adopt_val in AS_Types.__members__.values():
+            sql = f"""SELECT asn FROM
+                    {self.Rib_Out_Table.name} og
+                    INNER JOIN {ROVPP_Extrapolator_Rib_Out_Table.name} all_ases
+                        ON og.received_from_asn = all_ases.asn
+                    INNER JOIN attackers
+                        ON attackers.prefix = all_ases.prefix
+                            AND attackers.origin = all_ases.origin
+                    WHERE og.as_type = {adopt_val.value}"""
+            conds[adopt_val] = self.Rib_Out_Table.get_all(sql)
+        return conds
+    
     def _get_visible_hijack_data(self, t_names):
         """Gets visible hijacks using sql for speed"""
 
