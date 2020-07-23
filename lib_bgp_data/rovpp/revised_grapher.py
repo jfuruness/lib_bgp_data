@@ -153,6 +153,7 @@ class Simulation_Grapher(Parser):
                 ax.legend()
                 plt.tight_layout()
                 plt.rcParams.update({'font.size': 14})
+                plt.rcParams.update({'lines.markersize' : 14})
                 save_path = os.path.join(self.graph_path,
                                          "tkiz" if tkiz else "pngs",
                                          attack,
@@ -233,7 +234,16 @@ class Simulation_Grapher(Parser):
         for scenario, policies_dict in scenarios_dict.items():
             line_type, subtable, attack_type = scenario
             if test:
-                powerset = [list(policies_dict.keys())]
+                powerset = [list(policies_dict.keys()),
+                            ["ROVPP", "ROVPPBIS", "ROVPPBP",
+                             "ROVPP_LITE", "ROVPPBIS_LITE", "ROVPPBP_LITE"],
+                            ["BGP", "ROV", "rov_hidden_hijack_adopting",
+                             "ROVPP", "ROVPPBIS", "ROVPPBP",
+                             "ROVPP_LITE", "ROVPPBIS_LITE", "ROVPPBP_LITE"],
+                            ["rov_hidden_hijack_adopting",
+                             "ROVPP", "ROVPPBIS", "ROVPPBP",
+                             "ROVPP_LITE", "ROVPPBIS_LITE", "ROVPPBP_LITE"],
+                            ["BGP"]]
             else:
                 powerset = self.powerset_of_policies(policies_dict.keys())
             for policy_list in powerset:
@@ -334,7 +344,16 @@ class Simulation_Grapher(Parser):
                         ls=label.style,
                         marker=label.marker,
                         color=label.color)
-        ax.set_ylabel("Percent_" + line_type)
+        y_label = ""
+        if  "trace_hijacked" in line_type:
+            y_label = "Data Plane % Hijacked"
+        elif "trace_connected" in line_type:
+            y_label = "Data Plane % Successful Connection"
+        elif "trace_disconnected" in line_type:
+            y_label = "Data Plane % Disconnected"
+        else:
+            y_label = "Percent_" + line_type
+        ax.set_ylabel(y_label)
         ax.set_xlabel(f"Percent adoption")
         #ax.set_title(f"{subtable} and {attack_type}")
         ax.legend()
