@@ -77,6 +77,7 @@ class Output_Subtable:
     def _get_traceback_data(self, subtable_ases, all_ases):
         """Gets the data plane data through tracing back"""
 
+        1/0
         # NOTE: this can easily be changed to SQL. See super optimized folder.
         conds = {x: {y: 0 for y in AS_Types.list_values()}
                  for x in Data_Plane_Conditions.list_values()}
