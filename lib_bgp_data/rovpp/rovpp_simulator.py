@@ -47,7 +47,7 @@ class ROVPP_Simulator(Parser):
         exr.ROVPP_Extrapolator_Parser(**self.kwargs).install(force=True)
 
         # Gets relationships table
-        Relationships_Parser(**self.kwargs)._run()
+        Relationships_Parser(**self.kwargs)._run(url="http://data.caida.org/datasets/as-relationships/serial-2/20200701.as-rel2.txt.bz2")
 
         # Clear the table that stores all trial info
         with Simulation_Results_Table(clear=True) as _:
