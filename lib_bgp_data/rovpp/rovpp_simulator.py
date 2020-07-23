@@ -47,7 +47,7 @@ class ROVPP_Simulator(Parser):
         exr.ROVPP_Extrapolator_Parser(**self.kwargs).install(force=True)
 
         # Gets relationships table
-        Relationships_Parser(**self.kwargs).run()
+        Relationships_Parser(**self.kwargs)._run()
 
         # Clear the table that stores all trial info
         with Simulation_Results_Table(clear=True) as _:
