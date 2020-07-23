@@ -127,7 +127,7 @@ class Output_Subtable:
         loop_asns_set = set()
         asn, as_data = og_asn, og_as_data
         for i in range(64):
-            asn_str = f"ASN:{self.asn:<8}: {self.adopting}"
+            asn_str = f"ASN:{asn:<8}: {as_data}"
             loop_str_list.append(asn_str)
             asn = as_data["received_from_asn"]
             as_data = all_ases[asn]
