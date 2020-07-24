@@ -36,7 +36,8 @@ class ASRankTable(Generic_Table):
 
     __slots__ = []
 
-    name = 'asrank_table'
+    name = 'asrank'
+    columns = ['as_rank', 'as_number', 'organization', 'country', 'cone_size']
 
     def _create_tables(self):
         """Creates new table if it doesn't already exist. The contents will
@@ -44,7 +45,7 @@ class ASRankTable(Generic_Table):
         in the datebase may be out of date.
         """
 
-        sql = """CREATE UNLOGGED TABLE IF NOT EXISTS asrank_table (
+        sql = """CREATE UNLOGGED TABLE IF NOT EXISTS asrank (
               as_rank bigint,
               as_number bigint,
               organization varchar (250),
