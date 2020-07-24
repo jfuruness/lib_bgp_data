@@ -93,9 +93,9 @@ class Simulation_Grapher(Parser):
                   tkiz_l,
                   save_paths)
 
+        self.graph_deltas(scenarios_dict, tkiz)
         self.rov_data_v_ctrl(scenarios_dict, tkiz)
         self.tar_graphs()
-
 
     def rov_data_v_ctrl(self, scenarios_dict, tkiz):
         # Hard coded graph for ROV policy. There should be one graph for each
@@ -148,11 +148,12 @@ class Simulation_Grapher(Parser):
                                 ls=label.style,
                                 marker=label.marker,
                                 color=label.color)
-                ax.set_ylabel("Hijack %")
-                ax.set_xlabel("% adoption")
+                ax.set_ylabel("Percent Hijacked")
+                ax.set_xlabel("Percent Adoption")
                 ax.legend()
                 plt.tight_layout()
                 plt.rcParams.update({'font.size': 14})
+                plt.rcParams.update({'lines.markersize' : 14})
                 save_path = os.path.join(self.graph_path,
                                          "tkiz" if tkiz else "pngs",
                                          attack,
@@ -167,17 +168,87 @@ class Simulation_Grapher(Parser):
                     plt.savefig(os.path.join(save_path, "rov_hijacks_percent.png"))
                 plt.close()
 
+    def graph_deltas(self, scenarios_dict, tkiz):
+        """This function graphs the deltas in the simulation. Purpose is to
+        see how each policy compares to ROV++V1"""
+
+        # These are the line_types we are interested in comparing
+        line_types_to_graph = ['trace_hijacked_collateral',
+                               'trace_hijacked_adopting',
+                               'trace_connected_collateral',
+                               'trace_connected_adopting',
+                               'trace_disconnected_collateral',
+                               'trace_disconnected_adopting']
+
+        # Get all the different graphs that need to be graphed
+        graphs = list(self.get_delta_graphs(scenarios_dict,
+                                            set(line_types_to_graph),
+                                            tkiz))
+
+        # Graph each graph
+        for tkiz, line_type, subtable, attack_type, policy_list, policies_dict in graphs:
+            rovpp_line = policies_dict['ROVPP']
+            labels_dict = self.get_graph_labels()
+            fig, ax = plt.subplots()
+            for policy, line in policies_dict.items():
+                if policy in {'ROVPP', 'BGP', 'ROV', 'ROVPP_V0'}:
+                    continue
+                label = labels_dict[line.policy]
+                ax.errorbar(line.data[Graph_Values.X],
+                            [ly - ry for ry, ly in zip(rovpp_line.data[Graph_Values.Y],
+                                                       line.data[Graph_Values.Y])],
+                            #yerr=line.data[Graph_Values.YERR],
+                            label=label.name,
+                            ls=label.style,
+                            marker=label.marker,
+                            color=label.color)
+            ax.set_ylabel("Rovpp_Delta_" + line_type)
+            ax.set_xlabel("Percent Adoption")
+            ax.legend()
+            plt.tight_layout()
+            plt.rcParams.update({'font.size': 14})
+            save_path = os.path.join(self.graph_path,
+                                     "tkiz" if tkiz else "pngs",
+                                     attack_type,
+                                     subtable,
+                                     "rovpp_delta_" + line_type)
+            if not os.path.exists(save_path):
+                os.makedirs(save_path)
+            if tkiz:
+                tikzplotlib.save(os.path.join(save_path, "rovpp_delta_" + line_type + ".tex"))
+            else:
+                plt.savefig(os.path.join(save_path, "rovpp_delta_" + line_type + ".png"))
+            plt.close()
+            
+    def get_delta_graphs(self, scenarios_dict, line_types_to_graph, tkiz):
+        """Produces the graphs that need to be graphed"""
+
+        for scenario, policies_dict in scenarios_dict.items():
+            line_type, subtable, attack_type = scenario
+            if line_type not in line_types_to_graph:
+                continue
+            policy_list = list(policies_dict.keys())
+            yield tkiz, line_type, subtable, attack_type, policy_list, policies_dict
+
     def graph_permutations(self, scenarios_dict, test, graph_tkiz):
         for scenario, policies_dict in scenarios_dict.items():
             line_type, subtable, attack_type = scenario
             if test:
-                powerset = [list(policies_dict.keys())]
+                powerset = [list(policies_dict.keys()),
+                            ["ROVPP", "ROVPPBIS", "ROVPPBP",
+                             "ROVPP_LITE", "ROVPPBIS_LITE", "ROVPPBP_LITE"],
+                            ["BGP", "ROV", "rov_hidden_hijack_adopting",
+                             "ROVPP", "ROVPPBIS", "ROVPPBP",
+                             "ROVPP_LITE", "ROVPPBIS_LITE", "ROVPPBP_LITE"],
+                            ["rov_hidden_hijack_adopting",
+                             "ROVPP", "ROVPPBIS", "ROVPPBP",
+                             "ROVPP_LITE", "ROVPPBIS_LITE", "ROVPPBP_LITE"],
+                            ["BGP"]]
             else:
                 powerset = self.powerset_of_policies(policies_dict.keys())
             for policy_list in powerset:
                 yield graph_tkiz, line_type, subtable, attack_type, policy_list, policies_dict
  
-
     def generate_agg_tables(self):
         for Table in [Simulation_Results_Agg_Table,
                       Simulation_Results_Avg_Table]:
@@ -273,7 +344,16 @@ class Simulation_Grapher(Parser):
                         ls=label.style,
                         marker=label.marker,
                         color=label.color)
-        ax.set_ylabel("Percent_" + line_type)
+        y_label = ""
+        if  "trace_hijacked" in line_type:
+            y_label = "Data Plane % Hijacked"
+        elif "trace_connected" in line_type:
+            y_label = "Data Plane % Successful Connection"
+        elif "trace_disconnected" in line_type:
+            y_label = "Data Plane % Disconnected"
+        else:
+            y_label = "Percent_" + line_type
+        ax.set_ylabel(y_label)
         ax.set_xlabel(f"Percent adoption")
         #ax.set_title(f"{subtable} and {attack_type}")
         ax.legend()
@@ -305,7 +385,7 @@ class Simulation_Grapher(Parser):
                 "rov_hidden_hijack_adopting": Label("ROV_hidden_hijacks",
                                                     "dashed",
                                                     "1",
-                                                    "g"),
+                                                    "b"),
                 "rov_c_plane_hijacked_adopting": Label("ROV_Adopting_ctrl",
                                                        "dashed",
                                                        ".",
