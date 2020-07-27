@@ -61,7 +61,11 @@ class Generic_Table(Database):
         if "CREATE TABLE" in inspect.getsource(self.__class__):
             raise Exception(unlogged_err)
         super(Generic_Table, self).__init__(*args, **kwargs)
-
+    
+    def just_query(self, sqlquery):
+        """ Just executy a query """
+        return self.execute(sqlquery)
+    
     def get_all(self) -> list:
         """Gets all rows from table"""
 
