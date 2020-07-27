@@ -79,8 +79,9 @@ class Output_Subtable:
         
         # Get visible hijack ASNs
         visible_hijack_asns_data = self._get_visible_hijack_asns(table_names)
+        #print(visible_hijack_asns_data)
         # Consolidate all ASNs into a single list
-        visible_hijack_asns = set([x[0] for x in visible_hijack_asns_data[AS_Types.COLLATERAL]] + [x[0] for x in visible_hijack_asns_data[AS_Types.ADOPTING]])
+        visible_hijack_asns = set([x['asn'] for x in visible_hijack_asns_data[AS_Types.COLLATERAL]] + [x['asn'] for x in visible_hijack_asns_data[AS_Types.ADOPTING]])
         
         # NOTE: this can easily be changed to SQL. See super optimized folder.
         conds = {x: {y: 0 for y in AS_Types.list_values()}

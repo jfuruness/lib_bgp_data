@@ -192,7 +192,7 @@ class Simulation_Grapher(Parser):
             labels_dict = self.get_graph_labels()
             fig, ax = plt.subplots()
             for policy, line in policies_dict.items():
-                if policy in {'ROVPP', 'BGP', 'ROV', 'ROVPP_V0'}:
+                if policy in {'ROVPP', 'BGP', 'ROV', 'ROVPPB', 'ROVPPB_LITE', 'ROVPP_V0'}:
                     continue
                 label = labels_dict[line.policy]
                 ax.errorbar(line.data[Graph_Values.X],
@@ -203,7 +203,16 @@ class Simulation_Grapher(Parser):
                             ls=label.style,
                             marker=label.marker,
                             color=label.color)
-            ax.set_ylabel("Rovpp_Delta_" + line_type)
+            y_label = ""
+            if  "trace_hijacked" in line_type:
+                y_label = "Data Plane % Hijacked"
+            elif "trace_connected" in line_type:
+                y_label = "Data Plane % Successful Connection"
+            elif "trace_disconnected" in line_type:
+                y_label = "Data Plane % Disconnected"
+            else:
+                y_label = "Percent_" + line_type
+            ax.set_ylabel(y_label)
             ax.set_xlabel("Percent Adoption")
             ax.legend()
             plt.tight_layout()
@@ -229,6 +238,8 @@ class Simulation_Grapher(Parser):
             if line_type not in line_types_to_graph:
                 continue
             policy_list = list(policies_dict.keys())
+            #policy_list = ["ROVPPBIS", "ROVPPBP",
+            #               "ROVPP_LITE", "ROVPPB_LITE", "ROVPPBP_LITE"],
             yield tkiz, line_type, subtable, attack_type, policy_list, policies_dict
 
     def graph_permutations(self, scenarios_dict, test, graph_tkiz):
