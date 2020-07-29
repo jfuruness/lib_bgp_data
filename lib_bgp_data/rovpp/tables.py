@@ -439,42 +439,42 @@ class Simulation_Results_Avg_Table(Generic_Table):
         
                 --adopting traceback
                 AVG(trace_hijacked_adopting) AS trace_hijacked_adopting,
-                (1.645 * 2.0 * STDDEV(trace_hijacked_adopting))::decimal / SQRT(COUNT(*))::decimal AS trace_hijacked_adopting_confidence,
+                (1.96 * STDDEV(trace_hijacked_adopting))::decimal / SQRT(COUNT(*))::decimal AS trace_hijacked_adopting_confidence,
                 AVG(trace_disconnected_adopting) AS trace_disconnected_adopting,
-                (1.645 * 2.0 * STDDEV(trace_disconnected_adopting))::decimal / SQRT(COUNT(*))::decimal AS trace_disconnected_adopting_confidence,
+                (1.96 * STDDEV(trace_disconnected_adopting))::decimal / SQRT(COUNT(*))::decimal AS trace_disconnected_adopting_confidence,
                 AVG(trace_connected_adopting) AS trace_connected_adopting,
-                (1.645 * 2.0 * STDDEV(trace_connected_adopting))::decimal / SQRT(COUNT(*))::decimal AS trace_connected_adopting_confidence,
+                (1.96 * STDDEV(trace_connected_adopting))::decimal / SQRT(COUNT(*))::decimal AS trace_connected_adopting_confidence,
                 --collateral traceback
                 AVG(trace_hijacked_collateral) AS trace_hijacked_collateral,
-                (1.645 * 2.0 * STDDEV(trace_hijacked_collateral))::decimal / SQRT(COUNT(*))::decimal AS trace_hijacked_collateral_confidence,
+                (1.96 * STDDEV(trace_hijacked_collateral))::decimal / SQRT(COUNT(*))::decimal AS trace_hijacked_collateral_confidence,
                 AVG(trace_disconnected_collateral) AS trace_disconnected_collateral,
-                (1.645 * 2.0 * STDDEV(trace_disconnected_collateral))::decimal / SQRT(COUNT(*))::decimal AS trace_disconnected_collateral_confidence,
+                (1.96 * STDDEV(trace_disconnected_collateral))::decimal / SQRT(COUNT(*))::decimal AS trace_disconnected_collateral_confidence,
                 AVG(trace_connected_collateral) AS trace_connected_collateral,
-                (1.645 * 2.0 * STDDEV(trace_connected_collateral))::decimal / SQRT(COUNT(*))::decimal AS trace_connected_collateral_confidence,
+                (1.96 * STDDEV(trace_connected_collateral))::decimal / SQRT(COUNT(*))::decimal AS trace_connected_collateral_confidence,
                 --adopting control plane
                 AVG(c_plane_hijacked_adopting) AS c_plane_hijacked_adopting,
-                (1.645 * 2.0 * STDDEV(c_plane_hijacked_adopting))::decimal / SQRT(COUNT(*))::decimal AS c_plane_hijacked_adopting_confidence,
+                (1.96 * STDDEV(c_plane_hijacked_adopting))::decimal / SQRT(COUNT(*))::decimal AS c_plane_hijacked_adopting_confidence,
                 AVG(c_plane_disconnected_adopting) AS c_plane_disconnected_adopting,
-                (1.645 * 2.0 * STDDEV(c_plane_disconnected_adopting))::decimal / SQRT(COUNT(*))::decimal AS c_plane_disconnected_adopting_confidence,
+                (1.96 * STDDEV(c_plane_disconnected_adopting))::decimal / SQRT(COUNT(*))::decimal AS c_plane_disconnected_adopting_confidence,
                 AVG(c_plane_connected_adopting) AS c_plane_connected_adopting,
-                (1.645 * 2.0 * STDDEV(c_plane_connected_adopting))::decimal / SQRT(COUNT(*))::decimal AS c_plane_connected_adopting_confidence,
+                (1.96 * STDDEV(c_plane_connected_adopting))::decimal / SQRT(COUNT(*))::decimal AS c_plane_connected_adopting_confidence,
                 --collateral control plane
                 AVG(c_plane_hijacked_collateral) AS c_plane_hijacked_collateral,
-                (1.645 * 2.0 * STDDEV(c_plane_hijacked_collateral))::decimal / SQRT(COUNT(*))::decimal AS c_plane_hijacked_collateral_confidence,
+                (1.96 * STDDEV(c_plane_hijacked_collateral))::decimal / SQRT(COUNT(*))::decimal AS c_plane_hijacked_collateral_confidence,
                 AVG(c_plane_disconnected_collateral) AS c_plane_disconnected_collateral,
-                (1.645 * 2.0 * STDDEV(c_plane_disconnected_collateral))::decimal / SQRT(COUNT(*))::decimal AS c_plane_disconnected_collateral_confidence,
+                (1.96 * STDDEV(c_plane_disconnected_collateral))::decimal / SQRT(COUNT(*))::decimal AS c_plane_disconnected_collateral_confidence,
                 AVG(c_plane_connected_collateral) AS c_plane_connected_collateral,
-                (1.645 * 2.0 * STDDEV(c_plane_connected_collateral))::decimal / SQRT(COUNT(*))::decimal AS c_plane_connected_collateral_confidence,
+                (1.96 * STDDEV(c_plane_connected_collateral))::decimal / SQRT(COUNT(*))::decimal AS c_plane_connected_collateral_confidence,
                 --adopting hidden hijacks
                 AVG(visible_hijacks_adopting) AS visible_hijacks_adopting,
-                (1.645 * 2.0 * STDDEV(visible_hijacks_adopting))::decimal / SQRT(COUNT(*))::decimal AS visible_hijacks_adopting_confidence,
+                (1.96 * STDDEV(visible_hijacks_adopting))::decimal / SQRT(COUNT(*))::decimal AS visible_hijacks_adopting_confidence,
                 AVG(hidden_hijacks_adopting) AS hidden_hijacks_adopting,
-                (1.645 * 2.0 * STDDEV(hidden_hijacks_adopting))::decimal / SQRT(COUNT(*))::decimal AS hidden_hijacks_adopting_confidence,
+                (1.96 * STDDEV(hidden_hijacks_adopting))::decimal / SQRT(COUNT(*))::decimal AS hidden_hijacks_adopting_confidence,
                 --collateral hidden hijacks
                 AVG(visible_hijacks_collateral) AS visible_hijacks_collateral,
-                (1.645 * 2.0 * STDDEV(visible_hijacks_collateral))::decimal / SQRT(COUNT(*))::decimal AS visible_hijacks_collateral_confidence,
+                (1.96 * STDDEV(visible_hijacks_collateral))::decimal / SQRT(COUNT(*))::decimal AS visible_hijacks_collateral_confidence,
                 AVG(hidden_hijacks_collateral) AS hidden_hijacks_collateral,
-                (1.645 * 2.0 * STDDEV(hidden_hijacks_collateral))::decimal / SQRT(COUNT(*))::decimal AS hidden_hijacks_collateral_confidence
+                (1.96 * STDDEV(hidden_hijacks_collateral))::decimal / SQRT(COUNT(*))::decimal AS hidden_hijacks_collateral_confidence
             FROM {Simulation_Results_Agg_Table.name}
         GROUP BY
             attack_type,
