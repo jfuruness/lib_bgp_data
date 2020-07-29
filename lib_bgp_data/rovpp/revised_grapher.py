@@ -370,12 +370,7 @@ class Simulation_Grapher(Parser):
         #ax.set_title(f"{subtable} and {attack_type}")
         ax.legend()
         plt.tight_layout()
-<<<<<<< HEAD
-        #plt.set_markersize(40)
-        #plt.figure(figsize=(4,3))
-=======
->>>>>>> 8e91c24463501a0056640a4d05ae3f27b5b5623f
-        plt.rcParams.update({'font.size': 14})
+        plt.rcParams.update({'font.size': 15})
         policies = "_".join(x.policy for x in lines)
         if tkiz:
             tikzplotlib.save(os.path.join(save_path, f"{len(policies)}_{policies}.tex"))
