@@ -154,7 +154,7 @@ class Simulation_Grapher(Parser):
                 ax.set_xlabel("Percent Adoption")
                 ax.legend()
                 plt.tight_layout()
-                plt.rcParams.update({'font.size': 15})
+                plt.rcParams.update({'font.size': 14})
                 save_path = os.path.join(self.graph_path,
                                          "tkiz" if tkiz else "pngs",
                                          attack,
@@ -247,17 +247,14 @@ class Simulation_Grapher(Parser):
             line_type, subtable, attack_type = scenario
             if test:
                 powerset = [list(policies_dict.keys()),
-                            ["ROVPPBIS", "ROVPPBP",
+                            ["ROVPP", "ROVPPBIS", "ROVPPBP",
                              "ROVPP_LITE", "ROVPPBIS_LITE", "ROVPPBP_LITE"],
-                            ["BGP", "ROV", "rov_hidden_hijack_adopting", "ROVPP", "ROVPPBIS", "ROVPPBP"],
-                            ["BGP", "ROV",
-                             "ROVPP", "ROVPPBIS", "ROVPPBP"],
-                            ["BGP", "ROV",
-                             "ROVPP", "ROVPPBIS", "ROVPPB", "ROVPPBP"],
+                            ["BGP", "ROV", "rov_hidden_hijack_adopting",
+                             "ROVPP", "ROVPPBIS", "ROVPPBP",
+                             "ROVPP_LITE", "ROVPPBIS_LITE", "ROVPPBP_LITE"],
                             ["rov_hidden_hijack_adopting",
-                             "ROVPPBIS", "ROVPPBP",
+                             "ROVPP", "ROVPPBIS", "ROVPPBP",
                              "ROVPP_LITE", "ROVPPBIS_LITE", "ROVPPBP_LITE"],
-                            ["ROV", "ROVPPB", "ROVPPBIS"],
                             ["BGP"]]
             else:
                 powerset = self.powerset_of_policies(policies_dict.keys())
@@ -373,8 +370,11 @@ class Simulation_Grapher(Parser):
         #ax.set_title(f"{subtable} and {attack_type}")
         ax.legend()
         plt.tight_layout()
+<<<<<<< HEAD
         #plt.set_markersize(40)
         #plt.figure(figsize=(4,3))
+=======
+>>>>>>> 8e91c24463501a0056640a4d05ae3f27b5b5623f
         plt.rcParams.update({'font.size': 14})
         policies = "_".join(x.policy for x in lines)
         if tkiz:

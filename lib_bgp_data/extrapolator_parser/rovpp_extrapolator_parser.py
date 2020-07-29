@@ -76,7 +76,7 @@ class ROVPP_Extrapolator_Parser(Extrapolator_Parser):
         with ROVPP_Extrapolator_Rib_Out_Table(clear=True) as _db:
             try:
                 assert _db.get_count("SELECT COUNT(*) FROM rovpp_extrapolation_results") > 0
-            except psycopg2.errors.UndefinedTable:
+            except (psycopg2.errors.UndefinedTable, AssertionError):
                 print("Extrapolator failed to populate rovpp_extrapolation_results")
                 sys.exit(2)
                 raise Exception("Extrapolator failed to populate rovpp_extrapolation_results")
