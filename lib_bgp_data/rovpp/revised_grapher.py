@@ -249,7 +249,7 @@ class Simulation_Grapher(Parser):
                 powerset = [list(policies_dict.keys()),
                             ["ROVPP", "ROVPPBIS", "ROVPPBP",
                              "ROVPP_LITE", "ROVPPBIS_LITE", "ROVPPBP_LITE"],
-                            ["BGP", "ROV", "rov_hidden_hijack_adopting",
+                            ["ROV", "rov_hidden_hijack_adopting",
                              "ROVPP", "ROVPPBIS", "ROVPPBP",
                              "ROVPP_LITE", "ROVPPBIS_LITE", "ROVPPBP_LITE"],
                             ["rov_hidden_hijack_adopting",
