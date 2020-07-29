@@ -27,12 +27,14 @@ from ..base_classes import Parser
 from ..database import Database
 from ..utils import utils
 
-__author__ = "Justin Furuness"
-__credits__ = ["Justin Furuness"]
+__authors__ = ["Justin Furuness", "Samarth Kasbawala"]
+__credits__ = ["Justin Furuness", "Samarth Kasbawala"]
 __Lisence__ = "BSD"
 __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
+
+matplotlib.rcParams['lines.markersize'] = 10
 
 
 class Simulation_Grapher(Parser):
@@ -64,12 +66,12 @@ class Simulation_Grapher(Parser):
                 if (line_type == Line_Type.DATA_PLANE_HIJACKED.value.format("adopting")
                     and subtable == "edge_ases"
                     and attack_type == "subprefix_hijack"):
-                    hardcoded_line = scenarios_dict[("hidden_hijacks_adopting",
-                                                    "edge_ases",
-                                                    "subprefix_hijack")]["ROV"]
-                    hardcoded_line = deepcopy(hardcoded_line)
-                    hardcoded_line.policy = "rov_hidden_hijack_adopting"
-                    lines.append(hardcoded_line)
+                        hardcoded_line = scenarios_dict[("hidden_hijacks_adopting",
+                                                        "edge_ases",
+                                                     "subprefix_hijack")]["ROV"]
+                        hardcoded_line = deepcopy(hardcoded_line)
+                        hardcoded_line.policy = "rov_hidden_hijack_adopting"
+                        lines.append(hardcoded_line)
                 line_types.append(line_type)
                 subtables.append(subtable)
                 attack_types.append(attack_type)
@@ -92,23 +94,176 @@ class Simulation_Grapher(Parser):
                   [len(graphs)] * len(graphs),
                   tkiz_l,
                   save_paths)
+
+        self.graph_deltas(scenarios_dict, tkiz)
+        self.rov_data_v_ctrl(scenarios_dict, tkiz)
         self.tar_graphs()
 
-    def graph_permutations(self, scenarios_dict, test, graph_tkiz):
-        for tkiz in [True, False]:
-			# Removing this when we don't want tikz
-            if graph_tkiz is False and tkiz is True:
-                continue
-            for scenario, policies_dict in scenarios_dict.items():
-                line_type, subtable, attack_type = scenario
-                if test:
-                    powerset = [list(policies_dict.keys())]
-                else:
-                    powerset = self.powerset_of_policies(policies_dict.keys())
-                for policy_list in powerset:
-                    yield tkiz, line_type, subtable, attack_type, policy_list, policies_dict
- 
+    def rov_data_v_ctrl(self, scenarios_dict, tkiz):
+        # Hard coded graph for ROV policy. There should be one graph for each
+        # subtable and each attack has three subtables. I know this is really
+        # janky but this was what was easiest for me to code
 
+        # Get the graph attributes
+        (policies, percents, subtables, attack_types) = self.get_possible_graph_attrs()
+
+        # Empty dictionary to hold the lines for each graph
+        rov_lines = {}
+
+        # Each attack type will be a key in the rov_lines dictionary. The
+        # value for each key will be another dictionary that contains the lines
+        # to be graphed for each subtable
+        for attack_type in attack_types:
+            rov_lines[attack_type] = {subtable: [] for subtable in subtables}
+
+        # These are the ROV policy line types we are interested in graphing
+        line_types = ['c_plane_hijacked_adopting',
+                      'c_plane_hijacked_collateral',
+                      'trace_hijacked_adopting',
+                      'trace_hijacked_collateral']
+
+        # The scenarios dictionary should already contain the lines we want to
+        # graph, we just need to get them and append the lines to their
+        # appropriate list in the dictionary 
+        for attack, attack_dict in rov_lines.items():
+            for subtable in attack_dict.keys():
+                for line_type in line_types:
+                    line = scenarios_dict[(line_type, subtable, attack)]['ROV']
+                    line.policy = 'rov_' + line_type
+                    attack_dict[subtable].append(line)
+
+        # Graph the lines. This code is very similar to the write_graphs
+        # method. However, custom axis labels are needed and the method
+        # uses predefined axis labels. Also, the write graphs function prints
+        # out how many pngs have been written. Since this graph isn't in the
+        # output of graph permutations, the printed updates won't be accurate.
+        labels_dict = self.get_graph_labels()
+        for attack, attack_dict in rov_lines.items():
+            for subtable, lines in attack_dict.items():
+                fig, ax = plt.subplots()
+                for line in lines:
+                    label = labels_dict[line.policy]
+                    ax.errorbar(line.data[Graph_Values.X],
+                                line.data[Graph_Values.Y],
+                                yerr=line.data[Graph_Values.YERR],
+                                label=label.name,
+                                ls=label.style,
+                                marker=label.marker,
+                                color=label.color)
+                ax.set_ylabel("Percent Hijacked")
+                ax.set_xlabel("Percent Adoption")
+                ax.legend()
+                plt.tight_layout()
+                plt.rcParams.update({'font.size': 15})
+                save_path = os.path.join(self.graph_path,
+                                         "tkiz" if tkiz else "pngs",
+                                         attack,
+                                         subtable,
+                                         ("rov_cntrl_plane_v_data_plane_"
+                                          "adopting_and_collateral"))
+                if not os.path.exists(save_path):
+                    os.makedirs(save_path)
+                if tkiz:
+                    tikzplotlib.save(os.path.join(save_path, "rov_hijacks_percent.tex"))
+                else:
+                    plt.savefig(os.path.join(save_path, "rov_hijacks_percent.png"))
+                plt.close()
+
+    def graph_deltas(self, scenarios_dict, tkiz):
+        """This function graphs the deltas in the simulation. Purpose is to
+        see how each policy compares to ROV++V1"""
+
+        # These are the line_types we are interested in comparing
+        line_types_to_graph = ['trace_hijacked_collateral',
+                               'trace_hijacked_adopting',
+                               'trace_connected_collateral',
+                               'trace_connected_adopting',
+                               'trace_disconnected_collateral',
+                               'trace_disconnected_adopting']
+
+        # Get all the different graphs that need to be graphed
+        graphs = list(self.get_delta_graphs(scenarios_dict,
+                                            set(line_types_to_graph),
+                                            tkiz))
+
+        # Graph each graph
+        for tkiz, line_type, subtable, attack_type, policy_list, policies_dict in graphs:
+            rovpp_line = policies_dict['ROVPP']
+            labels_dict = self.get_graph_labels()
+            fig, ax = plt.subplots()
+            for policy, line in policies_dict.items():
+                if policy in {'ROVPP', 'BGP', 'ROV', 'ROVPPB', 'ROVPPB_LITE', 'ROVPP_V0'}:
+                    continue
+                label = labels_dict[line.policy]
+                ax.errorbar(line.data[Graph_Values.X],
+                            [ly - ry for ry, ly in zip(rovpp_line.data[Graph_Values.Y],
+                                                       line.data[Graph_Values.Y])],
+                            #yerr=line.data[Graph_Values.YERR],
+                            label=label.name,
+                            ls=label.style,
+                            marker=label.marker,
+                            color=label.color)
+            y_label = ""
+            if  "trace_hijacked" in line_type:
+                y_label = "Data Plane % Hijacked"
+            elif "trace_connected" in line_type:
+                y_label = "Data Plane % Successful Connection"
+            elif "trace_disconnected" in line_type:
+                y_label = "Data Plane % Disconnected"
+            else:
+                y_label = "Percent_" + line_type
+            ax.set_ylabel(y_label)
+            ax.set_xlabel("Percent Adoption")
+            ax.legend()
+            plt.tight_layout()
+            plt.rcParams.update({'font.size': 14})
+            save_path = os.path.join(self.graph_path,
+                                     "tkiz" if tkiz else "pngs",
+                                     attack_type,
+                                     subtable,
+                                     "rovpp_delta_" + line_type)
+            if not os.path.exists(save_path):
+                os.makedirs(save_path)
+            if tkiz:
+                tikzplotlib.save(os.path.join(save_path, "rovpp_delta_" + line_type + ".tex"))
+            else:
+                plt.savefig(os.path.join(save_path, "rovpp_delta_" + line_type + ".png"))
+            plt.close()
+            
+    def get_delta_graphs(self, scenarios_dict, line_types_to_graph, tkiz):
+        """Produces the graphs that need to be graphed"""
+
+        for scenario, policies_dict in scenarios_dict.items():
+            line_type, subtable, attack_type = scenario
+            if line_type not in line_types_to_graph:
+                continue
+            policy_list = list(policies_dict.keys())
+            #policy_list = ["ROVPPBIS", "ROVPPBP",
+            #               "ROVPP_LITE", "ROVPPB_LITE", "ROVPPBP_LITE"],
+            yield tkiz, line_type, subtable, attack_type, policy_list, policies_dict
+
+    def graph_permutations(self, scenarios_dict, test, graph_tkiz):
+        for scenario, policies_dict in scenarios_dict.items():
+            line_type, subtable, attack_type = scenario
+            if test:
+                powerset = [list(policies_dict.keys()),
+                            ["ROVPPBIS", "ROVPPBP",
+                             "ROVPP_LITE", "ROVPPBIS_LITE", "ROVPPBP_LITE"],
+                            ["BGP", "ROV", "rov_hidden_hijack_adopting", "ROVPP", "ROVPPBIS", "ROVPPBP"],
+                            ["BGP", "ROV",
+                             "ROVPP", "ROVPPBIS", "ROVPPBP"],
+                            ["BGP", "ROV",
+                             "ROVPP", "ROVPPBIS", "ROVPPB", "ROVPPBP"],
+                            ["rov_hidden_hijack_adopting",
+                             "ROVPPBIS", "ROVPPBP",
+                             "ROVPP_LITE", "ROVPPBIS_LITE", "ROVPPBP_LITE"],
+                            ["ROV", "ROVPPB", "ROVPPBIS"],
+                            ["BGP"]]
+            else:
+                powerset = self.powerset_of_policies(policies_dict.keys())
+            for policy_list in powerset:
+                yield graph_tkiz, line_type, subtable, attack_type, policy_list, policies_dict
+ 
     def generate_agg_tables(self):
         for Table in [Simulation_Results_Agg_Table,
                       Simulation_Results_Avg_Table]:
@@ -186,7 +341,7 @@ class Simulation_Grapher(Parser):
                     total,
                     tkiz,
                     save_path):
-        """Write the graph for whatever subset of liens you have"""
+        """Write the graph for whatever subset of lines you have"""
 
         # https://stackoverflow.com/a/47930319/8903959
         file_count = sum(len(files) for _, _, files in os.walk(self.graph_path))
@@ -199,16 +354,28 @@ class Simulation_Grapher(Parser):
             label = labels_dict[line.policy]
             ax.errorbar(line.data[Graph_Values.X],
                         line.data[Graph_Values.Y],
-        #                yerr=line.data[Graph_Values.YERR],
+                        yerr=line.data[Graph_Values.YERR],
                         label=label.name,
                         ls=label.style,
                         marker=label.marker,
                         color=label.color)
-        ax.set_ylabel("Percent_" + line_type)
+        y_label = ""
+        if  "trace_hijacked" in line_type:
+            y_label = "Data Plane % Hijacked"
+        elif "trace_connected" in line_type:
+            y_label = "Data Plane % Successful Connection"
+        elif "trace_disconnected" in line_type:
+            y_label = "Data Plane % Disconnected"
+        else:
+            y_label = "Percent_" + line_type
+        ax.set_ylabel(y_label)
         ax.set_xlabel(f"Percent adoption")
         #ax.set_title(f"{subtable} and {attack_type}")
         ax.legend()
         plt.tight_layout()
+        #plt.set_markersize(40)
+        #plt.figure(figsize=(4,3))
+        plt.rcParams.update({'font.size': 14})
         policies = "_".join(x.policy for x in lines)
         if tkiz:
             tikzplotlib.save(os.path.join(save_path, f"{len(policies)}_{policies}.tex"))
@@ -222,20 +389,36 @@ class Simulation_Grapher(Parser):
 
     def get_graph_labels(self):
         return {"ROV": Label("ROV", "-", ".", "b"),
-                "ROVPP": Label("ROV++v1", "--", "1", "g"),
+                "ROVPP": Label("ROV++v1", "--", "P", "g"),
                 "ROVPPB": Label("ROV++v2a", "-.", "*", "r"),
-                "ROVPPBP": Label("ROV++v3", ":", "x", "c"),
+                "ROVPPBP": Label("ROV++v3", ":", "X", "c"),
                 "ROVPPBIS": Label("ROV++v2", "solid", "d", "m"),
-                "ROVPP_V0": Label("ROVPP_V0", "dotted", "2", "y"),
+                "ROVPP_V0": Label("ROVPP_V0", "dotted", "v", "y"),
                 "BGP": Label("BGP", "dashdot", "3", "k"),
-                "ROVPP_LITE": Label("ROV++v1_Lite", "dashed", "4", "g"),
-                "ROVPPB_LITE": Label("ROV++v2a_Lite", "dotted", "x", "r"),
+                "ROVPP_LITE": Label("ROV++v1_Lite", "dashed", "h", "g"),
+                "ROVPPB_LITE": Label("ROV++v2a_Lite", "dotted", "s", "r"),
                 "ROVPPBP_LITE": Label("ROV++v3_Lite", "-", "*", "c"),
-                "ROVPPBIS_LITE": Label("ROV++v2_Lite", "-.", ".", "m"),
+                "ROVPPBIS_LITE": Label("ROV++v2_Lite", "-.", "^", "m"),
                 "rov_hidden_hijack_adopting": Label("ROV_hidden_hijacks",
                                                     "dashed",
-                                                    "1",
-                                                    "g"),
+                                                    ">",
+                                                    "b"),
+                "rov_c_plane_hijacked_adopting": Label("ROV_Adopting_ctrl",
+                                                       "dashed",
+                                                       ".",
+                                                       "b"),
+                "rov_c_plane_hijacked_collateral": Label("ROV_Collateral_ctrl",
+                                                         "dashed",
+                                                         ".",
+                                                         "r"),
+                "rov_trace_hijacked_adopting": Label("ROV_Adopting_data",
+                                                     "dashed",
+                                                     ".",
+                                                     "g"),
+                "rov_trace_hijacked_collateral": Label("ROV_Collateral_data",
+                                                       "dashed",
+                                                       ".",
+                                                       "y"),
                 }
 
 class Label:
@@ -297,7 +480,5 @@ class Policy_Line:
             if result["percent"] in set(self.percents):
                 self.data[Graph_Values.X].append(int(result["percent"]))
                 self.data[Graph_Values.Y].append(float(result[self.line_type]) * 100)
-#                self.data[Graph_Values.YERR].append(float(
-#                    result[self.conf_line_type]))
-
+                self.data[Graph_Values.YERR].append(float(result[self.conf_line_type]) * 100)
 
