@@ -35,7 +35,7 @@ __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
 matplotlib.rcParams['lines.markersize'] = 10
-
+matplotlib.rcParams['font.size'] = 15
 
 class Simulation_Grapher(Parser):
     """Graphs output of the simulation"""
@@ -247,8 +247,7 @@ class Simulation_Grapher(Parser):
             line_type, subtable, attack_type = scenario
             if test:
                 powerset = [list(policies_dict.keys()),
-                            ["ROVPP", "ROVPPBIS", "ROVPPBP",
-                             "ROVPP_LITE", "ROVPPBIS_LITE", "ROVPPBP_LITE"],
+                            ["ROV","ROVPP", "ROVPPBIS", "ROVPPB","ROVPPBP"],
                             ["ROV", "rov_hidden_hijack_adopting",
                              "ROVPP", "ROVPPBIS", "ROVPPBP",
                              "ROVPP_LITE", "ROVPPBIS_LITE", "ROVPPBP_LITE"],
