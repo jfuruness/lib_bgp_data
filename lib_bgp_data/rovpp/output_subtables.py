@@ -171,8 +171,8 @@ class Output_Subtable:
                          """.format(self.Input_Table.name,
                                     self.Rib_Out_Table.name,
                                     bool(adopt_val),
-                                    attack.attacker_asn if attacker.asn else 0,
-                                    attack.victim_asn if victim.asn else 0)
+                                    attack.attacker_asn if attack.attacker_asn else 0,
+                                    attack.victim_asn if attack.victim_asn else 0)
             conds[C_Plane_Conds.NO_RIB.value][adopt_val] =\
                 self.Rib_Out_Table.get_count(no_rib_sql)
 
