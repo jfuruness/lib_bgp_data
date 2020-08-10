@@ -147,7 +147,7 @@ class Output_Subtable:
             # NOTE: we no longer do it by prefix because now an atk can
             # have multiple prefixes. Only by origin should be fine tho
             sql = (f"SELECT COUNT(*) FROM {self.Rib_Out_Table.name}"
-                   " WHERE AND origin = %s AND asn != %s"
+                   " WHERE origin = %s AND asn != %s"
                    f" AND asn != %s AND impliment = {bool(adopt_val)}")
             conds[C_Plane_Conds.RECEIVED_ATTACKER_PREFIX_ORIGIN.value][adopt_val] =\
                 self.Rib_Out_Table.get_count(sql, [attack.attacker_asn,
