@@ -23,7 +23,9 @@ class Attack_Types(Enum):
 
     SUBPREFIX_HIJACK = "subprefix_hijack"
     PREFIX_HIJACK = "prefix_hijack"
-    UNANNOUNCED_PREFIX_HIJACK = "no_competing_announcement_hijack"
+    UNANNOUNCED_PREFIX_HIJACK = "unannounced_prefix_hijack"
+    UNANNOUNCED_SUPERPREFIX_HIJACK = "unannounced_superprefix_hijack"
+    SUPERPREFIX_HIJACK = "superprefix_hijack"
 
 
 class Policies(Enum):

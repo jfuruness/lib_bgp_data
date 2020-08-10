@@ -144,23 +144,22 @@ class Output_Subtable:
                  for x in C_Plane_Conds.list_values()}
 
         for adopt_val in AS_Types.list_values():
+            # NOTE: we no longer do it by prefix because now an atk can
+            # have multiple prefixes. Only by origin should be fine tho
             sql = (f"SELECT COUNT(*) FROM {self.Rib_Out_Table.name}"
-                   " WHERE prefix = %s AND origin = %s AND asn != %s"
+                   " WHERE AND origin = %s AND asn != %s"
                    f" AND asn != %s AND impliment = {bool(adopt_val)}")
             conds[C_Plane_Conds.RECEIVED_ATTACKER_PREFIX_ORIGIN.value][adopt_val] =\
-                self.Rib_Out_Table.get_count(sql, [attack.attacker_prefix,
-                                                   attack.attacker_asn,
+                self.Rib_Out_Table.get_count(sql, [attack.attacker_asn,
                                                    attack.attacker_asn,
                                                    attack.victim_asn])
             conds[C_Plane_Conds.RECEIVED_ONLY_VICTIM_PREFIX_ORIGIN.value][adopt_val] =\
-                self.Rib_Out_Table.get_count(sql, [attack.victim_prefix,
-                                                   attack.victim_asn,
+                self.Rib_Out_Table.get_count(sql, [attack.victim_asn,
                                                    attack.attacker_asn,
                                                    attack.victim_asn])
             conds[C_Plane_Conds.RECEIVED_BHOLE.value][adopt_val] =\
                 self.Rib_Out_Table.get_count(sql, 
-                    [attack.attacker_prefix,
-                     Data_Plane_Conditions.BHOLED.value,
+                    [Data_Plane_Conditions.BHOLED.value,
                      attack.attacker_asn,
                      attack.victim_asn])
 
