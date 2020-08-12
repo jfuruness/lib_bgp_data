@@ -81,10 +81,7 @@ class Data_Point(Parser):
         """Sets up the attack, inserts into the db"""
 
         # Gets two random ases without duplicates
-        # attacker, victim = sample(ases, k=2)
-        ############################# HARDCODED WRONG FOR PAPER DEADLINE!
-        attacker = sample(ases, k=1)[0]
-        victim = attacker
+        attacker, victim = sample(ases, k=2)
 
         # Table schema: prefix | as_path | origin | time
         # NOTE: we use the time as an index for keeping track of atk/vic pairs
