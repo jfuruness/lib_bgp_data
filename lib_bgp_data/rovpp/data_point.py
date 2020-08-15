@@ -19,6 +19,7 @@ from random import sample
 from .attack import Attack
 from .enums import Attack_Types, Non_Default_Policies
 from .tables import Attackers_Table, Victims_Table
+from .tables import Simulation_Announcements_Table, Tracked_ASes_Table
 from .test import Test
 
 from ..base_classes import Parser
@@ -117,11 +118,24 @@ class Data_Point(Parser):
                 if len(row) > 0:
                     row[1] = str(row[1]).replace("[", "{").replace("]", "}")
 
+        csv_path = join(self.csv_dir, "{}.csv")
+
         # For each type of attacker victim definition
         for atk_def, rows, Table in zip(["attackers", "victims"],
                                         [attacker_rows, victim_rows],
                                         [Attackers_Table, Victims_Table]):
             # Insert into the database
-            utils.rows_to_db(rows, join(self.csv_dir, f"{atk_def}.csv"), Table)
+            utils.rows_to_db(rows, csv_path.format(atk_def), Table)
+
+        # Change to use simulation_announcements
+        utils.rows_to_db(attacker_rows + victim_rows,
+                         csv_path.format("agg_ann"),
+                         Simulation_Announcements_Table)
+        utils.rows_to_db([[attacker, True, False],
+                          [victim, False, True]],
+                         csv_path.format("atk_vic_info"),
+                         Tracked_ASes_Table)
+
+        
 
         return Attack(attacker_rows, victim_rows)
