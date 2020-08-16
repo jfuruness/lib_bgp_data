@@ -112,6 +112,9 @@ class Data_Point(Parser):
                               ['1.2.0.0/16', [attacker], attacker, 0]]
             victim_rows = [['1.2.0.0/16', [victim], victim, 0]]
 
+        elif attack_type == Attack_Types.LEAK:
+            1/0
+
         # Format the lists to be arrays for insertion into postgres
         for rows in [attacker_rows, victim_rows]:
             for row in rows:

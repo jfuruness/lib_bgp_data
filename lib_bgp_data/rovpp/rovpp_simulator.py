@@ -23,6 +23,9 @@ from .tables import Simulation_Results_Table
 
 from ..base_classes import Parser
 from ..relationships_parser import Relationships_Parser
+from ..bgpstream_website_parser import BGPStream_Website_Parser, Event_Types
+from ..mrt_parser import MRT_Parser
+from ..database import Database
 from .. import extrapolator_parser as exr
 
 class ROVPP_Simulator(Parser):
@@ -38,17 +41,27 @@ class ROVPP_Simulator(Parser):
              seed=0,
              seeded_trial=None,
              attack_types=Attack_Types.__members__.values(),
-             adopt_policy_types=Non_Default_Policies.__members__.values()):
+             adopt_policy_types=Non_Default_Policies.__members__.values(),
+             redownload=True):
         """Runs ROVPP simulation.
         In depth explanation at top of module.
         """
 
-        # forces new install of extrapolator
-        exr.ROVPP_Extrapolator_Parser(**self.kwargs).install(force=True)
+        if redownload:
+            # forces new install of extrapolator
+            exr.ROVPP_Extrapolator_Parser(**self.kwargs).install(force=True)
+            # Gets relationships table
+            Relationships_Parser(**self.kwargs)._run()
+ 
 
-        # Gets relationships table
-        Relationships_Parser(**self.kwargs)._run(url="http://data.caida.org/datasets/as-relationships/serial-2/20200701.as-rel2.txt.bz2")
-
+        if Attack_Types.LEAK in attack_types and redownload:
+            # Download hijack data if not done already
+            BGPStream_Website_Parser(**self.kwargs)._run(
+                data_types=[Event_Types.LEAK.value])
+            # Download mrt data if not done already
+            MRT_Parser(**self.kwargs)._run()
+            with Leak_Related_Announcements_Table(clear=True) as db:
+                db.fill_table()
         # Clear the table that stores all trial info
         with Simulation_Results_Table(clear=True) as _:
             pass

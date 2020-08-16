@@ -36,6 +36,17 @@ from ..mrt_parser.tables import MRT_Announcements_Table
 from ..relationships_parser.tables import AS_Connectivity_Table, ASes_Table
 # Done this way to avoid circular imports
 
+class Leak_Related_Announcements_Table(MRT_Announcements_Table):
+    name = "leak_related_announcements"
+
+    def fill_table(self):
+        sql = f"""CREATE UNLOGGED TABLE IF NOT EXISTS {self.name} AS (
+              SELECT * FROM mrt_announcements m
+              INNER JOIN leaks l
+                ON m.prefix <<= l.leaked_prefix 
+              );"""
+        self.execute(sql)
+
 class Attackers_Table(MRT_Announcements_Table):
     """Attackers table that contains the attackers announcements"""
 

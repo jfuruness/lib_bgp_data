@@ -42,7 +42,7 @@ class ROVPP_Extrapolator_Parser(Extrapolator_Parser):
 
     branch = "aspa"
 
-    def _run(self, table_names, exr_bash=None):
+    def _run(self, table_names, exr_bash=None, attack_type=None):
         """Runs the bgp-extrapolator and verifies input.
 
         Installs if necessary. See README for in depth instructions.
@@ -81,4 +81,4 @@ class ROVPP_Extrapolator_Parser(Extrapolator_Parser):
                 sys.exit(2)
                 raise Exception("Extrapolator failed to populate rovpp_extrapolation_results")
             logging.info("Extrapolation complete, writing ribs out tables")
-            _db.fill_table()
+            _db.fill_table(attack_type)
