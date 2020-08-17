@@ -52,7 +52,7 @@ class Test:
         # Runs the rov++ extrapolator
         exr.ROVPP_Extrapolator_Parser(**exr_kwargs)._run(self.tables.names,
                                                          exr_bash=exrbash,
-                                                         attack=self.scenario)
+                                                         attack_type=self.scenario)
 
         pbars.update_extrapolator()
 

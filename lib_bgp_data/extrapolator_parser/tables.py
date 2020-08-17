@@ -50,13 +50,13 @@ class ROVPP_Extrapolator_Rib_Out_Table(Generic_Table):
                                 WHERE attacker=TRUE""")[0]["asn"]
 
         # Do this to more efficiently keep track of leak info
-        if attack_type = Attack_Types.LEAK:
+        if attack_type == Attack_Types.LEAK:
             sql = f"""UPDATE {self.name}
                     SET received_from_asn = 
                     {Data_Plane_Conditions.HIJACKED.value}
                     WHERE asn = {attacker};"""
             self.execute(sql)
-                
+        return    
 
 
 

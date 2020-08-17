@@ -14,6 +14,7 @@ __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
 import logging
+import sys
 
 import pytest
 
@@ -82,7 +83,6 @@ class Parser:
         try:
             self._run(*args, **kwargs)
         except Exception as e:
-            self.end_parser(start_time)
             logging.exception(e)
             error = True
         finally:

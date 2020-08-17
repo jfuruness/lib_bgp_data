@@ -23,6 +23,7 @@ from .tables import Simulation_Announcements_Table, Tracked_ASes_Table
 from .test import Test
 
 from ..base_classes import Parser
+from ..database import Database
 from ..utils import utils
 
 class Data_Point(Parser):
@@ -42,11 +43,11 @@ class Data_Point(Parser):
         # path
         self.csv_dir = csv_dir
 
-    def get_data(self, exr_bash, exr_kwargs, pbars, atk_types, pols, seeded):
+    def get_data(self, exr_bash, exr_kwargs, pbars, atk_types, pols, seeded, trial):
         """Runs test and stores data in the database"""
 
         # Get all possible tests and set them up
-        for test in self.get_possible_tests(atk_types, pols, seeded):
+        for test in self.get_possible_tests(atk_types, pols, seeded, trial):
             # Run the test and insert into the database
             test.run(self.tables,
                      exr_bash,
@@ -55,7 +56,7 @@ class Data_Point(Parser):
                      self.percent_iter,
                      pbars)
 
-    def get_possible_tests(self, attack_types, policies, seeded, set_up=True):
+    def get_possible_tests(self, attack_types, policies, seeded, trial, set_up=True):
         """Gets all possible tests. Sets them up and returns them"""
 
         # For each type of hijack
@@ -63,22 +64,22 @@ class Data_Point(Parser):
             # Sets adopting ases, returns hijack
             # We set up here so that we can compare one attack set up across
             # all the different policies
-            attack = self.set_up_test(attack_type, seeded) if set_up else None
+            attack = self.set_up_test(attack_type, seeded, trial) if set_up else None
             # For each type of policy, attempt to defend against that attack
             for adopt_policy in policies:
                 yield Test(attack_type, attack, adopt_policy, self.tables)
 
-    def set_up_test(self, attack_type, seeded):
+    def set_up_test(self, attack_type, seeded, trial_num):
         """Sets up the tests by filling attackers and setting adopters"""
 
         # Fills the hijack table
-        atk = self.fill_attacks(self.tables.possible_attackers, attack_type)
+        atk = self.fill_attacks(self.tables.possible_attackers, attack_type, trial_num)
         # Sets the adopting ases
         self.tables.set_adopting_ases(self.percent_iter, atk, seeded)
         # Return the hijack class
         return atk
 
-    def fill_attacks(self, ases, attack_type):
+    def fill_attacks(self, ases, attack_type, trial_num):
         """Sets up the attack, inserts into the db"""
 
         # Gets two random ases without duplicates
@@ -113,7 +114,15 @@ class Data_Point(Parser):
             victim_rows = [['1.2.0.0/16', [victim], victim, 0]]
 
         elif attack_type == Attack_Types.LEAK:
-            1/0
+            # CHange this to be the table later
+            with Database() as db:
+                sql = f"""SELECT * FROM leaks ORDER BY id LIMIT 1 OFFSET {trial_num}"""
+                leak = db.execute(sql)[0]
+                attacker_rows = [[leak["leaked_prefix"],
+                                  leak["example_as_path"],
+                                  leak["leaker_as_number"],
+                                  0]]
+                victim_rows = []
 
         # Format the lists to be arrays for insertion into postgres
         for rows in [attacker_rows, victim_rows]:
@@ -134,11 +143,11 @@ class Data_Point(Parser):
         utils.rows_to_db(attacker_rows + victim_rows,
                          csv_path.format("agg_ann"),
                          Simulation_Announcements_Table)
-        utils.rows_to_db([[attacker, True, False],
-                          [victim, False, True]],
+        attacker_victim_rows = [[attacker_rows[0][2], True, False]]
+        if len(victim_rows) > 0:
+            attacker_victim_rows.append([victim_rows[0][2], False, True])
+        utils.rows_to_db(attacker_victim_rows,
                          csv_path.format("atk_vic_info"),
                          Tracked_ASes_Table)
-
-        
 
         return Attack(attacker_rows, victim_rows)

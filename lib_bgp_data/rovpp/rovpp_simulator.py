@@ -42,19 +42,20 @@ class ROVPP_Simulator(Parser):
              seeded_trial=None,
              attack_types=Attack_Types.__members__.values(),
              adopt_policy_types=Non_Default_Policies.__members__.values(),
-             redownload=True):
+             redownload_base_data=True,
+             redownload_leak_data=True):
         """Runs ROVPP simulation.
         In depth explanation at top of module.
         """
 
-        if redownload:
+        if redownload_base_data:
             # forces new install of extrapolator
             exr.ROVPP_Extrapolator_Parser(**self.kwargs).install(force=True)
             # Gets relationships table
             Relationships_Parser(**self.kwargs)._run()
  
 
-        if Attack_Types.LEAK in attack_types and redownload:
+        if Attack_Types.LEAK in attack_types and redownload_leak_data:
             # Download hijack data if not done already
             BGPStream_Website_Parser(**self.kwargs)._run(
                 data_types=[Event_Types.LEAK.value])
@@ -62,6 +63,7 @@ class ROVPP_Simulator(Parser):
             MRT_Parser(**self.kwargs)._run()
             with Leak_Related_Announcements_Table(clear=True) as db:
                 db.fill_table()
+
         # Clear the table that stores all trial info
         with Simulation_Results_Table(clear=True) as _:
             pass
@@ -95,7 +97,8 @@ class ROVPP_Simulator(Parser):
                                      pbars,
                                      attack_types,
                                      adopt_policy_types,
-                                     seeded)
+                                     seeded,
+                                     trial)
                 pbars.update()
 
         tables.close()
