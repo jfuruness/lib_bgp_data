@@ -36,31 +36,74 @@ But it is the simplest and robust enough to use.
 
 import os
 import json
+import time
 
 import requests
 
 
-def asn_lookup(asn: int) -> dict:
+def asn_lookup(asns: list):
 
-    assert type(asn) is int, "Not a number"
+    info = []
+    continent_list = ['AS', 'EU', 'AF', 'NA', 'OC', 'SA', 'AN']
 
     # load the country code to continent mapping
     continent_path = os.path.join(os.path.dirname(os.path.realpath(__file__)),
-        'continent.json') 
+                                  'continent.json') 
     with open(continent_path, 'r') as f:
         c2c_map = json.load(f)
 
+
     api = 'https://api.bgpview.io/asn/'
-    r = requests.get(api + str(asn))
-    r.raise_for_status()
-    data = r.json()['data']
-    r.close()
 
-    country = data['country_code']
-    continent = c2c_map[country] if country else None
-    org = data['description_short']
+    count = 0
 
-    # should it return None or an empty string?    
-    return {'country': country, 'continent': continent, 'org': org}
+    with requests.Session() as session:
+        for asn in asns:
+            response = session.get(api + str(asn))
+
+            # if there's no response, wait for one hour then try again
+            # trying to circumvent any rate limit
+            while response.status_code != 200 and response.status_code != 429:
+                print('HTTP: ', response.status_code)
+                print('count:', count)
+                time.sleep(60)
+                response = session.get(api + str(asn))
+
+            if response.status_code == 429:
+                print('Hit the limit at: ', count)
+                time.sleep(3600)
+                response = session.get(api + str(asn))
+                if response.status_code == 429:
+                    raise ValueError('Not long enough')
+                
+            # response.raise_for_status()
+
+            data = response.json()['data']
+            country = data['country_code']
+
+            # sometimes they list a continent as the country
+            if country in continent_list:
+                country = None
+                continent = country
+            
+            continent = c2c_map[country] if country else None
+            org = data['description_short']
+
+            info.append({'country': country,
+                         'continent': continent,
+                         'org': org})
+
+            count += 1
+            if count % 100 == 0:
+                print(count)
+
+
+if __name__ == '__main__':
+    r = requests.get('https://stat.ripe.net/data/ris-asns/data.json?list_asns=true')
+    asns = r.json()['data']['asns']
+    asn_lookup(asns)
+
+
+
 
 
