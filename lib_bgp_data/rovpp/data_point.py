@@ -120,9 +120,10 @@ class Data_Point(Parser):
                 leak = db.execute(sql)[0]
                 attacker_rows = [[leak["leaked_prefix"],
                                   leak["example_as_path"],
-                                  leak["leaker_as_number"],
+                                  leak["example_as_path"][-1],
                                   0]]
                 victim_rows = []
+                attacker = leak["leaker_as_number"]
 
         # Format the lists to be arrays for insertion into postgres
         for rows in [attacker_rows, victim_rows]:
@@ -143,9 +144,9 @@ class Data_Point(Parser):
         utils.rows_to_db(attacker_rows + victim_rows,
                          csv_path.format("agg_ann"),
                          Simulation_Announcements_Table)
-        attacker_victim_rows = [[attacker_rows[0][2], True, False]]
+        attacker_victim_rows = [[attacker, True, False]]
         if len(victim_rows) > 0:
-            attacker_victim_rows.append([victim_rows[0][2], False, True])
+            attacker_victim_rows.append([victim, False, True])
         utils.rows_to_db(attacker_victim_rows,
                          csv_path.format("atk_vic_info"),
                          Tracked_ASes_Table)

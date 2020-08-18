@@ -393,6 +393,7 @@ class Simulation_Grapher(Parser):
                 "ROVPPB_LITE": Label("ROV++v2a_Lite", "dotted", "s", "r"),
                 "ROVPPBP_LITE": Label("ROV++v3_Lite", "-", "*", "c"),
                 "ROVPPBIS_LITE": Label("ROV++v2_Lite", "-.", "^", "m"),
+                "ASPA": Label("ASPA", "-.", "^", "m"),
                 "rov_hidden_hijack_adopting": Label("ROV_hidden_hijacks",
                                                     "dashed",
                                                     ">",
