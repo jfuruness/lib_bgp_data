@@ -241,6 +241,29 @@ class Postgres:
         if hasattr(self, "_connect"):
             self._connect()
 
+#####################################
+### Backup and Restore Functions ####
+#####################################
+
+    @staticmethod
+    def backup_table(table_name: str, section: str, file_path: str):
+        """Creates a backup file of given table in the specified section"""
+
+        cmd = ("sudo -i -u postgres "
+               f"pg_dump -Fc -t {table_name} {section} > {file_path}")
+        utils.run_cmds(cmd)
+
+    @staticmethod
+    def restore_table(section: str, file_path: str):
+        """Restore a given table in the specified section
+
+        Index must be re-created on the table after a restore.
+        """
+
+        cmd = ("sudo -i -u postgres "
+               f"pg_restore -d {section} {file_path}")
+        utils.run_cmds(cmd)
+
 ########################
 ### Helper Functions ###
 ########################
