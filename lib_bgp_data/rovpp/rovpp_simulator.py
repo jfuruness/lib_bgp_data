@@ -18,13 +18,13 @@ from .data_point import Data_Point
 from .enums import Attack_Types, Non_Default_Policies
 from .multiline_tqdm import Multiline_TQDM
 from .subtables_base import Subtables
-from .tables import Simulation_Results_Table
+from .tables import Simulation_Results_Table, Leak_Related_Announcements_Table
 
 
 from ..base_classes import Parser
 from ..relationships_parser import Relationships_Parser
 from ..bgpstream_website_parser import BGPStream_Website_Parser, Event_Types
-from ..mrt_parser import MRT_Parser
+from ..mrt_parser import MRT_Parser, MRT_Sources
 from ..database import Database
 from .. import extrapolator_parser as exr
 
@@ -60,7 +60,7 @@ class ROVPP_Simulator(Parser):
             BGPStream_Website_Parser(**self.kwargs)._run(
                 data_types=[Event_Types.LEAK.value])
             # Download mrt data if not done already
-            MRT_Parser(**self.kwargs)._run()
+#            MRT_Parser(**self.kwargs)._run(sources=[MRT_Sources.RIPE, MRT_Sources.ROUTE_VIEWS])
             with Leak_Related_Announcements_Table(clear=True) as db:
                 db.fill_table()
 

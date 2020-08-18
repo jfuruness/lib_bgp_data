@@ -253,7 +253,7 @@ class Etc_ASes_Table(ASes_Subtable):
 class Etc_ASes_Rib_Out_Table(Etc_ASes_Table, Subtable_Rib_Out):
     name = "etc_ases_rib_out"
 
-class Simulation_Results_Table(Database):
+class Simulation_Results_Table(Generic_Table):
     """Class with database functionality.
     In depth explanation at the top of the file."""
 
