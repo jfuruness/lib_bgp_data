@@ -14,6 +14,7 @@ __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
 import logging
+import sys
 
 import pytest
 
@@ -78,15 +79,16 @@ class Parser:
         """Times main function of parser, errors nicely"""
 
         start_time = utils.now()
+        error = False
         try:
             self._run(*args, **kwargs)
         except Exception as e:
-            self.end_parser(start_time)
             logging.exception(e)
+            error = True
         finally:
-            self.end_parser(start_time)
+            self.end_parser(start_time, error)
 
-    def end_parser(self, start_time):
+    def end_parser(self, start_time, error: bool):
         """Ends parser, prints time and deletes files"""
 
         utils.delete_paths([self.path, self.csv_dir])
@@ -94,6 +96,8 @@ class Parser:
         # dates-in-minutes-using-datetime-timedelta-method/
         _min, _sec = divmod((utils.now() - start_time).total_seconds(), 60)
         logging.info(f"{self.__class__.__name__} took {_min}m {_sec}s")
+        if error:
+            sys.exit(1)
 
     @classmethod
     def argparse_call(cls):

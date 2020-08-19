@@ -17,7 +17,7 @@ __credits__ = ["Justin Furuness", "Matt Jaccino"]
 __Lisence__ = "BSD"
 __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
-__status__ = "Development"
+__status__ = "Production"
 
 
 @pytest.mark.mrt_parser
