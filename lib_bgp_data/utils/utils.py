@@ -31,6 +31,9 @@ import pytz
 import requests
 import urllib
 import shutil
+from psutil import process_iter
+from signal import SIGTERM
+
 
 
 # This decorator deletes paths before and after func is called
@@ -352,3 +355,14 @@ def replace_line(path, prepend, line_to_replace, replace_with):
     for line in fileinput.input(path, inplace=1):
         line = line.replace(*lines)
         sys.stdout.write(line)
+
+        
+def kill_port(port: int, wait: bool = True):
+    for proc in process_iter():
+        for conns in proc.connections(kind='inet'):
+            if conns.laddr.port == port:
+                proc.send_signal(SIGTERM) # or SIGKILL
+                # Sometimes the above doesn't do it's job
+                run_cmds(f"sudo kill -9 $(lsof -t -i: {port})")
+                if wait:
+                    time.sleep(120)

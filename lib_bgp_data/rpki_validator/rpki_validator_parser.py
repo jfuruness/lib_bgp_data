@@ -30,10 +30,10 @@ class RPKI_Validator_Parser(Parser):
     wrapper. It's possible that later someone else will want to use it.
     """
 
-    def _run(self):
+    def _run(self, table: str):
         """Downloads and stores roas from a json"""
 
-        with RPKI_Validator_Wrapper() as _rpki_validator:
+        with RPKI_Validator_Wrapper(table_input=table) as _rpki_validator:
             # First we wait for the validator to load the data
             _rpki_validator.load_trust_anchors()
             # Writes validator to database
