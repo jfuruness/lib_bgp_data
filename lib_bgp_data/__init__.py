@@ -29,7 +29,7 @@ from .extrapolator_parser import Extrapolator_Parser
 from .database import Database, Postgres, Generic_Table
 from .rovpp import ROVPP_Simulator, Simulation_Grapher
 #from .forecast import Forecast
-from .hijack_end_time_parser import Hijack_End_Time_Parser
+from .cdn_whitelist import Whitelist
 
 class NotSudo(Exception):
     pass
