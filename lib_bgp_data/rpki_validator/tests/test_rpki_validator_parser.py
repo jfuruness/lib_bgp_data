@@ -17,8 +17,8 @@ from ...mrt_parser import MRT_Sources
 from ...utils import utils
 
 
-__authors__ = ["Justin Furuness, Tony Zheng"]
-__credits__ = ["Justin Furuness, Tony Zheng"]
+__authors__ = ["Justin Furuness"]
+__credits__ = ["Justin Furuness"]
 __Lisence__ = "BSD"
 __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
@@ -28,11 +28,8 @@ __status__ = "Development"
 class Test_RPKI_Validator_Parser:
     """Tests all local functions within the RPKI_Validator_Parser class."""
 
-    @pytest.fixture
-    def parser(self):
-        return RPKI_Validator_Parser()
-
-    def test_parser_test_data(self, test_table):
+    @pytest.mark.skip(reason="New hires will work on this")
+    def test_parser_test_data(self):
         """This is more of an overall system test,
 
         since most all of the functionality exists in the wrapper.
@@ -50,14 +47,16 @@ class Test_RPKI_Validator_Parser:
             assert db.execute(sql_val)[0]['validity'] == 1
             assert db.execute(sql_inval)[0]['validity'] == -2
 
-    def test__format_asn_dict(self, parser):
+
+    @pytest.mark.skip(reason="new hire will work on this")
+    def test__format_asn_dict(self):
         """Tests the format asn_dict function
 
         Confirms that the output is what we expect for a typical entry"""
-        for key, value in RPKI_Validator_Wrapper.get_validity_dict().items():
-            d = {'asn': 'AS198051', 'prefix': '1.2.0.0/16', 'validity': key}
-            assert parser._format_asn_dict(d) == [198051, '1.2.0.0/16', value]
 
+        pass
+
+    @pytest.mark.skip(reason="new hire will work on this")
     @pytest.mark.slow
     def test_comprehensive_system(self):
         """Tests the entire system on the MRT announcements.
@@ -99,5 +98,3 @@ class Test_RPKI_Validator_Parser:
             sleep(120)
             final_count = db.get_count(sql)
             assert initial_count == final_count
-
-

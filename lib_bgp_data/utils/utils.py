@@ -35,6 +35,7 @@ from psutil import process_iter
 from signal import SIGTERM
 
 
+
 # This decorator deletes paths before and after func is called
 def delete_files(files=[]):
     """This decorator deletes files before and after a function.
@@ -355,7 +356,7 @@ def replace_line(path, prepend, line_to_replace, replace_with):
         line = line.replace(*lines)
         sys.stdout.write(line)
 
-
+        
 def kill_port(port: int, wait: bool = True):
     for proc in process_iter():
         for conns in proc.connections(kind='inet'):
@@ -365,5 +366,3 @@ def kill_port(port: int, wait: bool = True):
                 run_cmds(f"sudo kill -9 $(lsof -t -i: {port})")
                 if wait:
                     time.sleep(120)
-
-
