@@ -22,7 +22,6 @@ import gzip
 import re
 import csv
 import time
-import sys
 import os
 from io import StringIO
 from .tables import Blacklist_Table
@@ -82,11 +81,12 @@ class Blacklist_Parser(Parser):
                      if check_file(downloaded_file):
                          break
             if not check_file(downloaded_file):
-                print("Aborting: File from " + source + 
-                      " failed to download properly with status code" + 
+                raise requests.exceptions.RetryError(
+                      "Aborting: File from " + source +
+                      " failed to download properly with status code" +
                       str(downloaded_file.status_code) + "and length" + 
                       str(len(downloaded_file.content)))
-                sys.exit()
+                raise SystemExit("Aborting")
             _path = f"{self.path}/" + source
             with open(_path, 'w+') as f:
                 f.write(downloaded_file.text)
