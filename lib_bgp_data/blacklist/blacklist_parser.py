@@ -35,7 +35,11 @@ class Blacklist_Parser(Parser):
     __slots__ = []
 
     def _run(self):
-        """Downloads and stores ASNs to table blacklist with columns uce2, uce3, spamhaus, and mit. Due to constraints when executing SQL, columns will be the size of the column with the most data, with None acting as filler forthe smaller columns where that source has no more ASNs on blacklist"""
+        """Downloads and stores ASNs to table blacklist with columns
+        uce2, uce3, spamhaus, and mit. Due to constraints when
+        executing SQL, columns will be the size of the column with
+        the most data, with None acting as filler for the smaller
+        columns where that source has no more ASNs on blacklist"""
         with Blacklist_Table(clear=True) as _blacklist_table:
             # Get and format asns
             raw = self._parse_lists(self._get_blacklists())
@@ -53,27 +57,31 @@ class Blacklist_Parser(Parser):
         blacklist of each source into the respective key as a path to file
         """
 
-
-        # TODO: If UCEPROTECT blank, retry DONE
-        # Download sources to file, and then read from file instead of reading from string, makes more sense/readable DONE
-        # Why am I using an IP for UCE's mirrors? The various mirrors of UCE's blacklists are not consistent with one another:
-        # Some will return a gzip, some just ISO-8859 text, and some just don't work. So, to ensure consistency, I'm using IP here.
+        # Download sources to file, and then read from file instead of
+        # reading from string, makes more sense/readable DONE
+        # Why am I using an IP for UCE's mirrors? The various mirrors
+        # of UCE's blacklists are not consistent with one another:
+        # Some will return a gzip, some just ISO-8859 text, and some
+        # just don't work. So, to ensure consistency, I'm using IP.
         # This should return plaintext.
-        sources = {'uce2': 'http://72.13.86.154/rbldnsd-all/dnsbl-2.uceprotect.net.gz', 'uce3': 'http://72.13.86.154/rbldnsd-all/dnsbl-3.uceprotect.net.gz', 'spamhaus': 'https://www.spamhaus.org/drop/asndrop.txt', 'mit': 'https://raw.githubusercontent.com/ctestart/BGP-SerialHijackers/master/prediction_set_with_class.csv'}
+        sources = {'uce2': 'http://72.13.86.154/rbldnsd-all/dnsbl-2.uceprotect.net.gz', 
+                   'uce3': 'http://72.13.86.154/rbldnsd-all/dnsbl-3.uceprotect.net.gz', 
+                   'spamhaus': 'https://www.spamhaus.org/drop/asndrop.txt', 
+                   'mit': 'https://raw.githubusercontent.com/ctestart/BGP-SerialHijackers/master/prediction_set_with_class.csv'}
         output_path = dict()
         # For each source in the sources dict, GET url, write response to path, and save path
         # to dict.
         for source in sources:
             downloaded_file = requests.get(sources[source])
             # Now we'll check if we got a proper file, if not try 5 more times or until success
-            if not downloaded_file.ok or downloaded_file.content == '':
-                for i in range(0, 5):
+            if not check_file(downloaded_file):
+                for i in range(5):
                      # Don't want to spam the page
                      time.sleep(5)
                      downloaded_file = requests.get(sources[source])
-                     if downloaded_file.ok and downloaded_file.content != '':
+                     if check_file(downloaded_file):
                          break
-            if not downloaded_file.ok or downloaded_file.content == '':
+            if not check_file(downloaded_file):
                 print("Aborting: File from " + source + 
                       " failed to download properly with status code" + 
                       str(downloaded_file.status_code) + "and length" + 
@@ -124,3 +132,9 @@ class Blacklist_Parser(Parser):
             for asn in parsed[key]:
                 formatted.append([asn, key])
         return formatted
+
+    def check_file(self, f):
+        """Takes a requests file and returns true if it has content,
+        false otherwise.
+        """
+        return (f.ok and f.content) != ''
