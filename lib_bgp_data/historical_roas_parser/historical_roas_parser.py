@@ -18,7 +18,11 @@ from ftplib import FTP, error_perm
 import threading
 from queue import Queue
 import time
-import concurrent.futures
+#import concurrent.futures
+from pathos.multiprocessing import ProcessPool
+import subprocess
+import requests
+from bs4 import BeautifulSoup as Soup
 
 from ..base_classes import Parser
 from ..utils import utils
@@ -33,14 +37,19 @@ class Historical_ROAS_Parser(Parser):
         """Collect the paths to all the csvs to download. Multithread the
            downloading of all the csvs, insert into db if not seen before."""
 
-        paths = []
-        with FTP('ftp.ripe.net') as ftp:
-            ftp.login()
-            self.get_csvs(ftp, 'rpki', paths)
-            paths = [(p, ftp) for p in paths]
+        # this machine has 12 cpus
+        # ProcessPool(nodes=48).map(self.download_csvs)
 
-            with concurrent.futures.ThreadPoolExecutor() as executor:
-                executor.map(self.download_csv, paths)
+        # self.download_csvs_test()
+        #csv_paths = self.get_csvs()
+
+        self.get_csvs_parse()
+
+        #paths = []
+        #with FTP('ftp.ripe.net') as ftp:
+        #    ftp.login()
+        #    print(self.get_csvs(ftp, 'rpki'))
+
            
         # context manager does ftp.quit()
         #with FTP('ftp.ripe.net') as ftp:
@@ -60,7 +69,7 @@ class Historical_ROAS_Parser(Parser):
     def download_csvs(self, ftp, root, db, paths):
         for path in ftp.nlst(root):
 
-            # there are 3 possibilities:
+            # there are 3 possibilities:i
             # file is a csv - download and insert into table
             # file is an archive - ignore
             # file is a folder - recurse deeper
@@ -87,14 +96,55 @@ class Historical_ROAS_Parser(Parser):
                 self.download_csvs(ftp, path, db)
     """
 
-    def get_csvs(self, ftp, root, paths):
+    def download_csvs_test(self):
+
+        # wget all the csv files - 2 hrs
+        p = subprocess.run('wget -r -np -e robots=off -A "*.csv" ftp.ripe.net/rpki/',
+            shell=True)
+
+        # list the paths to each csv
+        output = subprocess.run(f'find {os.getcwd()} -type f',
+                            shell=True, capture_output=True)
+        print(output.stdout)
+
+    def wget_try(self):
+        check_call('wget -r -np -R "repo.tar.gz" ftp.ripe.net/rpki/', shell=True)
+
+    def get_csvs(self, ftp, root, paths=None):
+        if paths is None:
+            paths = []
+        print(len(paths))
+        if len(paths) == 50:
+            return
         for path in ftp.nlst(root):
+            print(path)
             if 'csv' in path:
                 paths.append(path)
-            elif 'repo.tar.gx' in path:
+            elif 'repo.tar.gz' in path:
                 pass
             else:
                 self.get_csvs(ftp, path, paths)
+        return paths
+
+    def get_csvs_parse(self, root='https://ftp.ripe.net/rpki'):
+
+        r = requests.get(root)
+        r.raise_for_status()
+        s = Soup(r.text, 'lxml')
+        r.close()
+
+        # the first link is the parent directory
+        for link in s('a')[1:]:
+            href = link['href']
+            if href == '/' or href == 'repo.tar.gz':
+                pass
+            elif 'csv' in href:
+                subprocess.run(f'wget {root}', shell=True)
+                print('Downloaded something')
+                # maybe then do the reformating and insertion here
+            else:
+                #print(os.path.join(root, href))
+                self.get_csvs_parse(os.path.join(root, href))
 
     def reformat_csv(self, csv, path):
         """Replaces commas with tabs, removes URI column,
