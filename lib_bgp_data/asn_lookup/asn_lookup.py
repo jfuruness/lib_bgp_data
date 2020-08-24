@@ -63,14 +63,21 @@ def asn_lookup(asns: list):
 
             # if there's no response, wait for one hour then try again
             # trying to circumvent any rate limit
-            while response.status_code != 200 and response.status_code != 429:
+            if response.status_code != 200 and len(info) < 70800:
+                print('An error that was not a rate limit occurred!')
                 print('HTTP: ', response.status_code)
                 print('count:', count)
-                time.sleep(60)
+                time.sleep(120)
                 response = session.get(api + str(asn))
+                try:
+                    response.raise_for_status()
+                except:
+                    print('Still not working.')
+                    raise
 
-            if response.status_code == 429:
+            else:
                 print('Hit the limit at: ', count)
+                # wait for one hour
                 time.sleep(3600)
                 response = session.get(api + str(asn))
                 if response.status_code == 429:
