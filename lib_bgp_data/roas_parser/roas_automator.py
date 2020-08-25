@@ -25,6 +25,7 @@ if pg_dump or pg_restore have any.
 This automator is designed to be run nightly on our server using cron.
 """
 
+
 __authors__ = ["Samarth Kasbawala"]
 __credits__ = ["Samarth Kasbawala"]
 __Lisence__ = "BSD"
@@ -32,9 +33,12 @@ __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
+
 import os
 import psycopg2
+import pytest
 import subprocess
+
 from .tables import ROAs_Table
 from .roas_parser import ROAs_Parser
 from ..base_classes import Parser
@@ -44,8 +48,10 @@ from ..utils import utils
 class TableIsEmpty(Exception):
     pass
 
+
 class BackupError(Exception):
     pass
+
 
 class ROAs_Automator(ROAs_Parser):
     """ROAs_AUtomator class"""
@@ -90,19 +96,20 @@ class ROAs_Automator(ROAs_Parser):
                 try:
                     self._try_to_backup(roas, _csv_dir, table)
                 except (subprocess.CalledProcessError, BackupError) as e:
-                    subject = f"Roas Backup Error at {utils.now()}"
-                    if type(e) == BackupError:
-                        body = ("There was an error backing up the roas table. "
-                                "The backup file was not created correctly, so "
-                                "the previous backup was not overwritten. The "
-                                "pg_dump and pg_restore commands did not provide "
-                                "an error.")
-                    else:
-                        body = ("There was an error backing up the roas table. "
-                                "Below are the outputs\n"
-                                f"STD_OUT Message: {e.stdout}\n"
-                                f"STD_ERR Message: {e.stderr}")
-                    utils.send_email(subject, body)
+                    if not pytest.global_running_test:
+                        subject = f"Roas Backup Error at {utils.now()}"
+                        if type(e) == BackupError:
+                            body = ("There was an error backing up the roas table. "
+                                    "The backup file was not created correctly, so "
+                                    "the previous backup was not overwritten. The "
+                                    "pg_dump and pg_restore commands did not provide "
+                                    "an error.")
+                        else:
+                            body = ("There was an error backing up the roas table. "
+                                    "Below are the outputs\n"
+                                    f"STD_OUT Message: {e.stdout}\n"
+                                    f"STD_ERR Message: {e.stderr}")
+                        utils.send_email(subject, body)
 
 ########################
 ### Helper Functions ###

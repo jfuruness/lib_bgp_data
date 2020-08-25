@@ -15,13 +15,14 @@ __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
+
 import os
 import pytest
 import psycopg2
 import subprocess
 from unittest.mock import Mock, patch
 
-from ..roas_parser import ROAs_Parser
+
 from ..roas_automator import ROAs_Automator
 from ..tables import ROAs_Table
 from ...utils import utils
@@ -126,8 +127,7 @@ class Test_ROAs_Automator:
             assert _roas_table.get_count() > 100000
             assert os.path.exists(self.automator.prev_backup)
             assert os.path.exists(self.automator.temp_backup) is False
-                
-        
+                        
     def test__run(self):
         """Tests the _run function in the ROAs_Automator class"""
 
@@ -185,8 +185,7 @@ class Test_ROAs_Automator:
             assert os.path.exists(self.automator.prev_backup)
             assert os.path.exists(self.automator.temp_backup) is False
 
-    # Test is off because we don't want to send an email
-    def OFFtest_failed_backup(self):
+    def test_failed_backup(self):
         """This function tests the behavior in case the backup doesn't work
 
         An email should be sent indicating there was an error backing up the
@@ -225,8 +224,7 @@ class Test_ROAs_Automator:
             assert count == _roas_table.get_count()
             assert roas == _roas_table.get_all()
 
-    # Test is off because we don't want to send an email
-    def OFFtest_failed_backup_2(self):
+    def test_failed_backup_2(self):
         """Another test to see the behavior of a failed backup
 
         This test considers the case for when a backup fails and there is no
