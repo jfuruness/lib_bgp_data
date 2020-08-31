@@ -2,115 +2,67 @@
 # -*- coding: utf-8 -*-
 
 """
-Returns the country, continent, and holding organization of an ASN.
+Returns a list of the holding organization, countries, and continents for a
+list of ASNs.
 
-The mapping of country codes to continents is retrieved from:
-http://country.io/continent.json
+Using MaxMind database of CSVs which are updated weekly. But an account
+sign-up is necessary to download them, making the process manual.
+The benefit is that because they're CSVs, there is no ratelimit.
 
-The BGPView API for ASN lookup is used because it returns an easy-to-use json.
-https://bgpview.docs.apiary.io/#
-
-The alternatives are:
-
-RIRs RDAP service but the results are inconsistent. Compare these 2 results:
-
-https://rdap.apnic.net/autnum/38369
-https://rdap.arin.net/registry/autnum/13335
-
-The first has a country value, the second does not.
-
-Try RIPE's database query service:
-https://apps.db.ripe.net/db-web-ui/query
-
-On Cloudfare AS13335, no country is returned. And an inverse lookup is not
-allowed since it's not registered by RIPE but by ARIN.
-
-https://ipinfo.io/
-Is promising but it's paid.
-
-Thus all these options are incomplete, even BGPView, such as this:
-https://api.bgpview.io/asn/38369
-
-But it is the simplest and robust enough to use.
+RIPE has an API with no ratelimit but it doesn't have good endpoints that
+return country and continent data. As a matter of fact, RIPE directly
+endorses MaxMind on their docs
 """
 
-import os
-import json
-import time
+__author__ = "Tony Zheng"
+__credits__ = ["Tony Zheng, Reynaldo Morris"]
+__Lisence__ = "BSD"
+__maintainer__ = "Justin Furuness"
+__email__ = "jfuruness@gmail.com"
+__status__ = "Development"
 
-import requests
+import pandas as pd
 
 
 def asn_lookup(asns: list):
 
-    info = []
-    continent_list = ['AS', 'EU', 'AF', 'NA', 'OC', 'SA', 'AN']
+    infos = []
 
-    # load the country code to continent mapping
-    continent_path = os.path.join(os.path.dirname(os.path.realpath(__file__)),
-                                  'continent.json') 
-    with open(continent_path, 'r') as f:
-        c2c_map = json.load(f)
+    # pandas to read the multiple csvs used
+    # I renamed the csvs because the original names were extremely long
+    asn_data = pd.read_csv('./ASN/ipv4.csv')
+    geo_data = pd.read_csv('./Country/country-ipv4.csv')
 
+    # keep_default_na must be turned off or else it interprets the
+    # abbr 'NA' for 'North America' as not a value
+    country_data = pd.read_csv('./Country/country-english.csv',
+                                keep_default_na=False)
 
-    api = 'https://api.bgpview.io/asn/'
+    for asn in asns:
+        # list of country and continent tuples
+        CC = []
+        rows = asn_data.loc[asn_data['autonomous_system_number'] == int(asn)]
 
-    count = 0
+        for index, row in rows.iterrows():
+            org = row['autonomous_system_organization']
+            prefix = row['network']
 
-    with requests.Session() as session:
-        for asn in asns:
-            response = session.get(api + str(asn))
+            geo_row = geo_data.loc[geo_data['network'] == prefix]
 
-            # if there's no response, wait for one hour then try again
-            # trying to circumvent any rate limit
-            if response.status_code != 200 and len(info) < 70800:
-                print('An error that was not a rate limit occurred!')
-                print('HTTP: ', response.status_code)
-                print('count:', count)
-                time.sleep(120)
-                response = session.get(api + str(asn))
-                try:
-                    response.raise_for_status()
-                except:
-                    print('Still not working.')
-                    raise
+            # some prefixes are not present
+            if not geo_row.empty:
+                gid = geo_row['geoname_id'].values[0]
+                country_row = country_data.loc[country_data['geoname_id'] \
+                                                == int(gid)]
+                country = country_row['country_iso_code'].values[0]
+                continent = country_row['continent_code'].values[0]
+                CC.append((country, continent))
 
-            else:
-                print('Hit the limit at: ', count)
-                # wait for one hour
-                time.sleep(3600)
-                response = session.get(api + str(asn))
-                if response.status_code == 429:
-                    raise ValueError('Not long enough')
-                
-            # response.raise_for_status()
+        infos.append({'org': org, 'country_continent': CC})
 
-            data = response.json()['data']
-            country = data['country_code']
-
-            # sometimes they list a continent as the country
-            if country in continent_list:
-                country = None
-                continent = country
-            
-            continent = c2c_map[country] if country else None
-            org = data['description_short']
-
-            info.append({'country': country,
-                         'continent': continent,
-                         'org': org})
-
-            count += 1
-            if count % 100 == 0:
-                print(count)
-
+    return infos
 
 if __name__ == '__main__':
-    r = requests.get('https://stat.ripe.net/data/ris-asns/data.json?list_asns=true')
-    asns = r.json()['data']['asns']
-    asn_lookup(asns)
-
-
-
+    print(asn_lookup(['13335']))
 
 
