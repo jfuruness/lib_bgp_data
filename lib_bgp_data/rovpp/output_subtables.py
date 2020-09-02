@@ -136,9 +136,8 @@ class Output_Subtable:
             asn = as_data["received_from_asn"]
             as_data = all_ases[asn]
             if asn in loop_asns_set:
-                print("\n" * 20)
-                logging.error("Loop:\n\t" + "\n\t".join(loop_str_list))
-                logging.error(attack)
+                err_str = "\n" * 20 + "Loop:\n\t" + "\n\t".join(loop_str_list) + attack + "\n" * 20
+                logging.error(err_str)
                 sys.exit(1)
             else:
                 loop_asns_set.add(asn)
