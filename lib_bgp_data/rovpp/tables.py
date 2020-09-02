@@ -63,6 +63,8 @@ class Simulation_Announcements_Table(MRT_Announcements_Table):
 class Tracked_ASes_Table(Generic_Table):
     name = "tracked_ases"
 
+    columns = ["asn", "attacker", "victim"]
+
     def _create_tables(self):
         sql = f"""CREATE UNLOGGED TABLE IF NOT EXISTS {self.name} (
                 asn bigint,
