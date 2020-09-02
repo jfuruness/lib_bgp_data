@@ -2,7 +2,6 @@ Cloudflare
 Akamai
 Fastly
 StackPath
-CacheFly
 Rackspace
 Verizon
 Google

@@ -118,12 +118,35 @@ class Data_Point(Parser):
             with Database() as db:
                 sql = f"""SELECT * FROM leaks ORDER BY id LIMIT 1 OFFSET {trial_num}"""
                 leak = db.execute(sql)[0]
+                leaker_path = leak["example_as_path"]
+                attacker = leak["leaker_as_number"]
+                # Must cut off 1 after the attacker for proper seeding
+                # Note that by one after the attacker, I mean from right to left
+                # so if path was 51, 25, 63, ATTACKER, 81,
+                # We want the new path to be 63, ATTACKER, 81
+                # If there is prepending:
+                # OG path:
+                # 51, 25, 63, ATTACKER, ATTACKER, ATTACKER, 81,
+                # New path:
+                # 63, ATTACKER, ATTACKER, ATTACKER, 81,
+                new_leaker_path = []
+                about_to_break = False
+                for asn in reversed(leaker_path):
+                    new_leaker_path.append(asn)
+                    # Must have second equality here just in case attacker prepends
+                    # (prepending is when an asn is listed multiple times
+                    #  we want one after the attacker, but if the attacker is repeated
+                    #  we must keep going)
+                    if about_to_break and asn != attacker:
+                        break
+                    if asn == attacker:
+                        about_to_break = True
+                        
                 attacker_rows = [[leak["leaked_prefix"],
-                                  leak["example_as_path"],
+                                  new_leaker_path,
                                   leak["example_as_path"][-1],
                                   0]]
                 victim_rows = []
-                attacker = leak["leaker_as_number"]
 
         # Format the lists to be arrays for insertion into postgres
         for rows in [attacker_rows, victim_rows]:
