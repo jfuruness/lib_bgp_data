@@ -35,3 +35,13 @@ class Attack:
         else:
             self.victim_asn = None
             self.victim_prefix = None
+        self.attacker_rows = attacker_rows
+        self.victim_rows = victim_rows
+
+    def __repr__(self):
+        return (f"Attacker asn: {self.attacker_asn}\n"
+                f"Attacker Prefix: {self.attacker_prefix}\n"
+                f"Victim asn: {self.victim_asn}\n"
+                f"Victim prefix: {self.victim_prefix}\n"
+                f"Attacker rows: {self.attacker_rows}\n"
+                f"Victim rows: {self.victim_rows}\n")
