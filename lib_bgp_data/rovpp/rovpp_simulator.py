@@ -61,8 +61,8 @@ class ROVPP_Simulator(Parser):
                 data_types=[Event_Types.LEAK.value])
             # Download mrt data if not done already
 #            MRT_Parser(**self.kwargs)._run(sources=[MRT_Sources.RIPE, MRT_Sources.ROUTE_VIEWS])
-            with Leak_Related_Announcements_Table(clear=True) as db:
-                db.fill_table()
+#            with Leak_Related_Announcements_Table(clear=True) as db:
+#                db.fill_table()
 
         # Clear the table that stores all trial info
         with Simulation_Results_Table(clear=True) as _:
