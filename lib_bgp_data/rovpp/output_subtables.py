@@ -71,11 +71,13 @@ class Output_Subtable:
                       adopt_policy,
                       percent,
                       percent_iter,
-                      self._get_traceback_data(subtable_ases, all_ases),
+                      self._get_traceback_data(subtable_ases,
+                                               all_ases,
+                                               attack),
                       self._get_control_plane_data(attack),
                       self._get_visible_hijack_data(table_names))
 
-    def _get_traceback_data(self, subtable_ases, all_ases):
+    def _get_traceback_data(self, subtable_ases, all_ases, attack):
         """Gets the data plane data through tracing back"""
 
         # NOTE: this can easily be changed to SQL. See super optimized folder.
@@ -98,7 +100,8 @@ class Output_Subtable:
                     as_data = all_ases[asn]
             # NEEDED FOR EXR DEVS
             if looping:
-                self._print_loop_debug_data(all_ases, og_asn, og_as_data)
+                loop_data = [all_ases, og_asn, og_as_data, attack]
+                self._print_loop_debug_data(*loop_data)
         return conds
 
     def _get_visible_hijack_data(self, t_names):
@@ -121,7 +124,7 @@ class Output_Subtable:
             conds[adopt_val] = self.Rib_Out_Table.get_count(sql)
         return conds
 
-    def _print_loop_debug_data(self, all_ases, og_asn, og_as_data):
+    def _print_loop_debug_data(self, all_ases, og_asn, og_as_data, attack):
         """Prints debug information for whenever the exr breaks"""
 
         loop_str_list = []
@@ -134,6 +137,7 @@ class Output_Subtable:
             as_data = all_ases[asn]
             if asn in loop_asns_set:
                 logging.error("Loop:\n\t" + "\n\t".join(loop_str_list))
+                logging.error(attack)
                 sys.exit(1)
             else:
                 loop_asns_set.add(asn)

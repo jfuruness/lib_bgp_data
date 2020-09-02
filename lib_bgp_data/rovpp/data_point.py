@@ -141,7 +141,7 @@ class Data_Point(Parser):
                         break
                     if asn == attacker:
                         about_to_break = True
-                        
+                new_leaker_path.reverse()        
                 attacker_rows = [[leak["leaked_prefix"],
                                   new_leaker_path,
                                   leak["example_as_path"][-1],
