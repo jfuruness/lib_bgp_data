@@ -12,6 +12,7 @@ __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
+import logging
 import sys
 
 from .enums import AS_Types
