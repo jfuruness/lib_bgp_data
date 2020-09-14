@@ -14,9 +14,7 @@ __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
 import pytest
-import os
-import logging
-from ...utils import utils
+
 from ..parser import Parser
 
 
@@ -24,18 +22,15 @@ from ..parser import Parser
 class Test_Parser:
     """Tests all functions within the Parser class."""
 
+    @pytest.mark.skip(reason="New hire work")
     def test_init_subclass(self):
         """Test the __init_sublcass method.
 
         Make sure that all inherited classes are in the parsers list.
         """
-        class Foo(Parser):
-            def _run():
-                pass
 
-        assert Foo in Parser.parsers
-
-    def test__init__(self):
+    @pytest.mark.skip(reason="New hire work")
+    def test__innit__(self):
         """Tests init function.
 
         Should have a section.
@@ -78,6 +73,8 @@ class Test_Parser:
         assert not os.path.exists(parser.path)
         assert not os.path.exists(parser.csv_dir)
 
+
+    @pytest.mark.skip(reason="New hire work")
     def test_run(self):
         """Tests the run function
 
@@ -86,39 +83,15 @@ class Test_Parser:
         One test should be where there is no exception
             -tests should still clean out dirs
         """
-        class Foo(Parser):
-            def _run():
-                raise Exception
-        f = Foo()
-        f.run()
 
-        class Subparser(Parser):
-            def _run():
-                pass
-        sp = Subparser()
-        sp.run()
-        
-        for parser in [f, sp]:
-            self.assert_cleanup(parser)
-
+    @pytest.mark.skip(reason="New hire work")
     def test_end_parser(self):
         """tests end_parser func
 
         Make's sure that dirs are cleaned out. Don't worry about the time.
         """
-        class Foo(Parser):
-            def _run(self):
-                pass
-        f = Foo()
-        f.end_parser(utils.now())
-        self.assert_cleanup(f)
 
-        path = './foo'
-        csv_dir = './csv'
-        f = Foo(path=path, csv_dir=csv_dir)
-        f.end_parser(utils.now())
-        self.assert_cleanup(f)
-
+    @pytest.mark.skip(reason="New hire work")
     def test_argparse_call(self):
         """Tests argparse call method.
 
@@ -153,5 +126,3 @@ class Test_Parser:
         with open(p, 'w') as f:
             f.write(og_cpy)
         os.remove(sample)
-
-

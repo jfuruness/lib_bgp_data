@@ -35,7 +35,6 @@ class BGPStream_Website_Parser(Parser):
 
     __slots__ = ['_data']
 
-    
     def _run(self,
              row_limit: int = None,
              IPV4=True,
@@ -130,7 +129,7 @@ class BGPStream_Website_Parser(Parser):
             end = 'None'
 
         return _type, start, end, url, event_num
-    
+
     def _generate_known_events(self) -> dict:
         """Generates known events.
 

@@ -5,8 +5,8 @@
 For specifics on each test, see docstrings under each function.
 """
 
-__authors__ = ["Matt Jaccino", "Justin Furuness"]
-__credits__ = ["Matt Jaccino", "Justin Furuness"]
+__authors__ = ["Justin Furuness"]
+__credits__ = ["Justin Furuness"]
 __Lisence__ = "BSD"
 __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
@@ -52,7 +52,7 @@ class Test_Extrapolator:
 
         Test if not installed that it installs
         Test that can be installed twice.
-        Test that once installed, can run.
+        Test that once installed, can run. - might need to contact Cameron for this part
         """
 
         pass

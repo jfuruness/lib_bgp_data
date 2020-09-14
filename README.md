@@ -1,5 +1,7 @@
 # lib\_bgp\_data
-This package contains multiple submodules that are used to gather and manipulate real data in order to simulate snapshots of the internet. The purpose of this is to test different security policies to determine their accuracy, and hopefully find ones that will create a safer, more secure, internet as we know it.
+This package contains functionality to gather internet data from various sources. This internet data can then be used to simulate the internet with theoretical simulations to test new security policies (the simulation_framwork), or to simulate what would have happened in the real world if an Autonomous System used our security policies (The forecast). The purpose of this is to test different security policies to determine their accuracy, and hopefully find ones that will create a safer, more secure, internet as we know it.
+
+Note that this has expanded far beyond what we had originally intended, and this README could use a serious refactor to make it more usable.
 
 *disclaimer: If a submodule is in development, that means that it unit tests are in the process of being written*
 
@@ -15,8 +17,9 @@ This package contains multiple submodules that are used to gather and manipulate
     * [BGPStream Website Parser](#bgpstream-website-submodule)
     * [RPKI Validator Parser](#rpki-validator-submodule)
     * [What if Analysis Parser](#what-if-analysis-submodule)
+    * [CDN_Whitelist](#cdn-whitelist-submodule)
     * [API Submodule](#api-submodule)
-    * [ROVPP Submodule](#rovpp-submodule)
+    * [Simulation_Framework](#simulation-framework)
     * [Utils](#utils)
     * [Database](#database-submodule)
     * [Logging](#logging-submodule)
@@ -32,7 +35,44 @@ This package contains multiple submodules that are used to gather and manipulate
 * [FAQ](#faq)
 ## Package Description
 * [lib\_bgp\_data](#lib_bgp_data)
-This README is split up into several subsections for each of the submodules included in this package. Each subsection has it's own descriptions, usage instructions, etc. The [Forecast Submodule](#forecast-submodule) subsection details how all of the submodules combine to completely simulate the internet. For an overall view of how the project will work, see below:
+
+This README is split up into several subsections for each of the submodules included in this package. Each subsection has it's own descriptions, usage instructions, etc. All these different submodules are used in three ways:
+
+1. The [Forecast Submodule](#forecast-submodule). For this, we download real data from the internet, and using this data, can determine what would have happened to any given AS if they had deployed ROV or other ROV variants.
+2. The  [Simulation_Framework](#simulation-framework). For this, we use the real internet topology and simulate using many different adoption scenarios, trials, etc. to determine what would happen if a percentage of the internet adopted new security policies that we are trying to publish such as ROV++.
+3. The deployment project, very much in development. This project is basically the forecast project, except it takes as input the RIB in of the AS that it is forecasting, and does it's analysis in real time
+
+## Forecast Submodule
+* [lib\_bgp\_data](#lib_bgp_data)
+* [Short Description](#forecast-short-description)
+* [Long Description](#forecast-long-description)
+* [Usage](#forecast-usage)
+* [Table Schema](#forecast-table-schema)
+* [Design Choices](#forecast-design-choices)
+* [Todo and Possible Future Improvements](#todopossible-future-improvements)
+
+NOTE: To focus on other projects, this project was abandoned before there was a stable working version, in the middle of a serious refactor/optimization. Because of that, the Forecast service doesn't work, even though it did at one point.
+
+Status: Abandoned
+
+### Forecast Short description
+* [lib\_bgp\_data](#lib_bgp_data)
+* [Forecast Submodule](#forecast-submodule)
+
+This submodule runs all of the parsers to get a days worth of data for the ROV forecast.
+### Forecast Long description
+* [lib\_bgp\_data](#lib_bgp_data)
+* [Forecast Submodule](#forecast-submodule)
+
+This submodule basically follows the steps in the  [Package Description](#package-description) except for a couple of minor variations.
+
+1. If fresh_install is passed in as True, then a fresh install is installed.
+2. If test is passed in as true, the MRT announcements are filtered down to just one prefix to make it easier to test the package.
+3. db.vacuum_analyze_checkpoint is called 3 times. Once before joining the mrt announcements with roas, once before running the what if analysis, and at the end of everything. The purpose of this is to save storage space, create statistics on all of the tables, and write to disk. This helps the query planner when planning table joins and massively decreases runtime.
+
+Other than that, please refer to the below:
+
+For an overall view of how the project will work, see below:
 
 **![](https://docs.google.com/drawings/u/0/d/sx3R9HBevCu5KN2luxDuOzw/image?w=864&h=650&rev=1621&ac=1&parent=1fh9EhU9yX9X4ylwg_K-izE2T7C7CK--X-Vfk1qqd1sc)**
 Picture link: https://docs.google.com/document/d/1fh9EhU9yX9X4ylwg_K-izE2T7C7CK--X-Vfk1qqd1sc/edit?usp=sharing
@@ -50,36 +90,6 @@ Please note: These steps are not necessarily linear, as much of this is done in 
 8.  Using the bgpstream.com data from the [BGPStream Website Parser](#bgpstream-website-submodule) and the [RPKI Validator](#rpki-validator-submodule) data we can tell if an announcement would have been blocked or not, and whether or not that announcement would have been blocked correctly. For example, if the rpki validator says that a prefix origin pair is invalid by asn, that means it would be blocked (for the invalid by asn policy). If that announcement also occurs in bgpstream.com as a hijacking, then we know that the prefix origin pair is a hijacking, and then we add one point to the hijacked and blocked column. That is an over simplification, but this calculation is done in the last submodule, the [What if Analysis](#what-if-analysis-submodule). The output of this data is for each AS, a table of how many announcements have been blocked and were hijacks, blocked and were not hijacks, not blocked but were hijacks, and not blocked and were not hijacks. This does joins on massive tables, and takes 1-10 minutes on our server.
 9. The [What if Analysis](#what-if-analysis-submodule) data as well as the [Extrapolator](#extrapolator-submodule) data is then available to query form a web interface through the [API](#api-submodule), the last last submodule. All of these steps are done in the submodule called [Main](#main-submodule), in which many of these steps are done in parallel for efficiency. These results are then displayed on our website at [https://sidr.engr.uconn.edu/](https://sidr.engr.uconn.edu/)
 10. The purpose of this is to determine the effect that these security policies would have on the internet and blocking hijacks (attacks). Now from the API it is possible to see what attacks (hijacks) where blocked correctly and incorrectly. It's also possible to see if other announcements where treated as a hijack and were incorrectly blocked. Using this it is possible to see how different security policies would affect your specific ASN
-
-## Forecast Submodule
-* [lib\_bgp\_data](#lib_bgp_data)
-* [Short Description](#forecast-short-description)
-* [Long Description](#forecast-long-description)
-* [Usage](#forecast-usage)
-* [Table Schema](#forecast-table-schema)
-* [Design Choices](#forecast-design-choices)
-* [Todo and Possible Future Improvements](#todopossible-future-improvements)
-
-NOTE: This submodule is not yet complete, and should not be used
-
-
-Status: Development
-### Forecast Short description
-* [lib\_bgp\_data](#lib_bgp_data)
-* [Forecast Submodule](#forecast-submodule)
-
-This submodule runs all of the parsers to get a days worth of data for the ROV forecast.
-### Forecast Long description
-* [lib\_bgp\_data](#lib_bgp_data)
-* [Forecast Submodule](#forecast-submodule)
-
-This submodule basically follows the steps in the  [Package Description](#package-description) except for a couple of minor variations.
-
-1. If fresh_install is passed in as True, then a fresh install is installed.
-2. If test is passed in as true, the MRT announcements are filtered down to just one prefix to make it easier to test the package.
-3. db.vacuum_analyze_checkpoint is called 3 times. Once before joining the mrt announcements with roas, once before running the what if analysis, and at the end of everything. The purpose of this is to save storage space, create statistics on all of the tables, and write to disk. This helps the query planner when planning table joins and massively decreases runtime.
-
-Other than that, please refer to the [Package Description](#package-description)
 
 ### Forecast Usage
 * [lib\_bgp\_data](#lib_bgp_data)
@@ -363,7 +373,7 @@ This submodule downloads and parses MRT Files. This is done through a series of 
     * sed is used because it is cross compatible and fast
         * Must use regex parser that can find/replace for array format
         * AS Sets are not parsed because they are unreliable, these are less than .5% of all announcements
-6. Parsed information is stored in csv files, and old files are deleted
+5. Parsed information is stored in csv files, and old files are deleted
     * This is handled by the MRT_File class
     * This is done because there is thirty to one hundred gigabytes
         * Fast insertion is needed, and bulk insertion is the fastest
@@ -371,7 +381,7 @@ This submodule downloads and parses MRT Files. This is done through a series of 
         * CSVs are more portable and don't rely on postgres versions
         * Binary file insertion relies on specific postgres instance
     * Old files are deleted to free up space
-7. CSV files are inserted into postgres using COPY, and then deleted
+6. CSV files are inserted into postgres using COPY, and then deleted
     * This is handled by MRT_File class
     * COPY is used for speedy bulk insertions
     * Files are deleted to save space
@@ -379,7 +389,8 @@ This submodule downloads and parses MRT Files. This is done through a series of 
         * There are not a lot of duplicates, so it's not worth the time
         * The overall project takes longer if duplicates are deleted
         * A duplicate has the same AS path and prefix
-8. VACUUM ANALYZE is then called to analyze the table for statistics
+7. VACUUM ANALYZE is then called to analyze the table for statistics
+
 ### MRT Announcements Usage
 * [lib\_bgp\_data](#lib_bgp_data)
 * [MRT Announcements Submodule](#mrt-announcements-submodule)
@@ -848,7 +859,7 @@ ROAs_Parser().parse_roas()
 ```
 
 #### From the Command Line
-Depending on the permissions of your system, and whether or not you pip installed the package with sudo, you might be able to run the ROAs Parser with:
+Depending on the permissions of your system, and whether or not you installed the package with sudo, you might be able to run the ROAs Parser with:
 
 ```lib_bgp_data --roas_parser```
 
@@ -1408,6 +1419,7 @@ with RPKI_Validator_Wrapper(table_input="table_name_of_prefix_origins") as _rpki
 ```
 
 If you want to make any query to the API, see below.
+Also note: for a list of queriable endpoints: https://rpki-validator.ripe.net/swagger-ui.html#/Input32validation
 ```python
 from lib_bgp_data import RPKI_Validator_Wrapper
 # This will create the file for upload, and upload it to the validator
@@ -1583,6 +1595,136 @@ Coming Soon to a theater near you
      of the announcements sent out over the internet.
     * If an index is not included it is because it was never used
 
+## CDN Whitelist Submodule
+   * [lib\_bgp\_data](#lib_bgp_data)
+   * [Short Description](#cdn-whitelist-short-description)
+   * [Long Description](#cdn-whitelist-long-description)
+   * [Usage](#cdn-whitelist-usage)
+   * [Table Schema](#cdn-whitelist-table-schema)
+   * [Design Choices](#cdn-whitelist-design-choices)
+* [Todo and Possible Future Improvements](#todopossible-future-improvements)
+
+Status: Development
+
+### CDN Whitelist Short description
+* [lib\_bgp\_data](#lib_bgp_data)
+* [CDN Whitelist Submodule](#cdn-whitelist-submodule)
+The purpose of this submodule is to get all ASNs that are owned by CDNs from hackertarget.com, converting this data into csvs and inserting this data into the database.
+### CDN Whitelist Long Description
+* [lib\_bgp\_data](#lib_bgp_data)
+* [CDN Whitelist Submodule](#cdn-whitelist-submodule)
+
+The purpose of this parser is to download ASNs owned by CDNs from hackertarget.com and insert them into a database. This is done through a series of steps.
+
+1. Get list of CDNs from cdns.txt in the submodule
+   * Handled in the _get_cdns function
+2. Make an API call to https://api.hackertarget.com/aslookup/?q=
+   * Handled in the _run function
+   * This will get the json for the ASNs
+3. Format the data for database insertion
+   * Handled in the _run function
+4. Insert the data into the database
+   * Handled in the utils.rows_to_db
+    * First converts data to a csv then inserts it into the database
+    * CSVs are used for fast bulk database insertion
+    
+Notes from Tony:
+This submodule generates the autonomous system numbers registered to
+companies that serve content delivery networks using Hacker Target's API.
+I have found this to be the most reliable and simplest way to get ASNs for a
+company.
+
+Notably, they allow 100 lookups per day for free. Getting all the ASNs for one
+company counts as one lookup.
+
+There are several tools that a quick google search returns, however most of
+them don't return all the ASNs for a company, or some companies don't show up
+in search, or can't search for the company by name. I'll list them here:
+utratools.com
+mxtoolbox.com
+dnschecker.org
+spyse.com
+ipinfo.io
+
+Using the different IRR's APIs is convuluted. They each maintain a different
+one. RIPE's database lookup tool says it can lookup across all the IRRs but
+when I try, I just get errors. Also to get the ASN, you first need to search
+by organisation, then get the organisation id, then perform an inverse search
+for ASNs using that organisation id.
+
+The list of CDNs is in cdns.txt. It's a handpicked list. Sometimes companies
+aren't very tight on branding and register ASNs under a different name.
+
+
+### CDN Whitelist Usage
+* [lib\_bgp\_data](#lib_bgp_data)
+* [CDN Whitelist Submodule](#cdn-whitelist-submodule)
+#### In a Script
+Initializing the CDN_Whitelist class:
+
+
+| Parameter    | Default                             | Description                                                                                                       |
+|--------------|-------------------------------------|-------------------------------------------------------------------------------------------------------------------|
+| name         | ```self.__class__.__name__```     | The purpose of this is to make sure when we clean up paths at the end it doesn't delete files from other parsers. |
+| path         | ```"/tmp/bgp_{}".format(name)```     | Not used                                                                                         |
+| csv_dir      | ```"/dev/shm/bgp_{}".format(name)``` | Path for CSV files, located in RAM                                                                                |
+| stream_level | ```logging.INFO```                        | Logging level for printing                                                                                        |
+| section | ```"bgp"  ```                      | database section to use                                                                                      |
+> Note that any one of the above attributes can be changed or all of them can be changed in any combination
+
+To initialize CDN_Whitelist with default values:
+```python
+from lib_bgp_data import CDN_Whitelist
+parser = CDN_Whitelist()
+```                 
+To initialize CDN_Whitelist with custom path, CSV directory, and logging level and section:
+```python
+from logging import DEBUG
+from lib_bgp_data import CDN_Whitelist
+parser = CDN_Whitelist(path="/my_custom_path",
+                       csv_dir="/my_custom_csv_dir",
+                       stream_level=DEBUG,
+                       section="mydatabasesection")
+```
+To run the CDN_Whitelist with defaults (there are no optional parameters):
+```python
+from lib_bgp_data import CDN_Whitelist
+CDN_Whitelist().parse_roas()
+```
+
+#### From the Command Line
+Depending on the permissions of your system, and whether or not you installed the package with sudo, you might be able to run the CDN_Whitelist with:
+
+```lib_bgp_data --cdn_whitelist```
+
+For debugging:
+```bash
+lib_bgp_data --cdn_whitelist --debug
+```
+or a variety of other possible commands, I've tried to make it fairly idiot proof with the capitalization and such.
+
+The other way you can run it is with:
+```python3 -m lib_bgp_data --cdn_whitelist```
+
+### CDN Whitelist Table Schema
+* [lib\_bgp\_data](#lib_bgp_data)
+* [CDN Whitelist Submodule](#cdn-whitelist-submodule)
+    * This table contains information on the ASNs retrieved from the hackertarget.com
+    * Unlogged tables are used for speed
+    * asn: The ASN of an AS *(bigint)*
+    * cdn: Name of CDN *(varchar)*
+    * Create Table SQL:
+    ```
+	CREATE UNLOGGED TABLE IF NOT EXISTS {self.name} (
+                 cdn varchar (200),
+                 asn bigint
+                 );
+    ```
+### CDN Whitelist Design Choices
+* [lib\_bgp\_data](#lib_bgp_data)
+* [CDN Whitelist Submodule](#cdn-whitelist-submodule)
+    * CSVs are used for fast database bulk insertion
+
 ## API Submodule
    * [lib\_bgp\_data](#lib_bgp_data)
    * [Short Description](#api-short-description)
@@ -1680,6 +1822,7 @@ Status: Development
 * [lib\_bgp\_data](#lib_bgp_data)
 * [Utils](#utils)
 The utils folder contains a utils file that has many useful functions used across multiple files and submodules.
+
 ### Utils Features
 * [lib\_bgp\_data](#lib_bgp_data)
 * [Utils](#utils)
@@ -1822,62 +1965,6 @@ Other convenience funcs:
 
 Again please note: upon connection, it creates the tables. If clear is passed, it will clear them. After the context manager is over it will close the database.
 
-Initializing the Database using db_connection (which should always be used):
-
-
-| Parameter    | Default                             | Description                                                                                                       |
-|--------------|-------------------------------------|-------------------------------------------------------------------------------------------------------------------|
-| table | Database | What gets initialized |
-| logger         | ```Thread_Safe_Logger()```     | Logger used to log information |
-| clear | ```False``` | Clear table upon initialization. Leave for normal db usage | 
-| cursor_factory         | ```RealDictCursor```     | Format for how data is returned                                                                                         |
-> Note that any one of the above attributes can be changed or all of them can be changed in any combination
-
-To initialize Database with default values using db_connection:
-```python
-from lib_bgp_data import Database, db_connection
-with db_connection(Database) as db:
-    pass
-```                 
-To initialize the Database with logger on debug using db_connection:
-```python
-from logging import DEBUG
-from lib_bgp_data import Database, db_connection, Thread_Safe_Logger as Logger
-with db_connection(Database, Logger({"stream_level": DEBUG)) as db:
-    pass
-```
-To initialize the Database with a custom cursor factory other than RealDictCursor and custom logging:
-```python
-from logging import DEBUG
-from psycopg2.extras import NamedTupleCursor
-from lib_bgp_data import Database, db_connection, Thread_Safe_Logger as Logger
-with db_connection(Database,
-                   Logger({"stream_level": DEBUG),
-                   cursor_factory=NamedTupleCursor) as db:
-    pass
-```
-To get data from a query:
-```python
-from lib_bgp_data import Database, db_connection
-with db_connection(Database) as db:
-    data = db.execute("SELECT * FROM my_table WHERE my_val=%s", [1])
-```
-To execute multiple sql queries at once:
-```python
-from lib_bgp_data import Database, db_connection
-with db_connection(Database) as db:
-    sqls = ["SELECT * FROM my_table", "SELECT * FROM my_table2"]
-    data = db.multiprocess_execute(sqls)
-```
-To unhinge/rehinge database (disable writing to disk, then reenable it):
-```python
-from lib_bgp_data import Database, db_connection
-with db_connection(Database) as db:
-    db.unhinge_db()
-    # do intensive queries
-    db.rehinge_db()
-```
-
 ### Database Design Choices
 * [lib\_bgp\_data](#lib_bgp_data)
 * [Database Submodule](#database-submodule)
@@ -1951,8 +2038,19 @@ sudo apt-get install libpq-dev
 ```
 Then install postgres 12 (see [Postgres Installation](#postgres-installation))
 
+
+#### VERY IMPORTANT: You must be root always (both installation and running anything). We purposefully circumvent security measures because that's what they told us to do.
+
+#### IF YOU ARE NOT ROOT, NOTHING WILL WORK
+to become root:
+```sudo -E su```
+
+
+
+
 If you are on a machine that has SELinux, you are going to need to run this in a python environment. On Ubuntu, the steps are as follows
 NOTE: We now use python3.8. Make sure that you are using python 3.8.
+ALSO NOTE: sometimes installing virtualenv will fail, if your default python version is 3.8, that's fine
 ```bash
 sudo apt-get install python3-pip
 sudo python3.8 -m pip3 install virtualenv 
@@ -1962,7 +2060,7 @@ On Redhat the steps can be found here:
 [https://developers.redhat.com/blog/2018/08/13/install-python3-rhel/](https://developers.redhat.com/blog/2018/08/13/install-python3-rhel/)
 NOTE: If you are installing it on an OS other than ubuntu, I do not think the install script will work. Good luck doing it all manually.
 
-Note: if you are using our machine ahlocal, there are some very weird permission errors. Due to SE Linux and the gateway, etc, sudo cannot access your home directory. I have tried using ```export HOME=/root``` and other solutions to no avail. No one seems to be able to figure it out. No one seems to care either, and I have told the higher ups and coding is the priority. To run this I would install it in a top level directory like /ext and install it by using ```sudo su``` and continuing from there. I'm sure this is not completely secure so hopefully this will get fixed in the future but no one seems to know how to do that lol.
+Note: if you are using our machine ahlocal, ahdev, or  one similar, YOU MUST BE ROOT! I've been told that's the way to do it by the higher ups, I know it is not secure. Do ```sudo su``` to become root.
 
 Once you have virtualenv installed, run 
 ```bash
@@ -1971,20 +2069,25 @@ source ./env/bin/activate
 ```
 You now have a python virtual environment. You should still be a super user.
 Then, if you are not installing for development, run:
+
+NOTE: THIS VERSION HAS BEEN OUT OF DATE FOR A WHILE, TO GET LATEST UPDATES INSTALL DEVELOPMENT VERSION
 ```bash
 pip3 install wheel --upgrade
-pip3 install lib_bgp_data --upgrade --force
+pip3 install lib_bgp_data --upgrade
 ```
 This will install the package and all of it's python dependencies.
 
+NOTE: THIS VERSION IS UP TO DATE BUT NOT STABLE, STABLE PACKAGE IS COMING
+
 If you want to install the project for development:
 ```bash
+sudo -E su (Unless you are already root, then skip this step)
 git clone https://github.com/jfuruness/lib_bgp_data.git
 cd lib_bgp_data
 pip3 install wheel --upgrade
 pip3 install -r requirements.txt --upgrade
 python3 setup.py sdist bdist_wheel
-python3 setup.py develop --force
+python3 setup.py develop
 ```
 
 There are lots of other dependencies, but they will be installed automatically the first time they are needed. If not, manual install links are below:
@@ -2002,7 +2105,7 @@ Note that now that you have installed every part of lib_bgp_data, you can test i
 
 ```pip3 install lib_bgp_data --upgrade --force --install-option test```
 
-to test the install. 
+to test the install. NOTE: NO YOU CAN'T. This is out of date, we are still in the process of fixing these tests
 
 To test the development package, cd into the root directory and run pytest.
 
@@ -2224,9 +2327,11 @@ Thanks to all of these blogs, stack overflow posts, etc. for their help in solvi
 * [https://github.com/tqdm/tqdm/issues/484](https://github.com/tqdm/tqdm/issues/484)  
 * [https://stackoverflow.com/a/3160819/8903959](https://stackoverflow.com/a/3160819/8903959)  
 * [https://stackoverflow.com/a/39281387](https://stackoverflow.com/a/39281387)
-* [https://stackoverflow.com/a/1482316](https://stackoverflow.com/a/1482316)https://stackoverflow.com/a/1482316
+* [https://stackoverflow.com/a/1482316](https://stackoverflow.com/a/1482316)
+* https://stackoverflow.com/a/1482316
 * https://stackoverflow.com/a/19640319
-* 
+* https://stackoverflow.com/a/47930319/8903959
+* https://stackoverflow.com/a/5419488/8903959
 
 ## License
    * [lib\_bgp\_data](#lib_bgp_data)
@@ -2239,18 +2344,36 @@ BSD License
 I added this section just so I would have to deal with less overhead with all the new hires that we were getting. To start with you will need to do some things to get started.
 
 1. Email Amir and Jeanette (if you don't know her email just email Amir) and get set up with payroll on ess.uconn.edu. When you submit your hours, you will also need to submit an excel spreadsheet of the times that you worked, and what you did during those hours. You can keep the descriptions short, for example: Aug 8 9am-5pm Worked on Roas parser. Whenever you work please update your hours so that you do not forget. Please remind me and I will get you access to this doc. Also note that all training is billable hours. We expect at least 10 hours a week, but if you have heavy or light weeks due to school everything is very flexible, certainly don't let this get in the way of your grades. Please just let me know in advance if you will be working less and have high priority tasks, and I'll redelegate them elsewhere.
+
 2. Email Professor Laurent with your public ssh key and password, cc Amir and myself, and make sure to ask for access and sudo power on ahlocal and ahdev. To log on to these servers, do:
 ```ssh -A jmf@csi-lab-ssh.engr.uconn.edu```
 ```ssh -A ahlocal```
 ```sudo -E su```
-Once you have cloned this repo (NOTE: DO NOT USE GLOBAL CONFIG!!):
-```git config user.email <youremail>```
-```git config user.name <"Your Name">```
+
+For the first time you log in:
+```bash
+cd /new_hires/
+mkdir <your_name>
+cd <your_name>
+git clone git@github.com:jfuruness/lib_bgp_data.git
+```
+NOTE: do NOT use global configurations
+```bash
+git config user.email <youremail>
+git config user.name <"Your Name">
+```
+
 Also note that you should code and run your programs on these servers. You should not do it on your local machine. Our servers are much faster than your laptop with much more memory, by a margin of more than 10X. Time is money. In addition, when there is a problem it will help me to debug if I can access your code and run it. We've also had problems in the past of code breaking when run on our environments that didn't break on laptops, and it had to be scrapped. I recommend using tmux in conjunction with vim.
+
 3. We will need to get you access to slack. Email me a reminder to do that, and to give you access to Jira. Any questions you may have, slack is the way to reach me.
-4. Once you have access to the Jira board, this is where we will keep track of what we need to do. Every week we have a "stand up" meeting, a short 15 minute meeting where we go over the progress we've made on the tickets we are working on, and any roadblocks we may have. Make sure to have pushed your code to your own branch before this meeting.
+
+4. Once you have access to the Jira board, this is where we will keep track of what we need to do. Every week we have a "stand up" meeting, a short 15 minute meeting where we go over the progress we've made on the tickets we are working on, and any roadblocks we may have. Make sure to have pushed your code to your own branch before this meeting. We will go over what you worked on, what you are working on, what you will work on, and any roadblocks.
+
 5. Read the Goa Rexford paper (ask for access) and I'd read this README for clarity on some things. Message me when this is done so that we can have a one on one discussion of our research and what you will be working on. Don't worry if this stuff is confusing, I did not get anything when I first started, it won't be a problem at all.
-6. That's about it! We are working on some exciting stuff and exciting papers. We usually publish a couple every year, so you are definitely working on some awesome stuff that will change the internet as we know it!
+
+6. Follow the installation instructions. Install the repo you cloned.
+
+7. That's about it! We are working on some exciting stuff and exciting papers. We usually publish every year, so you are definitely working on some awesome stuff that will change the internet as we know it!
 
 ## TODO/Possible Future Improvements
    * [lib\_bgp\_data](#lib_bgp_data)

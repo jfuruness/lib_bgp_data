@@ -5,17 +5,24 @@
 For specifics on each test, see docstrings under each function.
 """
 
-import pytest
-from ..rpki_file import RPKI_File
-from ...utils import utils
-
-
-__authors__ = ["Justin Furuness"]
-__credits__ = ["Justin Furuness"]
+__authors__ = ["Justin Furuness, Tony Zheng"]
+__credits__ = ["Justin Furuness, Tony Zheng"]
 __Lisence__ = "BSD"
 __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
+
+import os
+import gzip
+import socket
+from time import sleep
+
+import pytest
+import requests
+from psutil import process_iter
+from ..rpki_file import RPKI_File
+from ...utils import utils
+
 
 @pytest.mark.rpki_validator
 class Test_RPKI_File:
@@ -28,7 +35,8 @@ class Test_RPKI_File:
         # This table can have very few lines in it, that's totally fine
         # Should have a structure similar to mrt_announcements_table
         # Table should delete everything in it, and fill with data
-        pass
+        self.rpki_file = RPKI_File(test_table)
+        self.gz_path = self.rpki_file._dir + self.rpki_file.hosted_name
 
     @pytest.mark.skip(reason="new hire will work on this")
     def test___init__(self):
@@ -80,8 +88,18 @@ class Test_RPKI_File:
         check that you close the file correctly, and nothing is running
         on port 8000.
         """
+       
+        if not contextmanager:
+            self.rpki_file.spawn_process()
+            self.rpki_file.close()
 
-        pass
+        # check port 8000 is closed
+        for process in process_iter():
+            for connection in process.connections(kind='inet'):
+                assert connection.laddr.port != self.rpki_file.port
+        # check file was deleted
+        assert not os.path.exists(self.gz_path)
+
     
     @pytest.mark.skip(reason="new hire will work on this")
     def test_contextmanager(self):
@@ -90,5 +108,10 @@ class Test_RPKI_File:
         Basically tests spawn_process and close, but does this using the
         with statement, instead of closing by default.
         """
+        
+        with self.rpki_file as rpki_file:
+            self.test_spawn_process(True)
+        self.test_close_process(True)
+
 
         pass

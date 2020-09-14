@@ -87,17 +87,14 @@ class Database(Postgres):
             # Creates tables if do not exist
             self._create_tables()
 
-    def execute(self, sql: str, data: iter = None) -> list:
+    def execute(self, sql: str, data: iter = []) -> list:
         """Executes a query. Returns [] if no results."""
 
-        assert (data is None
-                or isinstance(data, list)
+        assert (isinstance(data, list)
                 or isinstance(data, tuple)), "Data must be list/tuple"
 
-        if data is None:
-            self.cursor.execute(sql)
-        else:
-            self.cursor.execute(sql, data)
+        self.cursor.execute(sql, data)
+
         try:
             return self.cursor.fetchall()
         except psycopg2.ProgrammingError as e:
