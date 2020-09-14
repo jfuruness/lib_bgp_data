@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 
 """
-This submodule generates the autonomous system numbers registered to 
-companies that serve content delivery networks using Hacker Target's API. 
+This submodule generates the autonomous system numbers registered to
+companies that serve content delivery networks using Hacker Target's API.
 I have found this to be the most reliable and simplest way to get ASNs for a
 company.
 
@@ -42,36 +42,39 @@ from requests import Session
 
 from ..base_classes.parser import Parser
 from ..utils import utils
-from .tables import Whitelist_Table
+from .tables import CDN_Whitelist_Table
 
-class Whitelist(Parser):
-    
+
+class CDN_Whitelist(Parser):
+    """Downloads the ASNs of listed CDNs"""
+
     def _run(self):
+        """Downloads ASNs of listed CDNs into the DB"""
+
         whitelist = []
 
         api = 'https://api.hackertarget.com/aslookup/?q='
-        with Session() as session: 
+        with Session() as session:
+            for cdn in self._get_cdns():
+                # Get ASN data
+                response = session.get(api + cdn)
+                # Check for errors
+                response.raise_for_status()
 
-            path_here = os.path.dirname(os.path.realpath(__file__))
-            cdn_list_path = path_here + '/cdns.txt'
-            with open(cdn_list_path, 'r') as f:
-        
-                for cdn in f:
+                # Format data for db insertion
+                for line in response.text.split('\n'):
+                    asn = line.split(',')[0].replace('"', '')
+                    whitelist.append([cdn, asn])
 
-                    # in case there's a blank line
-                    if not cdn.strip():
-                        continue
+                response.close()
 
-                    cdn = cdn.strip()
-                    response = session.get(api + cdn)
-                    response.raise_for_status()
+            utils.rows_to_db(whitelist, self.csv_dir, CDN_Whitelist_Table)
 
-                    for line in response.text.split('\n'):
-                        asn = line.split(',')[0].replace('"', '')
-                        whitelist.append([cdn, asn])
+    def _get_cdns(self):
+        """Gets all CDNs from local file"""
 
-                    response.close()
-        
-            utils.rows_to_db(whitelist, self.csv_dir, Whitelist_Table)
- 
-       
+        path_here = os.path.dirname(os.path.realpath(__file__))
+        cdn_list_path = path_here + '/cdns.txt'
+
+        with open(cdn_list_path, 'r') as f:
+            return [cdn.strip() for cdn in f if cdn.strip()]

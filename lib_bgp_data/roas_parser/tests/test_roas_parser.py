@@ -33,7 +33,7 @@ class Test_ROAs_Parser:
         with Database() as _db:
             _db.execute("DROP TABLE IF EXISTS roas;")
 
-    def OFFtest_parse_roas(self):
+    def test_parse_roas(self):
         """Tests the parse roas function"""
 
         # Parses the roas
@@ -60,7 +60,7 @@ class Test_ROAs_Parser:
             # Makes sure that there is an index
             assert len(indexes) > 0
 
-    def OFFtest_get_json_roas(self):
+    def test_get_json_roas(self):
         """Tests the _get_json_roas function of the roas collector.
 
         This function should return a list of dicts of roas
@@ -79,7 +79,7 @@ class Test_ROAs_Parser:
         # Make sure there are more than 10k ROAs
         assert len(roas) > 10000
 
-    def OFFtest_format_roas(self):
+    def test_format_roas(self):
         """Tests the _format_roas function of the roas collector."""
 
         # Get the list of dicts of ROAs
