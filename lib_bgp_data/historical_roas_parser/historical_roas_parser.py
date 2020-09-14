@@ -18,7 +18,6 @@ from ftplib import FTP, error_perm
 import threading
 from queue import Queue
 import time
-#import concurrent.futures
 from pathos.multiprocessing import ProcessPool
 import subprocess
 import requests
@@ -38,63 +37,46 @@ class Historical_ROAS_Parser(Parser):
            downloading of all the csvs, insert into db if not seen before."""
 
         # this machine has 12 cpus
-        # ProcessPool(nodes=48).map(self.download_csvs)
-
-        # self.download_csvs_test()
+        # ProcessPool(nodes=48).map(self.download_csvs_test, [])
+        
         #csv_paths = self.get_csvs()
 
-        self.get_csvs_parse()
+        # self.get_csvs_parse()
 
-        #paths = []
-        #with FTP('ftp.ripe.net') as ftp:
-        #    ftp.login()
-        #    print(self.get_csvs(ftp, 'rpki'))
-
-           
-        # context manager does ftp.quit()
+        # FTP for paths takes ~ 4 hrs
         #with FTP('ftp.ripe.net') as ftp:
          #   ftp.login()
-          #  with Historical_ROAS_Table() as db:
-           #     self.download_csvs(ftp, 'rpki', db)
-            #    db.create_index()
+          #  print(self.get_csvs(ftp, 'rpki'))
 
-    def download_csv(self, path):
-        with open('temp.csv', 'wb') as f:
-            path[1].retrbinary(f'RETR {path[0]}', f.write())
-            self.reformat_csv(csv_path)
-        with Historical_ROAS_Parsed_Table() as db:
-            db.execute(f"INSERT INTO {db.name}(file) VALUES ({path})")
+        
+        s = requests.Session()
+        headers = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) '\
+                         'AppleWebKit/537.36 (KHTML, like Gecko) '\
+                       'Chrome/75.0.3770.80 Safari/537.36'}
+        s.headers.update(headers)
 
-    """
-    def download_csvs(self, ftp, root, db, paths):
-        for path in ftp.nlst(root):
+        paths = self.get_csvs_parse(s)
 
-            # there are 3 possibilities:i
-            # file is a csv - download and insert into table
-            # file is an archive - ignore
-            # file is a folder - recurse deeper
+        print(f'Done parsing {len(paths)} csvs')
 
-            if 'csv' in path:
-                paths.append(path)
+        # generate the list of all download_paths
+        # mkdir all the dirs starting with parent dir 'rpki'
+        download_paths = []
+        for path in paths:
+            download_path = path[path.index('rpki'):]
+            utils.run_cmds(f'mkdir -p {download_path[:-8]}')
+            download_paths.append(download_path)
+        
+        print(f'There are {len(download_paths)} download_paths')
 
-                with Historical_ROAS_Parsed_Table() as parsed:
-                    sql = f"SELECT * FROM {parsed.name} WHERE file = {path}" 
-                    if not parsed.get_count(sql=sql):
-                    csv = 'temp.csv'
-                    with open(csv, 'wb') as f:
-                        ftp.retrbinary(f'RETR {path}', f.write)
-                        self.reformat_csv(csv, path)
-                        utils.csv_to_db(Historical_ROAS_Table, csv)
-                        self.count += 1
-                        print(self.count, path)
-                        db.delete_duplicates()
+        # Multiprocessingly download all csvs (nodes = 4 x # CPUS)
+        pool = ProcessPool(nodes=48)
+        pool.map(utils.download_file, paths, download_paths)
+        pool.map(self.reformat_csv, download_paths)
+        pool.map(self.db_insert, download_paths)
+        pool.close()
+        pool.join()
 
-            elif 'repo.tar.gz' in path:
-                pass
-
-            else:
-                self.download_csvs(ftp, path, db)
-    """
 
     def download_csvs_test(self):
 
@@ -105,51 +87,81 @@ class Historical_ROAS_Parser(Parser):
         # list the paths to each csv
         output = subprocess.run(f'find {os.getcwd()} -type f',
                             shell=True, capture_output=True)
-        print(output.stdout)
+
+        for csv in output.split('\n'):
+            self.reformat_csv(csv)
+            utils.csv_to_db(Historical_ROAS_Table, csv)
+
+    def reformat_csv(self, csv):
+        """Delete URI (1st) column using cut,
+           delete the first row (column names),
+           delete 'AS', add the date, replace commas with tabs using sed"""
+
+        date = '-'.join(csv[-19:-9].split('/'))
+        cmds = [f'cut -d , -f 1 --complement <{csv} >{csv}.new',
+                f'mv {csv}.new {csv}',
+                f'sed -i "1d" {csv}',
+                f'sed -i "s/AS//g" {csv}',
+                f'sed -i "s/,/\t/g" {csv}',
+                f'sed -i "s/$/\t{date}/" {csv}']
+
+        utils.run_cmds(cmds)
+
+    def db_insert(self, csv):
+        utils.csv_to_db(Historical_ROAS_Table, csv)
+        with Historical_ROAS_Table() as t:
+            t.delete_duplicates()
 
     def wget_try(self):
         check_call('wget -r -np -R "repo.tar.gz" ftp.ripe.net/rpki/', shell=True)
 
     def get_csvs(self, ftp, root, paths=None):
+        """Return list of URLs to all CSVs on the FTP server."""
+
         if paths is None:
             paths = []
-        print(len(paths))
-        if len(paths) == 50:
-            return
+
         for path in ftp.nlst(root):
-            print(path)
             if 'csv' in path:
                 paths.append(path)
             elif 'repo.tar.gz' in path:
                 pass
             else:
                 self.get_csvs(ftp, path, paths)
+
         return paths
 
-    def get_csvs_parse(self, root='https://ftp.ripe.net/rpki'):
+    def get_csvs_parse(self, s, root='https://ftp.ripe.net/rpki', paths=None):
 
-        r = requests.get(root)
+        if paths is None:
+            paths = []
+
+        r = s.get(root)
         r.raise_for_status()
-        s = Soup(r.text, 'lxml')
+        html = Soup(r.text, 'lxml')
         r.close()
 
         # the first link is the parent directory
-        for link in s('a')[1:]:
+        for link in html('a')[1:]:
+
             href = link['href']
+            path = os.path.join(root, href)
+
             if href == '/' or href == 'repo.tar.gz':
                 pass
             elif 'csv' in href:
-                subprocess.run(f'wget {root}', shell=True)
-                print('Downloaded something')
-                # maybe then do the reformating and insertion here
+                paths.append(path)
             else:
                 #print(os.path.join(root, href))
-                self.get_csvs_parse(os.path.join(root, href))
+                self.get_csvs_parse(s, path, paths)
 
+        return paths 
+
+    """
     def reformat_csv(self, csv, path):
-        """Replaces commas with tabs, removes URI column,
-           deletes 'AS' e.g. AS13335 -> 13335,
-           and adds date parsed from the file name."""
+        #Replaces commas with tabs, removes URI column,
+         #  deletes 'AS' e.g. AS13335 -> 13335,
+          # and adds date parsed from the file name.
         with open(csv, 'r+') as f:
             content = f.read().split('\n')[1:]
             # clear the file
@@ -164,5 +176,4 @@ class Historical_ROAS_Parser(Parser):
                     date = '-'.join(path.split('/')[2:5])
                     f.write(f'\t{date}')
                     f.write('\n')
- 
-            
+    """ 
