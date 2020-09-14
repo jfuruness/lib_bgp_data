@@ -17,6 +17,7 @@ Note that this has expanded far beyond what we had originally intended, and this
     * [BGPStream Website Parser](#bgpstream-website-submodule)
     * [RPKI Validator Parser](#rpki-validator-submodule)
     * [What if Analysis Parser](#what-if-analysis-submodule)
+    * [CDN_Whitelist](#cdn-whitelist-submodule)
     * [API Submodule](#api-submodule)
     * [Simulation_Framework](#simulation-framework)
     * [Utils](#utils)
@@ -1593,6 +1594,108 @@ Coming Soon to a theater near you
      what if analysis queries. This is because each AS keeps almost all
      of the announcements sent out over the internet.
     * If an index is not included it is because it was never used
+
+## CDN Whitelist Submodule
+   * [lib\_bgp\_data](#lib_bgp_data)
+   * [Short Description](#cdn-whitelist-short-description)
+   * [Long Description](#cdn-whitelist-long-description)
+   * [Usage](#cdn-whitelist-usage)
+   * [Table Schema](#cdn-whitelist-table-schema)
+   * [Design Choices](#cdn-whitelist-design-choices)
+* [Todo and Possible Future Improvements](#todopossible-future-improvements)
+
+Status: Development
+
+### CDN Whitelist Short description
+* [lib\_bgp\_data](#lib_bgp_data)
+* [CDN Whitelist Submodule](#cdn-whitelist-submodule)
+The purpose of this submodule is to get all ASNs that are owned by CDNs from hackertarget.com, converting this data into csvs and inserting this data into the database.
+### CDN Whitelist Long Description
+* [lib\_bgp\_data](#lib_bgp_data)
+* [CDN Whitelist Submodule](#cdn-whitelist-submodule)
+
+The purpose of this parser is to download ASNs owned by CDNs from hackertarget.com and insert them into a database. This is done through a series of steps.
+
+1. Get list of CDNs from cdns.txt in the submodule
+   * Handled in the _get_cdns function
+2. Make an API call to https://api.hackertarget.com/aslookup/?q=
+   * Handled in the _run function
+   * This will get the json for the ASNs
+3. Format the data for database insertion
+   * Handled in the _run function
+4. Insert the data into the database
+   * Handled in the utils.rows_to_db
+    * First converts data to a csv then inserts it into the database
+    * CSVs are used for fast bulk database insertion
+
+### CDN Whitelist Usage
+* [lib\_bgp\_data](#lib_bgp_data)
+* [CDN Whitelist Submodule](#cdn-whitelist-submodule)
+#### In a Script
+Initializing the CDN_Whitelist class:
+
+
+| Parameter    | Default                             | Description                                                                                                       |
+|--------------|-------------------------------------|-------------------------------------------------------------------------------------------------------------------|
+| name         | ```self.__class__.__name__```     | The purpose of this is to make sure when we clean up paths at the end it doesn't delete files from other parsers. |
+| path         | ```"/tmp/bgp_{}".format(name)```     | Not used                                                                                         |
+| csv_dir      | ```"/dev/shm/bgp_{}".format(name)``` | Path for CSV files, located in RAM                                                                                |
+| stream_level | ```logging.INFO```                        | Logging level for printing                                                                                        |
+| section | ```"bgp"  ```                      | database section to use                                                                                      |
+> Note that any one of the above attributes can be changed or all of them can be changed in any combination
+
+To initialize CDN_Whitelist with default values:
+```python
+from lib_bgp_data import CDN_Whitelist
+parser = CDN_Whitelist()
+```                 
+To initialize CDN_Whitelist with custom path, CSV directory, and logging level and section:
+```python
+from logging import DEBUG
+from lib_bgp_data import CDN_Whitelist
+parser = CDN_Whitelist(path="/my_custom_path",
+                       csv_dir="/my_custom_csv_dir",
+                       stream_level=DEBUG,
+                       section="mydatabasesection")
+```
+To run the CDN_Whitelist with defaults (there are no optional parameters):
+```python
+from lib_bgp_data import CDN_Whitelist
+CDN_Whitelist().parse_roas()
+```
+
+#### From the Command Line
+Depending on the permissions of your system, and whether or not you installed the package with sudo, you might be able to run the CDN_Whitelist with:
+
+```lib_bgp_data --cdn_whitelist```
+
+For debugging:
+```bash
+lib_bgp_data --cdn_whitelist --debug
+```
+or a variety of other possible commands, I've tried to make it fairly idiot proof with the capitalization and such.
+
+The other way you can run it is with:
+```python3 -m lib_bgp_data --cdn_whitelist```
+
+### CDN Whitelist Table Schema
+* [lib\_bgp\_data](#lib_bgp_data)
+* [CDN Whitelist Submodule](#cdn-whitelist-submodule)
+    * This table contains information on the ASNs retrieved from the hackertarget.com
+    * Unlogged tables are used for speed
+    * asn: The ASN of an AS *(bigint)*
+    * cdn: Name of CDN *(varchar)*
+    * Create Table SQL:
+    ```
+	CREATE UNLOGGED TABLE IF NOT EXISTS {self.name} (
+                 cdn varchar (200),
+                 asn bigint
+                 );
+    ```
+### CDN Whitelist Design Choices
+* [lib\_bgp\_data](#lib_bgp_data)
+* [CDN Whitelist Submodule](#cdn-whitelist-submodule)
+    * CSVs are used for fast database bulk insertion
 
 ## API Submodule
    * [lib\_bgp\_data](#lib_bgp_data)
