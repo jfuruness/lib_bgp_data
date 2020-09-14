@@ -22,7 +22,6 @@ import gzip
 import re
 import csv
 import time
-import sys
 import os
 from io import StringIO
 from .tables import Blacklist_Table
@@ -35,7 +34,11 @@ class Blacklist_Parser(Parser):
     __slots__ = []
 
     def _run(self):
-        """Downloads and stores ASNs to table blacklist with columns uce2, uce3, spamhaus, and mit. Due to constraints when executing SQL, columns will be the size of the column with the most data, with None acting as filler forthe smaller columns where that source has no more ASNs on blacklist"""
+        """Downloads and stores ASNs to table blacklist with columns
+        uce2, uce3, spamhaus, and mit. Due to constraints when
+        executing SQL, columns will be the size of the column with
+        the most data, with None acting as filler for the smaller
+        columns where that source has no more ASNs on blacklist"""
         with Blacklist_Table(clear=True) as _blacklist_table:
             # Get and format asns
             raw = self._parse_lists(self._get_blacklists())
@@ -46,6 +49,11 @@ class Blacklist_Parser(Parser):
 ######################
 ###Helper Functions###
 ######################
+    def _check_file(self, f):
+        """Takes a requests file and returns true if it has content,
+        false otherwise.
+        """
+        return (f.ok and f.content) != ''
 
     def _get_blacklists(self):
         """Gets blacklists from UCE level 2, UCE level 3, spamhaus, and the
@@ -53,32 +61,38 @@ class Blacklist_Parser(Parser):
         blacklist of each source into the respective key as a path to file
         """
 
-
-        # TODO: If UCEPROTECT blank, retry DONE
-        # Download sources to file, and then read from file instead of reading from string, makes more sense/readable DONE
-        # Why am I using an IP for UCE's mirrors? The various mirrors of UCE's blacklists are not consistent with one another:
-        # Some will return a gzip, some just ISO-8859 text, and some just don't work. So, to ensure consistency, I'm using IP here.
+        # Download sources to file, and then read from file instead of
+        # reading from string, makes more sense/readable DONE
+        # Why am I using an IP for UCE's mirrors? The various mirrors
+        # of UCE's blacklists are not consistent with one another:
+        # Some will return a gzip, some just ISO-8859 text, and some
+        # just don't work. So, to ensure consistency, I'm using IP.
         # This should return plaintext.
-        sources = {'uce2': 'http://72.13.86.154/rbldnsd-all/dnsbl-2.uceprotect.net.gz', 'uce3': 'http://72.13.86.154/rbldnsd-all/dnsbl-3.uceprotect.net.gz', 'spamhaus': 'https://www.spamhaus.org/drop/asndrop.txt', 'mit': 'https://raw.githubusercontent.com/ctestart/BGP-SerialHijackers/master/prediction_set_with_class.csv'}
+        sources = {'uce2': 'http://72.13.86.154/rbldnsd-all/dnsbl-2.uceprotect.net.gz',
+                   'uce3': 'http://72.13.86.154/rbldnsd-all/dnsbl-3.uceprotect.net.gz',
+                   'spamhaus': 'https://www.spamhaus.org/drop/asndrop.txt',
+                   'mit': 'https://raw.githubusercontent.com/ctestart/BGP-SerialHijackers/master/prediction_set_with_class.csv'}
         output_path = dict()
-        # For each source in the sources dict, GET url, write response to path, and save path
-        # to dict.
+        # For each source in the sources dict, GET url, write response
+        # to path, and save path to dict.
         for source in sources:
             downloaded_file = requests.get(sources[source])
-            # Now we'll check if we got a proper file, if not try 5 more times or until success
-            if not downloaded_file.ok or downloaded_file.content == '':
-                for i in range(0, 5):
-                     # Don't want to spam the page
-                     time.sleep(5)
-                     downloaded_file = requests.get(sources[source])
-                     if downloaded_file.ok and downloaded_file.content != '':
-                         break
-            if not downloaded_file.ok or downloaded_file.content == '':
-                print("Aborting: File from " + source + 
-                      " failed to download properly with status code" + 
-                      str(downloaded_file.status_code) + "and length" + 
+            # Now we'll check if we got a proper file, if not try 5
+            # more times or until success
+            if not self._check_file(downloaded_file):
+                for i in range(5):
+                    # Don't want to spam the page
+                    time.sleep(5)
+                    downloaded_file = requests.get(sources[source])
+                    if self._check_file(downloaded_file):
+                        break
+            if not self._check_file(downloaded_file):
+                raise requests.exceptions.RetryError(
+                      "Aborting: File from " + source +
+                      " failed to download properly with status code" +
+                      str(downloaded_file.status_code) + "and length" +
                       str(len(downloaded_file.content)))
-                sys.exit()
+                raise SystemExit("Aborting")
             _path = f"{self.path}/" + source
             with open(_path, 'w+') as f:
                 f.write(downloaded_file.text)
@@ -98,20 +112,18 @@ class Blacklist_Parser(Parser):
             if source != 'mit':
                 with open(sources[source], 'r') as f:
                     output = f.read()
-                    asns = re.findall(r'AS\d+', output)
-                    for i, asn in enumerate(asns):
-                        asns[i] = asn.replace('AS', '')
+                    asns = re.findall(r'AS(\d+)', output)
                     parsed[source] = set(asns)
-                    
             # If mit csv, use csv utilities to ID malicious ASNs.
-            if source == 'mit':
+            elif source == 'mit':
                 parsed[source] = set()
-                with open(sources[source], newline = '') as csvfile:
+                with open(sources[source], newline='') as csvfile:
                     mit_reader = csv.DictReader(csvfile, delimiter=',')
                     for row in mit_reader:
-                    # Index 54 is HardVotePred: If 1, MIT's classifier has flagged the ASN
-                    # as having a similar behavior to BGP serial hijackers.
-                    # If 0, the ASN was not flagged.
+                        # Column 54 is HardVotePred: If 1, MIT's
+                        # classifier has flagged the ASN
+                        # as having a similar behavior to BGP serial
+                        # hijackers. If 0, the ASN was not flagged.
                         if row['HardVotePred'] == '1':
                             parsed[source].update(set(row['ASN']))
         return parsed
