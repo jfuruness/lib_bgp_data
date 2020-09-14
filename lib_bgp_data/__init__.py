@@ -30,7 +30,7 @@ from .database import Database, Postgres, Generic_Table
 from .rovpp import ROVPP_Simulator, Simulation_Grapher
 #from .forecast import Forecast
 from .cdn_whitelist import CDN_Whitelist
-from .blacklist import Blacklist_Parser
+from .blacklist_parser import Blacklist_Parser
 
 class NotSudo(Exception):
     pass
