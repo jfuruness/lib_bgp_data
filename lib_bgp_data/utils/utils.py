@@ -26,6 +26,7 @@ import time
 
 from bs4 import BeautifulSoup as Soup
 from bz2 import BZ2Decompressor
+import gzip
 from pathos.multiprocessing import ProcessingPool
 import pytz
 import requests
@@ -248,6 +249,11 @@ def unzip_bz2(old_path: str) -> str:
     delete_paths(old_path)
     return new_path
 
+def unzip_gz(path):
+    # https://stackoverflow.com/a/44712152/8903959
+    with gzip.open(path, 'rb') as f_in:
+        with open(path.replace(".gz", ""), 'wb') as f_out:
+            shutil.copyfileobj(f_in, f_out)
 
 def write_csv(rows: list, csv_path: str):
     """Writes rows into csv_path, a tab delimited csv"""
