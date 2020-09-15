@@ -8,8 +8,8 @@ Note that we do NOT test the parse_roas function, because this is
 essentially a database operation and is checked in another file
 """
 
-__author__ = "Justin Furuness"
-__credits__ = ["Justin Furuness"]
+__authors__ = ["Justin Furuness", "Nicholas Shpetner"]
+__credits__ = ["Justin Furuness", "Nicholas Shpetner"]
 __Lisence__ = "BSD"
 __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
@@ -18,6 +18,7 @@ __status__ = "Development"
 import pytest
 
 from ..roas_parser import ROAs_Parser
+from ..roas_parser import ROAs_Collector
 from ...database import Database
 
 @pytest.mark.roas_parser
@@ -97,7 +98,6 @@ class Test_ROAs_Parser:
             # Checks for the max length
             assert formatted_roa[2] == int(roa["maxLength"])
 
-    @pytest.mark.skip(reason="new hires wil work on this:")
     def test_warnings(self):
         """Checks deprecation warnings
 
@@ -105,4 +105,8 @@ class Test_ROAs_Parser:
         deprecation warnings
         """
 
-        pass
+        with pytest.deprecated_call():
+            # Call parse_roas() for its warning
+            self.parser.parse_roas()
+            # Make a temporary ROAs_Parser object to test warning in init
+            temp = ROAs_Collector()

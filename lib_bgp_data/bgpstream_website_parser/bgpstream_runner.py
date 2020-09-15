@@ -40,7 +40,6 @@ from ..utils import utils
 from .bgpstream_website_parser import BGPStream_Website_Parser
 from .tables import Hijacks_Table, Leaks_Table, Outages_Table
 
-
 __author__ = "Tony Zheng"
 __credits__ = ["Tony Zheng"]
 __Lisence__ = "BSD"
@@ -116,7 +115,6 @@ class BGPStream_Website_Runner(Parser):
             # new backup is larger, save as the most up-to-date backup
             if count_tmp > count_prev:
                 check_call(f'mv {tmp_backup} {prev_backup}', shell=True)
-
             # restore live table
             db.execute(f'DROP TABLE {table.name}')
             db.execute(f'CREATE TABLE {table.name} AS TABLE temp')
@@ -136,5 +134,4 @@ class BGPStream_Website_Runner(Parser):
     def pg_cmd(self, cmd: str):
         """executes cmd as postgres user"""
         check_call(f'sudo -i -u postgres {cmd}', shell=True)
-
 

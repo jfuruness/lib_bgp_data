@@ -69,6 +69,7 @@ class ROV_Validity_Table(Generic_Table):
     __slots__ = []
 
     name = "rov_validity"
+    columns = ['origin', 'prefix', 'validity']
 
     def _create_tables(self):
         sql = """CREATE UNLOGGED TABLE IF NOT EXISTS rov_validity (
