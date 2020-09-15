@@ -17,6 +17,7 @@ import logging
 
 from ..database import Generic_Table
 from ..rovpp.tables import Attackers_Table, Victims_Table
+from ..rovpp.enums import Attack_Types, Data_Plane_Conditions
 
 class ROVPP_Extrapolator_Rib_Out_Table(Generic_Table):
     """Class with database functionality.
@@ -27,13 +28,47 @@ class ROVPP_Extrapolator_Rib_Out_Table(Generic_Table):
 
     name = "rovpp_extrapolator_rib_out"
 
-    def fill_table(self):
+    def fill_table(self, attack_type):
         """Creates tables if they do not exist.
 
         Called during initialization of the database class.
         """
 
         logging.debug("Creating rovpp ribs out table")
+
+        sql = f"""CREATE UNLOGGED TABLE {self.name} AS (
+              SELECT exr1.asn, exr1.prefix, exr1.origin, exr1.received_from_asn,
+                     exr1.time, exr1.alternate_as, exr1.opt_flag
+                FROM rovpp_extrapolation_results exr1
+                LEFT JOIN rovpp_extrapolation_results exr2
+                    ON exr1.asn = exr2.asn AND exr1.prefix >> exr2.prefix
+                WHERE exr2.asn IS NULL);"""
+        self.execute(sql)
+
+        # CHANGE LATER
+        attacker = self.execute("""SELECT asn FROM tracked_ases
+                                WHERE attacker=TRUE""")[0]["asn"]
+
+        # Do this to more efficiently keep track of leak info
+        if attack_type == Attack_Types.LEAK:
+            sql = f"""UPDATE {self.name}
+                    SET received_from_asn = 
+                    {Data_Plane_Conditions.HIJACKED.value}
+                    WHERE asn = {attacker};"""
+            self.execute(sql)
+        return    
+
+
+
+
+
+
+
+
+
+        # GET RID OF THIS!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!111
+
+
 
         # Could be written as massive SQL,
         # But this is easier to read and debug
@@ -76,8 +111,10 @@ class ROVPP_Extrapolator_Rib_Out_Table(Generic_Table):
                 SELECT * FROM {more_specific_results_table}
                   UNION
                 SELECT * FROM {only_victim_results_table}) results
-              INNER JOIN attacker_victims av
-                ON av.attacker_prefix = results.prefix OR av.victim_prefix = results.prefix);"""
+              --used to hvae this for super optimized version but no longer needed
+              --INNER JOIN attacker_victims av
+              --  ON av.attacker_prefix = results.prefix OR av.victim_prefix = results.prefix
+                );"""
         self.execute(sql)
 
         # Delete all unnessecary tables

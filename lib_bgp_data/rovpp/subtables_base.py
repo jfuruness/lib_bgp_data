@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 """Contains the base class subtables
-
 Used for splitting the input/output into separate tables
 so that we can get data on different parts of the internet
 """
@@ -43,25 +42,32 @@ class Subtables(Input_Subtables, Output_Subtables):
                 table.connect()
 
     def fill_tables(self):
-        self.possible_attackers = []
+        """Fill the tables with ASes"""
+
         for table in self.tables:
             table.Input_Table.clear_table()
             table.Input_Table.fill_table(self.names)
-            table.ases = {x["asn"]: [] for x in table.Input_Table.get_all()}
-            self.possible_attackers.extend(table.ases.keys() if table.possible_attacker else [])
 
     def close(self):
+        """Close the connections"""
+
         for table in self.tables:
             table.close()
 
     @property
     def names(self):
+        """Returns the names of the tables"""
+
         return [x.table.name for x in self.tables]
 
 class Subtable(Input_Subtable, Output_Subtable):
     """Subtable that we divide results into"""
 
     def __init__(self, Table, percents, possible_attacker=True, policy=None):
+        """Save instance attributes.
+
+        Set possible_attacker to False if this subdivision cannot attack"""
+
         self.table = Table
         self.possible_attacker = possible_attacker
         self.percents = percents

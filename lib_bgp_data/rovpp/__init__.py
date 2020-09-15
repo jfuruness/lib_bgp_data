@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 """This subpackage contains the run simulations over the internet topology
-
 See README for in depth instructions
 """
 
@@ -14,3 +13,4 @@ __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
 from .rovpp_simulator import ROVPP_Simulator
+from .revised_grapher import Simulation_Grapher

@@ -36,7 +36,7 @@ class Test_ROAs_Parser:
         with Database() as _db:
             _db.execute("DROP TABLE IF EXISTS roas;")
 
-    def OFFtest_parse_roas(self):
+    def test_parse_roas(self):
         """Tests the parse roas function"""
 
         # Parses the roas

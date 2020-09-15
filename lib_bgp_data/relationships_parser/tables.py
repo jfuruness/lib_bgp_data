@@ -33,7 +33,7 @@ __credits__ = ["Justin Furuness", "James Breslin"]
 __Lisence__ = "BSD"
 __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
-__status__ = "Development"
+__status__ = "Production"
 
 
 def make_sure_tables_exist(table_classes: list):
@@ -54,7 +54,6 @@ def make_sure_tables_exist(table_classes: list):
         Relationships_Parser().run()
 
 
-
 class Provider_Customers_Table(Generic_Table):
     """Class with database functionality.
 
@@ -63,6 +62,7 @@ class Provider_Customers_Table(Generic_Table):
     __slots__ = []
 
     name = "provider_customers"
+    columns = ["provider_as", "customer_as"]
 
     def _create_tables(self):
         """Creates tables if they do not exist.
@@ -75,6 +75,7 @@ class Provider_Customers_Table(Generic_Table):
               );"""
         self.execute(sql)
 
+
 class Peers_Table(Generic_Table):
     """Class with database functionality.
 
@@ -83,6 +84,7 @@ class Peers_Table(Generic_Table):
     __slots__ = []
 
     name = "peers"
+    columns = ["peer_as_1", "peer_as_2"]
 
     def _create_tables(self):
         """Creates tables if they do not exist.
@@ -94,6 +96,7 @@ class Peers_Table(Generic_Table):
               peer_as_2 bigint
               );"""
         self.execute(sql)
+
 
 class ASes_Table(Generic_Table):
     """Class with database functionality.
@@ -110,12 +113,10 @@ class ASes_Table(Generic_Table):
               as_types BOOLEAN[]);"""
         self.execute(sql)
 
-
     def fill_table(self):
         """Populates the ases table with data from the tables
         peers and provider_customers.
         """
-
 
         make_sure_tables_exist([Peers_Table, Provider_Customers_Table])
 

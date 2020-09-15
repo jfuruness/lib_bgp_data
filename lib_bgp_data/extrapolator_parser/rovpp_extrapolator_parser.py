@@ -18,6 +18,9 @@ __status__ = "Development"
 import logging
 from multiprocessing import cpu_count
 import os
+import sys
+
+import psycopg2
 
 from .extrapolator_parser import Extrapolator_Parser
 from ..rovpp.tables import Attackers_Table, Victims_Table
@@ -37,10 +40,9 @@ class ROVPP_Extrapolator_Parser(Extrapolator_Parser):
 
     __slots__ = []
 
-#    branch = "ribs"
-    branch = "merge_ribs_newv3"
+    branch = "aspa"
 
-    def _run(self, table_names, exr_bash=None):
+    def _run(self, table_names, exr_bash=None, attack_type=None):
         """Runs the bgp-extrapolator and verifies input.
 
         Installs if necessary. See README for in depth instructions.
@@ -52,17 +54,31 @@ class ROVPP_Extrapolator_Parser(Extrapolator_Parser):
         logging.debug("About to run the rovpp extrapolator")
 
         # Should be moved to exr
-        with Database() as db:
-            sql = "SELECT MAX(list_index) AS max_list_index FROM attackers"
-            max_index = db.execute(sql)[0]["max_list_index"]
+#        with Database() as db:
+#            sql = "SELECT MAX(list_index) AS max_list_index FROM attackers"
+#            max_index = db.execute(sql)[0]["max_list_index"]
 
         bash_args = f"{self.install_location} -v 1"
         for table_name in table_names:
             bash_args += f" -t {table_name}"
-        bash_args += f" -s {max_index + 1}"  # +1 cause the exr devs r off by 1
+        with Database() as db:
+            db.execute("DROP TABLE IF EXISTS rovpp_extrapolation_results")
+#        bash_args += f" -s {max_index + 1}"  # +1 cause the exr devs r off by 1
         logging.debug(bash_args)
         # Exr bash here for dev only
-        utils.run_cmds(exr_bash if exr_bash else bash_args)
+        try:
+            utils.run_cmds(exr_bash if exr_bash else bash_args)
+        except Exception as e:
+            # Must die this hard so our sim fails
+            print(f"Extrapolator failed to populate rovpp_extrapolation_results: {e}")
+            sys.exit(1)
         # Gets rib out. Basically returns only more specific prefixes
         with ROVPP_Extrapolator_Rib_Out_Table(clear=True) as _db:
-            _db.fill_table()
+            try:
+                assert _db.get_count("SELECT COUNT(*) FROM rovpp_extrapolation_results") > 0
+            except (psycopg2.errors.UndefinedTable, AssertionError):
+                print("Extrapolator failed to populate rovpp_extrapolation_results")
+                sys.exit(2)
+                raise Exception("Extrapolator failed to populate rovpp_extrapolation_results")
+            logging.info("Extrapolation complete, writing ribs out tables")
+            _db.fill_table(attack_type)

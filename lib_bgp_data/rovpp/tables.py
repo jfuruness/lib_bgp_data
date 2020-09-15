@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 """This module contains ROVPP_ASes_Table and Subprefix_Hijack_Temp_Table
-
 These two classes inherits from the Database class. The Database class
 does allow for the conection to a database upon initialization. Also
 upon initialization the _create_tables function is called to initialize
@@ -14,7 +13,6 @@ used when combining with the roas table, which does a parallel seq_scan,
 thus any indexes are not used since they are not efficient. Each table
 follows the table name followed by a _Table since it inherits from the
 database class.
-
 Possible future improvements:
     -Add test cases
 """
@@ -26,13 +24,9 @@ __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
-import ipaddress
 import logging
 from random import sample
 
-from tqdm import tqdm
-
-from .attack import Attack
 from .enums import Non_Default_Policies, Policies, Attack_Types
 from .enums import AS_Types, Data_Plane_Conditions as DP_Conds
 from .enums import Control_Plane_Conditions as CP_Conds
@@ -42,85 +36,41 @@ from ..mrt_parser.tables import MRT_Announcements_Table
 from ..relationships_parser.tables import AS_Connectivity_Table, ASes_Table
 # Done this way to avoid circular imports
 
-class Tests_Table(Generic_Table):
-    name = "tests"
+class Leak_Related_Announcements_Table(MRT_Announcements_Table):
+    name = "leak_related_announcements"
 
-    def fill_table(self, policies, attack_types, possible_attackers):
-        """Creates a table of all prefix and policy adoption pairs
-
-        The list index goes up by 1 every time
-        The policy index goes up to the max policy then back to 0
-        """
-
-        atk_dict = {k: [] for k in attack_types}
-
-        assert len(atk_dict) <= 3, "Must mod this func for more attacks"
-
-        for i in range(0, 254, len(atk_dict)):
-            for n in range(254):
-                # Cameron wrote prefix generation code
-                # Should generate prefixes that do not overlap with each other
-
-                # Subprefix attacks
-                if Attack_Types.SUBPREFIX_HIJACK in attack_types:
-                    sub_atk_pref = ipaddress.ip_network(((i<<24) + (n<<16), 24))
-                    sub_vic_pref = ipaddress.ip_network(((i<<24) + (n<<16), 16))
-                    subprefix_atk = Attack(sub_atk_pref, sub_vic_pref)
-                    atk_dict[Attack_Types.SUBPREFIX_HIJACK].append(subprefix_atk)
-                # Prefix attacks
-                if Attack_Types.PREFIX_HIJACK in attack_types:
-                    pref_atk = ipaddress.ip_network((((i+1)<<24) + (n<<16), 24))
-                    pref_vic = ipaddress.ip_network((((i+1)<<24) + (n<<16), 24))
-                    prefix_attack = Attack(pref_atk, pref_vic)
-                    atk_dict[Attack_Types.PREFIX_HIJACK].append(prefix_attack)
-                # Non compete attacks
-                if Attack_Types.UNANNOUNCED_PREFIX_HIJACK in attack_types:
-                    non_comp_pref = ipaddress.ip_network((((i+2)<<24) + (n<<16), 16))
-                    non_comp = Attack(non_comp_pref)
-                    atk_dict[Attack_Types.UNANNOUNCED_PREFIX_HIJACK].append(non_comp)
-
-        num_attacks = len(atk_dict[Attack_Types.SUBPREFIX_HIJACK])
-
-        # Must create attacker victim pairs here equal to number of attacks - len policies
-        attacker_victim_pairs = [sample(possible_attackers, k=2)
-                                 for x in range(num_attacks * len(atk_dict))]
-
-
-        with tqdm(total=num_attacks * len(atk_dict), desc="Generating attacks") as pbar:
-
-            # There is prob a way to do it in a for loop but whatever
-            list_index = 0
-            attack_index = 0
-            while attack_index < num_attacks - len(policies):
-                for attack_type in atk_dict:
-                    attacker_victim_pair = attacker_victim_pairs[list_index]
-                    for i, policy_value in enumerate([x.value for x in policies]):
-                        attack = atk_dict[attack_type][attack_index + i]
-                        attack.add_info(list_index, policy_value, attack_type, attacker_victim_pair)
-                        pbar.update()
-                    list_index += 1
-                attack_index += len(policies)
-
-
-class Simulation_Announcements_Table(Generic_Table):
-    def _create_tables(self):
-        sql = f"""CREATE UNLOGGED TABLE IF NOT EXISTS {self.name} (
-                 prefix cidr,
-                 as_path bigint ARRAY,
-                 origin bigint,
-                 list_index integer,
-                 policy_val smallint,
-                 attack_type smallint,
-                 percent_iter integer
-                 );"""
+    def fill_table(self):
+        sql = f"""CREATE UNLOGGED TABLE IF NOT EXISTS {self.name} AS (
+              SELECT * FROM mrt_announcements m
+              INNER JOIN leaks l
+                ON m.prefix <<= l.leaked_prefix 
+              );"""
         self.execute(sql)
-        
 
-class Attackers_Table(Simulation_Announcements_Table):
+class Attackers_Table(MRT_Announcements_Table):
+    """Attackers table that contains the attackers announcements"""
+
     name = "attackers"
 
-class Victims_Table(Simulation_Announcements_Table):
+class Victims_Table(MRT_Announcements_Table):
+    """Victims table that contains the victims announcements"""
+
     name = "victims"
+
+class Simulation_Announcements_Table(MRT_Announcements_Table):
+    name = "simulation_announcements"
+
+class Tracked_ASes_Table(Generic_Table):
+    name = "tracked_ases"
+
+    columns = ["asn", "attacker", "victim"]
+
+    def _create_tables(self):
+        sql = f"""CREATE UNLOGGED TABLE IF NOT EXISTS {self.name} (
+                asn bigint,
+                attacker boolean,
+                victim boolean);"""
+        self.execute(sql)
 
 # Fix this later
 from ..extrapolator_parser.tables import ROVPP_Extrapolator_Rib_Out_Table
@@ -129,18 +79,75 @@ from ..extrapolator_parser.tables import ROVPP_Extrapolator_Rib_Out_Table
 ### Subtables ###
 #################
 
+class ASes_Subtable(Generic_Table):
+    """Ases subtable (generic type of subtable)"""
+
+    def set_adopting_ases(self, percent, attacker, deterministic):
+        """Sets ases to impliment"""
+
+        ases = set([x["asn"] for x in self.get_all()])
+        # The attacker cannot adopt
+        if attacker in ases:
+            ases.remove(attacker)
+        # Number of adopting ases
+        ases_to_set = len(ases) * percent // 100
+
+        # I don't agree with this way of coding it, but this came from up above
+        if percent == 0:
+            if "edge" in self.name:
+                ases_to_set = 1
+            else:
+                ases_to_set = 0
+        if percent == 100:
+            ases_to_set -= 1
+
+
+        if percent > 0:
+            assert ases_to_set > 0, f"{percent}|{len(ases)}|{self.name}"
+        if ases_to_set == 0:
+            return
+
+        # Using seeded randomness
+        # NOTE: this should be changed. SQL can use a seed.
+        # Updates ases to be adopting
+        if deterministic:
+            ases = list(ases)
+            ases.sort()
+            adopting_ases = sample(ases, k=ases_to_set)
+            percent_s_str = " OR asn = ".join("%s" for AS in adopting_ases)
+            sql = """UPDATE {self.name} SET impliment = TRUE
+                  WHERE asn = {percent_s_str}"""
+            self.execute(sql, adopting_ases)
+        else:
+            sql = """UPDATE {0} SET impliment = TRUE
+                    FROM (SELECT * FROM {0}
+                             WHERE {0}.asn != {1}
+                             ORDER BY RANDOM() LIMIT {2}
+                             ) b
+                   WHERE b.asn = {0}.asn
+                   ;""".format(self.name, attacker, ases_to_set)
+            self.execute(sql)
+
+    def change_routing_policies(self, policy):
+        """Change the adopting ases routing policies"""
+
+        sql = f"""UPDATE {self.name} SET as_type = {policy.value}
+                 WHERE impliment = TRUE;"""
+        self.execute(sql)
+
 class Subtable_Rib_Out(Generic_Table):
+    """The rib out table for whatever subtable. Rib out from the extrapolator"""
 
     def fill_rib_out_table(self):
         sql = f"""CREATE UNLOGGED TABLE IF NOT EXISTS {self.name} AS (
               SELECT a.asn, a.prefix, a.origin, a.received_from_asn,
-                b.as_type, b.adopting
+                b.as_type, b.impliment
                 FROM {ROVPP_Extrapolator_Rib_Out_Table.name} a
               INNER JOIN {self.input_name} b
                 ON a.asn = b.asn);"""
         self.execute(sql)
 
-class Top_100_ASes_Table(ASes_Table):
+class Top_100_ASes_Table(ASes_Subtable):
     """Class with database functionality.
     In depth explanation at the top of the file."""
 
@@ -154,22 +161,28 @@ class Top_100_ASes_Table(ASes_Table):
 
     def fill_table(self, *args):
 
-        ases = [3356, 1299, 174, 2914, 3257, 6762, 6939, 6453, 3491, 6461,
-                1273, 3549, 9002, 5511, 12956, 4637, 7473, 209, 12389, 701,
-                3320, 7018, 7922, 20485, 3216, 9498, 31133, 20764, 6830, 1239,
-                52320, 16735, 2828, 15412, 8359, 286, 58453, 28917, 262589,
-                10429, 4809, 7738, 4755, 41095, 37468, 33891, 43531, 4766,
-                11537, 8220, 31500, 4826, 18881, 7843, 29076, 4230, 46887,
-                34800, 62663, 8167, 9304, 7029, 5588, 267613, 3303, 11164,
-                20804, 8218, 5617, 4134, 1221, 7474, 13786, 22773, 9049, 28329,
-                12741, 61832, 28598, 132602, 3326, 22356, 2516, 7545, 26615,
-                6663, 2497, 577, 23520, 55410, 9318, 3786, 20115, 3267, 3223,
-                20562, 6128, 3741, 9505, 50607]
+        ases = ['3356', '1299', '174', '3257', '2914', '6762', '6939',
+                '6453', '3491', '6461', '1273', '3549', '9002', '5511',
+                '4637', '12956', '7473', '209', '12389', '3320', '701',
+                '7018', '7922', '20485', '3216', '16735', '9498', '31133',
+                '6830', '20764', '2828', '52320', '15412', '1239', '8359',
+                '286', '43531', '58453', '10429', '262589', '28917', '37468',
+                '4809', '4755', '7738', '33891', '31500', '41095', '4766',
+                '8220', '4826', '11537', '7843', '18881', '29076',
+                '34800', '46887', '4230', '5483', '20804', '4134',
+                '8167', '267613', '7029', '9304', '5588', '26615',
+                '11164', '3303', '3267', '8218', '9049', '9505', '28598',
+                '6663', '1221', '22773', '7474', '132602', '61832', '28329',
+                '12741', '13786', '3326', '9318', '2516', '7545', '22356',
+                '2497', '577', '50607', '3786', '55410', '20115', '23520',
+                '20562', '6128', '3223', '5617', '3255']
 
         ases_str = " OR asn = ".join([str(x) for x in ases])
         # TODO deadlines so fuck it
         sql = f"""CREATE UNLOGGED TABLE IF NOT EXISTS {self.name} AS (
-                 SELECT a.asn, ARRAY[]::BOOLEAN[] AS as_types
+                 SELECT a.asn,
+                    {Policies.DEFAULT.value} AS as_type,
+                    FALSE as impliment
                 FROM {ASes_Table.name} a WHERE asn = {ases_str}
                  );"""              
         self.cursor.execute(sql)
@@ -179,8 +192,8 @@ class Top_100_ASes_Rib_Out_Table(Top_100_ASes_Table, Subtable_Rib_Out):
     name = "top_100_ases_rib_out"
 
 
-class Edge_ASes_Table(ASes_Table):
-    """Class with database functionality.
+class Edge_ASes_Table(ASes_Subtable):
+    """Subtable that consists of only edge ases
     In depth explanation at the top of the file."""
 
     __slots__ = []
@@ -193,7 +206,9 @@ class Edge_ASes_Table(ASes_Table):
 
     def fill_table(self, *args):
         sql = f"""CREATE UNLOGGED TABLE IF NOT EXISTS edge_ases AS (
-                     SELECT r.asn, ARRAY[]::BOOLEAN[] AS as_types
+                     SELECT r.asn,
+                        {Policies.DEFAULT.value} AS as_type,
+                        FALSE as impliment
                          FROM {ASes_Table.name} r
                          INNER JOIN {AS_Connectivity_Table.name} c
                             ON c.asn = r.asn
@@ -205,7 +220,7 @@ class Edge_ASes_Rib_Out_Table(Edge_ASes_Table, Subtable_Rib_Out):
     name = "edge_ases_rib_out"
 
 
-class Etc_ASes_Table(ASes_Table):
+class Etc_ASes_Table(ASes_Subtable):
     """Class with database functionality.
     In depth explanation at the top of the file."""
 
@@ -219,7 +234,9 @@ class Etc_ASes_Table(ASes_Table):
 
     def fill_table(self, table_names):
         sql = f"""CREATE UNLOGGED TABLE IF NOT EXISTS {self.name} AS (
-                 SELECT ra.asn, ARRAY[]::BOOLEAN[] AS as_types
+                 SELECT ra.asn,
+                    {Policies.DEFAULT.value} AS as_type,
+                    FALSE as impliment
                      FROM {ASes_Table.name} ra"""
         table_names = [x for x in table_names if x != self.name]
         if len(table_names) > 0:
@@ -238,9 +255,8 @@ class Etc_ASes_Table(ASes_Table):
 class Etc_ASes_Rib_Out_Table(Etc_ASes_Table, Subtable_Rib_Out):
     name = "etc_ases_rib_out"
 
-class Simulation_Results_Table(Database):
+class Simulation_Results_Table(Generic_Table):
     """Class with database functionality.
-
     In depth explanation at the top of the file."""
 
     __slots__ = ['attacker_asn', 'attacker_prefix', 'victim_asn',
@@ -256,12 +272,11 @@ class Simulation_Results_Table(Database):
 
     def _create_tables(self):
         """Creates tables if they do not exist.
-
         Called during initialization of the database class.
         """
 
-        sql = """CREATE UNLOGGED TABLE IF NOT EXISTS
-                 simulation_results (
+        sql = f"""CREATE UNLOGGED TABLE IF NOT EXISTS
+                 {self.name} (
                  attack_type text,
                  subtable_name text,
                  attacker_asn bigint,
@@ -270,6 +285,7 @@ class Simulation_Results_Table(Database):
                  victim_prefix CIDR,
                  adopt_pol text,
                  percent bigint,
+                 percent_iter bigint,
                  trace_hijacked_collateral bigint,
                  trace_nothijacked_collateral bigint,
                  trace_blackholed_collateral bigint,
@@ -285,7 +301,9 @@ class Simulation_Results_Table(Database):
                  c_plane_has_attacker_prefix_origin_adopting bigint,
                  c_plane_has_only_victim_prefix_origin_adopting bigint,
                  c_plane_has_bhole_adopting bigint,
-                 no_rib_adopting bigint
+                 no_rib_adopting bigint,
+                 visible_hijacks_adopting bigint,
+                 visible_hijacks_collateral bigint
                  );"""
         self.execute(sql)
 
@@ -295,8 +313,10 @@ class Simulation_Results_Table(Database):
                hijack_type,
                adopt_pol_name,
                percent,
+               percent_iter,
                traceback_data,
-               c_plane_data):
+               c_plane_data,
+               visible_hijack_data):
 
         sql = f"""INSERT INTO {self.name}(
                  attack_type,
@@ -307,6 +327,7 @@ class Simulation_Results_Table(Database):
                  victim_prefix,
                  adopt_pol,
                  percent,
+                 percent_iter,
                  trace_hijacked_collateral,
                  trace_nothijacked_collateral,
                  trace_blackholed_collateral,
@@ -322,20 +343,22 @@ class Simulation_Results_Table(Database):
                  c_plane_has_attacker_prefix_origin_adopting,
                  c_plane_has_only_victim_prefix_origin_adopting,
                  c_plane_has_bhole_adopting,
-                 no_rib_adopting)
+                 no_rib_adopting,
+                 visible_hijacks_adopting,
+                 visible_hijacks_collateral)
               VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
                       %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
-                      %s, %s, %s, %s);"""
+                      %s, %s, %s, %s, %s, %s, %s);"""
 
         # Also write out cp = control plane dp = dataplane everywhere
         # Had to do it, things where so insanely long unreadable
 
         # Splits dicts up for readability
-        traceback_non_adopting = {k: type_dict[AS_Types.NON_ADOPTING.value]
+        traceback_non_adopting = {k: type_dict[AS_Types.COLLATERAL.value]
                                   for k, type_dict in traceback_data.items()}
         traceback_adopting = {k: type_dict[AS_Types.ADOPTING.value]
                               for k, type_dict in traceback_data.items()}
-        cp_non_adopting = {k: type_dict[AS_Types.NON_ADOPTING.value]
+        cp_non_adopting = {k: type_dict[AS_Types.COLLATERAL.value]
                            for k, type_dict in c_plane_data.items()}
         cp_adopting = {k: type_dict[AS_Types.ADOPTING.value]
                        for k, type_dict in c_plane_data.items()}
@@ -347,7 +370,6 @@ class Simulation_Results_Table(Database):
         total_traceback_adopting = sum(traceback_adopting.values())
         total_traceback_adopting += cp_adopting[CP_Conds.NO_RIB.value]
 
-
         test_info = [hijack_type.value,
                      subtable_name,
                      hijack.attacker_asn,
@@ -355,9 +377,10 @@ class Simulation_Results_Table(Database):
                      hijack.victim_asn,
                      hijack.victim_prefix,
                      Non_Default_Policies(adopt_pol_name).name,
-                     percent]
+                     percent,
+                     percent_iter]
 
-        traceback_info = [
+        trace_info = [
             traceback_non_adopting[DP_Conds.HIJACKED.value],
             traceback_non_adopting[DP_Conds.NOTHIJACKED.value],
             traceback_non_adopting[DP_Conds.BHOLED.value],
@@ -368,7 +391,7 @@ class Simulation_Results_Table(Database):
             traceback_adopting[DP_Conds.BHOLED.value],
             total_traceback_adopting]
 
-        control_plane_info = [
+        cplane_info = [
             cp_non_adopting[CP_Conds.RECEIVED_ATTACKER_PREFIX_ORIGIN.value],
             cp_non_adopting[CP_Conds.RECEIVED_ONLY_VICTIM_PREFIX_ORIGIN.value],
             cp_non_adopting[CP_Conds.RECEIVED_BHOLE.value],
@@ -379,4 +402,110 @@ class Simulation_Results_Table(Database):
             cp_adopting[CP_Conds.RECEIVED_BHOLE.value],
             cp_adopting[CP_Conds.NO_RIB.value]]
 
-        self.execute(sql, test_info + traceback_info + control_plane_info)
+        v_hjack_info = [visible_hijack_data[x] for x in 
+                               [AS_Types.ADOPTING, AS_Types.COLLATERAL]]
+
+        self.execute(sql, test_info + trace_info + cplane_info + v_hjack_info)
+
+class Simulation_Results_Agg_Table(Generic_Table):
+    """Table used to aggregate the results for graphing"""
+
+    name = "simulation_results_agg"
+
+    def fill_table(self):
+        sql = f""" 
+        CREATE UNLOGGED TABLE {self.name} AS (
+            SELECT
+        
+                attack_type, subtable_name, adopt_pol, percent,
+        
+                --adopting traceback
+                trace_hijacked_adopting::decimal / trace_total_adopting::decimal AS trace_hijacked_adopting,
+                (trace_blackholed_adopting::decimal + no_rib_adopting::decimal)::decimal / trace_total_adopting::decimal AS trace_disconnected_adopting,
+                trace_nothijacked_adopting::decimal / trace_total_adopting::decimal AS trace_connected_adopting,
+        
+                --collateral traceback
+                trace_hijacked_collateral::decimal / trace_total_collateral::decimal AS trace_hijacked_collateral,
+                (trace_blackholed_collateral::decimal + no_rib_collateral::decimal)::decimal / trace_total_collateral::decimal AS trace_disconnected_collateral,
+                trace_nothijacked_collateral::decimal / trace_total_collateral::decimal AS trace_connected_collateral,
+        
+                --adopting control plane
+                c_plane_has_attacker_prefix_origin_adopting::decimal / trace_total_adopting::decimal AS c_plane_hijacked_adopting,
+                (c_plane_has_bhole_adopting::decimal + no_rib_adopting::decimal)::decimal / trace_total_adopting::decimal AS c_plane_disconnected_adopting,
+                c_plane_has_only_victim_prefix_origin_adopting::decimal / trace_total_adopting::decimal AS c_plane_connected_adopting,
+        
+                --collateral control plane
+                c_plane_has_attacker_prefix_origin_collateral::decimal / trace_total_collateral::decimal AS c_plane_hijacked_collateral,
+                (c_plane_has_bhole_collateral::decimal + no_rib_collateral::decimal)::decimal / trace_total_collateral::decimal AS c_plane_disconnected_collateral,
+                c_plane_has_only_victim_prefix_origin_collateral::decimal / trace_total_collateral::decimal AS c_plane_connected_collateral,
+        
+                --adopting hidden hijacks
+                visible_hijacks_adopting::decimal / trace_total_adopting::decimal AS visible_hijacks_adopting,
+                (trace_hijacked_adopting::decimal - visible_hijacks_adopting::decimal)::decimal / trace_total_adopting::decimal AS hidden_hijacks_adopting,
+        
+                --collateral hidden hijacks
+                visible_hijacks_collateral::decimal / trace_total_collateral::decimal AS visible_hijacks_collateral,
+                (trace_hijacked_collateral::decimal - visible_hijacks_collateral::decimal)::decimal / trace_total_collateral::decimal AS hidden_hijacks_collateral
+        
+            FROM {Simulation_Results_Table.name}
+            WHERE trace_total_adopting > 0 AND trace_total_collateral > 0
+        );"""
+        self.execute(sql) 
+
+class Simulation_Results_Avg_Table(Generic_Table):
+    """Table used to get the confidence intervals for graphing"""
+
+    name = "simulation_results_avg"
+
+    def fill_table(self):
+        sql = f"""
+        CREATE UNLOGGED TABLE {self.name} AS (
+            SELECT
+                attack_type, subtable_name, adopt_pol, percent,
+        
+                --adopting traceback
+                AVG(trace_hijacked_adopting) AS trace_hijacked_adopting,
+                (1.96 * STDDEV(trace_hijacked_adopting))::decimal / SQRT(COUNT(*))::decimal AS trace_hijacked_adopting_confidence,
+                AVG(trace_disconnected_adopting) AS trace_disconnected_adopting,
+                (1.96 * STDDEV(trace_disconnected_adopting))::decimal / SQRT(COUNT(*))::decimal AS trace_disconnected_adopting_confidence,
+                AVG(trace_connected_adopting) AS trace_connected_adopting,
+                (1.96 * STDDEV(trace_connected_adopting))::decimal / SQRT(COUNT(*))::decimal AS trace_connected_adopting_confidence,
+                --collateral traceback
+                AVG(trace_hijacked_collateral) AS trace_hijacked_collateral,
+                (1.96 * STDDEV(trace_hijacked_collateral))::decimal / SQRT(COUNT(*))::decimal AS trace_hijacked_collateral_confidence,
+                AVG(trace_disconnected_collateral) AS trace_disconnected_collateral,
+                (1.96 * STDDEV(trace_disconnected_collateral))::decimal / SQRT(COUNT(*))::decimal AS trace_disconnected_collateral_confidence,
+                AVG(trace_connected_collateral) AS trace_connected_collateral,
+                (1.96 * STDDEV(trace_connected_collateral))::decimal / SQRT(COUNT(*))::decimal AS trace_connected_collateral_confidence,
+                --adopting control plane
+                AVG(c_plane_hijacked_adopting) AS c_plane_hijacked_adopting,
+                (1.96 * STDDEV(c_plane_hijacked_adopting))::decimal / SQRT(COUNT(*))::decimal AS c_plane_hijacked_adopting_confidence,
+                AVG(c_plane_disconnected_adopting) AS c_plane_disconnected_adopting,
+                (1.96 * STDDEV(c_plane_disconnected_adopting))::decimal / SQRT(COUNT(*))::decimal AS c_plane_disconnected_adopting_confidence,
+                AVG(c_plane_connected_adopting) AS c_plane_connected_adopting,
+                (1.96 * STDDEV(c_plane_connected_adopting))::decimal / SQRT(COUNT(*))::decimal AS c_plane_connected_adopting_confidence,
+                --collateral control plane
+                AVG(c_plane_hijacked_collateral) AS c_plane_hijacked_collateral,
+                (1.96 * STDDEV(c_plane_hijacked_collateral))::decimal / SQRT(COUNT(*))::decimal AS c_plane_hijacked_collateral_confidence,
+                AVG(c_plane_disconnected_collateral) AS c_plane_disconnected_collateral,
+                (1.96 * STDDEV(c_plane_disconnected_collateral))::decimal / SQRT(COUNT(*))::decimal AS c_plane_disconnected_collateral_confidence,
+                AVG(c_plane_connected_collateral) AS c_plane_connected_collateral,
+                (1.96 * STDDEV(c_plane_connected_collateral))::decimal / SQRT(COUNT(*))::decimal AS c_plane_connected_collateral_confidence,
+                --adopting hidden hijacks
+                AVG(visible_hijacks_adopting) AS visible_hijacks_adopting,
+                (1.96 * STDDEV(visible_hijacks_adopting))::decimal / SQRT(COUNT(*))::decimal AS visible_hijacks_adopting_confidence,
+                AVG(hidden_hijacks_adopting) AS hidden_hijacks_adopting,
+                (1.96 * STDDEV(hidden_hijacks_adopting))::decimal / SQRT(COUNT(*))::decimal AS hidden_hijacks_adopting_confidence,
+                --collateral hidden hijacks
+                AVG(visible_hijacks_collateral) AS visible_hijacks_collateral,
+                (1.96 * STDDEV(visible_hijacks_collateral))::decimal / SQRT(COUNT(*))::decimal AS visible_hijacks_collateral_confidence,
+                AVG(hidden_hijacks_collateral) AS hidden_hijacks_collateral,
+                (1.96 * STDDEV(hidden_hijacks_collateral))::decimal / SQRT(COUNT(*))::decimal AS hidden_hijacks_collateral_confidence
+            FROM {Simulation_Results_Agg_Table.name}
+        GROUP BY
+            attack_type,
+            subtable_name,
+            adopt_pol,
+            percent
+        );"""
+        self.execute(sql) 

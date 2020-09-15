@@ -17,9 +17,7 @@ from .enums import Policies
 
 class Multiline_TQDM:
     """Class that allows for larger descriptions using multiline tqdm
-
     Note that this is specifically for this simulator
-
     See https://github.com/tqdm/tqdm/issues/630#issuecomment-469085742
     """
 
@@ -45,6 +43,8 @@ class Multiline_TQDM:
             pbar.update()
 
     def update_extrapolator(self):
+        """Sets the extrapolator to no longer be running"""
+
         self.set_desc(self.scenario,
                       self.adopt_pol,
                       self.percent,
@@ -91,7 +91,7 @@ class Multiline_TQDM:
         # Descriptions
         descs = [f"Scenario: {scenario.value if scenario else ''}",
                  f"Adopt Policy: {adopt_pol_name}",
-                 f"Adoption Percentage: {percent if percent else ''}",
+                 f"Adoption Percentage: {percent if percent is not None else ''}",
                  f"Attacker: {attack.attacker_asn if attack else ''}",
                  f"Victim: {attack.victim_asn if attack else ''}",
                  f"Extrapolator Running: {exr_running}"]
