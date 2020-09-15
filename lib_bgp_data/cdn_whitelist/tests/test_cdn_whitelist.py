@@ -16,9 +16,11 @@ __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
 import pytest
+from os import path
 
 from ..cdn_whitelist import CDN_Whitelist
-from ...database import Database
+from ..tables import CDN_Whitelist_Table
+from ...utils import utils
 
 @pytest.mark.cdn_whitelist
 class Test_CDN_Whitelist:
@@ -27,11 +29,26 @@ class Test_CDN_Whitelist:
     @pytest.fixture(autouse=True)
     def setup(self):
         """Parser setup and table deleted before every test"""
-
-        pass
+        with CDN_Whitelist_Table(clear=True) as t:
+            pass
 
     def test_run(self):
         """Tests the _run function"""
 
         # Downloads data and inserts into the database (should be more than 0 entries)
         # Makes sure it doesn't error even if there is a CDN that doesn't exist
+
+        # Add a nonsense CDN
+        list_path = path.dirname(path.dirname(path.realpath(__file__)))
+        list_path = path.join(list_path, 'cdns.txt')
+        utils.run_cmds(f'echo "urfgurf" >> {list_path}')
+
+        CDN_Whitelist()._run()
+
+        with CDN_Whitelist_Table() as t:
+            assert t.get_count() > 0
+
+        # Delete what was added
+        utils.run_cmds(f"sed -i '$d' {list_path}")
+
+        

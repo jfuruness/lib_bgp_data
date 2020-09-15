@@ -58,13 +58,15 @@ class CDN_Whitelist(Parser):
             for cdn in self._get_cdns():
                 # Get ASN data
                 response = session.get(api + cdn)
-                # Check for errors
                 response.raise_for_status()
 
-                # Format data for db insertion
-                for line in response.text.split('\n'):
-                    asn = line.split(',')[0].replace('"', '')
-                    whitelist.append([cdn, asn])
+                if response.text == 'error getting result':
+                    pass
+                else:
+                    # Format data for db insertion
+                    for line in response.text.split('\n'):
+                        asn = line.split(',')[0].replace('"', '')
+                        whitelist.append([cdn, asn])
 
                 response.close()
 

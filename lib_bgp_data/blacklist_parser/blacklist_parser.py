@@ -110,7 +110,7 @@ class Blacklist_Parser(Parser):
                         # hijackers. If 0, the ASN was not flagged.
                         if row['HardVotePred'] == '1':
                             print(
-                            parsed[source].update(set(row['ASN']))
+                            parsed[source].update(set(row['ASN'])))
         return parsed
 
     def _format_dict(self, parsed: dict):
