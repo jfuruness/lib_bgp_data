@@ -38,7 +38,7 @@ class Test_Parser:
         path and csv directories should be created and empty
         should fail if _run not present, and vice versa.
         """
-        
+     
         class Foo(Parser):
             pass
         

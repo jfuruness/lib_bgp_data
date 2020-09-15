@@ -5,7 +5,6 @@
 For specifics on each test, see docstrings under each function.
 """
 
-
 __authors__ = ["Justin Furuness, Tony Zheng"]
 __credits__ = ["Justin Furuness, Tony Zheng"]
 __Lisence__ = "BSD"
@@ -23,7 +22,6 @@ import requests
 from psutil import process_iter
 from ..rpki_file import RPKI_File
 from ...utils import utils
-
 
 @pytest.mark.rpki_validator
 class Test_RPKI_File:
@@ -87,6 +85,7 @@ class Test_RPKI_File:
         on port 8000.
         """
 
+
        
         if not contextmanager:
             self.rpki_file.spawn_process()
@@ -98,7 +97,6 @@ class Test_RPKI_File:
                 assert connection.laddr.port != self.rpki_file.port
         # check file was deleted
         assert not os.path.exists(self.gz_path)
-
     
     @pytest.mark.skip(reason="new hire will work on this")
     def test_contextmanager(self):

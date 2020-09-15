@@ -5,6 +5,7 @@
 For specifics on each test, see docstrings under each function.
 """
 
+
 __authors__ = ["Justin Furuness, Tony Zheng"]
 __credits__ = ["Justin Furuness, Tony Zheng"]
 __Lisence__ = "BSD"
@@ -34,6 +35,7 @@ class Test_RPKI_Validator_Wrapper:
     """Tests all local functions within the RPKI_Validator_Wrapper class."""
 
     @pytest.mark.skip(reason="New hires will work on this")
+
     path = ('lib_bgp_data.rpki_validator.rpki_validator_wrapper.'          
             'RPKI_Validator_Wrapper.')
 
@@ -66,7 +68,6 @@ class Test_RPKI_Validator_Wrapper:
         Make sure to use a small input file for this.
         """
 
-
     @pytest.mark.skip(reason="New hires will work on this")
     @pytest.mark.slow
     def test__kill8080(self):
@@ -76,7 +77,6 @@ class Test_RPKI_Validator_Wrapper:
         If wait is true, should ensure that it waits long enough to reclaim
         ports.
         """
-
 
         # check port is open in the context manager
         with wrapper as validator:
@@ -234,8 +234,6 @@ class Test_RPKI_Validator_Wrapper:
         where they should, and none exist where they should not.
         This includes arins tal.
         """
-
-        assert False
 
     @pytest.mark.skip(reason="New hires will work on this")
     def test__change_file_hosted_location(self):
