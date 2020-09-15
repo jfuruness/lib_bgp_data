@@ -95,3 +95,11 @@ class Test_Config:
         """
 
         pass
+
+    @pytest.mark.skip(reason="New hire work")
+    def test_set_global_section_header(self):
+        """Test the set global section header function
+
+        Test that the section is set to test"""
+
+        pass

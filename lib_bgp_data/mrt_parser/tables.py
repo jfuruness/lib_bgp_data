@@ -21,9 +21,7 @@ __credits__ = ["Justin Furuness"]
 __Lisence__ = "BSD"
 __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
-__status__ = "Development"
-
-import logging
+__status__ = "Production"
 
 from ..database import Generic_Table
 
@@ -37,13 +35,15 @@ class MRT_Announcements_Table(Generic_Table):
 
     name = "mrt_announcements"
 
+    columns = ["prefix", "as_path", "origin", "time"]
+
     def _create_tables(self):
         """Creates tables if they do not exist.
 
         Called during initialization of the database class.
         """
 
-        sql = """CREATE UNLOGGED TABLE IF NOT EXISTS mrt_announcements (
+        sql = f"""CREATE UNLOGGED TABLE IF NOT EXISTS {self.name} (
                  prefix cidr,
                  as_path bigint ARRAY,
                  origin bigint,

@@ -14,8 +14,6 @@ import os
 import time
 
 from pathos.multiprocessing import ProcessingPool
-from psutil import process_iter
-from signal import SIGTERM
 from tqdm import trange
 import urllib
 
@@ -43,6 +41,7 @@ class RPKI_Validator_Wrapper:
 
     # Sorry for the crazy naming scheme, must be done to avoid
     # having install file names in multiple locations
+    temp_install_path = "/tmp/temp_rpki_validator_install"
     rpki_package_path = RPKI_PACKAGE_PATH
     rpki_run_name = RPKI_RUN_NAME
     rpki_run_path = RPKI_PACKAGE_PATH + RPKI_RUN_NAME
@@ -66,7 +65,7 @@ class RPKI_Validator_Wrapper:
     def __enter__(self):
         """Runs the RPKI Validator"""
 
-        self._kill_8080()
+        utils.kill_port(self.port)
         # Must remove these to ensure a clean run
         utils.clean_paths(self.rpki_db_paths)
         cmds = [f"cd {self.rpki_package_path}",
@@ -88,25 +87,9 @@ class RPKI_Validator_Wrapper:
         self._process.terminate()
         self._process.join()
         self._process.clear()
-        self._kill_8080(wait=False)
+        utils.kill_port(self.port, wait=False)
         logging.debug("Closed rpki validator")
         self._rpki_file.close()
-
-    # https://stackoverflow.com/a/20691431
-    def _kill_8080(self, wait=True):
-        """Kills all processes on port 8080"""
-
-        logging.debug("Make way for the rpki validator!!!")
-        logging.debug("Killing all port 8080 processes, cause idc")
-        for proc in process_iter():
-            for conns in proc.connections(kind='inet'):
-                if conns.laddr.port == RPKI_Validator_Wrapper.port:
-                    proc.send_signal(SIGTERM) # or SIGKILL
-                    # Sometimes the above doesn't do it's job
-                    utils.run_cmds(("sudo kill -9 $(lsof -t -i:"
-                                    f"{RPKI_Validator_Wrapper.port})"))
-                    if wait:
-                        self._wait(120, "Waiting for reclaimed ports")
 
     def _start_validator(self):
         """Sends start cmd to RPKI Validator"""
@@ -224,7 +207,8 @@ class RPKI_Validator_Wrapper:
 
         config_logging(kwargs.get("stream_level", logging.DEBUG),
                        kwargs.get("section"))
-        utils.delete_paths(RPKI_Validator_Wrapper.rpki_package_path)
+        utils.delete_paths([RPKI_Validator_Wrapper.rpki_package_path,
+                            RPKI_Validator_Wrapper.temp_install_path])
 
         RPKI_Validator_Wrapper._download_validator()
         RPKI_Validator_Wrapper._change_file_hosted_location()
@@ -240,7 +224,9 @@ class RPKI_Validator_Wrapper:
         arin_tal = ("https://www.arin.net/resources/manage/rpki/"
                     "arin-ripevalidator.tal")
         # This is the java version they use so we will use it
-        cmds = ["sudo apt-get -y install openjdk-8-jre",
+        cmds = [f"mkdir {RPKI_Validator_Wrapper.temp_install_path}",
+                f"cd {RPKI_Validator_Wrapper.temp_install_path}",
+                "sudo apt-get -y install openjdk-8-jre",
                 f"wget {rpki_url}",
                 "tar -xvf rpki-validator-3-latest-dist.tar.gz",
                 "rm -rf rpki-validator-3-latest-dist.tar.gz",

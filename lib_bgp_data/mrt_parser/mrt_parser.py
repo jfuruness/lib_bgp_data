@@ -14,7 +14,7 @@ __credits__ = ["Justin Furuness", "Matt Jaccino"]
 __Lisence__ = "BSD"
 __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
-__status__ = "Development"
+__status__ = "Production"
 
 import datetime
 import logging
@@ -78,6 +78,12 @@ class MRT_Parser(Parser):
             IPV6 defaults to False, so IP6 results are not included
         """
 
+        # If start/end not default:
+        logging.warning(("Caida api doesn't work as you'd expect."
+                         " There are bugs. To ensure a good run, epoch times"
+                         " must start 5 seconds before day, and end 1 second"
+                         " before the end of the day"))
+
         # Gets urls of all mrt files needed
         urls = self._get_mrt_urls(start, end, api_param_mods, sources)
         logging.debug(f"Total files {len(urls)}")
@@ -104,7 +110,7 @@ class MRT_Parser(Parser):
                                               sources,
                                               PARAMS_modification)
         # Give Isolario URLs if parameter is not changed
-        return caida_urls + self._get_iso_mrt_urls(start, sources) 
+        return caida_urls + self._get_iso_mrt_urls(start, sources)
         # If you ever want RIPE without the caida api, look at the commit
         # Where the relationship_parser_tests where merged in
 
@@ -163,7 +169,7 @@ class MRT_Parser(Parser):
 
         # Get the folder name according to the start parameter
         _folder = _start.strftime("%Y_%m/")
-        # Isolario files are added every 2 hrs, so if start time is odd numbered,
+        # Isolario files are added every 2 hrs, so if start time is odd,
         # then make it an even number and add an hour
         # https://stackoverflow.com/q/12400256/8903959
         if _start.hour % 2 != 0:
@@ -188,7 +194,7 @@ class MRT_Parser(Parser):
         with utils.progress_bar("Downloading MRTs, ", len(mrt_files)):
             # Creates a dl pool with 4xCPUs since it is I/O based
             with utils.Pool(dl_threads, 4, "download") as dl_pool:
-                
+
                 # Download files in parallel
                 dl_pool.map(lambda f: utils.download_file(
                         f.url, f.path, f.num, len(urls),
@@ -204,7 +210,6 @@ class MRT_Parser(Parser):
         In depth explanation at the top of the file.
         dl=download, p=parse.
         """
-
 
         with utils.progress_bar("Parsing MRT Files,", len(mrt_files)):
             with utils.Pool(p_threads, 1, "parsing") as p_pool:
