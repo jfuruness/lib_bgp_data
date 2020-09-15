@@ -38,6 +38,7 @@ class Test_Parser:
         path and csv directories should be created and empty
         should fail if _run not present, and vice versa.
         """
+        
         class Foo(Parser):
             pass
         
@@ -99,6 +100,7 @@ class Test_Parser:
         Attempt to have a class be able to be called with this. Make
         sure that it works.
         """
+
         # Add Foo_Parser to an existing parser file
         # Run it, and assert its _run function is called
 

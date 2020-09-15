@@ -25,15 +25,15 @@ import urllib
 
 import pytest
 from psutil import process_iter
-
+import pytest
 from ..rpki_validator_wrapper import RPKI_Validator_Wrapper
 from ...utils import utils
-
 
 @pytest.mark.rpki_validator
 class Test_RPKI_Validator_Wrapper:
     """Tests all local functions within the RPKI_Validator_Wrapper class."""
 
+    @pytest.mark.skip(reason="New hires will work on this")
     path = ('lib_bgp_data.rpki_validator.rpki_validator_wrapper.'          
             'RPKI_Validator_Wrapper.')
 
@@ -65,6 +65,18 @@ class Test_RPKI_Validator_Wrapper:
 
         Make sure to use a small input file for this.
         """
+
+
+    @pytest.mark.skip(reason="New hires will work on this")
+    @pytest.mark.slow
+    def test__kill8080(self):
+        """Initializes the RPKI Validator and tests kill8080 function
+
+        Spawns a 8080 process, and runs kill8080 to make sure it dies.
+        If wait is true, should ensure that it waits long enough to reclaim
+        ports.
+        """
+
 
         # check port is open in the context manager
         with wrapper as validator:
@@ -102,8 +114,8 @@ class Test_RPKI_Validator_Wrapper:
             p.terminate()
             p.join()
             p.clear()
- 
 
+    @pytest.mark.skip(reason="New hires will work on this")
     @pytest.mark.slow
     def test_make_query(self):
         """Initializes the RPKI Validator and tests make_query function
@@ -165,6 +177,7 @@ class Test_RPKI_Validator_Wrapper:
         Run rpki validator and get validity data as json. Ensure that
         there are no values that exist that are not in this dict.
         """
+
         with wrapper as validator:
             validator.load_trust_anchors()
             data = validator.get_validity_data()
@@ -212,6 +225,7 @@ class Test_RPKI_Validator_Wrapper:
                 for line in correct_file:
                     assert line in installed_file_lines
 
+    @pytest.mark.skip(reason="New hires will work on this")
     def test_rpki_download_validator(self):
         """Tests _download_validator
 
@@ -221,7 +235,7 @@ class Test_RPKI_Validator_Wrapper:
         This includes arins tal.
         """
 
-        pass
+        assert False
 
     @pytest.mark.skip(reason="New hires will work on this")
     def test__change_file_hosted_location(self):
@@ -259,16 +273,5 @@ class Test_RPKI_Validator_Wrapper:
         In addition, check that RPKI_File and RPKI_Validator is not in the file
         (at least I don't think that it should be) to check for fstring errors
         """
-        self.test___init__()
-        absentees = ['rpki.validator.data.path=.',
-                    'rpki.validator.preconfigured.trust.anchors.directory=' +
-                    './preconfigured-tals',
-                    'rpki.validator.rsync.local.storage.directory=./rsync',
-                    'RPKI_FILE', 'RPKI_Validator']
 
-        with open(f"{RPKI_Validator_Wrapper.rpki_package_path}conf"
-                "/application.properties") as f:
-            file_contents = f.read()
-            with pytest.raises(ValueError):
-                for a in absentees:
-                    file_contents.index(a)
+        pass

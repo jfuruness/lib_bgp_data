@@ -12,18 +12,21 @@ __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
-import pytest
 from unittest.mock import Mock, patch
 from itertools import chain, combinations
+from time import strftime, gmtime, time
+
+import pytest
+from bs4 import BeautifulSoup as Soup
+import re
+
 from ..bgpstream_website_parser import utils, BGPStream_Website_Parser
 from ..tables import Hijacks_Table, Leaks_Table, Outages_Table
 from ..data_classes import Hijack, Leak, Outage
 from ..event_types import Event_Types
 from ...utils import utils
 from ...database import Database, Generic_Table
-from bs4 import BeautifulSoup as Soup
-from time import strftime, gmtime, time
-import re
+
 
 ########################
 ### Helper Functions ###

@@ -38,6 +38,7 @@ class Test_RPKI_Validator_Parser:
         are valid into a test table. Then we can confirm that the output
         is what we expect.
         """
+
         
         with ROV_Validity_Table() as db:
             RPKI_Validator_Parser()._run(table=test_table)
@@ -46,7 +47,6 @@ class Test_RPKI_Validator_Parser:
 
             assert db.execute(sql_val)[0]['validity'] == 1
             assert db.execute(sql_inval)[0]['validity'] == -2
-
 
     @pytest.mark.skip(reason="new hire will work on this")
     def test__format_asn_dict(self):
@@ -72,6 +72,7 @@ class Test_RPKI_Validator_Parser:
         but def need to test here. Don't want to test in a
         different func because this unit test will take hours.
         """
+
         with ROV_Validity_Table() as db:
 
             # use only one collector and remove isolario to make it a  little faster
