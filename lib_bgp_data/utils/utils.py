@@ -387,7 +387,7 @@ def send_email(subject, body):
     with smtplib.SMTP_SSL("smtp.gmail.com", 465) as smtp:
         smtp.login(email_address, password)
         smtp.send_message(message)
-        
+
 def kill_port(port: int, wait: bool = True):
     for proc in process_iter():
         for conns in proc.connections(kind='inet'):
