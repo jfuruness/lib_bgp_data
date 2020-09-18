@@ -77,15 +77,21 @@ class Output_Subtable:
     def _get_traceback_data(self, subtable_ases, all_ases, table_names):
         """Gets the data plane data through tracing back"""
         
+        possible_hidden_hijack_ases = self._get_ases_with_only_prefix()
+        if len(possible_hidden_hijack_ases) > 2:
+            print("We found some possible hidden hijaks!")
+            for row in possible_hidden_hijack_ases:
+                print("ASN: " + row['asn'])
+                sys.exit(1)
         # Get visible hijack ASNs
-        visible_hijack_asns_data = self._get_visible_hijack_asns(table_names)
-        #print(visible_hijack_asns_data)
-        # Consolidate all ASNs into a single list
-        visible_hijack_asns = set([x['asn'] for x in visible_hijack_asns_data[AS_Types.COLLATERAL]] + [x['asn'] for x in visible_hijack_asns_data[AS_Types.ADOPTING]])
-        
-        # NOTE: this can easily be changed to SQL. See super optimized folder.
-        conds = {x: {y: 0 for y in AS_Types.list_values()}
-                 for x in Data_Plane_Conditions.list_values()}
+        # visible_hijack_asns_data = self._get_visible_hijack_asns(table_names)
+        # #print(visible_hijack_asns_data)
+        # # Consolidate all ASNs into a single list
+        # visible_hijack_asns = set([x['asn'] for x in visible_hijack_asns_data[AS_Types.COLLATERAL]] + [x['asn'] for x in visible_hijack_asns_data[AS_Types.ADOPTING]])
+        # 
+        # # NOTE: this can easily be changed to SQL. See super optimized folder.
+        # conds = {x: {y: 0 for y in AS_Types.list_values()}
+        #          for x in Data_Plane_Conditions.list_values()}
 
         # For all the ases in the subtable
         for og_asn, og_as_data in subtable_ases.items():
@@ -95,10 +101,10 @@ class Output_Subtable:
             # Done to catch extrapolator loops
             for i in range(64):
                 if (condition := as_data["received_from_asn"]) in conds:
-                    if condition == Data_Plane_Conditions.HIJACKED and not (og_asn in visible_hijack_asns):
-                        print("We found a hidden hijack!")
-                        print("ASN: " + og_asn)
-                        sys.exit(1)
+                    # if condition == Data_Plane_Conditions.HIJACKED and not (og_asn in visible_hijack_asns):
+                    #     print("We found a hidden hijack!")
+                    #     print("ASN: " + og_asn)
+                    #     sys.exit(1)
                     conds[condition][og_as_data["impliment"]] += 1
                     looping = False
                     break
@@ -129,6 +135,17 @@ class Output_Subtable:
                     WHERE og.as_type = {adopt_val.value}"""
             conds[adopt_val] = self.Rib_Out_Table.just_query(sql)
         return conds
+    
+    def _get_ases_with_only_prefix(self, t_names):
+        """Gets all asns that have only the prefix."""
+        
+        for adopt_val in AS_Types.__members__.values():
+            sql = f"""SELECT asn, prefix, received_from_asn, COUNT(asn) AS num_prefixes
+                      FROM {ROVPP_Extrapolator_Rib_Out_Table.name} all_ases
+                      WHERE num_prefixes = 1 AND masklen(prefix) = 16
+                      GROUP BY asn"""
+            query_results = self.Rib_Out_Table.just_query(sql)
+        return query_results
     
     def _get_visible_hijack_data(self, t_names):
         """Gets visible hijacks using sql for speed"""
