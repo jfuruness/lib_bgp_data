@@ -28,20 +28,20 @@ class Historical_ROAS_Table(Generic_Table):
 
     def delete_duplicates(self):
         """Deletes duplicated roas, preserving earlier one."""
-        sql = "CREATE UNLOGGED TABLE {self.name}_temp LIKE({self.name})"
+        sql = f"CREATE UNLOGGED TABLE {self.name}_temp (LIKE {self.name})"
         self.execute(sql)
 
         sql = f"""INSERT INTO {self.name}_temp({','.join(self.columns)})
                   SELECT DISTINCT ON({','.join(self.columns[:-1])})
                     {','.join(self.columns)}
                   FROM {self.name}"""
-        sql.execute(sql)
+        self.execute(sql)
 
         sql = f"DROP TABLE {self.name}"
-        sql.execute(sql)
+        self.execute(sql)
 
         sql = f"ALTER TABLE {self.name}_temp RENAME TO {self.name}"
-        sql.execute(sql)
+        self.execute(sql)
 
     def create_index(self):
         index_name = f'{self.name}_index'
