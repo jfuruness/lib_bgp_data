@@ -66,6 +66,17 @@ class Parser:
         # Path to where all files willi go. It does not have to exist
         self.path = kwargs.get("path", f"/tmp/{name}")
         self.csv_dir = kwargs.get("csv_dir", f"/dev/shm/{name}")
+
+        # IS THIS AN APPROPRIATE LOCATION TO STORE BACKUPS???
+        self.backup_dir = kwargs.get("backup_dir", f"/dev/shm/{name}_backups")
+
+        # DO YOU WANT TO MAKE BACKUPS?
+        self.backup = kwargs.get("backup", False)
+
+        assert hasattr(self, "tables"), ("Please have a class attribute that "
+                                         "lists the tables that should be "
+                                         "backed up.")
+
         # Recreates empty directories
         utils.clean_paths([self.path, self.csv_dir])
         self.kwargs = kwargs
@@ -98,6 +109,83 @@ class Parser:
         logging.info(f"{self.__class__.__name__} took {_min}m {_sec}s")
         if error:
             sys.exit(1)
+
+    def backup_tables(self, table_list):
+        for table in table_list:
+            backup = f'{table.name}.sql.gz'
+            with table() as t:
+                try:
+                    count = t.get_count()
+                except psycopg2.errors.UndefinedTable:
+                    self.restore(backup)
+
+        self.run()
+
+        for table in self.tabel_list():
+            self.backup(table)
+
+    def backup(self, table):
+        """Makes a new backup if live table has more data than old backup."""
+
+        prev_backup = os.path.join(self.backup_dir, f'{table.name}.sql.gz')
+        tmp_backup = os.path.join(self.backup_dir, 'temp.sql.gz')
+       
+        # making the backup directory if doesn't exist. (e.g. first time)
+        if not os.path.exists(self.backup_dir):
+            os.mkdir(self.backup_dir)
+
+        # if previous backups don't exists, make backups right now
+        if not os.path.exists(prev_backup):
+            self.pg_cmd(f'pg_dump -Fc -t {table.name} '
+                        f'{self.section} > {prev_backup}')
+ 
+        # make a temp backup of live table
+        self.pg_cmd(f'pg_dump -Fc -t {table.name} '
+                    f'{self.section} > {tmp_backup}')
+
+        with table() as db:
+            # copy live table
+            db.execute('DROP TABLE IF EXISTS temp')
+            db.execute(f'CREATE TABLE temp AS TABLE {table.name}')
+
+            # restore previous backup
+            self.restore(prev_backup, db)
+            count_prev = db.get_count()
+            
+            # restore temp
+            self.restore(tmp_backup, db)
+            count_tmp = db.get_count()
+
+            # new backup is larger, save as the most up-to-date backup
+            if count_tmp > count_prev:
+                check_call(f'mv {tmp_backup} {prev_backup}', shell=True)
+            # restore live table
+            db.execute(f'DROP TABLE {table.name}')
+            db.execute(f'CREATE TABLE {table.name} AS TABLE temp')
+            db.execute('DROP TABLE temp')
+
+            if os.path.exists(tmp_backup):
+                os.remove(tmp_backup)
+
+    def restore(self, backup, table):
+        """Restores backup into clean table, then checks table is nonempty."""
+
+        self.pg_cmd(f'pg_restore -c --if-exists -d {self.section} {backup}')
+         
+        assert table.get_count() > 0, ('Table is still empty. '
+                                       'Restore or backup must have failed.') 
+
+    def pg_cmd(self, cmd: str):
+        """executes cmd as postgres user"""
+        check_call(f'sudo -i -u postgres {cmd}', shell=True)
+
+    def add_cronjob(self):
+        """Adds a cron job to run parser at 4AM"""
+        # Should the time be an input? Different parsers run at diff times?
+        # What interpreter?
+        job = "0 4 * * * /new_hires/tony/env/bin/lib_bgp_data --bgpstream_website_runner"
+        with open(f'/etc/cron.d/{self.name}', 'w') as f:
+            f.write(job)
 
     @classmethod
     def argparse_call(cls):
