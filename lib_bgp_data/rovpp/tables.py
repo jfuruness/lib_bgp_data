@@ -115,7 +115,7 @@ class ASes_Subtable(Generic_Table):
             ases.sort()
             adopting_ases = sample(ases, k=ases_to_set)
             percent_s_str = " OR asn = ".join("%s" for AS in adopting_ases)
-            sql = """UPDATE {self.name} SET impliment = TRUE
+            sql = f"""UPDATE {self.name} SET impliment = TRUE
                   WHERE asn = {percent_s_str}"""
             self.execute(sql, adopting_ases)
         else:

@@ -76,29 +76,59 @@ class ROVPP_Simulator(Parser):
         data_pts = [Data_Point(tables, i, percent, self.csv_dir)
                     for i, percent in enumerate(percents)]
 
-        # We do this so that we can immediatly skip to the deterministic trial
-        trials = [seeded_trial] if seeded_trial else list(range(num_trials))
+        # We run tqdm off of the number of scenarios that need to be run. The
+        # total number of scenarios is the number of Test objects that are
+        # created and run. This allows someone to input the scenario number
+        # they see in the tqdm bar and jump to that specifiic scenario. Having
+        # the tqdm be based on the number of trials is too slow, and we
+        # potentially may have to wait a while for a specific tets to be run
+        # in a specific trial. The reason we have multiple bars is so that we
+        # can display useful status using the bar.
 
-        # The reason we run tqdm off the number of trials
-        # And not number of data points is so that someone can input the
-        # deterministic trial number and have it jump straight to that trial
-        # In addition - the reason we have multiple bars is so that we can
-        # display useful stats using the bar
+        # Get total number of scenarios (Test class objects that will be run).
+        # This value will be used in the tqdm
+        total = 0
+        for trial in range(num_trials):
+            for data_pt in data_pts:
+                for test in data_pt.get_possible_tests(attack_types,
+                                                       adopt_policy_types,
+                                                       seeded,
+                                                       trial,
+                                                       set_up=False):
+                    total += 1
 
-        with Multiline_TQDM(len(trials)) as pbars:
+        # Which scenarioi(s) need to be done, subtract 1 if seeded due to 0
+        # indexing. We do this so we can jump to a specific deterministic
+        # scenario
+        if not seeded_trial:
+            scenarios = set(range(total))
+        elif 0 < seeded_trial <= total:
+            scenarios = {seeded_trial - 1}
+        else:
+            scenarios = {}
+
+        with Multiline_TQDM(len(scenarios)) as pbars:
+            current_scenario = 0
             if seeded and seed != 0:
                 random.seed(seed)
-            for trial in trials:
-                if seeded and seed == 0:
-                    random.seed(trial)
+            for trial in range(num_trials):
                 for data_pt in data_pts:
-                    data_pt.get_data(exr_bash,
-                                     self.kwargs,
-                                     pbars,
-                                     attack_types,
-                                     adopt_policy_types,
-                                     seeded,
-                                     trial)
-                pbars.update()
-
+                    # For each data point, Tests objects are created by
+                    # looping through attack_type and adopt_policy. By looping
+                    # here instead of in the get_data() method, it allows us
+                    # to have direct control of which scenario is being run
+                    for attack_type in attack_types:
+                        for adopt_policy_type in adopt_policy_types:
+                            if seeded and seed == 0:
+                                random.seed(current_scenario)
+                            if current_scenario in scenarios:
+                                data_pt.get_data(exr_bash,
+                                                 self.kwargs,
+                                                 pbars,
+                                                 [attack_type],
+                                                 [adopt_policy_type],
+                                                 seeded,
+                                                 current_scenario)
+                                pbars.update()
+                            current_scenario += 1
         tables.close()
