@@ -42,8 +42,6 @@ class ROAs_Table(Generic_Table):
     name = "roas"
     columns = ["asn", "prefix", "max_length", "created_at"]
 
-    columns = ["asn", "prefix", "max_length"]
-
     def _create_tables(self):
         """Creates tables if they do not exist"""
 
