@@ -90,27 +90,27 @@ class Data_Point(Parser):
 
         # Subprefix hijack
         if attack_type == Attack_Types.SUBPREFIX_HIJACK:
-            attacker_rows = [['1.2.3.0/24', [attacker], attacker, 0]]
+            attacker_rows = [['1.2.3.0/24', [attacker], attacker, 1]]
             victim_rows = [['1.2.0.0/16', [victim], victim, 0]]
 
         # Prefix hijack
         elif attack_type == Attack_Types.PREFIX_HIJACK:
-            attacker_rows = [['1.2.0.0/16', [attacker], attacker, 0]]
+            attacker_rows = [['1.2.0.0/16', [attacker], attacker, 1]]
             victim_rows = [['1.2.0.0/16', [victim], victim, 0]]
 
         # Unannounced prefix hijack
         elif attack_type == Attack_Types.UNANNOUNCED_PREFIX_HIJACK:
-            attacker_rows = [['1.2.3.0/24', [attacker], attacker, 0]]
+            attacker_rows = [['1.2.3.0/24', [attacker], attacker, 1]]
             victim_rows = []
 
         elif attack_type == Attack_Types.UNANNOUNCED_SUPERPREFIX_HIJACK:
-            attacker_rows = [['1.2.3.0/24', [attacker], attacker, 0],
-                              ['1.2.0.0/16', [attacker], attacker, 0]] 
+            attacker_rows = [['1.2.3.0/24', [attacker], attacker, 1],
+                              ['1.2.0.0/16', [attacker], attacker, 1]] 
             victim_rows = []
 
         elif attack_type == Attack_Types.SUPERPREFIX_HIJACK:
-            attacker_rows = [['1.2.3.0/24', [attacker], attacker, 0],
-                              ['1.2.0.0/16', [attacker], attacker, 0]]
+            attacker_rows = [['1.2.3.0/24', [attacker], attacker, 1],
+                              ['1.2.0.0/16', [attacker], attacker, 1]]
             victim_rows = [['1.2.0.0/16', [victim], victim, 0]]
 
         elif attack_type == Attack_Types.LEAK:
@@ -145,7 +145,7 @@ class Data_Point(Parser):
                 attacker_rows = [[leak["leaked_prefix"],
                                   new_leaker_path,
                                   leak["example_as_path"][-1],
-                                  0]]
+                                  1]]
                 victim_rows = []
 
         # Format the lists to be arrays for insertion into postgres

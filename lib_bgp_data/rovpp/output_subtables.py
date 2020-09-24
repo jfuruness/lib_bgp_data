@@ -30,6 +30,10 @@ class Output_Subtables:
         # Gets all the asn data
         with ROVPP_Extrapolator_Rib_Out_Table() as _db:
             ases = {x["asn"]: x for x in _db.get_all()}
+
+        ###########################################################
+        # Read in the file in here!
+
         # Stores the data for the specific subtables
         for table in self.tables:
             table.Rib_Out_Table.clear_table()

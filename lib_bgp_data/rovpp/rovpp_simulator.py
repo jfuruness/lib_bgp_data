@@ -64,6 +64,36 @@ class ROVPP_Simulator(Parser):
 #            with Leak_Related_Announcements_Table(clear=True) as db:
 #                db.fill_table()
 
+        # prints all leaks with loops in them
+        with Database() as db: 
+            prepending = set()
+            loops = set()
+            leaked_to_many = set()
+            leaked_to_one = set()
+            leaks = db.execute("SELECT * FROM leaks;")
+            for leak in leaks:
+                if len(leak["leaked_to_number"]) == 1:
+                    leaked_to_one.add(leak["url"].replace("/event/", ""))
+                else:
+                    leaked_to_many.add(leak["url"].replace("/event/", ""))
+                cur_path = set()
+                for _as in leak["example_as_path"]:
+                    if _as in cur_path:
+                        if _as != prev_as:
+                            loops.add(leak["url"].replace("/event/", ""))
+                        else:
+                            prepending.add(leak["url"].replace("/event/", ""))
+                        break
+                    cur_path.add(_as)
+                    prev_as = _as
+        print("prepending = " + str(prepending))
+        print(len(prepending))
+        print("loops = " + str(loops))
+        print(len(loops))
+        print("multileak = " + str(leaked_to_many))
+        print(len(leaked_to_many))
+        print("single_leak = " + str(leaked_to_one))
+        print(len(leaks))
         # Clear the table that stores all trial info
         with Simulation_Results_Table(clear=True) as _:
             pass
