@@ -139,7 +139,7 @@ class Parser:
         self.run()
 
         # Back up the tables
-        for table in self.tabels:
+        for table in self.tables:
             self.backup(table)
 
     def backup(self, table):
