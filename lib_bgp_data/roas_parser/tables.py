@@ -21,8 +21,8 @@ Possible future improvements:
 """
 
 
-__author__ = "Justin Furuness"
-__credits__ = ["Justin Furuness"]
+__authors__ = ["Justin Furuness", "Samarth Kasbawala"]
+__credits__ = ["Justin Furuness", "Samarth Kasbawala"]
 __Lisence__ = "BSD"
 __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
@@ -40,16 +40,16 @@ class ROAs_Table(Generic_Table):
     __slots__ = []
 
     name = "roas"
-
-    columns = ["asn", "prefix", "max_length"]
+    columns = ["asn", "prefix", "max_length", "created_at"]
 
     def _create_tables(self):
-        """ Creates tables if they do not exist"""
+        """Creates tables if they do not exist"""
 
         sql = """CREATE UNLOGGED TABLE IF NOT EXISTS roas (
               asn bigint,
               prefix cidr,
-              max_length integer
+              max_length integer,
+              created_at bigint
               ) ;"""
         self.execute(sql)
 

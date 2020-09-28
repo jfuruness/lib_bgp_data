@@ -47,7 +47,6 @@ class Test_RPKI_Validator_Parser:
             assert db.execute(sql_val)[0]['validity'] == 1
             assert db.execute(sql_inval)[0]['validity'] == -2
 
-
     @pytest.mark.skip(reason="new hire will work on this")
     def test__format_asn_dict(self):
         """Tests the format asn_dict function
@@ -72,6 +71,8 @@ class Test_RPKI_Validator_Parser:
         but def need to test here. Don't want to test in a
         different func because this unit test will take hours.
         """
+
+
         with ROV_Validity_Table() as db:
 
             # use only one collector and remove isolario to make it a  little faster

@@ -38,6 +38,42 @@ class Test_Parser:
         path and csv directories should be created and empty
         should fail if _run not present, and vice versa.
         """
+     
+        class Foo(Parser):
+            pass
+        
+        with pytest.raises(AssertionError):
+            f = Foo()
+
+        # defaults
+        class Subparser(Parser):
+            def _run(self):
+                pass
+
+        sp = Subparser()
+        assert sp.kwargs['section'] == 'test'
+        assert logging.root.level == logging.INFO
+        path = '/tmp/test_Subparser'
+        csv_dir = '/dev/shm/test_Subparser'
+        assert not os.listdir(path)
+        assert not os.listdir(csv_dir)
+       
+        # reset, otherwise logging can only be configured once
+        logging.root.handlers = []
+
+        # with kwargs
+        stream_level = logging.ERROR 
+        path = './foo'
+        csv_dir = './csv'
+        sp = Subparser(stream_level=stream_level, path=path, csv_dir=csv_dir)
+        assert logging.root.level == logging.ERROR
+        assert not os.listdir(path)
+        assert not os.listdir(csv_dir)
+
+    def assert_cleanup(self, parser):
+        assert not os.path.exists(parser.path)
+        assert not os.path.exists(parser.csv_dir)
+
 
     @pytest.mark.skip(reason="New hire work")
     def test_run(self):
@@ -65,4 +101,30 @@ class Test_Parser:
         sure that it works.
         """
 
-        pass
+        # Add Foo_Parser to an existing parser file
+        # Run it, and assert its _run function is called
+
+        # this gets us up to /base_classes
+        p = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+
+        p = os.path.join(os.path.dirname(p), 'bgpstream_website_parser',
+            'bgpstream_website_parser.py')
+
+        with open(p, 'r') as f:
+            og_cpy = f.read()
+
+        sample = 'sample.txt'
+        code = ("class Foo_Parser(Parser):\n\tdef _run(self):\n\t\t"
+                f"with open('{sample}', 'w+') as f: f.write('abc')")
+
+        with open(p, 'a') as f:
+            f.write('\n')
+            f.write(code)
+
+        os.system('lib_bgp_data --foo_parser')
+        with open(sample, 'r') as f:
+            assert f.read() == 'abc'
+
+        with open(p, 'w') as f:
+            f.write(og_cpy)
+        os.remove(sample)
