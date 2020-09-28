@@ -33,9 +33,10 @@ class BGPStream_Website_Parser(Parser):
     For a more in depth explanation, read the top of the file.
     """
 
-    __slots__ = ['_data', 'table_list']
+    __slots__ = ['_data']
 
-    table_list = [Hijacks_Table, Leaks_Table, Outages_Table]
+    backup = True
+    tables = [Hijacks_Table, Leaks_Table, Outages_Table]
 
     def _run(self,
              row_limit: int = None,

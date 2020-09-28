@@ -32,6 +32,12 @@ class Parser:
     # This will add an error_catcher decorator to all methods
 
     parsers = []
+
+    # By default, should be false. Subclasses can override this
+    backup = False
+    # List of all the parsers that should be backed up
+    parsers_backup = []
+
     # https://stackoverflow.com/a/43057166/8903959
     def __init_subclass__(cls, **kwargs):
         """This method essentially creates a list of all subclasses
@@ -44,6 +50,9 @@ class Parser:
 
         super().__init_subclass__(**kwargs)
         cls.parsers.append(cls)
+
+        if cls.backup:
+            cls.parsers_backup.append(cls)
 
     def __init__(self, **kwargs):
         """Initializes logger and path variables.
@@ -70,12 +79,11 @@ class Parser:
         # IS THIS AN APPROPRIATE LOCATION TO STORE BACKUPS???
         self.backup_dir = kwargs.get("backup_dir", f"/dev/shm/{name}_backups")
 
-        # DO YOU WANT TO MAKE BACKUPS?
-        self.backup = kwargs.get("backup", False)
-
-        assert hasattr(self, "tables"), ("Please have a class attribute that "
-                                         "lists the tables that should be "
-                                         "backed up.")
+        # If parser can be backed up, make sure it has tables class attribute
+        if self.backup:
+            assert hasattr(self, "tables"), ("Please have a class attribute that "
+                                             "lists the tables that should be "
+                                             "backed up.")
 
         # Recreates empty directories
         utils.clean_paths([self.path, self.csv_dir])
@@ -111,16 +119,26 @@ class Parser:
             sys.exit(1)
 
     def backup_tables(self, table_list):
+        """Runs the parser and properly maintains the tablei(s) that it uses"""
+
+        # Back up the tables belonging to specific parser
         for table in table_list:
-            backup = f'{table.name}.sql.gz'
+            backup = os.path.join(self.backup_dir, f'{table.name}.sql.gz')
             with table() as t:
                 try:
                     count = t.get_count()
+                # NOTE: Should also check if count is 0
                 except psycopg2.errors.UndefinedTable:
-                    self.restore(backup)
+                    from ..database.config import global_section_header as gsh
+                    assert gsh is not None
+                    if os.path.exists(backup):
+                        table.restore_table(gsh, backup)
+                        # NOTE: might need to create index? idk
 
+        # Run the specific parser
         self.run()
 
+        # Back up the tables
         for table in self.tabel_list():
             self.backup(table)
 
@@ -129,6 +147,9 @@ class Parser:
 
         prev_backup = os.path.join(self.backup_dir, f'{table.name}.sql.gz')
         tmp_backup = os.path.join(self.backup_dir, 'temp.sql.gz')
+
+        from ..database.config import global_section_header as gsh
+        assert gsh is not None
        
         # making the backup directory if doesn't exist. (e.g. first time)
         if not os.path.exists(self.backup_dir):
@@ -136,12 +157,10 @@ class Parser:
 
         # if previous backups don't exists, make backups right now
         if not os.path.exists(prev_backup):
-            self.pg_cmd(f'pg_dump -Fc -t {table.name} '
-                        f'{self.section} > {prev_backup}')
+            table.backup_table(table.name, gsh, prev_backup)
  
         # make a temp backup of live table
-        self.pg_cmd(f'pg_dump -Fc -t {table.name} '
-                    f'{self.section} > {tmp_backup}')
+        table.backup_table(table.name, gsh, tmp_backup)
 
         with table() as db:
             # copy live table
@@ -166,18 +185,6 @@ class Parser:
 
             if os.path.exists(tmp_backup):
                 os.remove(tmp_backup)
-
-    def restore(self, backup, table):
-        """Restores backup into clean table, then checks table is nonempty."""
-
-        self.pg_cmd(f'pg_restore -c --if-exists -d {self.section} {backup}')
-         
-        assert table.get_count() > 0, ('Table is still empty. '
-                                       'Restore or backup must have failed.') 
-
-    def pg_cmd(self, cmd: str):
-        """executes cmd as postgres user"""
-        check_call(f'sudo -i -u postgres {cmd}', shell=True)
 
     def add_cronjob(self):
         """Adds a cron job to run parser at 4AM"""
