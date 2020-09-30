@@ -77,6 +77,10 @@ class Historical_ROAS_Parser(Parser):
         pool.close()
         pool.join()
 
+        with Historical_ROAS_Table() as t:
+            t.delete_duplicates()
+
+
 
     def download_csvs_test(self):
 
@@ -109,8 +113,12 @@ class Historical_ROAS_Parser(Parser):
 
     def db_insert(self, csv):
         utils.csv_to_db(Historical_ROAS_Table, csv)
-        with Historical_ROAS_Table() as t:
-            t.delete_duplicates()
+
+        # I think multiprocessing this is causing
+        # historical_roas_temp already exists error
+        
+        #with Historical_ROAS_Table() as t:
+        #    t.delete_duplicates()
 
     def wget_try(self):
         check_call('wget -r -np -R "repo.tar.gz" ftp.ripe.net/rpki/', shell=True)

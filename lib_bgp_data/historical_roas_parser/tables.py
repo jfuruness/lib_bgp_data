@@ -28,6 +28,9 @@ class Historical_ROAS_Table(Generic_Table):
 
     def delete_duplicates(self):
         """Deletes duplicated roas, preserving earlier one."""
+        sql = f"DROP TABLE IF EXISTS {self.name}_temp"
+        self.execute(sql)
+
         sql = f"CREATE UNLOGGED TABLE {self.name}_temp (LIKE {self.name})"
         self.execute(sql)
 
