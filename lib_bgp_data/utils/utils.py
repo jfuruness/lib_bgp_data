@@ -397,3 +397,10 @@ def kill_port(port: int, wait: bool = True):
                 run_cmds(f"sudo kill -9 $(lsof -t -i: {port})")
                 if wait:
                     time.sleep(120)
+
+
+def add_cronjob(name, time, executable):
+    """Creates a cronjob of name, that runs executable at (cron) time."""
+    run_cmds(f'echo "{time} root {executable} > /etc/cron.d/{name}')
+
+

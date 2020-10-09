@@ -37,6 +37,7 @@ class BGPStream_Website_Parser(Parser):
 
     backup = True
     tables = [Hijacks_Table, Leaks_Table, Outages_Table]
+    crontime = '0 4 * * *' # 4am every day
 
     def _run(self,
              row_limit: int = None,

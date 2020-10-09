@@ -15,6 +15,7 @@ __status__ = "Development"
 
 import logging
 import sys
+import os
 
 import pytest
 
@@ -36,6 +37,7 @@ class Parser:
     # By default, should be false. Subclasses can override this
     backup = False
     # List of all the parsers that should be backed up
+    # Do we need this?
     parsers_backup = []
 
     # https://stackoverflow.com/a/43057166/8903959
@@ -78,12 +80,15 @@ class Parser:
 
         # IS THIS AN APPROPRIATE LOCATION TO STORE BACKUPS???
         self.backup_dir = kwargs.get("backup_dir", f"/dev/shm/{name}_backups")
+        self.cronjob = f'{self.name}_automate'
 
         # If parser can be backed up, make sure it has tables class attribute
         if self.backup:
             assert hasattr(self, "tables"), ("Please have a class attribute that "
                                              "lists the tables that should be "
                                              "backed up.")
+            assert hasattr(self, "crontime"), ("Define the (cron) time that "
+                                               "this parser should be run.")
 
         # Recreates empty directories
         utils.clean_paths([self.path, self.csv_dir])
@@ -117,6 +122,11 @@ class Parser:
         logging.info(f"{self.__class__.__name__} took {_min}m {_sec}s")
         if error:
             sys.exit(1)
+
+        # Adding the automating cronjob if necessary
+        if self.backup and not os.path.exists(f'/etc/cron.d/{self.cronjob}'):
+            utils.add_cronjob(self.cronjob, *self.crontime,
+                f'/env/bin/lib_bgp_data --{self.name}')
 
     def backup_tables(self, table_list):
         """Runs the parser and properly maintains the tablei(s) that it uses"""
@@ -185,14 +195,6 @@ class Parser:
 
             if os.path.exists(tmp_backup):
                 os.remove(tmp_backup)
-
-    def add_cronjob(self):
-        """Adds a cron job to run parser at 4AM"""
-        # Should the time be an input? Different parsers run at diff times?
-        # What interpreter?
-        job = "0 4 * * * /new_hires/tony/env/bin/lib_bgp_data --bgpstream_website_runner"
-        with open(f'/etc/cron.d/{self.name}', 'w') as f:
-            f.write(job)
 
     @classmethod
     def argparse_call(cls):
