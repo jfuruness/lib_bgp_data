@@ -59,7 +59,7 @@ class Historical_ROAS_Table(Generic_Table):
 
 class Historical_ROAS_Parsed_Table(Generic_Table):
 
-    name = 'historical_roas_parse'
+    name = 'historical_roas_parsed'
     
     def _create_tables(self):
         sql = f"""CREATE UNLOGGED TABLE IF NOT EXISTS {self.name} (
