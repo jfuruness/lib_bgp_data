@@ -399,8 +399,10 @@ def kill_port(port: int, wait: bool = True):
                     time.sleep(120)
 
 
-def add_cronjob(name, time, executable):
+def add_cronjob(name, time, executable, overwrite=False):
     """Creates a cronjob of name, that runs executable at (cron) time."""
-    run_cmds(f'echo "{time} root {executable} > /etc/cron.d/{name}')
+    cronjob = f'/etc/cron.d/{name}'
+    if not os.path.exists or overwrite:
+        run_cmds(f'echo "{time} root {executable} > {cronjob}')
 
 

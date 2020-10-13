@@ -30,7 +30,7 @@ from logging import DEBUG
 from sys import argv
 
 from .base_classes import Parser
-from .utils import config_logging
+from .utils import utils, config_logging
 
 
 def main():
@@ -52,6 +52,13 @@ def main():
         parser.add_argument(f"--{cls.__name__.lower()}",
                             nargs=0,
                             action=argparse_action_cls)
+
+        # Adds cronjobs for respective parsers
+        if cls.backup:
+            utils.add_cronjob(cls.__name__, 
+                              cls.crontime,
+                              ('/night_runs/bin/lib_bgp_data ',
+                               '--{cls.__name__.lower()}'))
 
     # Configure logging to be debug if passed in
     # I know this should be done differently, but to make the module extendable
