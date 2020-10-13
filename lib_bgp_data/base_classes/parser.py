@@ -197,6 +197,16 @@ class Parser:
                 os.remove(tmp_backup)
 
     @classmethod
+    def run_backupables(cls):
+        """Run all the parsers that are intended to be automated
+        and backed up"""
+
+        def inner_run():
+            for p in cls.parsers_backup:
+                p().run()
+        return inner_run
+
+    @classmethod
     def argparse_call(cls):
         """This function returns method to override argparse action
 

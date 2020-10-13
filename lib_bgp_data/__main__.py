@@ -53,12 +53,13 @@ def main():
                             nargs=0,
                             action=argparse_action_cls)
 
-        # Adds cronjobs for respective parsers
-        if cls.backup:
-            utils.add_cronjob(cls.__name__, 
-                              cls.crontime,
-                              ('/night_runs/bin/lib_bgp_data ',
-                               '--{cls.__name__.lower()}'))
+    # Is this right? Can I name the class anything?
+    argparse_action_cls = type('Backer-upper',
+                               (Action, ),
+                               {'__call__': Parser.run_backupables()})
+    parser.add_argument('--backup',
+                        nargs=0,
+                        action=argparse_action_cls)
 
     # Configure logging to be debug if passed in
     # I know this should be done differently, but to make the module extendable
