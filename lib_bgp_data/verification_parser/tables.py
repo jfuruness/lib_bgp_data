@@ -10,7 +10,6 @@ Possible future improvements:
     -Add test cases, docs, everything
 """
 
-from ..database import Generic_Table
 
 __author__ = "Justin Furuness"
 __credits__ = ["Justin Furuness"]
@@ -18,6 +17,9 @@ __Lisence__ = "BSD"
 __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
+
+
+from ..database import Generic_Table
 
 
 class MRT_Subtable_Table(Generic_Table):
