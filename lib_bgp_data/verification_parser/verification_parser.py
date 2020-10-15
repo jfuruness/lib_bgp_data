@@ -62,4 +62,5 @@ class Verification_Parser(Parser):
             # Note that announcements are announcements with same prefix
             # Note that these announcements come from full set of mrts,
             # Not just the ones we are going to use for control set w/collectors
+            # NOTE also that these ann must be distinct by prefix as_path origin!!
             assert False, "Steps listed as comments above"
