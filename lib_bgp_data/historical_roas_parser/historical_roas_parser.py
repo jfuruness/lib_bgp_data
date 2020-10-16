@@ -2,7 +2,8 @@
 # -*- coding: utf-8 -*-
 
 """
-This module downloads and inserts roas into db. 
+This module downloads all the roas from ftp.ripe.net/rpki to the database.
+HTML parsing and multiprocessing is the fastest way to do this.
 """
 
 __author__ = "Tony Zheng"
@@ -13,12 +14,7 @@ __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
 import os
-from ftplib import FTP, error_perm
-import threading
-from queue import Queue
-import time
 from pathos.multiprocessing import ProcessPool
-import subprocess
 import requests
 from bs4 import BeautifulSoup as Soup
 
@@ -33,7 +29,7 @@ class Historical_ROAS_Parser(Parser):
         """Collect the paths to all the csvs to download. Multithread the
            downloading of all the csvs, insert into db if not seen before."""
 
-        parsed = self.get_parsed_files()
+        parsed = self._get_parsed_files()
 
         s = requests.Session()
         headers = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) '\
@@ -53,39 +49,38 @@ class Historical_ROAS_Parser(Parser):
             download_paths.append(download_path)
 
         # Multiprocessingly download all csvs (nodes = 4 x # CPUS)
-        pool = ProcessPool(nodes=48)
+        pool = ProcessPool(nodes=12)
         pool.map(utils.download_file, paths, download_paths)
-        pool.map(self.reformat_csv, download_paths)
-        pool.map(self.db_insert, download_paths)
+        pool.map(self._reformat_csv, download_paths)
+        pool.map(self._db_insert, download_paths)
         pool.close()
         pool.join()
 
         with Historical_ROAS_Table() as t:
             t.delete_duplicates()
 
-        self.add_parsed_files(paths)
+        self._add_parsed_files(paths)
 
         utils.run_cmds(f'rm -r rpki')
 
-    def get_parsed_files(self):
+    def _get_parsed_files(self):
         """Return the csvs that have already been parsed and inserted into db"""
 
         parsed = []
         with Historical_ROAS_Parsed_Table() as t:
-            t.execute(f"INSERT INTO {t.name}(file) VALUES ('ftp.ripe.net/afrinic.tal/2020/10/08/roas.csv');")
             for row in t.execute(f'SELECT * FROM {t.name}'):
                 parsed.append(row['file'])
         return parsed
 
-    def add_parsed_files(self, files):
+    def _add_parsed_files(self, files):
         """Adds newly parsed csvs to the parsed table"""
         path = './roas_parsed.csv'
         with open(path, 'w+') as f:
             for line in files:
                 f.write(line + '\n')
-        utils.csv_to_db(Historical_ROAS_Parsed_Table)
+        utils.csv_to_db(Historical_ROAS_Parsed_Table, path)
 
-    def reformat_csv(self, csv):
+    def _reformat_csv(self, csv):
         """Delete URI (1st) column using cut,
            delete the first row (column names),
            delete 'AS', add the date, replace commas with tabs using sed"""
@@ -100,10 +95,14 @@ class Historical_ROAS_Parser(Parser):
 
         utils.run_cmds(cmds)
 
-    def db_insert(self, csv):
+    def _db_insert(self, csv):
         utils.csv_to_db(Historical_ROAS_Table, csv)
 
-    def get_csvs(self, s, root='https://ftp.ripe.net/rpki', paths=None):
+    def _get_csvs(self, s, root='https://ftp.ripe.net/rpki', paths=None):
+        """
+        Returns the paths to all the csvs that exist under root.
+        Pass a requests session s for speed.
+        """
 
         if paths is None:
             paths = []
@@ -124,7 +123,6 @@ class Historical_ROAS_Parser(Parser):
             elif 'csv' in href:
                 paths.append(path)
             else:
-                #print(os.path.join(root, href))
                 self.get_csvs(s, path, paths)
 
         return paths 
