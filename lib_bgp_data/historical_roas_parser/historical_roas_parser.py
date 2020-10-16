@@ -37,7 +37,7 @@ class Historical_ROAS_Parser(Parser):
                        'Chrome/75.0.3770.80 Safari/537.36'}
         s.headers.update(headers)
 
-        paths = self.get_csvs(s)
+        paths = self._get_csvs(s)
         paths = [p for p in paths if p not in parsed]
 
         # generate the list of all download_paths
@@ -123,7 +123,7 @@ class Historical_ROAS_Parser(Parser):
             elif 'csv' in href:
                 paths.append(path)
             else:
-                self.get_csvs(s, path, paths)
+                self._get_csvs(s, path, paths)
 
         return paths 
 
