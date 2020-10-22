@@ -19,36 +19,18 @@ __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
 
+import logging
+
 from ..database import Generic_Table
 
 
-class MRT_Subtable_Table(Generic_Table):
-    """Class with database functionality.
-
-    In depth explanation at the top of the file."""
+class Collectors_Table(Generic_Table):
 
     __slots__ = []
 
-    def _create_tables(self):
-        self.cursor.execute("""ALTER TABLE mrt_announcements
-                            RENAME TO {}""".format(self.name))
-
-    def drop_tables(self):
-        self.cursor.execute("DROP TABLE {} IF EXSTS".format(self.name))
-
-
-class Route_Views_Table(Generic_Table):
-    """Inherits MRT_Subtable and overrides name"""
-
-    pass
-
-class RIPE_Table(Generic_Table):
-    """Inherits MRT_Subtable and overrides name"""
-
-    pass
-
-
-class Isolario_Table(Generic_Table):
-    """Inherits MRT_Subtable and overrides name"""
-
-    pass
+    def fill_table(self):
+        logging.info("Getting collectors. This may take a while")
+        # NOTE: postgres is 1 indexed, so as_path[1] is really first element
+        sql = f"""SELECT DISTINCT as_path[1] AS collector_asn
+               FROM {MRT_Announcements_Table.name};"""
+        self.execute(sql)
