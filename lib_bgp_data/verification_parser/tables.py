@@ -33,10 +33,11 @@ class Collectors_Table(Generic_Table):
     name = "collectors"
 
     def fill_table(self):
-        logging.info("Getting collectors. This may take a while")
+        logging.info("Getting collectors. Takes <= 10 min ish")
         # NOTE: postgres is 1 indexed, so as_path[1] is really first element
-        sql = f"""SELECT DISTINCT as_path[1] AS collector_asn
-               FROM {MRT_Announcements_Table.name};"""
+        sql = f"""CREATE UNLOGGED TABLE {self.name} AS (
+                SELECT DISTINCT as_path[1] AS collector_asn
+               FROM {MRT_Announcements_Table.name});"""
         self.execute(sql)
 
 class Top_100_Collectors_Table(Generic_Table):
@@ -47,11 +48,11 @@ class Top_100_Collectors_Table(Generic_Table):
 
     def fill_table(self):
         logging.info("Getting top collectors by as rank")
-        sql = f"""CREATE TABLE {self.name} AS (
+        sql = f"""CREATE UNLOGGED TABLE {self.name} AS (
                 SELECT collector_asn, as_rank FROM {Collectors_Table.name} c
                     INNER JOIN {ASRankTable.name} asr
                         ON asr.as_number = c.collector_asn
-                ORDER BY as_rank LIMIT 100;"""
+                ORDER BY as_rank LIMIT 100);"""
         self.execute(sql)
 
 class Top_100_w_100k_Prefixes_Table(Generic_Table):
@@ -62,10 +63,12 @@ class Top_100_w_100k_Prefixes_Table(Generic_Table):
 
     def fill_table(self):
         logging.info("Filtering collectors by having over 100k prefixs")
-        sql = f"""CREATE TABLE {self.name} AS (
-                SELECT collector_asn, as_rank, COUNT(*) as num_prefixes FROM {MRT_Announcements_Table.name} mrt
-                    INNER JOIN {Top_100_Collectors_Table.name} c
-                ON c.collector_asn = mrt.as_path[1]
-                GROUP BY c.collector_asn
-                WHERE COUNT(*) > 100000;"""
+        sql = f"""CREATE UNLOGGED TABLE {self.name} AS (
+                SELECT * FROM (
+                    SELECT collector_asn, as_rank, COUNT(*) as num_prefixes
+                        FROM {MRT_Announcements_Table.name} mrt
+                        INNER JOIN {Top_100_Collectors_Table.name} c
+                    ON c.collector_asn = mrt.as_path[1]
+                    GROUP BY c.collector_asn, as_rank) placeholder
+                WHERE num_prefixes > 100000);"""
         self.execute(sql)

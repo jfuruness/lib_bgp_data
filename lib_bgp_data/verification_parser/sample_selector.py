@@ -37,13 +37,10 @@ class Sample_Selector:
         self._get_top_100_collectors_table()
         # Step 3:
         # Filter further by only collectors that have over 100k prefixes
-        self._get_top_collectors_w_100k_prefix_origins_table()
+        self._get_top_collectors_w_100k_prefixes_table()
         # Step 4:
         # select distinct by prefix, path, and origin announcements
         # For these collectors
-        self._get_top_collectors_w_100k_prefix_origins_with_distinct_table()
-        # Step 5:
-        # Filter by only collectors that have, for each prefix, 1 origin and 1 path
         self._get_top_collectors_w_100k_prefix_origins_with_distinct_table()
         # Step 6:
         # Filter mrt announcements even further by this
@@ -82,7 +79,7 @@ class Sample_Selector:
         with Top_100_Collectors_Table(clear=True) as db:
             db.fill_table()
 
-    def _get_top_collectors_w_100k_prefixes(self):
+    def _get_top_collectors_w_100k_prefixes_table(self):
         """Gets all collectors in...
 
         top 100 ases by as rank that have over 100k prefix origin pairs
