@@ -9,7 +9,7 @@ The purpose of this is to generate input from 3 MRT file sources.
 """
 
 __author__ = "Justin Furuness"
-__credits__ = ["Justin Furuness"]
+__credits__ = ["Justin Furuness", "James Breslin"]
 __Lisence__ = "BSD"
 __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
@@ -18,8 +18,8 @@ __status__ = "Development"
 import logging
 
 from ..asrank_website_parser import ASRankWebsiteParser
-from ..base_classes import Parsre
-from ..mrt_parser import MRT_Parser
+from ..base_classes import Parser
+from ..mrt_parser import MRT_Parser, MRT_Sources
 
 class Verification_Parser(Parser):
     """This class generates input to the extrapolator verification
@@ -29,25 +29,38 @@ class Verification_Parser(Parser):
 
     __slots__ = []
 
-    def run(self,
-            clear_db=False,
-            mrt_annoucements=False,
-            as_rank=False,
-            sample_selection=False):
-        if clear_db:
+    def _run(self,
+             test=False,
+             clear_db=False,
+             mrt_announcements=False,
+             as_rank=False,
+             sample_selection=False):
+        if clear_db and not test:
             assert False, "Clear db, checkpoint, vaccum analyze"
         if mrt_announcements:
-            MRT_Parser(**self.kwargs).run(IPV4=True, IPV6=False)
+            kwargs = {"sources": [MRT_Sources.RIPE, MRT_Sources.ROUTE_VIEWS],
+                      "IPV4": True,
+                      "IPV6": False}
+            if test:
+                kwargs["api_param_mods"] = {"collectors[]": ["route-views2",
+                                                             "rrc03"]}
+            MRT_Parser(**self.kwargs).run(**kwargs)
         if as_rank:
             ASRankWebsiteParser(**self.kwargs).run()
         if sample_selection:
+            assert False, "impliment this"
             ### LATER MUST MOVE THIS INTO ANOTHER class!!!
             # Step 1:
             # Get a table of all collectors
+            self.get_table_of_collectors()
             # Step 2:
             # Order collectors by AS rank, get only top 100 out of that
+            self.order_collectors()
+            self.get_top_100_collectors()
             # Step 3:
             # Filter further by only collectors that have over 100k prefixes
+            self.filter_collectors()
+            assert False, "Make sure you have enough collectors by this point"
             # Step 4:
             # select distinct by prefix, path, and origin announcements
             # For these collectors

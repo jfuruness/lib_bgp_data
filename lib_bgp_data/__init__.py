@@ -32,6 +32,7 @@ from .rovpp import ROVPP_Simulator, Simulation_Grapher
 #from .forecast import Forecast
 from .cdn_whitelist import CDN_Whitelist
 from .blacklist_parser import Blacklist_Parser
+from .verification_parser import Verification_Parser
 
 class NotSudo(Exception):
     pass
