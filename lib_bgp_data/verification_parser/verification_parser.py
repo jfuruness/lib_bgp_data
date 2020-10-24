@@ -19,7 +19,9 @@ from .sample_selector import Sample_Selector
 
 from ..asrank_website_parser import ASRankWebsiteParser
 from ..base_classes import Parser
+from ..database import Database
 from ..mrt_parser import MRT_Parser, MRT_Sources
+from ..mrt_parser.tables import MRT_Announcements_Table
 
 
 class Verification_Parser(Parser):
@@ -47,6 +49,13 @@ class Verification_Parser(Parser):
                 kwargs["api_param_mods"] = {"collectors[]": ["route-views2",
                                                              "rrc03"]}
             MRT_Parser(**self.kwargs).run(**kwargs)
+            # Create index on prefix for sample selection speedup
+            print("Test if this speeds up sample selection. If not remove")
+            with Database() as db:
+                sql = f"""CREATE INDEX ON
+                       {MRT_Announcements_Table.name}
+                       USING GIST(prefix inet_ops)"""
+                db.execute(sql)
         if as_rank:
             ASRankWebsiteParser(**self.kwargs).run()
         if sample_selection:
