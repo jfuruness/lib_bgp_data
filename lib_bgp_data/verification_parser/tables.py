@@ -52,7 +52,7 @@ class Monitors_Table(Generic_Table):
     name = "monitors"
 
     def fill_table(self):
-        logging.info("Getting Monitors and their statistics")
+        logging.info("Getting Monitors and their statistics, ~37m")
         with ASRankTable() as db:
             largest_as_rank_plus_one = db.get_count() + 1
         # Yes, this takes a long time.
@@ -63,7 +63,7 @@ class Monitors_Table(Generic_Table):
                 --NOTE: ann stands for announcements
                 SELECT distinct_prefixes.monitor_asn AS asn,
                         --coalesced since as_rank doesn't have all ases
-                       COALESCE(asrank.as_rank, {largest_as_rank_plus_one}),
+                       COALESCE(asrank.as_rank, {largest_as_rank_plus_one}) AS as_rank,
                        distinct_prefixes.distinct_prefixes_count
                             AS distinct_prefixes,
                        total_anns.total_ann_count AS total_ann,
@@ -117,9 +117,10 @@ class Control_Announcements_Table(Generic_Table):
     name = "control_announcements"
 
     def fill_table(self):
-        logging.info("getting intersection of control monitor ann prefixes")
+        logging.info("getting intersection of control monitor ann prefixes "
+                     "~10min")
         sql = f"""CREATE UNLOGGED TABLE {self.name} AS (
-               SELECT * FROM
+               SELECT mrt.* FROM
                     {MRT_W_Monitors_Table.name} mrt
                 INNER JOIN {Control_Monitors_Table.name} control_monitors
                     ON control_monitors.asn = mrt.monitor_asn
@@ -149,7 +150,7 @@ class Test_Announcements_Table(Generic_Table):
     def fill_table(self):
         logging.info("Getting all test announcements")
         sql = f"""CREATE UNLOGGED TABLE {self.name} AS (
-                SELECT * FROM {MRT_Announcements.name} mrt
-                INNER JOIN {Control_Announcements.name} c_ann
+                SELECT mrt.* FROM {MRT_Announcements_Table.name} mrt
+                INNER JOIN {Control_Announcements_Table.name} c_ann
                     ON mrt.prefix <<= c_ann.prefix);"""
         self.execute(sql)
