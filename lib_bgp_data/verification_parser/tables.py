@@ -149,6 +149,12 @@ class Test_Announcements_Table(Generic_Table):
 
     def fill_table(self):
         logging.info("Getting all test announcements")
+        print("MIGHT NEED SOME INDEXES HERE!")
+        assert False, """1. Whenever exr wrapper is called it should assert mrt ann has index
+                        2. Whenever exr itself is called it should assert mrt ann has index
+                        3. This is way too slow without an index on the control_ann_table as well
+                        """
+ 
         sql = f"""CREATE UNLOGGED TABLE {self.name} AS (
                 SELECT mrt.* FROM {MRT_Announcements_Table.name} mrt
                 INNER JOIN {Control_Announcements_Table.name} c_ann
