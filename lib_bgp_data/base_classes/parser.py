@@ -37,7 +37,6 @@ class Parser:
     # By default, should be false. Subclasses can override this
     backup = False
     # List of all the parsers that should be backed up
-    # Do we need this?
     parsers_backup = []
 
     # https://stackoverflow.com/a/43057166/8903959
@@ -87,6 +86,7 @@ class Parser:
             assert hasattr(self, "tables"), ("Please have a class attribute that "
                                              "lists the tables that should be "
                                              "backed up.")
+            # NOTE: Do we need this? We just need one cronjob to run everything
             assert hasattr(self, "crontime"), ("Define the (cron) time that "
                                                "this parser should be run.")
 
@@ -123,16 +123,18 @@ class Parser:
         if error:
             sys.exit(1)
 
+        # NOTE: Do we need this too?
         # Adding the automating cronjob if necessary
         if self.backup and not os.path.exists(f'/etc/cron.d/{self.cronjob}'):
             utils.add_cronjob(self.cronjob, *self.crontime,
                 f'/env/bin/lib_bgp_data --{self.name}')
 
-    def backup_tables(self, table_list):
-        """Runs the parser and properly maintains the tablei(s) that it uses"""
+    def backup_tables(self):
+        """Runs the parser and properly maintains the table(s) that it uses"""
 
-        # Back up the tables belonging to specific parser
-        for table in table_list:
+        # Check the tables belonging to specific parser, only parsers with
+        # tables class attribute will have this function called
+        for table in self.tables:
             backup = os.path.join(self.backup_dir, f'{table.name}.sql.gz')
             with table() as t:
                 try:
@@ -142,7 +144,7 @@ class Parser:
                     from ..database.config import global_section_header as gsh
                     assert gsh is not None
                     if os.path.exists(backup):
-                        table.restore_table(gsh, backup)
+                        t.restore_table(gsh, backup)
                         # NOTE: might need to create index? idk
 
         # Run the specific parser
@@ -178,11 +180,11 @@ class Parser:
             db.execute(f'CREATE TABLE temp AS TABLE {table.name}')
 
             # restore previous backup
-            self.restore(prev_backup, db)
+            db.restore_table(gsh, prev_backup)
             count_prev = db.get_count()
             
             # restore temp
-            self.restore(tmp_backup, db)
+            db.restore(gsh, tmp_backup)
             count_tmp = db.get_count()
 
             # new backup is larger, save as the most up-to-date backup
@@ -203,7 +205,7 @@ class Parser:
 
         def inner_run():
             for p in cls.parsers_backup:
-                p().run()
+                p().backup_tables()
         return inner_run
 
     @classmethod
