@@ -14,7 +14,8 @@ __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
 from os.path import join
-from random import sample
+from random import sample, seed
+import uuid
 
 from .attack import Attack
 from .enums import Attack_Types, Non_Default_Policies
@@ -43,11 +44,11 @@ class Data_Point(Parser):
         # path
         self.csv_dir = csv_dir
 
-    def get_data(self, exr_bash, exr_kwargs, pbars, atk_types, pols, seeded, trial):
+    def get_data(self, exr_bash, exr_kwargs, pbars, atk_types, pols, trial):
         """Runs test and stores data in the database"""
 
         # Get all possible tests and set them up
-        for test in self.get_possible_tests(atk_types, pols, seeded, trial):
+        for test in self.get_possible_tests(atk_types, pols, trial):
             # Run the test and insert into the database
             test.run(self.tables,
                      exr_bash,
@@ -56,7 +57,7 @@ class Data_Point(Parser):
                      self.percent_iter,
                      pbars)
 
-    def get_possible_tests(self, attack_types, policies, seeded, trial, set_up=True):
+    def get_possible_tests(self, attack_types, policies, trial, set_up=True):
         """Gets all possible tests. Sets them up and returns them"""
 
         # For each type of hijack
@@ -64,18 +65,18 @@ class Data_Point(Parser):
             # Sets adopting ases, returns hijack
             # We set up here so that we can compare one attack set up across
             # all the different policies
-            attack = self.set_up_test(attack_type, seeded, trial) if set_up else None
+            attack = self.set_up_test(attack_type, trial) if set_up else None
             # For each type of policy, attempt to defend against that attack
             for adopt_policy in policies:
                 yield Test(attack_type, attack, adopt_policy, self.tables)
 
-    def set_up_test(self, attack_type, seeded, trial_num):
+    def set_up_test(self, attack_type, trial_num):
         """Sets up the tests by filling attackers and setting adopters"""
 
         # Fills the hijack table
         atk = self.fill_attacks(self.tables.possible_attackers, attack_type, trial_num)
         # Sets the adopting ases
-        self.tables.set_adopting_ases(self.percent_iter, atk, seeded)
+        self.tables.set_adopting_ases(self.percent_iter, atk)
         # Return the hijack class
         return atk
 

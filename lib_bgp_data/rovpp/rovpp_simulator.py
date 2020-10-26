@@ -13,6 +13,7 @@ __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
 import random
+import uuid
 
 from .data_point import Data_Point
 from .enums import Attack_Types, Non_Default_Policies
@@ -37,8 +38,7 @@ class ROVPP_Simulator(Parser):
              percents=[1],# list(range(5, 31, 5)),
              num_trials=2,
              exr_bash=None,
-             seeded=False,
-             seed=0,
+             seed=uuid.getnode(),
              seeded_trial=None,
              attack_types=Attack_Types.__members__.values(),
              adopt_policy_types=Non_Default_Policies.__members__.values(),
@@ -92,12 +92,11 @@ class ROVPP_Simulator(Parser):
             for data_pt in data_pts:
                 for test in data_pt.get_possible_tests(attack_types,
                                                        adopt_policy_types,
-                                                       seeded,
                                                        trial,
                                                        set_up=False):
                     total += 1
 
-        # Which scenarioi(s) need to be done, subtract 1 if seeded due to 0
+        # Which scenario(s) need(s) to be done, subtract 1 if seeded due to 0
         # indexing. We do this so we can jump to a specific deterministic
         # scenario
         if not seeded_trial:
@@ -109,8 +108,6 @@ class ROVPP_Simulator(Parser):
 
         with Multiline_TQDM(len(scenarios)) as pbars:
             current_scenario = 0
-            if seeded and seed != 0:
-                random.seed(seed)
             for trial in range(num_trials):
                 for data_pt in data_pts:
                     # For each data point, Tests objects are created by
@@ -119,15 +116,15 @@ class ROVPP_Simulator(Parser):
                     # to have direct control of which scenario is being run
                     for attack_type in attack_types:
                         for adopt_policy_type in adopt_policy_types:
-                            if seeded and seed == 0:
-                                random.seed(current_scenario)
                             if current_scenario in scenarios:
+                                # seed on a function of the MAC address and
+                                # scenario number
+                                random.seed(seed//2 + scenario)
                                 data_pt.get_data(exr_bash,
                                                  self.kwargs,
                                                  pbars,
                                                  [attack_type],
                                                  [adopt_policy_type],
-                                                 seeded,
                                                  current_scenario)
                                 pbars.update()
                             current_scenario += 1

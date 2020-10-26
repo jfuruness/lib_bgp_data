@@ -27,11 +27,11 @@ class Input_Subtables:
             subtable.clear_table()
             subtable.fill_input_table(self.tables)
 
-    def set_adopting_ases(self, percent_iter, attack, seeded):
+    def set_adopting_ases(self, percent_iter, attack):
         """Sets adopting ases"""
 
         for subtable in self.tables:
-            subtable.set_adopting_ases(percent_iter, attack, seeded, self.names)
+            subtable.set_adopting_ases(percent_iter, attack, self.names)
 
     def change_routing_policies(self, policy):
         """Changes the routing policy for that percentage of ASes"""
@@ -58,15 +58,14 @@ class Input_Subtables:
 class Input_Subtable:
     """Subtable class for ease of use"""
 
-    def set_adopting_ases(self, iteration_num, attack, deterministic, names):
+    def set_adopting_ases(self, iteration_num, attack, names):
         """Sets adopting ases"""
 
         # Cleared instead of updated due to speed, much faster
         self.Input_Table.clear_table()
         self.Input_Table.fill_table(names)
         self.Input_Table.set_adopting_ases(self.percents[iteration_num],
-                                           attack.attacker_asn,
-                                           deterministic)
+                                           attack.attacker_asn)
 
     def change_routing_policies(self, policy):
         """Changes routing policies of the subtable"""
