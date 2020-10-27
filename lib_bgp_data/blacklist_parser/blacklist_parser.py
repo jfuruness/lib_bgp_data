@@ -15,6 +15,8 @@ __maintainer__ = "Nicholas Shpetner"
 __email__ = "nicholas.shpetner@uconn.edu"
 __status__ = "Development"
 
+from .blacklist_sources import UCE_Blacklist, UCE2, UCE3
+from .blacklist_sources import Spamhaus_Blacklist, MIT_Blacklist
 from .blacklist_source import Blacklist_Source
 from .tables import Blacklist_Table
 from ..base_classes import Parser
@@ -28,6 +30,6 @@ class Blacklist_Parser(Parser):
 
         rows = []
         for Source in Blacklist_Source.sources:
-            rows.extend(Source().run())
+            rows.extend(Source(self.csv_dir).run())
 
         utils.rows_to_db(rows, f"{self.csv_dir}/blist.csv", Blacklist_Table)

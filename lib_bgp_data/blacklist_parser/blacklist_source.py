@@ -14,6 +14,7 @@ __email__ = "nicholas.shpetner@uconn.edu"
 __status__ = "Development"
 
 import re
+import os
 
 from ..utils import utils
 
@@ -30,7 +31,8 @@ class Blacklist_Source:
         """
 
         super().__init_subclass__(**kwargs)
-        cls.sources.append(cls)
+        if hasattr(cls, "url"):
+            cls.sources.append(cls)
 
     def __init__(self, csv_dir):
         self.csv_dir = csv_dir
@@ -47,7 +49,7 @@ class Blacklist_Source:
         return os.path.join(self.csv_dir, self.__class__.__name__)
 
     def parse(self):
-        with open(self.path, 'r') as f:
+        with open(self.path, 'r', encoding="utf-8", errors="ignore") as f:
             return self.parse_file(f)
 
     def parse_file(self, f):

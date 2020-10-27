@@ -27,7 +27,7 @@ class UCE_Blacklist(Blacklist_Source):
 
     def download(self):
         temp_path = self.path + ".gz"
-        utils.download_file(source.value, temp_path)
+        utils.download_file(self.url, temp_path)
         utils.unzip_gz(temp_path)
 
 class UCE2(UCE_Blacklist):
