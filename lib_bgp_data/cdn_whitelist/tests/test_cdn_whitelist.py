@@ -17,6 +17,7 @@ __status__ = "Development"
 
 import pytest
 from os import path
+from unittest.mock import patch
 
 from ..cdn_whitelist import CDN_Whitelist
 from ..tables import CDN_Whitelist_Table
@@ -27,28 +28,38 @@ class Test_CDN_Whitelist:
     """Tests all functions within the ROAs Parser class."""
 
     @pytest.fixture(autouse=True)
-    def setup(self):
+    def parser(self):
         """Parser setup and table deleted before every test"""
-        with CDN_Whitelist_Table(clear=True) as t:
-            pass
+        CDN_Whitelist_Table(clear=True)
+        return CDN_Whitelist()
 
-    def test_run(self):
+    def test_run(self, parser):
         """Tests the _run function"""
 
-        # Downloads data and inserts into the database (should be more than 0 entries)
-        # Makes sure it doesn't error even if there is a CDN that doesn't exist
+        # Downloads data and inserts into the database 
+        # Table should have entries after run
 
-        # Add a nonsense CDN
-        list_path = path.dirname(path.dirname(path.realpath(__file__)))
-        list_path = path.join(list_path, 'cdns.txt')
-        utils.run_cmds(f'echo "urfgurf" >> {list_path}')
-
-        CDN_Whitelist()._run()
+        parser._run()
 
         with CDN_Whitelist_Table() as t:
             assert t.get_count() > 0
 
-        # Delete what was added
-        utils.run_cmds(f"sed -i '$d' {list_path}")
+    @patch.object(CDN_Whitelist, '_get_cdns', return_value=['urfgurf'])
+    def test_bad_CDN(self, mock, parser):
+        """Tests that an error occurs with a CDN that doesn't exist"""
 
-        
+        with pytest.raises(ValueError):
+            parser._run()
+
+    def test_get_cdns(self, parser):
+        """
+        Tests that the CDN organisations are correctly
+        being retrieved from the text file.
+        """
+        test_file = './test_cdns.txt'
+        with open(test_file, 'w+') as f:
+            f.write('IMACDN')
+        assert parser._get_cdns(test_file) == ['IMACDN']
+        utils.delete_paths(test_file)
+
+
