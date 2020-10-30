@@ -34,7 +34,6 @@ class Data:
     __slots__ = ['_as_regex', '_nums_regex', '_ip_regex',
                  '_temp_row', 'data', '_columns', 'csv_path']
 
-    
     def __init__(self, csv_dir: str):
         """Initializes regexes and other important info."""
 
@@ -60,7 +59,6 @@ class Data:
         with self.table() as t:
             self._columns = t.columns
 
-    
     def append(self, row: bs4.element.Tag):
         """Parses, formats, and appends a row of data from bgpstream.com.
 
@@ -79,7 +77,6 @@ class Data:
         except AttributeError:
             logging.debug('ERROR IN THIS ROW. WILL NOT BE APPENDED')
 
-    
     def db_insert(self, IPV4=True, IPV6=False):
         """Inserts the data into the database and formats it.
 
@@ -109,7 +106,6 @@ class Data:
 ### Helper Functions ###
 ########################
 
-    
     def _parse_common_elements(self, row: bs4.element.Tag):
         """Parses common tags and adds data to temp_row.
 
@@ -142,7 +138,6 @@ class Data:
         # Returns the as info and html for the page with more info
         return as_info, utils.get_tags(url, "td")
 
-    
     def _parse_as_info(self, as_info: str):
         """Performs regex on as_info to return AS number and AS name.
 
@@ -166,7 +161,6 @@ class Data:
                 return as_parsed.group("as_name2"),\
                     as_parsed.group("as_number2")
 
-    
     def _format_temp_row(self) -> list:
         """Formats row vals for input into the csv files.
 
@@ -196,7 +190,6 @@ class Hijack(Data):
 
     table = Hijacks_Table
 
-    
     def _parse_uncommon_info(self, as_info: str, extended_children: list):
         """Parses misc hijack row info."""
 
@@ -218,7 +211,7 @@ class Hijack(Data):
             extended_children[end - 4].string).group(1).strip()
 
         self._temp_row["detected_as_path"] = self._nums_regex.search(
-            extended_children[end - 2].string.strip()).group(1) 
+            extended_children[end - 2].string.strip()).group(1)
         self._temp_row["detected_as_path"] = str([int(s) for s in
             self._temp_row.get("detected_as_path").split(' ')])
         self._temp_row["detected_as_path"] =\
@@ -239,7 +232,7 @@ class Leak(Data):
     __slots__ = []
 
     table = Leaks_Table
-    
+
     def _parse_uncommon_info(self, as_info: str, extended_children: list):
         """Parses misc leak row info."""
 
@@ -290,7 +283,7 @@ class Outage(Data):
     __slots__ = []
 
     table = Outages_Table
- 
+
     def _parse_uncommon_info(self, as_info: str, extended_children: list):
         """Parses misc outage row info."""
 
