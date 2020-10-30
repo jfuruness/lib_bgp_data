@@ -367,9 +367,8 @@ def kill_port(port: int, wait: bool = True):
                     time.sleep(120)
 
 
-def add_cronjob(name, minute, hour, day_month, month, day_week, executable):
-    """Creates a cronjob of name"""
-    run_cmds((f'echo "{minute} {hour} {day_month} {month} {day_week} root ',
-            f'{executable} > /etc/cron.d/{name}'))
-
-
+def add_cronjob(name, time, executable, overwrite=False):
+    """Creates a cronjob of name, that runs executable at (cron) time."""
+    cronjob = f'/etc/cron.d/{name}'
+    if not os.path.exists or overwrite:
+        run_cmds(f'echo "{time} root {executable} > {cronjob}')

@@ -71,7 +71,5 @@ def install():
 
     # MaxMind updates on Tuesdays, so we'll update on Wednesdays.
     utils.add_cronjob('GeoIP_Update', 
-                      '0', '0', '*', '*', '3',
+                      '0 0 * * 3',
                       '/etc/geoipupdate')
-
-
