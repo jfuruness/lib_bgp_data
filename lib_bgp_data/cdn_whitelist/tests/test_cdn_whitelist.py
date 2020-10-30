@@ -61,5 +61,3 @@ class Test_CDN_Whitelist:
             f.write('IMACDN')
         assert parser._get_cdns(test_file) == ['IMACDN']
         utils.delete_paths(test_file)
-
-

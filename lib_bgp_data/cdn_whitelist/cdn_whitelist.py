@@ -94,5 +94,3 @@ class CDN_Whitelist(Parser):
 
         with open(input_file, 'r') as f:
             return [cdn.strip() for cdn in f if cdn.strip()]
-
-
