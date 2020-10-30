@@ -66,5 +66,3 @@ class Historical_ROAS_Parsed_Table(Generic_Table):
                     file text
                     );"""
         self.execute(sql)
-
-

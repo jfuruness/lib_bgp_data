@@ -20,7 +20,17 @@ from ...utils import utils
 
 class Test_Historical_ROAS_Parser:
 
+    @pytest.mark.slow()
+    #@pytest.mark.skip()
+    def test_clean_run(self):
+        """Performs a clean run by dropping the tables."""
+        Historical_ROAS_Parsed_Table(clear=True)
+        with Historical_ROAS_Table(clear=True) as t:
+            Historical_ROAS_Parser().run()
+            assert t.get_count() > 1000000
+
     def test_no_duplicates(self):
+        """Tests no duplicates rows exist in the table"""
         with Historical_ROAS_Table() as t:
             sql = f"SELECT DISTINCT({','.join(t.columns[:-1])}) FROM {t.name}"
             distinct = len(t.execute(sql))
@@ -28,6 +38,10 @@ class Test_Historical_ROAS_Parser:
             assert len(t.execute(sql)) == distinct
 
     def test_get_parsed_files(self):
+        """
+        Tests that the method correctly returns all the rows of
+        the parsed files table.
+        """
         files = Historical_ROAS_Parser()._get_parsed_files()
         with Historical_ROAS_Parsed_Table() as t:
             for f in files:
@@ -35,6 +49,10 @@ class Test_Historical_ROAS_Parser:
                 assert len(t.execute(sql)) == 1
 
     def test_add_parsed_files(self):
+        """
+        Tests that the method correctly adds a new parsed file
+        to the parsed files table.
+        """
         file_name = 'a_test_file'
         Historical_ROAS_Parser()._add_parsed_files([file_name])
         with Historical_ROAS_Parsed_Table() as t:
@@ -44,6 +62,10 @@ class Test_Historical_ROAS_Parser:
             t.execute(sql)
 
     def test_reformat_csv(self):
+        """
+        Tests the reformatting. See the docstring for the method
+        for what it does exactly.
+        """
         path = './test_reformat.csv'
         correct = '37674	41.191.212.0/22	24	'
         correct += '2015-10-30 13:21:35	2016-10-30 13:21:35	.-test_ref\n'
@@ -59,5 +81,3 @@ class Test_Historical_ROAS_Parser:
             assert f.read() == correct
 
         utils.delete_paths(path)
-
-

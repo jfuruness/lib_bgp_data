@@ -49,7 +49,7 @@ class Historical_ROAS_Parser(Parser):
             download_paths.append(download_path)
 
         # Multiprocessingly download all csvs (nodes = 4 x # CPUS)
-        pool = ProcessPool(nodes=12)
+        pool = ProcessPool(nodes=48)
         pool.map(utils.download_file, paths, download_paths)
         pool.map(self._reformat_csv, download_paths)
         pool.map(self._db_insert, download_paths)
@@ -61,7 +61,7 @@ class Historical_ROAS_Parser(Parser):
 
         self._add_parsed_files(paths)
 
-        utils.run_cmds(f'rm -r rpki')
+        utils.delete_paths('./rpki')
 
     def _get_parsed_files(self):
         """Return the csvs that have already been parsed and inserted into db"""
@@ -125,6 +125,4 @@ class Historical_ROAS_Parser(Parser):
             else:
                 self._get_csvs(s, path, paths)
 
-        return paths 
-
-
+        return paths
