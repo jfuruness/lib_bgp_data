@@ -119,7 +119,7 @@ class ROVPP_Simulator(Parser):
                             if current_scenario in scenarios:
                                 # seed on a function of the MAC address and
                                 # scenario number
-                                random.seed(seed//2 + scenario)
+                                random.seed(seed//2 + current_scenario)
                                 data_pt.get_data(exr_bash,
                                                  self.kwargs,
                                                  pbars,
