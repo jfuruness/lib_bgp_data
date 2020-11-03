@@ -25,7 +25,7 @@ __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
 import logging
-from random import sample
+from random import random, sample
 
 from .enums import Non_Default_Policies, Policies, Attack_Types
 from .enums import AS_Types, Data_Plane_Conditions as DP_Conds
@@ -82,7 +82,7 @@ from ..extrapolator_parser.tables import ROVPP_Extrapolator_Rib_Out_Table
 class ASes_Subtable(Generic_Table):
     """Ases subtable (generic type of subtable)"""
 
-    def set_adopting_ases(self, percent, attacker, deterministic):
+    def set_adopting_ases(self, percent, attacker, random_seed):
         """Sets ases to impliment"""
 
         ases = set([x["asn"] for x in self.get_all()])
@@ -107,26 +107,17 @@ class ASes_Subtable(Generic_Table):
         if ases_to_set == 0:
             return
 
-        # Using seeded randomness
-        # NOTE: this should be changed. SQL can use a seed.
-        # Updates ases to be adopting
-        if deterministic:
-            ases = list(ases)
-            ases.sort()
-            adopting_ases = sample(ases, k=ases_to_set)
-            percent_s_str = " OR asn = ".join("%s" for AS in adopting_ases)
-            sql = """UPDATE {self.name} SET impliment = TRUE
-                  WHERE asn = {percent_s_str}"""
-            self.execute(sql, adopting_ases)
-        else:
-            sql = """UPDATE {0} SET impliment = TRUE
-                    FROM (SELECT * FROM {0}
-                             WHERE {0}.asn != {1}
-                             ORDER BY RANDOM() LIMIT {2}
-                             ) b
-                   WHERE b.asn = {0}.asn
-                   ;""".format(self.name, attacker, ases_to_set)
-            self.execute(sql)
+        if random_seed:
+            self.execute(f"SELECT setseed({random_seed});")
+
+        sql = """UPDATE {0} SET impliment = TRUE
+                FROM (SELECT * FROM {0}
+                         WHERE {0}.asn != {1}
+                         ORDER BY RANDOM() LIMIT {2}
+                         ) b
+               WHERE b.asn = {0}.asn
+               ;""".format(self.name, attacker, ases_to_set)
+        self.execute(sql)
 
     def change_routing_policies(self, policy):
         """Change the adopting ases routing policies"""

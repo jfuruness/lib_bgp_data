@@ -13,6 +13,7 @@ __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
 import random
+import uuid
 
 from .data_point import Data_Point
 from .enums import Attack_Types, Non_Default_Policies
@@ -36,10 +37,10 @@ class ROVPP_Simulator(Parser):
     def _run(self,
              percents=[1],# list(range(5, 31, 5)),
              num_trials=2,
-             exr_bash=None,
-             seeded=False,
-             seed=0,
+             exr_bash=None,  # For development only
+             seed=uuid.getnode(),
              seeded_trial=None,
+             deterministic=False,
              attack_types=Attack_Types.__members__.values(),
              adopt_policy_types=Non_Default_Policies.__members__.values(),
              redownload_base_data=True,
@@ -103,32 +104,37 @@ class ROVPP_Simulator(Parser):
         tables.fill_tables()
 
         # All data points that we want to graph
-        data_pts = [Data_Point(tables, i, percent, self.csv_dir)
+        data_pts = [Data_Point(tables, i, percent, self.csv_dir, deterministic)
                     for i, percent in enumerate(percents)]
 
-        # We do this so that we can immediatly skip to the deterministic trial
-        trials = [seeded_trial] if seeded_trial else list(range(num_trials))
+        # We run tqdm off of the number of scenarios that need to be run. The
+        # total number of scenarios is the number of Test objects that are
+        # created and run. This allows someone to input the scenario number
+        # they see in the tqdm bar and jump to that specifiic scenario. Having
+        # the tqdm be based on the number of trials is too slow, and we
+        # potentially may have to wait a while for a specific tets to be run
+        # in a specific trial. The reason we have multiple bars is so that we
+        # can display useful status using the bar.
 
-        # The reason we run tqdm off the number of trials
-        # And not number of data points is so that someone can input the
-        # deterministic trial number and have it jump straight to that trial
-        # In addition - the reason we have multiple bars is so that we can
-        # display useful stats using the bar
+        # Get total number of scenarios (Test class objects that will be run).
+        # This value will be used in the tqdm
+        total = 0
+        for trial in range(num_trials):
+            for data_pt in data_pts:
+                for test in data_pt.get_possible_tests(attack_types,
+                                                       adopt_policy_types,
+                                                       trial,
+                                                       set_up=False):
+                    total += 1
 
-        with Multiline_TQDM(len(trials)) as pbars:
-            if seeded and seed != 0:
-                random.seed(seed)
-            for trial in trials:
-                if seeded and seed == 0:
-                    random.seed(trial)
+        with Multiline_TQDM(total) as pbars:
+            for trial in range(num_trials):
                 for data_pt in data_pts:
                     data_pt.get_data(exr_bash,
-                                     self.kwargs,
-                                     pbars,
-                                     attack_types,
-                                     adopt_policy_types,
-                                     seeded,
-                                     trial)
-                pbars.update()
-
+                                        self.kwargs,
+                                        pbars,
+                                        attack_types,
+                                        adopt_policy_types,
+                                        trial,
+                                        seeded_trial)
         tables.close()

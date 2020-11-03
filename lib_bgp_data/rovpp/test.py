@@ -68,3 +68,4 @@ class Test:
                         self.adopt_policy,
                         percent,
                         p_iter)
+        pbars.update()

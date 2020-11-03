@@ -14,7 +14,8 @@ __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
 from os.path import join
-from random import sample
+import random
+import uuid
 
 from .attack import Attack
 from .enums import Attack_Types, Non_Default_Policies
@@ -29,7 +30,7 @@ from ..utils import utils
 class Data_Point(Parser):
     """Represents a data point on the graph"""
 
-    def __init__(self, subtables, percent_iter, percent, csv_dir):
+    def __init__(self, subtables, percent_iter, percent, csv_dir, deterministic):
         """stores relevant info"""
 
         # Subtables object
@@ -42,21 +43,27 @@ class Data_Point(Parser):
         self.percent = percent
         # path
         self.csv_dir = csv_dir
+        self.deterministic = deterministic
 
-    def get_data(self, exr_bash, exr_kwargs, pbars, atk_types, pols, seeded, trial):
+    def get_data(self, exr_bash, exr_kwargs, pbars, atk_types, pols, trial, seeded_trial):
         """Runs test and stores data in the database"""
 
         # Get all possible tests and set them up
-        for test in self.get_possible_tests(atk_types, pols, seeded, trial):
-            # Run the test and insert into the database
-            test.run(self.tables,
-                     exr_bash,
-                     exr_kwargs,
-                     self.percent,
-                     self.percent_iter,
-                     pbars)
+        for test in self.get_possible_tests(atk_types, pols, trial):
+            # Yes, this isn't the fastest way to do it
+            # But it's only for development, so whatever
+            if pbars.current_trial != seeded_trial and seeded_trial is not None:
+                pbars.update()
+            else:
+                # Run the test and insert into the database
+                test.run(self.tables,
+                         exr_bash,
+                         exr_kwargs,
+                         self.percent,
+                         self.percent_iter,
+                         pbars)
 
-    def get_possible_tests(self, attack_types, policies, seeded, trial, set_up=True):
+    def get_possible_tests(self, attack_types, policies, trial, set_up=True):
         """Gets all possible tests. Sets them up and returns them"""
 
         # For each type of hijack
@@ -64,26 +71,38 @@ class Data_Point(Parser):
             # Sets adopting ases, returns hijack
             # We set up here so that we can compare one attack set up across
             # all the different policies
-            attack = self.set_up_test(attack_type, seeded, trial) if set_up else None
+            attack = self.set_up_test(attack_type, trial) if set_up else None
             # For each type of policy, attempt to defend against that attack
             for adopt_policy in policies:
                 yield Test(attack_type, attack, adopt_policy, self.tables)
 
-    def set_up_test(self, attack_type, seeded, trial_num):
+    def set_up_test(self, attack_type, trial_num):
         """Sets up the tests by filling attackers and setting adopters"""
 
+        random_seed = self.get_set_random_seed(attack_type, trial_num)
         # Fills the hijack table
         atk = self.fill_attacks(self.tables.possible_attackers, attack_type, trial_num)
         # Sets the adopting ases
-        self.tables.set_adopting_ases(self.percent_iter, atk, seeded)
+        self.tables.set_adopting_ases(self.percent_iter, atk, random_seed)
         # Return the hijack class
         return atk
+
+    def get_set_random_seed(self, attack_type, trial_num):
+        if self.deterministic:
+            seed = (str(attack_type)
+                    + str(self.percent_iter)
+                    + str(trial_num))
+            random.seed(seed)
+            return random.random()
 
     def fill_attacks(self, ases, attack_type, trial_num):
         """Sets up the attack, inserts into the db"""
 
+        if self.deterministic:
+            ases = sorted(ases)
+
         # Gets two random ases without duplicates
-        attacker, victim = sample(ases, k=2)
+        attacker, victim = random.sample(ases, k=2)
 
         # Table schema: prefix | as_path | origin | time
         # NOTE: we use the time as an index for keeping track of atk/vic pairs
