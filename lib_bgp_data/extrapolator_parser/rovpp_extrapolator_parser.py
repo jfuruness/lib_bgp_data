@@ -40,7 +40,7 @@ class ROVPP_Extrapolator_Parser(Extrapolator_Parser):
 
     __slots__ = []
 
-    branch = "aspa"
+    branch = "rovpp_tbl_chg"
 
     def _run(self, table_names, exr_bash=None, attack_type=None):
         """Runs the bgp-extrapolator and verifies input.
