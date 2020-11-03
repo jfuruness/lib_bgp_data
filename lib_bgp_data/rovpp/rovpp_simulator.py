@@ -37,9 +37,10 @@ class ROVPP_Simulator(Parser):
     def _run(self,
              percents=[1],# list(range(5, 31, 5)),
              num_trials=2,
-             exr_bash=None,
+             exr_bash=None,  # For development only
              seed=uuid.getnode(),
              seeded_trial=None,
+             deterministic=False,
              attack_types=Attack_Types.__members__.values(),
              adopt_policy_types=Non_Default_Policies.__members__.values(),
              redownload_base_data=True,
@@ -73,7 +74,7 @@ class ROVPP_Simulator(Parser):
         tables.fill_tables()
 
         # All data points that we want to graph
-        data_pts = [Data_Point(tables, i, percent, self.csv_dir)
+        data_pts = [Data_Point(tables, i, percent, self.csv_dir, deterministic)
                     for i, percent in enumerate(percents)]
 
         # We run tqdm off of the number of scenarios that need to be run. The
@@ -96,36 +97,14 @@ class ROVPP_Simulator(Parser):
                                                        set_up=False):
                     total += 1
 
-        # Which scenario(s) need(s) to be done, subtract 1 if seeded due to 0
-        # indexing. We do this so we can jump to a specific deterministic
-        # scenario
-        if not seeded_trial:
-            scenarios = set(range(total))
-        elif 0 < seeded_trial <= total:
-            scenarios = {seeded_trial - 1}
-        else:
-            scenarios = {}
-
-        with Multiline_TQDM(len(scenarios)) as pbars:
-            current_scenario = 0
+        with Multiline_TQDM(total) as pbars:
             for trial in range(num_trials):
                 for data_pt in data_pts:
-                    # For each data point, Tests objects are created by
-                    # looping through attack_type and adopt_policy. By looping
-                    # here instead of in the get_data() method, it allows us
-                    # to have direct control of which scenario is being run
-                    for attack_type in attack_types:
-                        for adopt_policy_type in adopt_policy_types:
-                            if current_scenario in scenarios:
-                                # seed on a function of the MAC address and
-                                # scenario number
-                                random.seed(seed//2 + current_scenario)
-                                data_pt.get_data(exr_bash,
-                                                 self.kwargs,
-                                                 pbars,
-                                                 [attack_type],
-                                                 [adopt_policy_type],
-                                                 current_scenario)
-                                pbars.update()
-                            current_scenario += 1
+                    data_pt.get_data(exr_bash,
+                                        self.kwargs,
+                                        pbars,
+                                        attack_types,
+                                        adopt_policy_types,
+                                        trial,
+                                        seeded_trial)
         tables.close()
