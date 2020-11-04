@@ -110,6 +110,7 @@ class Control_Monitors_Table(Generic_Table):
                 );"""
         self.execute(sql)
 
+
 class Control_Announcements_Table(Generic_Table):
 
     __slots__ = []
@@ -149,14 +150,51 @@ class Test_Announcements_Table(Generic_Table):
 
     def fill_table(self):
         logging.info("Getting all test announcements")
-        print("MIGHT NEED SOME INDEXES HERE!")
-        assert False, """1. Whenever exr wrapper is called it should assert mrt ann has index
-                        2. Whenever exr itself is called it should assert mrt ann has index
-                        3. This is way too slow without an index on the control_ann_table as well
-                        """
- 
+        logging.info("Getting distinct prefixes from control ann")
+        control_prefix_name = "control_prefixes"
+        sql = f"""CREATE UNLOGGED TABLE {control_prefix_name} AS (
+              SELECT DISTINCT prefix
+                FROM {Control_Announcements_Table.name}
+              );"""
+        self.execute(sql)
+        logging.info("Getting all prefixes to exclude")
+        excluded_prefixes_name = "excluded_prefixes"
+        sql = f"""CREATE UNLOGGED TABLE {excluded_prefixes_name} AS (
+              SELECT DISTINCT prefix FROM {MRT_Announcements_Table.name}
+              EXCEPT SELECT prefix FROM {Control_Announcements_Table.name});"""
+        self.execute(sql)
+        sql = f"CREATE INDEX ON {excluded_prefixes_name}
+              USING GIST(prefix inet_ops)"""
+        self.execute(sql)
+        
+        logging.info("Version 1 for getting test ann")
+        # Done this way to join as little as possible
+        # Also if you just inner join with <<= you get duplication
+        # Whereas with this method, it simply removes all cases where it's >>
         sql = f"""CREATE UNLOGGED TABLE {self.name} AS (
                 SELECT mrt.* FROM {MRT_Announcements_Table.name} mrt
-                INNER JOIN {Control_Announcements_Table.name} c_ann
-                    ON mrt.prefix <<= c_ann.prefix);"""
+                LEFT JOIN {excluded_prefixes_name} ep
+                    ON mrt.prefix = ep.prefix
+                WHERE ep.prefix IS NULL);"""
         self.execute(sql)
+        logging.info("Adding index to test_ann for exr input")
+        sql = f"""CREATE INDEX ON {self.name} USING GIST(prefix inet_ops);"""
+        self.execute(sql)
+
+        logging.info("Trying the delete version")
+        # Testing this way as well.
+        # Rename mrt announcements table
+        # Just delete all that don't abide by
+        # Prob faster since don't need to recreate index for EXR splitting
+        sql = f"""ALTER TABLE {MRT_Announcements_Table.name}
+               RENAME TO {self.name}qqq;"""
+        self.execute(sql)
+        logging.info("Deleting from MRT ann")
+        sql = f"""DELETE FROM {self.name}qqq a
+              WHERE a.prefix = {excluded_prefixes_name}.prefix"""
+        self.execute(sql)
+        logging.info("Delete version complete")
+        # THIRD METHOD
+        # Just use MRT ann as your test ann
+        # exr may take slightly longer, but who cares
+        # esp if it is mostly the same size, and removing them takes forever
