@@ -50,7 +50,6 @@ class Verification_Parser(Parser):
                                                              "rrc03"]}
             MRT_Parser(**self.kwargs).run(**kwargs)
             # Create index on prefix for sample selection speedup
-            print("Test if this speeds up sample selection. If not remove")
             with Database() as db:
                 sql = f"""CREATE INDEX ON
                        {MRT_Announcements_Table.name}

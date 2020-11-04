@@ -33,23 +33,24 @@ class Sample_Selector:
         tables = [
         # Step 1:
         # Add monitor_asn to all mrt announcements
-#        MRT_W_Monitors_Table,
+        MRT_W_Monitors_Table,
         # Get a table of all Monitors with statistics
-#        Monitors_Table,
+        Monitors_Table,
         # Step 2:
         # Only use monitors that have rib out
         # (exr doesn't compute real rib in since it processes ann like a moment
         # in time. Won't go into detail here)
-#        Control_Monitors_Table,
+        Control_Monitors_Table,
         # Step 3:
         # Get all announcements for prefixes that exist in all control monitors
         # Note that since we only use monitors that only output rib out
         # Each monitor only has 1 ann per prefix
-#        Control_Announcements_Table,
+        Control_Announcements_Table,
         # Step 4:
         # Get all announcements that <<= control_announcemnt.prefixes
         # For these collectors
-        Test_Announcements_Table]
+#        Test_Announcements_Table
+        ]
 
         for Table in tables:
             with Table(clear=True) as db:
