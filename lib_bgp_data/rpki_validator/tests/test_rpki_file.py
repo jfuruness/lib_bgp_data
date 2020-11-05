@@ -56,7 +56,7 @@ class Test_RPKI_File:
         """
         with Unique_Prefix_Origins_Table() as _db:
             sql = f'SELECT COUNT(*) FROM {test_table}'
-            assert self.rpki_file.total_lines == _db.execute(sql)[0]['count']
+            assert self.rpki_file.total_lines == _db.get_count(sql)
 
     def test_gzip(self):
         """Tests the gzip function.
@@ -88,7 +88,7 @@ class Test_RPKI_File:
         download the file and that the file is the same as the one
         uploaded.
         """
-        if not contextmanager :
+        if not contextmanager:
             self.rpki_file.spawn_process()
 
         localhost = socket.gethostbyname(socket.gethostname())

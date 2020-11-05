@@ -395,5 +395,5 @@ def kill_port(port: int, wait: bool = True):
                 proc.send_signal(SIGTERM) # or SIGKILL
                 # Sometimes the above doesn't do it's job
                 run_cmds(f"sudo kill -9 $(lsof -t -i: {port})")
-                if wait:
-                    time.sleep(120)
+    if wait:
+        time.sleep(120)
