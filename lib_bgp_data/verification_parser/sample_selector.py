@@ -18,8 +18,6 @@ import logging
 from .tables import MRT_W_Monitors_Table
 from .tables import Monitors_Table
 from .tables import Control_Monitors_Table
-from .tables import Control_Announcements_Table
-from .tables import Test_Announcements_Table
 
 class Sample_Selector:
     """This class generates input to the extrapolator verification
@@ -32,24 +30,15 @@ class Sample_Selector:
     def select_samples(self):
         tables = [
         # Step 1:
-        # Add monitor_asn to all mrt announcements
+        # Add monitor_asn to all mrt announcements, w/indexes
         MRT_W_Monitors_Table,
         # Get a table of all Monitors with statistics
         Monitors_Table,
         # Step 2:
-        # Only use monitors that have rib out
+        # Only use monitors that have rib out that have tons of prefixes
         # (exr doesn't compute real rib in since it processes ann like a moment
         # in time. Won't go into detail here)
         Control_Monitors_Table,
-        # Step 3:
-        # Get all announcements for prefixes that exist in all control monitors
-        # Note that since we only use monitors that only output rib out
-        # Each monitor only has 1 ann per prefix
-        Control_Announcements_Table,
-        # Step 4:
-        # Get all announcements that <<= control_announcemnt.prefixes
-        # For these collectors
-#        Test_Announcements_Table
         ]
 
         for Table in tables:

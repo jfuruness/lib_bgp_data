@@ -33,7 +33,10 @@ class MRT_W_Monitors_Table(Generic_Table):
     name = "mrt_w_monitors"
 
     def fill_table(self):
-        logging.info("Adding monitor to all MRT ann, ~20min")
+        # Add to design decisions - updating table takes forever, which is why the rewrite
+        # Note that this may be because I already had an index on it, but whatevs
+        logging.info("Adding monitor to all MRT ann, was ~20min.")
+
         # NOTE: postgres is 1 indexed, so as_path[1] is really first element
         sql = f"""CREATE UNLOGGED TABLE {self.name} AS (
                 SELECT as_path[1] AS monitor_asn,
@@ -44,6 +47,14 @@ class MRT_W_Monitors_Table(Generic_Table):
                 FROM {MRT_Announcements_Table.name}
                 );"""
         self.execute(sql)
+        logging.info("Creating index on the prefix")
+        sql = """CREATE INDEX ON {self.name} USING GIST(prefix inet_ops);"""
+        self.execute(sql)
+        logging.info("Creating index on the monitor")
+        self.execute("CREATE INDEX ON {self.name}(monitor)")
+
+        msg = "MRT Announcements not filled"
+        assert len(self.execute("SELECT * FROM {self.name} LIMIT 2")) > 1, msg
 
 class Monitors_Table(Generic_Table):
 
@@ -109,92 +120,3 @@ class Control_Monitors_Table(Generic_Table):
                 LIMIT {self.control_total}
                 );"""
         self.execute(sql)
-
-
-class Control_Announcements_Table(Generic_Table):
-
-    __slots__ = []
-
-    name = "control_announcements"
-
-    def fill_table(self):
-        logging.info("getting intersection of control monitor ann prefixes "
-                     "~10min")
-        sql = f"""CREATE UNLOGGED TABLE {self.name} AS (
-               SELECT mrt.* FROM
-                    {MRT_W_Monitors_Table.name} mrt
-                INNER JOIN {Control_Monitors_Table.name} control_monitors
-                    ON control_monitors.asn = mrt.monitor_asn
-                INNER JOIN (
-                    --gets all prefixes that occur at every asn
-                    SELECT prefix FROM (
-                        --gets all prefixes that occr from a monitor
-                        SELECT prefix, COUNT(*) AS prefix_count
-                            FROM {MRT_W_Monitors_Table.name} a
-                        INNER JOIN {Control_Monitors_Table.name} b
-                            ON a.monitor_asn = b.asn
-                        GROUP BY prefix
-                        ) prefixes_w_counts
-                    WHERE prefixes_w_counts.prefix_count = (
-                        SELECT COUNT(*) FROM {Control_Monitors_Table.name})
-                ) prefix_intersection
-                    ON prefix_intersection.prefix = mrt.prefix);"""
-
-        self.execute(sql)
-
-class Test_Announcements_Table(Generic_Table):
-
-    __slots__ = []
-
-    name = "test_announcements"
-
-    def fill_table(self):
-        logging.info("Getting all test announcements")
-        logging.info("Getting distinct prefixes from control ann")
-        control_prefix_name = "control_prefixes"
-        sql = f"""CREATE UNLOGGED TABLE {control_prefix_name} AS (
-              SELECT DISTINCT prefix
-                FROM {Control_Announcements_Table.name}
-              );"""
-        self.execute(sql)
-        logging.info("Getting all prefixes to exclude")
-        excluded_prefixes_name = "excluded_prefixes"
-        sql = f"""CREATE UNLOGGED TABLE {excluded_prefixes_name} AS (
-              SELECT DISTINCT prefix FROM {MRT_Announcements_Table.name}
-              EXCEPT SELECT prefix FROM {Control_Announcements_Table.name});"""
-        self.execute(sql)
-        sql = f"CREATE INDEX ON {excluded_prefixes_name}
-              USING GIST(prefix inet_ops)"""
-        self.execute(sql)
-        
-        logging.info("Version 1 for getting test ann")
-        # Done this way to join as little as possible
-        # Also if you just inner join with <<= you get duplication
-        # Whereas with this method, it simply removes all cases where it's >>
-        sql = f"""CREATE UNLOGGED TABLE {self.name} AS (
-                SELECT mrt.* FROM {MRT_Announcements_Table.name} mrt
-                LEFT JOIN {excluded_prefixes_name} ep
-                    ON mrt.prefix = ep.prefix
-                WHERE ep.prefix IS NULL);"""
-        self.execute(sql)
-        logging.info("Adding index to test_ann for exr input")
-        sql = f"""CREATE INDEX ON {self.name} USING GIST(prefix inet_ops);"""
-        self.execute(sql)
-
-        logging.info("Trying the delete version")
-        # Testing this way as well.
-        # Rename mrt announcements table
-        # Just delete all that don't abide by
-        # Prob faster since don't need to recreate index for EXR splitting
-        sql = f"""ALTER TABLE {MRT_Announcements_Table.name}
-               RENAME TO {self.name}qqq;"""
-        self.execute(sql)
-        logging.info("Deleting from MRT ann")
-        sql = f"""DELETE FROM {self.name}qqq a
-              WHERE a.prefix = {excluded_prefixes_name}.prefix"""
-        self.execute(sql)
-        logging.info("Delete version complete")
-        # THIRD METHOD
-        # Just use MRT ann as your test ann
-        # exr may take slightly longer, but who cares
-        # esp if it is mostly the same size, and removing them takes forever

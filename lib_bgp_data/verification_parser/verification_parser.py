@@ -46,15 +46,8 @@ class Verification_Parser(Parser):
                       "IPV4": True,
                       "IPV6": False}
             if test:
-                kwargs["api_param_mods"] = {"collectors[]": ["route-views2",
-                                                             "rrc03"]}
+                kwargs["api_param_mods"] = {"collectors[]": ["route-views2"]}
             MRT_Parser(**self.kwargs).run(**kwargs)
-            # Create index on prefix for sample selection speedup
-            with Database() as db:
-                sql = f"""CREATE INDEX ON
-                       {MRT_Announcements_Table.name}
-                       USING GIST(prefix inet_ops)"""
-                db.execute(sql)
         if as_rank:
             ASRankWebsiteParser(**self.kwargs).run()
         if sample_selection:
