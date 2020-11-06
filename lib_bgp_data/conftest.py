@@ -6,6 +6,7 @@
 import pytest
 from subprocess import check_call
 from .database.config import set_global_section_header, Config
+from .utils import utils
 
 __author__ = "Justin Furuness"
 __credits__ = ["Justin Furuness"]
@@ -14,15 +15,20 @@ __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
-def pytest_runtest_setup(section="test"):
+section = f"test_{utils.now().strftime('%m_%d_%Y_%H_%M_%S')}"
+
+def pytest_runtest_setup():
     pytest.global_running_test = True
+
+    # isn't this done in the Config constructor?
     set_global_section_header(section)
-    Config("test").install()
-    bash = "sudo -i -u postgres psql -d test -c "
+
+    Config(section).install()
+    bash = f"sudo -i -u postgres psql -d {section} -c "
     bash += "'CREATE SCHEMA IF NOT EXISTS public;'"
     check_call(bash, shell=True)
 
 def pytest_runtest_teardown():
-    bash = "sudo -i -u postgres psql -d test -c "
+    bash = f"sudo -i -u postgres psql -d {section} -c "
     bash += "'DROP SCHEMA IF EXISTS public CASCADE;'"
     check_call(bash, shell=True)
