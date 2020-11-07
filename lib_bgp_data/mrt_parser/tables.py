@@ -91,27 +91,24 @@ class Distinct_Prefix_Origins_W_IDs_Table(Generic_Table):
     def fill_table(self):
         """Fills table with data"""
 
-        sql = f"""WITH superprefixes AS(
-                SELECT DISTINCT ON (prefix) dpo.prefix, prefix_id
-                   FROM {Distinct_Prefix_Origins_Table.name} dpo
-                    LEFT JOIN {Distinct_Prefix_Origins_Table.name} dpo2
-                        ON dpo2.prefix << dpo.prefix
-                    WHERE dpo2.prefix IS NULL
-                ), superprefix_groups AS(
-                    SELECT prefix,
-                           ROW_NUMBER() OVER (ORDER BY prefix)
-                                AS prefix_group_id
-                    FROM superprefixes
-                ), prefix_group_ids AS (
-                    SELECT dpo.prefix, sp.prefix_group_id
-                    FROM {Distinct_Prefix_Origins_Table.name} dpo
-                        INNER JOIN superprefixes sp
-                            ON sp.prefix <<= superprefixes
-                ), block_ids AS (
-                    SELECT DISTINCT block_id
-                        FROM {Distinct_Prefix_Origins_Table.name}
-                ), 
-               CREATE UNLOGGED TABLE {self.name} AS (
+        sql = f"""
+                CREATE UNLOGGED TABLE {self.name} AS (
+                    WITH superprefixes AS(
+                    SELECT DISTINCT ON (prefix) dpo.prefix
+                       FROM {Distinct_Prefix_Origins_Table.name} dpo
+                        LEFT JOIN {Distinct_Prefix_Origins_Table.name} dpo2
+                            ON dpo2.prefix << dpo.prefix
+                        WHERE dpo2.prefix IS NULL
+                    ), superprefix_groups AS(
+                        SELECT prefix, ROW_NUMBER() OVER ()
+                                    AS prefix_group_id
+                        FROM superprefixes
+                    ), prefix_group_ids AS (
+                        SELECT dpo.prefix, spg.prefix_group_id
+                        FROM {Distinct_Prefix_Origins_Table.name} dpo
+                            INNER JOIN superprefix_groups spg
+                                ON spg.prefix <<= dpo.prefix
+                    ) 
                 SELECT dpo.prefix,
                        dpo.origin,
                        prefix_ids.prefix_id,
@@ -121,23 +118,24 @@ class Distinct_Prefix_Origins_W_IDs_Table(Generic_Table):
                 FROM {Distinct_Prefix_Origins_Table.name} dpo
                 INNER JOIN (
                     SELECT prefix,
-                           ROW_NUMBER() OVER (ORDER BY prefix) AS prefix_id
+                           ROW_NUMBER() OVER () AS prefix_id
                     FROM (SELECT DISTINCT prefix
-                            FROM {Distinct_Prefix_Origins_Table.name})
+                            FROM {Distinct_Prefix_Origins_Table.name}) a
                     ) prefix_ids
                         ON prefix_ids.prefix = dpo.prefix
                 INNER JOIN (
                     SELECT origin,
-                           ROW_NUMBER() OVER (ORDER BY origin) AS origin_id
+                           ROW_NUMBER() OVER () AS origin_id
                     FROM (SELECT DISTINCT origin
-                            FROM {Distinct_Prefix_Origins_Table.name})
+                            FROM {Distinct_Prefix_Origins_Table.name}) a
                     ) origin_ids
                         ON origin_ids.origin = dpo.origin
                 INNER JOIN (
-                    SELECT prefix, origin
-                           ROW_NUMBER() OVER (ORDER BY prefix, origin) AS prefix_origin_id
+                    SELECT prefix,
+                           origin,
+                           ROW_NUMBER() OVER () AS prefix_origin_id
                     FROM (SELECT DISTINCT prefix, origin
-                            FROM {Distinct_Prefix_Origins_Table.name})
+                            FROM {Distinct_Prefix_Origins_Table.name}) a
                     ) prefix_origin_ids
                         ON prefix_origin_ids.prefix = dpo.prefix
                             AND prefix_origin_ids.origin = dpo.origin
@@ -206,6 +204,7 @@ class Prefix_Origin_Metadata_Table(Generic_Table):
                     FROM dpo_blocks dpo
                     LEFT JOIN roas r
                         ON dpo.prefix <<= r.prefix
+                    WHERE r.created_at = (SELECT MAX(created_at) FROM roas)
                 )
                 CREATE UNLOGGED TABLE {self.name} AS (
                 SELECT dpo.prefix,
@@ -222,50 +221,40 @@ class Prefix_Origin_Metadata_Table(Generic_Table):
                        bpo.block_prefix_origin_id
                 FROM dpo_blocks_roas dpo
                 INNER JOIN LATERAL (
-                    SELECT dpo_t.prefix_origin_id,
-                           ROW_NUMBER() OVER (ORDER BY block_id,
-                                                       prefix)
-                                AS block_prefix_id
-                        FROM dpo_blocks_roas dpo_t
-                    WHERE dpo_t.block_id = dpo.block_id
+                    --must do lateral rather than partition to get proper distinct
+                    SELECT prefix,
+                           ROW_NUMBER() OVER () AS block_prefix_id
+                        FROM (SELECT DISTINCT prefix
+                              FROM dpo_blocks_roas dpo_t
+                              WHERE dpo_t.block_id = dpo.block_id) a
                 ) block_prefix_ids bp_ids
-                    ON bp_ids.prefix_origin_id = dpo.prefix_origin_id
+                    ON bp_ids.prefix = dpo.prefix
                 INNER JOIN LATERAL(
-                    SELECT dpo_t.prefix_origin_id,
-                           ROW_NUMBER() OVER (ORDER BY block_id,
-                                                       origin)
-                                AS block_origin_id
-                        FROM dpo_blocks_roas dpo_t
-                    WHERE dpo_t.block_id = dpo.block_id
-                ) block_prefix_ids bp_ids
-                    ON bp_ids.prefix_origin_id = dpo.prefix_origin_id
-                INNER JOIN LATERAL(
-                    SELECT dpo_t.prefix_origin_id,
-                           ROW_NUMBER() OVER (ORDER BY block_id,
-                                                       origin)
-                                AS block_origin_id
-                        FROM dpo_blocks_roas dpo_t
-                        WHERE dpo_t.block_id = dpo.block_id
+                    SELECT origin,
+                           ROW_NUMBER() OVER () AS block_origin_id
+                        FROM (SELECT DISTINCT origin
+                              FROM dpo_blocks_roas dpo_t
+                            WHERE dpo_t.block_id = dpo.block_id) a
                 ) block_prefix_ids bo_ids
-                    ON bo_ids.prefix_origin_id = dpo.prefix_origin_id
+                    ON bo_ids.origin = dpo.origin
                 INNER JOIN LATERAL(
-                    SELECT dpo_t.prefix_origin_id,
-                           ROW_NUMBER() OVER (ORDER BY block_id,
-                                                       group_id)
+                    SELECT prefix_group_id,
+                           ROW_NUMBER() OVER ()
                                 AS block_prefix_group_id
-                        FROM dpo_blocks_roas dpo_t
-                        WHERE dpo_t.block_id = dpo.block_id
+                        FROM (SELECT DISTINCT prefix_group_id
+                              FROM dpo_blocks_roas dpo_t
+                            WHERE dpo_t.block_id = dpo.block_id) a
                 ) block_prefix_ids bpg_ids
-                    ON bpg_ids.prefix_origin_id = dpo.prefix_origin_id
+                    ON bpg_ids.prefixi_group_id = dpo.prefix_group_id
                 INNER JOIN LATERAL(
-                    SELECT dpo_t.prefix_origin_id,
-                           ROW_NUMBER() OVER (ORDER BY block_id,
-                                                       prefix_origin_id)
+                    SELECT prefix_origin_id,
+                           ROW_NUMBER() OVER ()
                                 AS block_prefix_origin_id
-                        FROM dpo_blocks_roas dpo_t
-                        WHERE dpo_t2.block_id = dpo.block_id
+                        FROM (SELECT DISTINCT prefix, origin
+                              FROM dpo_blocks_roas dpo_t
+                            WHERE dpo_t2.block_id = dpo.block_id) a
                 ) block_prefix_origin_ids bpo_ids
-                    ON bpo_ids.prefix_origin_id = dpo.prefix_origin_id
+                    ON bpo_ids.prefix = dpo.prefix AND bpo_ids.origin = dpo.origin
             );"""
         self.execute(sql)
         with Distinct_Prefix_Origins_W_IDs_Table() as db:
@@ -282,6 +271,8 @@ class MRT_W_Metadata_Table(Generic_Table):
     def fill_table(self):
         sql = """CREATE UNLOGGED TABLE {self.name} AS (
                 SELECT mrt.*,
+                       --NOTE that postgres starts at 1 not 0
+                       mrt.as_path[1] AS monitor_asn,
                        pom.prefix_id,
                        pom.origin_id
                        pom.prefix_origin_id
@@ -291,9 +282,7 @@ class MRT_W_Metadata_Table(Generic_Table):
                        pom.block_prefix_id,
                        pom.block_origin_id,
                        pom.block_prefix_group_id,
-                       pom.block_prefix_origin_id,
-                --NOTE that postgres starts at 1 not 0
-                    mrt.as_path[1] AS monitor_asn
+                       pom.block_prefix_origin_id
                 FROM {MRT_Announcements_Table.name} mrt
                 INNER JOIN {Prefix_Origin_Metadata_Table.name} pom
                     ON pom.prefix = mrt.prefix AND pom.origin = mrt.origin

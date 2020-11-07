@@ -64,7 +64,7 @@ class MRT_Metadata_Parser(Parser):
 
         self._validate()
         self._add_prefix_origin_index()
-        for Table in [Distinct_Prefix_Origins_Table,
+        for Table in [#Distinct_Prefix_Origins_Table,
                       Distinct_Prefix_Origins_W_IDs_Table]:
             logging.info(f"Creating {Table.__name__}")
             self._get_p_o_table_w_indexes(Table)
@@ -104,9 +104,10 @@ class MRT_Metadata_Parser(Parser):
             sql = f"""CREATE INDEX IF NOT EXISTS {db.name}_dist_o_index
                   ON {db.name}(origin)"""
             self._create_index(sql, db) 
-            sql = f"""CREATE INDEX IF NOT EXISTS {db.name}_g_index
-                  ON {db.name}(group_id);"""
-            self._create_index(sql, db)
+            if Table == Distinct_Prefix_Origins_W_IDs_Table:
+                sql = f"""CREATE INDEX IF NOT EXISTS {db.name}_g_index
+                      ON {db.name}(prefix_group_id);"""
+                self._create_index(sql, db)
 
     def _create_block_table(self, max_block_size):
         """Creates blocks for the extrapolator
