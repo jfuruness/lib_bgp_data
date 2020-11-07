@@ -25,11 +25,12 @@ import binpacking
 import requests
 
 from ..base_classes import Parser
+from ..roas_parser.tables import ROAs_Table
 from .mrt_file import MRT_File
 from .mrt_installer import MRT_Installer
 from .mrt_sources import MRT_Sources
 from .tables import MRT_Announcements_Table
-from .tables import Distinct_Prefix_Origin_Table
+from .tables import Distinct_Prefix_Origins_Table
 from .tables import Distinct_Prefix_Origins_W_IDs_Table
 from .tables import Blocks_Table
 from .tables import Prefix_Origin_Metadata_Table
@@ -85,8 +86,8 @@ class MRT_Metadata_Parser(Parser):
         """Adds index to prefix and origin for combining with ROAs table"""
 
         with MRT_Announcements_Table() as db:
-            sql = f"""CREATE INDEX {db.name}_po_index IF NOT EXISTS ON
-                  {self.name} USING GIST(prefix inet_ops, origin)"""
+            sql = f"""CREATE INDEX IF NOT EXISTS {db.name}_po_index ON
+                  {db.name} USING GIST(prefix inet_ops, origin)"""
             self._create_index(sql, db)
 
     def _get_p_o_table_w_indexes(self, Table):
@@ -94,16 +95,16 @@ class MRT_Metadata_Parser(Parser):
 
         with Table(clear=True) as db:
             db.fill_table()
-            sql = f"""CREATE INDEX {db.name}_dpo_index IF NOT EXISTS
+            sql = f"""CREATE INDEX IF NOT EXISTS {db.name}_dpo_index
                   ON {db.name} USING GIST(prefix inet_ops, origin)"""
             self._create_index(sql, db)
-            sql = f"""CREATE INDEX {db.name}_dist_p_index IF NOT EXISTS
+            sql = f"""CREATE INDEX IF NOT EXISTS {db.name}_dist_p_index
                   ON {db.name} USING GIST(prefix inet_ops)"""
             self._create_index(sql, db)
-            sql = f"""CREATE INDEX {db.name}_dist_o_index IF NOT EXISTS
+            sql = f"""CREATE INDEX IF NOT EXISTS {db.name}_dist_o_index
                   ON {db.name}(origin)"""
             self._create_index(sql, db) 
-            sql = f"""CREATE INDEX {db.name}_g_index IF NOT EXISTS
+            sql = f"""CREATE INDEX IF NOT EXISTS {db.name}_g_index
                   ON {db.name}(group_id);"""
             self._create_index(sql, db)
 
@@ -119,7 +120,7 @@ class MRT_Metadata_Parser(Parser):
         logging.info("Getting prefix blocks")
         with Distinct_Prefix_Origins_W_IDs_Table() as db:
             sql = f"""SELECT prefix_group_id, COUNT(prefix_group_id) AS total
-                  FROM {self.name}
+                  FROM {db.name}
                     GROUP BY prefix_group_id;"""
             group_counts = self.execute(sql)
             group_counts_dict = {x["prefix_group_id"]: x["total"]
@@ -137,7 +138,7 @@ class MRT_Metadata_Parser(Parser):
         """Creates an index on the roas table"""
 
         with ROAs_Table() as db: 
-            sql = f"""CREATE INDEX roas_index IF NOT EXISTS
+            sql = f"""CREATE INDEX IF NOT EXISTS roas_index
                   ON {db.name} USING GIST(prefix inet_ops, origin);"""
             self._create_index(sql, db)
 
@@ -164,6 +165,6 @@ class MRT_Metadata_Parser(Parser):
             # Depending on what application is being run
 
     def _create_index(self, sql, db):
-        logging.info(f"Creating index on {db.name}"
+        logging.info(f"Creating index on {db.name}")
         db.execute(sql)
         logging.info("Index complete")
