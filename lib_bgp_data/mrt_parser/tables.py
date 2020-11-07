@@ -72,6 +72,73 @@ class Distinct_Prefix_Origins_Table(Generic_Table):
                 );"""
         self.execute(sql)
 
+
+class Superprefixes_Table(Generic_Table):
+    """Class with database functionality
+
+    in depth explanation at the top of the file"""
+
+    __slots__ = []
+
+    name = "superprefixes"
+
+    columns = ["prefix"]
+
+    def fill_table(self):
+        """Fills table with data"""
+
+        sql = f"""CREATE UNLOGGED TABLE {self.name} AS(
+                    SELECT DISTINCT ON (prefix) dpo.prefix
+                       FROM {Distinct_Prefix_Origins_Table.name} dpo
+                        LEFT JOIN {Distinct_Prefix_Origins_Table.name} dpo2
+                            ON dpo2.prefix << dpo.prefix
+                        WHERE dpo2.prefix IS NULL);"""
+        self.execute(sql)
+
+class Superprefix_Groups_Table(Generic_Table):
+    """Class with database functionality
+
+    in depth explanation at the top of the file"""
+
+    __slots__ = []
+
+    name = "superprefix_groups"
+
+    columns = ["prefix", "prefix_group_id"]
+
+    def fill_table(self):
+        """Fills table with data"""
+
+        sql = f"""CREATE UNLOGGED TABLE {self.name} AS(
+                        SELECT prefix, ROW_NUMBER() OVER ()
+                                    AS prefix_group_id
+                        FROM {Superprefixes_Table.name}
+                );""" 
+        self.execute(sql)
+
+class Prefix_Groups_Table(Generic_Table):
+    """Class with database functionality
+
+    in depth explanation at the top of the file"""
+
+    __slots__ = []
+
+    name = "prefix_groups"
+
+    columns = ["prefix", "prefix_group_id"]
+
+    def fill_table(self):
+        """Fills table with data"""
+
+        sql = f"""CREATE UNLOGGED TABLE {self.name} AS(
+                         SELECT dpo.prefix, spg.prefix_group_id
+                        FROM {Distinct_Prefix_Origins_Table.name} dpo
+                            INNER JOIN {Superprefix_Groups_Table.name} spg
+                                ON spg.prefix <<= dpo.prefix
+                );""" 
+        self.execute(sql)
+
+
 class Distinct_Prefix_Origins_W_IDs_Table(Generic_Table):
     """Class with database functionality
 
@@ -91,24 +158,10 @@ class Distinct_Prefix_Origins_W_IDs_Table(Generic_Table):
     def fill_table(self):
         """Fills table with data"""
 
+        # NOTE: I know you can use with statements for superprefix tables/
+        # group ids, but this makes the query too slow without indexes
         sql = f"""
                 CREATE UNLOGGED TABLE {self.name} AS (
-                    WITH superprefixes AS(
-                    SELECT DISTINCT ON (prefix) dpo.prefix
-                       FROM {Distinct_Prefix_Origins_Table.name} dpo
-                        LEFT JOIN {Distinct_Prefix_Origins_Table.name} dpo2
-                            ON dpo2.prefix << dpo.prefix
-                        WHERE dpo2.prefix IS NULL
-                    ), superprefix_groups AS(
-                        SELECT prefix, ROW_NUMBER() OVER ()
-                                    AS prefix_group_id
-                        FROM superprefixes
-                    ), prefix_group_ids AS (
-                        SELECT dpo.prefix, spg.prefix_group_id
-                        FROM {Distinct_Prefix_Origins_Table.name} dpo
-                            INNER JOIN superprefix_groups spg
-                                ON spg.prefix <<= dpo.prefix
-                    ) 
                 SELECT dpo.prefix,
                        dpo.origin,
                        prefix_ids.prefix_id,
@@ -139,7 +192,7 @@ class Distinct_Prefix_Origins_W_IDs_Table(Generic_Table):
                     ) prefix_origin_ids
                         ON prefix_origin_ids.prefix = dpo.prefix
                             AND prefix_origin_ids.origin = dpo.origin
-                INNER JOIN prefix_group_ids
+                INNER JOIN {Prefix_Groups_Table.name} prefix_group_ids
                     ON prefix_group_ids.prefix = dpo.prefix
                 );"""
         self.execute(sql)

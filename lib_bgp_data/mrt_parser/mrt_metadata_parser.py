@@ -22,6 +22,7 @@ import os
 import warnings
 
 import binpacking
+import psycopg2
 import requests
 
 from ..base_classes import Parser
@@ -31,6 +32,7 @@ from .mrt_installer import MRT_Installer
 from .mrt_sources import MRT_Sources
 from .tables import MRT_Announcements_Table
 from .tables import Distinct_Prefix_Origins_Table
+from .tables import Superprefixes_Table
 from .tables import Distinct_Prefix_Origins_W_IDs_Table
 from .tables import Blocks_Table
 from .tables import Prefix_Origin_Metadata_Table
@@ -64,7 +66,11 @@ class MRT_Metadata_Parser(Parser):
 
         self._validate()
         self._add_prefix_origin_index()
-        for Table in [#Distinct_Prefix_Origins_Table,
+        logging.info(f"Creating {Distinct_Prefix_Origins_Table.name}")
+        self._get_p_o_table_w_indexes(Distinct_Prefix_Origins_Table)
+        self._get_superprefixes()
+        for Table in [Superprefix_Groups_Table,
+                      Prefix_Groups_Table,
                       Distinct_Prefix_Origins_W_IDs_Table]:
             logging.info(f"Creating {Table.__name__}")
             self._get_p_o_table_w_indexes(Table)
@@ -95,19 +101,31 @@ class MRT_Metadata_Parser(Parser):
 
         with Table(clear=True) as db:
             db.fill_table()
-            sql = f"""CREATE INDEX IF NOT EXISTS {db.name}_dpo_index
-                  ON {db.name} USING GIST(prefix inet_ops, origin)"""
-            self._create_index(sql, db)
-            sql = f"""CREATE INDEX IF NOT EXISTS {db.name}_dist_p_index
-                  ON {db.name} USING GIST(prefix inet_ops)"""
-            self._create_index(sql, db)
-            sql = f"""CREATE INDEX IF NOT EXISTS {db.name}_dist_o_index
-                  ON {db.name}(origin)"""
-            self._create_index(sql, db) 
-            if Table == Distinct_Prefix_Origins_W_IDs_Table:
-                sql = f"""CREATE INDEX IF NOT EXISTS {db.name}_g_index
+            index_sqls = [
+                  f"""CREATE INDEX IF NOT EXISTS {db.name}_dpo_index
+                  ON {db.name} USING GIST(prefix inet_ops, origin)""",
+
+                  f"""CREATE INDEX IF NOT EXISTS {db.name}_dist_p_index
+                  ON {db.name} USING GIST(prefix inet_ops)""",
+
+                  f"""CREATE INDEX IF NOT EXISTS {db.name}_dist_o_index
+                  ON {db.name}(origin)""",
+
+                  f"""CREATE INDEX IF NOT EXISTS {db.name}_g_index
                       ON {db.name}(prefix_group_id);"""
-                self._create_index(sql, db)
+            ]
+            for sql in index_sqls:
+                try:
+                    self._create_index(sql, db)
+                except psycopg2.errors.UndefinedColumn:
+                    pass
+
+    def _get_superprefixes(self):
+        """Creates superprefix table"""
+
+        logging.info("Creating superprefix table")
+        with Superprefix_Table(clear=True) as db:
+            db.fill_table()
 
     def _create_block_table(self, max_block_size):
         """Creates blocks for the extrapolator
@@ -134,6 +152,11 @@ class MRT_Metadata_Parser(Parser):
                     block_table_rows.append([block_id, group_id])
             csv_path = os.path.join(self.csv_dir, "block_table.csv")
             utils.rows_to_db(rows, csv_path, Blocks_Table)
+            for _id in ["block_id", "group_id"]:
+                sql = f"""CREATE INDEX IF NOT EXISTS
+                        {Blocks_Table.name}_{_id} ON {Blocks_Table.name}({_id})
+                      ;"""
+                self._create_index(sql, db)
 
     def _add_roas_index(self):
         """Creates an index on the roas table"""
