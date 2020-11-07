@@ -37,6 +37,7 @@ setup(
     install_requires=[
         'wheel',
         'setuptools',
+        'binpacking',
         'validators>=0.14.1',
         'tqdm>=4.40.2',
         'pytest==4.6.6',

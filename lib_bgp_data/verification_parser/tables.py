@@ -48,13 +48,13 @@ class MRT_W_Monitors_Table(Generic_Table):
                 );"""
         self.execute(sql)
         logging.info("Creating index on the prefix")
-        sql = """CREATE INDEX ON {self.name} USING GIST(prefix inet_ops);"""
+        sql = f"""CREATE INDEX ON {self.name} USING GIST(prefix inet_ops);"""
         self.execute(sql)
         logging.info("Creating index on the monitor")
-        self.execute("CREATE INDEX ON {self.name}(monitor)")
+        self.execute(f"CREATE INDEX ON {self.name}(monitor)")
 
         msg = "MRT Announcements not filled"
-        assert len(self.execute("SELECT * FROM {self.name} LIMIT 2")) > 1, msg
+        assert len(self.execute(f"SELECT * FROM {self.name} LIMIT 2")) > 1, msg
 
 class Monitors_Table(Generic_Table):
 

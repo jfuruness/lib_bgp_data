@@ -20,7 +20,7 @@ from .roas_parser import ROAs_Parser, ROAs_Collector
 from .bgpstream_website_parser import BGPStream_Website_Runner
 from .bgpstream_website_parser import BGPStream_Website_Parser
 from .bgpstream_website_parser import Event_Types as BGPStream_Types
-from .mrt_parser import MRT_Parser, MRT_Sources
+from .mrt_parser import MRT_Parser, MRT_W_Metadata_Parser, MRT_Sources
 from .asrank_website_parser import ASRankWebsiteParser
 
 #from .what_if_analysis import What_If_Analysis
