@@ -302,6 +302,7 @@ class Prefix_Origin_Metadata_Table(Generic_Table):
     name = "prefix_origin_metadata"
 
     def fill_table(self):
+        assert False, "You include a left join on the roas table, which causes cross join. Simply add unknown prefixes to roas first and inner join."
         sql = f"""CREATE UNLOGGED TABLE {self.name} AS (
                 WITH dpo_blocks AS (
                     SELECT dpo.prefix,
@@ -332,9 +333,12 @@ class Prefix_Origin_Metadata_Table(Generic_Table):
                                 ELSE 0 --unknown
                             END AS roa_validity
                     FROM dpo_blocks dpo
-                    LEFT JOIN roas r
+                    LEFT JOIN (SELECT prefix,
+                                      asn,
+                                      max_length
+                               FROM roas WHERE (SELECT MAX(created_at)
+                                                FROM roas) = created_at) r
                         ON dpo.prefix <<= r.prefix
-                    WHERE r.created_at = (SELECT MAX(created_at) FROM roas)
                 )
                 --NOTE that later if needed you can add block_origin_id, etc
                 --but to save time, and since they currently have no use,
@@ -383,7 +387,7 @@ class Prefix_Origin_Metadata_Table(Generic_Table):
         self.execute(sql)
         with Distinct_Prefix_Origins_W_IDs_Table() as db:
             assert db.get_count() == self.get_count()
-            assert False, "Change dpo_blocks_roas to be separate table with indexes"
+            print("Change dpo_blocks_roas to be separate table with indexes???")
 
 class MRT_W_Metadata_Table(Generic_Table):
     """Class with database functionality"""
