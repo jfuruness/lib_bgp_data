@@ -110,7 +110,7 @@ class Superprefix_Groups_Table(Generic_Table):
         """Fills table with data"""
 
         sql = f"""CREATE UNLOGGED TABLE {self.name} AS(
-                        SELECT prefix, ROW_NUMBER() OVER ()
+                        SELECT prefix, ROW_NUMBER() OVER () - 1
                                     AS prefix_group_id
                         FROM {Superprefixes_Table.name}
                 );""" 
@@ -135,6 +135,73 @@ class Prefix_Groups_Table(Generic_Table):
                         FROM {Distinct_Prefix_Origins_Table.name} dpo
                             INNER JOIN {Superprefix_Groups_Table.name} spg
                                 ON spg.prefix <<= dpo.prefix
+                );""" 
+        self.execute(sql)
+
+class Prefix_IDs_Table(Generic_Table):
+    """Class with database functionality
+
+    in depth explanation at the top of the file"""
+
+    __slots__ = []
+
+    name = "prefix_ids"
+
+    columns = ["prefix", "prefix_id"]
+
+    def fill_table(self):
+        """Fills table with data"""
+
+        sql = f"""CREATE UNLOGGED TABLE {self.name} AS(
+                         SELECT DISTINCT dpo.prefix,
+                                         DENSE_RANK() OVER () -1
+                                            AS prefix_id
+                        FROM {Distinct_Prefix_Origins_Table.name} dpo
+                );""" 
+        self.execute(sql)
+
+class Origin_IDs_Table(Generic_Table):
+    """Class with database functionality
+
+    in depth explanation at the top of the file"""
+
+    __slots__ = []
+
+    name = "origin_ids"
+
+    columns = ["origin", "origin_id"]
+
+    def fill_table(self):
+        """Fills table with data"""
+
+        sql = f"""CREATE UNLOGGED TABLE {self.name} AS(
+                         SELECT DISTINCT dpo.origin,
+                                         DENSE_RANK() OVER () -1
+                                            AS origin_id
+                        FROM {Distinct_Prefix_Origins_Table.name} dpo
+                );""" 
+        self.execute(sql)
+
+class Prefix_Origin_IDs_Table(Generic_Table):
+    """Class with database functionality
+
+    in depth explanation at the top of the file"""
+
+    __slots__ = []
+
+    name = "origin_ids"
+
+    columns = ["prefix", "origin", "prefix_origin_id"]
+
+    def fill_table(self):
+        """Fills table with data"""
+
+        sql = f"""CREATE UNLOGGED TABLE {self.name} AS(
+                        --table id distinct already, no distinct nessecary
+                         SELECT dpo.origin, dpo.prefix,
+                                         DENSE_RANK() OVER () -1
+                                            AS prefix_origin_id
+                        FROM {Distinct_Prefix_Origins_Table.name} dpo
                 );""" 
         self.execute(sql)
 
@@ -164,34 +231,15 @@ class Distinct_Prefix_Origins_W_IDs_Table(Generic_Table):
                 CREATE UNLOGGED TABLE {self.name} AS (
                 SELECT dpo.prefix,
                        dpo.origin,
-                       prefix_ids.prefix_id,
-                       origin_ids.origin_id,
-                       prefix_origin_ids.prefix_origin_id,
+                       p_ids.prefix_id,
+                       o_ids.origin_id,
+                       dpo.prefix_origin_id,
                        prefix_group_ids.prefix_group_id
-                FROM {Distinct_Prefix_Origins_Table.name} dpo
-                INNER JOIN (
-                    SELECT prefix,
-                           ROW_NUMBER() OVER () AS prefix_id
-                    FROM (SELECT DISTINCT prefix
-                            FROM {Distinct_Prefix_Origins_Table.name}) a
-                    ) prefix_ids
-                        ON prefix_ids.prefix = dpo.prefix
-                INNER JOIN (
-                    SELECT origin,
-                           ROW_NUMBER() OVER () AS origin_id
-                    FROM (SELECT DISTINCT origin
-                            FROM {Distinct_Prefix_Origins_Table.name}) a
-                    ) origin_ids
-                        ON origin_ids.origin = dpo.origin
-                INNER JOIN (
-                    SELECT prefix,
-                           origin,
-                           ROW_NUMBER() OVER () AS prefix_origin_id
-                    FROM (SELECT DISTINCT prefix, origin
-                            FROM {Distinct_Prefix_Origins_Table.name}) a
-                    ) prefix_origin_ids
-                        ON prefix_origin_ids.prefix = dpo.prefix
-                            AND prefix_origin_ids.origin = dpo.origin
+                FROM {Prefix_Origin_IDs_Table.name} dpo
+                INNER JOIN {Prefix_IDs_Table.name} p_ids
+                    ON p_ids.prefix = dpo.prefix
+                INNER JOIN {Origin_IDs_Table.name} o_ids
+                    ON o_ids.origin = dpo.origin
                 INNER JOIN {Prefix_Groups_Table.name} prefix_group_ids
                     ON prefix_group_ids.prefix = dpo.prefix
                 );"""

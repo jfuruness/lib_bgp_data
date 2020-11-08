@@ -33,6 +33,11 @@ from .mrt_sources import MRT_Sources
 from .tables import MRT_Announcements_Table
 from .tables import Distinct_Prefix_Origins_Table
 from .tables import Superprefixes_Table
+from .tables import Superprefix_Groups_Table
+from .tables import Prefix_Groups_Table
+from .tables import Prefix_IDs_Table
+from .tables import Origin_IDs_Table
+from .tables import Prefix_Origin_IDs_Table
 from .tables import Distinct_Prefix_Origins_W_IDs_Table
 from .tables import Blocks_Table
 from .tables import Prefix_Origin_Metadata_Table
@@ -71,6 +76,9 @@ class MRT_Metadata_Parser(Parser):
         self._get_superprefixes()
         for Table in [Superprefix_Groups_Table,
                       Prefix_Groups_Table,
+                      Prefix_IDs_Table,
+                      Origin_IDs_Table,
+                      Prefix_Origin_IDs_Table,
                       Distinct_Prefix_Origins_W_IDs_Table]:
             logging.info(f"Creating {Table.__name__}")
             self._get_p_o_table_w_indexes(Table)
@@ -124,7 +132,7 @@ class MRT_Metadata_Parser(Parser):
         """Creates superprefix table"""
 
         logging.info("Creating superprefix table")
-        with Superprefix_Table(clear=True) as db:
+        with Superprefixes_Table(clear=True) as db:
             db.fill_table()
 
     def _create_block_table(self, max_block_size):
