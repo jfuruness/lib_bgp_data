@@ -309,7 +309,8 @@ class ROA_Known_Validity_Table(Generic_Table):
         """Fills table with data"""
 
         sql = f"""CREATE UNLOGGED TABLE IF NOT EXISTS {self.name} AS (
-                    SELECT dpo.prefix,
+                    SELECT DISTINCT ON (dpo.prefix, dpo.origin)
+                           dpo.prefix,
                            dpo.origin,
                            CASE WHEN r.asn != dpo.origin
                                     THEN 2 --invalid by origin
@@ -393,7 +394,6 @@ class Prefix_Origin_Metadata_Table(Generic_Table):
     name = "prefix_origin_metadata"
 
     def fill_table(self):
-        assert False, "You include a left join on the roas table, which causes cross join. Simply add unknown prefixes to roas first and inner join."
         sql = f"""CREATE UNLOGGED TABLE {self.name} AS (
                 SELECT dpo.prefix,
                        dpo.origin,
@@ -403,16 +403,16 @@ class Prefix_Origin_Metadata_Table(Generic_Table):
                        dpo.prefix_group_id,
                        dpo.block_id,
                        dpo.roa_validity,
-                       bp_ids.block_prefix_id,
-                       bo_ids.block_origin_id,
-                       bpg_ids.block_prefix_group_id,
-                       bpo_ids.block_prefix_origin_id
+                       bp_ids.block_prefix_id
+                       --bo_ids.block_origin_id,
+                       --bpg_ids.block_prefix_group_id,
+                       --bpo_ids.block_prefix_origin_id
                 FROM {Prefix_Origin_Blocks_Metadata_Table.name} dpo
                 INNER JOIN (
                     --must do lateral rather than partition to get proper distinct
                     SELECT DISTINCT prefix,
                            DENSE_RANK() OVER (PARTITION BY block_id) - 1 AS block_prefix_id
-                        FROM dpo_blocks_roas
+                        FROM {Prefix_Origin_Blocks_Metadata_Table.name}
                 ) bp_ids
                     ON bp_ids.prefix = dpo.prefix
                 --NOTE that later if needed you can add block_origin_id, etc
@@ -421,21 +421,21 @@ class Prefix_Origin_Metadata_Table(Generic_Table):
                 --INNER JOIN (
                 --    SELECT DISTINCT origin,
                 --           DENSE_RANK() OVER (PARTITION BY block_id) - 1 AS block_origin_id
-                --        FROM dpo_blocks_roas dpo_t
+                --        FROM {Prefix_Origin_Blocks_Metadata_Table.name}
                 --) bo_ids
                 --    ON bo_ids.origin = dpo.origin
                 --INNER JOIN (
                 --    SELECT DISTINCT prefix_group_id,
                 --           DENSE_RANK() OVER (PARTITION BY block_id) - 1
                 --                AS block_prefix_group_id
-                --        FROM dpo_blocks_roas dpo_t
+                --        FROM {Prefix_Origin_Blocks_Metadata_Table.name}
                 --) bpg_ids
                 --    ON bpg_ids.prefix_group_id = dpo.prefix_group_id
                 --INNER JOIN (
                 --    SELECT prefix, origin,
                 --           DENSE_RANK() OVER (PARTITION BY block_id) - 1
                 --                AS block_prefix_origin_id
-                --        FROM dpo_blocks_roas dpo_t
+                --        FROM {Prefix_Origin_Blocks_Metadata_Table.name}
                 --) bpo_ids
                 --    ON bpo_ids.prefix = dpo.prefix AND bpo_ids.origin = dpo.origin
             );"""
@@ -452,6 +452,7 @@ class MRT_W_Metadata_Table(Generic_Table):
     name = "mrt_w_metadata"
 
     def fill_table(self):
+        assert False, "WAIT"
         sql = """CREATE UNLOGGED TABLE {self.name} AS (
                 SELECT mrt.*,
                        --NOTE that postgres starts at 1 not 0
