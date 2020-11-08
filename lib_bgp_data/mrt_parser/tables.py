@@ -69,73 +69,9 @@ class Distinct_Prefix_Origins_Table(Generic_Table):
         sql = f"""CREATE UNLOGGED TABLE {self.name} AS (
                 SELECT DISTINCT prefix, origin
                     FROM {MRT_Announcements_Table.name}
+                --0 is reserved address
+                WHERE MASKLEN(prefix) > 0;
                 );"""
-        self.execute(sql)
-
-
-class Superprefixes_Table(Generic_Table):
-    """Class with database functionality
-
-    in depth explanation at the top of the file"""
-
-    __slots__ = []
-
-    name = "superprefixes"
-
-    columns = ["prefix"]
-
-    def fill_table(self):
-        """Fills table with data"""
-
-        sql = f"""CREATE UNLOGGED TABLE {self.name} AS(
-                    SELECT DISTINCT ON (prefix) dpo.prefix
-                       FROM {Distinct_Prefix_Origins_Table.name} dpo
-                        LEFT JOIN {Distinct_Prefix_Origins_Table.name} dpo2
-                            ON dpo2.prefix << dpo.prefix
-                        WHERE dpo2.prefix IS NULL);"""
-        self.execute(sql)
-
-class Superprefix_Groups_Table(Generic_Table):
-    """Class with database functionality
-
-    in depth explanation at the top of the file"""
-
-    __slots__ = []
-
-    name = "superprefix_groups"
-
-    columns = ["prefix", "prefix_group_id"]
-
-    def fill_table(self):
-        """Fills table with data"""
-
-        sql = f"""CREATE UNLOGGED TABLE {self.name} AS(
-                        SELECT prefix, ROW_NUMBER() OVER () - 1
-                                    AS prefix_group_id
-                        FROM {Superprefixes_Table.name}
-                );""" 
-        self.execute(sql)
-
-class Prefix_Groups_Table(Generic_Table):
-    """Class with database functionality
-
-    in depth explanation at the top of the file"""
-
-    __slots__ = []
-
-    name = "prefix_groups"
-
-    columns = ["prefix", "prefix_group_id"]
-
-    def fill_table(self):
-        """Fills table with data"""
-
-        sql = f"""CREATE UNLOGGED TABLE {self.name} AS(
-                         SELECT dpo.prefix, spg.prefix_group_id
-                        FROM {Distinct_Prefix_Origins_Table.name} dpo
-                            INNER JOIN {Superprefix_Groups_Table.name} spg
-                                ON spg.prefix <<= dpo.prefix
-                );""" 
         self.execute(sql)
 
 class Prefix_IDs_Table(Generic_Table):
@@ -159,6 +95,98 @@ class Prefix_IDs_Table(Generic_Table):
                         FROM {Distinct_Prefix_Origins_Table.name} dpo
                 );""" 
         self.execute(sql)
+
+
+class Superprefixes_Table(Generic_Table):
+    """Class with database functionality
+
+    in depth explanation at the top of the file"""
+
+    __slots__ = []
+
+    name = "superprefixes"
+
+    columns = ["prefix"]
+
+    def fill_table(self):
+        """Fills table with data"""
+
+        sql = f"""CREATE UNLOGGED TABLE {self.name} AS(
+                    SELECT DISTINCT ON (prefix) dpo.prefix
+                       FROM {Prefix_IDs_Table.name} dpo
+                        LEFT JOIN {Prefix_IDs_Table.name} dpo2
+                            ON dpo2.prefix >> dpo.prefix
+                        WHERE dpo2.prefix_id IS NULL);"""
+        self.execute(sql)
+
+class Superprefix_Groups_Table(Generic_Table):
+    """Class with database functionality
+
+    in depth explanation at the top of the file"""
+
+    __slots__ = []
+
+    name = "superprefix_groups"
+
+    columns = ["prefix", "prefix_group_id"]
+
+    def fill_table(self):
+        """Fills table with data"""
+
+        sql = f"""CREATE UNLOGGED TABLE {self.name} AS(
+                        SELECT prefix, ROW_NUMBER() OVER () - 1
+                                    AS prefix_group_id
+                        FROM {Superprefixes_Table.name}
+                );""" 
+        self.execute(sql)
+
+class Unknown_Prefixes_Table(Generic_Table):
+    """Class with database functionality
+
+    in depth explanation at the top of the file"""
+
+    __slots__ = []
+
+    name = "unknown_prefixes"
+
+    columns = ["prefix"]
+
+    def fill_table(self):
+        """Fills table with data"""
+
+        sql = f"""CREATE UNLOGGED TABLE {self.name} AS(
+                        SELECT prefix FROM {Prefix_IDs_Table.name}
+                        EXCEPT
+                        SELECT prefix FROM {Superprefixes_Table.name}
+                );""" 
+        self.execute(sql)
+
+
+class Prefix_Groups_Table(Generic_Table):
+    """Class with database functionality
+
+    in depth explanation at the top of the file"""
+
+    __slots__ = []
+
+    name = "prefix_groups"
+
+    columns = ["prefix", "prefix_group_id"]
+
+    def fill_table(self):
+        """Fills table with data"""
+
+        sql = f"""CREATE UNLOGGED TABLE {self.name} AS(
+                         SELECT u_p.prefix, spg.prefix_group_id
+                        FROM {Unknown_Prefixes_Table.name} u_p
+                        INNER JOIN {Superprefix_Groups_Table.name} spg
+                            ON u_p.prefix << spg.prefix
+                        UNION ALL
+                        SELECT prefix, prefix_group_id
+                            FROM {Superprefix_Groups_Table.name}
+                );""" 
+        self.execute(sql)
+
 
 class Origin_IDs_Table(Generic_Table):
     """Class with database functionality
@@ -189,7 +217,7 @@ class Prefix_Origin_IDs_Table(Generic_Table):
 
     __slots__ = []
 
-    name = "origin_ids"
+    name = "prefix_origin_ids"
 
     columns = ["prefix", "origin", "prefix_origin_id"]
 
@@ -259,9 +287,9 @@ class Blocks_Table(Generic_Table):
     def _create_tables(self):
         """Fills table with data"""
 
-        sql = f"""CREATE UNLOGGED TABLE {self.name}(
-                block_id INTEGER
-                group_id INTEGER
+        sql = f"""CREATE UNLOGGED TABLE IF NOT EXISTS {self.name}(
+                block_id INTEGER,
+                prefix_group_id INTEGER
                 );"""
         self.execute(sql)
 

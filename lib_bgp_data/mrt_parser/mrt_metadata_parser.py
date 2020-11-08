@@ -38,6 +38,7 @@ from .tables import Prefix_Groups_Table
 from .tables import Prefix_IDs_Table
 from .tables import Origin_IDs_Table
 from .tables import Prefix_Origin_IDs_Table
+from .tables import Unknown_Prefixes_Table
 from .tables import Distinct_Prefix_Origins_W_IDs_Table
 from .tables import Blocks_Table
 from .tables import Prefix_Origin_Metadata_Table
@@ -70,18 +71,23 @@ class MRT_Metadata_Parser(Parser):
         """
 
         self._validate()
-        self._add_prefix_origin_index()
-        logging.info(f"Creating {Distinct_Prefix_Origins_Table.name}")
-        self._get_p_o_table_w_indexes(Distinct_Prefix_Origins_Table)
-        self._get_superprefixes()
-        for Table in [Superprefix_Groups_Table,
-                      Prefix_Groups_Table,
-                      Prefix_IDs_Table,
-                      Origin_IDs_Table,
-                      Prefix_Origin_IDs_Table,
-                      Distinct_Prefix_Origins_W_IDs_Table]:
-            logging.info(f"Creating {Table.__name__}")
-            self._get_p_o_table_w_indexes(Table)
+#        self._add_prefix_origin_index()
+#        logging.info(f"Creating {Distinct_Prefix_Origins_Table.name}")
+#        self._get_p_o_table_w_indexes(Distinct_Prefix_Origins_Table)
+#        self._get_rid_of_reserved_addresses(Distinct_Prefix_Origins_Table);
+        # If you were a real cool cat, you would have done a compressed
+        # trie, finding common ancestors, to get prefix groupings
+        # def way faster than all this. Also more difficult.
+#        for Table in [Prefix_IDs_Table,
+#                      Superprefixes_Table,
+#                      Superprefix_Groups_Table,
+#                      Unknown_Prefixes_Table,
+#                      Prefix_Groups_Table,
+#                      Origin_IDs_Table,
+#                      Prefix_Origin_IDs_Table,
+#                      Distinct_Prefix_Origins_W_IDs_Table]:
+#            logging.info(f"Creating {Table.__name__}")
+#            self._get_p_o_table_w_indexes(Table)
         self._create_block_table(max_block_size)
         self._add_roas_index()
         self._get_prefix_origin_metadata_table()
@@ -128,12 +134,10 @@ class MRT_Metadata_Parser(Parser):
                 except psycopg2.errors.UndefinedColumn:
                     pass
 
-    def _get_superprefixes(self):
-        """Creates superprefix table"""
-
-        logging.info("Creating superprefix table")
-        with Superprefixes_Table(clear=True) as db:
-            db.fill_table()
+    def _get_rid_of_reserved_addresses(self, Table):
+        with Table() as db:
+            sql = f"""DELETE FROM {db.name} WHERE MASKLEN(prefix) = 0;"""
+            db.execute(sql)
 
     def _create_block_table(self, max_block_size):
         """Creates blocks for the extrapolator
@@ -149,18 +153,18 @@ class MRT_Metadata_Parser(Parser):
             sql = f"""SELECT prefix_group_id, COUNT(prefix_group_id) AS total
                   FROM {db.name}
                     GROUP BY prefix_group_id;"""
-            group_counts = self.execute(sql)
+            group_counts = db.execute(sql)
             group_counts_dict = {x["prefix_group_id"]: x["total"]
                                  for x in group_counts}
             # Returns a list of dicts, that contains group_id: count
-            bins = binpacking.to_constant_volume(max_block_size)
+            bins = binpacking.to_constant_volume(group_counts_dict, max_block_size)
             block_table_rows = []
             for block_id, current_bin in enumerate(bins):
                 for group_id in current_bin:
                     block_table_rows.append([block_id, group_id])
             csv_path = os.path.join(self.csv_dir, "block_table.csv")
-            utils.rows_to_db(rows, csv_path, Blocks_Table)
-            for _id in ["block_id", "group_id"]:
+            utils.rows_to_db(block_table_rows, csv_path, Blocks_Table)
+            for _id in ["block_id", "prefix_group_id"]:
                 sql = f"""CREATE INDEX IF NOT EXISTS
                         {Blocks_Table.name}_{_id} ON {Blocks_Table.name}({_id})
                       ;"""
