@@ -293,6 +293,97 @@ class Blocks_Table(Generic_Table):
                 );"""
         self.execute(sql)
 
+
+class ROA_Known_Validity_Table(Generic_Table):
+    """Class with database functionality
+
+    in depth explanation at the top of the file"""
+
+    __slots__ = []
+
+    name = "roa_known_validity"
+
+    columns = ["prefix", "origin", "roa_validity"]
+
+    def fill_table(self):
+        """Fills table with data"""
+
+        sql = f"""CREATE UNLOGGED TABLE IF NOT EXISTS {self.name} AS (
+                    SELECT dpo.prefix,
+                           dpo.origin,
+                           CASE WHEN r.asn != dpo.origin
+                                    THEN 2 --invalid by origin
+                                WHEN MASKLEN(dpo.prefix) > r.max_length
+                                    THEN 3 --invalid by max len
+                                WHEN r.asn = dpo.origin
+                                     AND MASKLEN(dpo.prefix) <= r.max_length
+                                        THEN 0 --valid
+                                ELSE 1 --unknown
+                            END AS roa_validity
+                    FROM {Distinct_Prefix_Origins_W_IDs_Table.name} dpo
+                    INNER JOIN (SELECT prefix,
+                                      asn,
+                                      max_length
+                               FROM roas WHERE (SELECT MAX(created_at)
+                                                FROM roas) = created_at) r
+                        ON dpo.prefix <<= r.prefix
+                );"""
+        self.execute(sql)
+
+class ROA_Validity_Table(Generic_Table):
+    """Class with database functionality
+
+    in depth explanation at the top of the file"""
+
+    __slots__ = []
+
+    name = "roa_validity"
+
+    columns = ["prefix", "origin", "roa_validity"]
+
+    def fill_table(self):
+        """Fills table with data"""
+
+        sql = f"""CREATE UNLOGGED TABLE IF NOT EXISTS {self.name} AS (
+                    SELECT prefix, origin, roa_validity
+                        FROM {ROA_Known_Validity_Table.name}
+                    UNION ALL
+                    (SELECT prefix, origin, 1 AS roa_validity
+                        FROM {Distinct_Prefix_Origins_W_IDs_Table.name}
+                    EXCEPT SELECT prefix, origin, 1 AS roa_validity
+                        FROM {ROA_Known_Validity_Table.name})
+                );"""
+        self.execute(sql)
+
+class Prefix_Origin_Blocks_Metadata_Table(Generic_Table):
+    """Class with database functionality"""
+
+    __slots__ = []
+
+
+    name = "prefix_origin_block_metadata"
+
+    def fill_table(self):
+        sql = f"""CREATE UNLOGGED TABLE {self.name} AS (
+                    SELECT dpo.prefix,
+                           dpo.origin,
+                           dpo.prefix_id,
+                           dpo.origin_id,
+                           dpo.prefix_origin_id,
+                           dpo.prefix_group_id,
+                           block.block_id,
+                           roa_v.roa_validity
+                    FROM {Distinct_Prefix_Origins_W_IDs_Table.name} dpo
+                INNER JOIN {Blocks_Table.name} block
+                    ON block.prefix_group_id = dpo.prefix_group_id
+                INNER JOIN {ROA_Validity_Table.name} roa_v
+                    ON roa_v.prefix = dpo.prefix AND roa_v.origin = dpo.origin
+                );"""
+        self.execute(sql)
+ 
+
+
+
 class Prefix_Origin_Metadata_Table(Generic_Table):
     """Class with database functionality"""
 
@@ -304,45 +395,6 @@ class Prefix_Origin_Metadata_Table(Generic_Table):
     def fill_table(self):
         assert False, "You include a left join on the roas table, which causes cross join. Simply add unknown prefixes to roas first and inner join."
         sql = f"""CREATE UNLOGGED TABLE {self.name} AS (
-                WITH dpo_blocks AS (
-                    SELECT dpo.prefix,
-                           dpo.origin,
-                           dpo.prefix_id,
-                           dpo.origin_id,
-                           dpo.prefix_origin_id,
-                           dpo.prefix_group_id,
-                           block.block_id
-                    FROM {Distinct_Prefix_Origins_W_IDs_Table.name} dpo
-                INNER JOIN {Blocks_Table.name} block
-                    ON block.prefix_group_id = dpo.prefix_group_id
-                ), dpo_blocks_roas AS (
-                    SELECT dpo.prefix,
-                           dpo.origin,
-                           dpo.prefix_id,
-                           dpo.origin_id,
-                           dpo.prefix_origin_id,
-                           dpo.prefix_group_id,
-                           dpo.block_id,
-                           CASE WHEN r.asn != dpo.origin
-                                    THEN 2 --invalid by origin
-                                WHEN MASKLEN(dpo.prefix) > r.max_length
-                                    THEN 3 --invalid by max len
-                                WHEN r.asn = dpo.origin
-                                     AND MASKLEN(dpo.prefix) <= r.max_length
-                                        THEN 1 --valid
-                                ELSE 0 --unknown
-                            END AS roa_validity
-                    FROM dpo_blocks dpo
-                    LEFT JOIN (SELECT prefix,
-                                      asn,
-                                      max_length
-                               FROM roas WHERE (SELECT MAX(created_at)
-                                                FROM roas) = created_at) r
-                        ON dpo.prefix <<= r.prefix
-                )
-                --NOTE that later if needed you can add block_origin_id, etc
-                --but to save time, and since they currently have no use,
-                --we omit them here for speed.
                 SELECT dpo.prefix,
                        dpo.origin,
                        dpo.prefix_id,
@@ -355,7 +407,7 @@ class Prefix_Origin_Metadata_Table(Generic_Table):
                        bo_ids.block_origin_id,
                        bpg_ids.block_prefix_group_id,
                        bpo_ids.block_prefix_origin_id
-                FROM dpo_blocks_roas dpo
+                FROM {Prefix_Origin_Blocks_Metadata_Table.name} dpo
                 INNER JOIN (
                     --must do lateral rather than partition to get proper distinct
                     SELECT DISTINCT prefix,
@@ -363,31 +415,33 @@ class Prefix_Origin_Metadata_Table(Generic_Table):
                         FROM dpo_blocks_roas
                 ) bp_ids
                     ON bp_ids.prefix = dpo.prefix
-                INNER JOIN (
-                    SELECT DISTINCT origin,
-                           DENSE_RANK() OVER (PARTITION BY block_id) - 1 AS block_origin_id
-                        FROM dpo_blocks_roas dpo_t
-                ) bo_ids
-                    ON bo_ids.origin = dpo.origin
-                INNER JOIN (
-                    SELECT DISTINCT prefix_group_id,
-                           DENSE_RANK() OVER (PARTITION BY block_id) - 1
-                                AS block_prefix_group_id
-                        FROM dpo_blocks_roas dpo_t
-                ) bpg_ids
-                    ON bpg_ids.prefix_group_id = dpo.prefix_group_id
-                INNER JOIN (
-                    SELECT prefix, origin,
-                           DENSE_RANK() OVER (PARTITION BY block_id) - 1
-                                AS block_prefix_origin_id
-                        FROM dpo_blocks_roas dpo_t
-                ) bpo_ids
-                    ON bpo_ids.prefix = dpo.prefix AND bpo_ids.origin = dpo.origin
+                --NOTE that later if needed you can add block_origin_id, etc
+                --but to save time, and since they currently have no use,
+                --we omit them here for speed.
+                --INNER JOIN (
+                --    SELECT DISTINCT origin,
+                --           DENSE_RANK() OVER (PARTITION BY block_id) - 1 AS block_origin_id
+                --        FROM dpo_blocks_roas dpo_t
+                --) bo_ids
+                --    ON bo_ids.origin = dpo.origin
+                --INNER JOIN (
+                --    SELECT DISTINCT prefix_group_id,
+                --           DENSE_RANK() OVER (PARTITION BY block_id) - 1
+                --                AS block_prefix_group_id
+                --        FROM dpo_blocks_roas dpo_t
+                --) bpg_ids
+                --    ON bpg_ids.prefix_group_id = dpo.prefix_group_id
+                --INNER JOIN (
+                --    SELECT prefix, origin,
+                --           DENSE_RANK() OVER (PARTITION BY block_id) - 1
+                --                AS block_prefix_origin_id
+                --        FROM dpo_blocks_roas dpo_t
+                --) bpo_ids
+                --    ON bpo_ids.prefix = dpo.prefix AND bpo_ids.origin = dpo.origin
             );"""
         self.execute(sql)
         with Distinct_Prefix_Origins_W_IDs_Table() as db:
             assert db.get_count() == self.get_count()
-            print("Change dpo_blocks_roas to be separate table with indexes???")
 
 class MRT_W_Metadata_Table(Generic_Table):
     """Class with database functionality"""
@@ -408,10 +462,10 @@ class MRT_W_Metadata_Table(Generic_Table):
                        pom.prefix_group_id,
                        pom.block_id,
                        pom.roas,
-                       pom.block_prefix_id,
-                       pom.block_origin_id,
-                       pom.block_prefix_group_id,
-                       pom.block_prefix_origin_id
+                       pom.block_prefix_id--,
+                       --pom.block_origin_id,
+                       --pom.block_prefix_group_id,
+                       --pom.block_prefix_origin_id
                 FROM {MRT_Announcements_Table.name} mrt
                 INNER JOIN {Prefix_Origin_Metadata_Table.name} pom
                     ON pom.prefix = mrt.prefix AND pom.origin = mrt.origin

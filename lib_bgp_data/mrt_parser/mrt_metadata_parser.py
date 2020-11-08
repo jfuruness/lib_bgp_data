@@ -41,6 +41,9 @@ from .tables import Prefix_Origin_IDs_Table
 from .tables import Unknown_Prefixes_Table
 from .tables import Distinct_Prefix_Origins_W_IDs_Table
 from .tables import Blocks_Table
+from .tables import ROA_Known_Validity_Table
+from .tables import ROA_Validity_Table
+from .tables import Prefix_Origin_Blocks_Metadata_Table
 from .tables import Prefix_Origin_Metadata_Table
 from .tables import MRT_W_Metadata_Table
 from ..utils import utils
@@ -90,7 +93,11 @@ class MRT_Metadata_Parser(Parser):
 #            self._get_p_o_table_w_indexes(Table)
 #        self._create_block_table(max_block_size)
 #        self._add_roas_index()
-        self._get_prefix_origin_metadata_table()
+        for Table in [ROA_Known_Validity_Table,
+                      ROA_Validity_Table,
+                      Prefix_Origin_Blocks_Metadata_Table,
+                      Prefix_Origin_Metadata_Table]:
+            self._get_p_o_table_w_indexes(Table)
         self._add_metadata()
 
     def _validate(self):
@@ -126,7 +133,11 @@ class MRT_Metadata_Parser(Parser):
                   ON {db.name}(origin)""",
 
                   f"""CREATE INDEX IF NOT EXISTS {db.name}_g_index
-                      ON {db.name}(prefix_group_id);"""
+                      ON {db.name}(prefix_group_id);""",
+                  f"""CREATE INDEX IF NOT EXISTS {db.name}_pbtree_index
+                      ON {db.name}(prefix)""",
+                  f"""CREATE INDEX IF NOT EXISTS {db.name}_po_btree_index
+                     ON {db.name}(prefix, origin);"""
             ]
             for sql in index_sqls:
                 try:
@@ -176,16 +187,6 @@ class MRT_Metadata_Parser(Parser):
         with ROAs_Table() as db: 
             sql = f"""CREATE INDEX IF NOT EXISTS roas_index
                   ON {db.name} USING GIST(prefix inet_ops, asn);"""
-            self._create_index(sql, db)
-
-    def _get_prefix_origin_metadata_table(self):
-        """Combine all tables thus far and roas table"""
-
-        logging.info("Getting prefix origin metadata table")
-        with Prefix_Origin_Metadata_Table(clear=True) as db:
-            db.fill_table()
-            sql = f"""CREATE INDEX po_meta_index ON {db.name}
-                  USING GIST(prefix inet_ops, origin)"""
             self._create_index(sql, db)
 
     def _add_metadata(self):
