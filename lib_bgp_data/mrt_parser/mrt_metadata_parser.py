@@ -88,8 +88,8 @@ class MRT_Metadata_Parser(Parser):
 #                      Distinct_Prefix_Origins_W_IDs_Table]:
 #            logging.info(f"Creating {Table.__name__}")
 #            self._get_p_o_table_w_indexes(Table)
-        self._create_block_table(max_block_size)
-        self._add_roas_index()
+#        self._create_block_table(max_block_size)
+#        self._add_roas_index()
         self._get_prefix_origin_metadata_table()
         self._add_metadata()
 
@@ -175,7 +175,7 @@ class MRT_Metadata_Parser(Parser):
 
         with ROAs_Table() as db: 
             sql = f"""CREATE INDEX IF NOT EXISTS roas_index
-                  ON {db.name} USING GIST(prefix inet_ops, origin);"""
+                  ON {db.name} USING GIST(prefix inet_ops, asn);"""
             self._create_index(sql, db)
 
     def _get_prefix_origin_metadata_table(self):
