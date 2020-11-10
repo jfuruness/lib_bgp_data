@@ -364,8 +364,8 @@ class MRT_W_Metadata_Table(Generic_Table):
                        --NOTE that postgres starts at 1 not 0
                        mrt.as_path[1] AS monitor_asn,
                        pom.prefix_id,
-                       pom.origin_id
-                       pom.prefix_origin_id
+                       pom.origin_id,
+                       pom.prefix_origin_id,
                        --pom.prefix_group_id,
                        pom.block_id,
                        pom.roa_validity,
