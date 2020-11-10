@@ -82,13 +82,13 @@ class MRT_Metadata_Parser(Parser):
 #                      Distinct_Prefix_Origins_W_IDs_Table]:
 #            logging.info(f"Creating {Table.__name__}")
 #            self._get_p_o_table_w_indexes(Table)
-        self._create_block_table(max_block_size)
-        self._add_roas_index()
-        for Table in [ROA_Known_Validity_Table,
-                      ROA_Validity_Table,
-                      Prefix_Origin_Blocks_Metadata_Table,
-                      Prefix_Origin_Metadata_Table]:
-            self._get_p_o_table_w_indexes(Table)
+#        self._create_block_table(max_block_size)
+#        self._add_roas_index()
+#        for Table in [ROA_Known_Validity_Table,
+#                      ROA_Validity_Table,
+#                      Prefix_Origin_Blocks_Metadata_Table,
+#                      Prefix_Origin_Metadata_Table]:
+#            self._get_p_o_table_w_indexes(Table)
         self._add_metadata()
 
     def _validate(self):
@@ -180,17 +180,17 @@ class MRT_Metadata_Parser(Parser):
             group_counts = sorted(group_counts, key=lambda x: x[1], reverse=True)
             bin_count = (len(group_counts) // max_block_size) + 1
             bins = list(sorted([Bin(i) for i in range(bin_count)]))
+            # tbh, is this the same as just doing it in order?
+            # Should check this...
             for i, (prefix, ann_count) in enumerate(group_counts):
-                if i % 100:
-                    print(i)
                 for b_index, b in enumerate(bins):
                     if b.add_prefix(prefix, ann_count):
-                        current_bucket = bins.pop(b_index)
+                        current_index = b_index
                         break
                 # Inserts item in sorted list correctly
                 # MUCH faster than sort
                 # https://stackoverflow.com/a/38346428/8903959
-                bins = bisect.insort_left(bins, current_bucket)
+                bisect.insort_left(bins, bins.pop(b_index))
             block_table_rows = []
             for current_bin in bins:
                 block_table_rows.extend(current_bin.rows)

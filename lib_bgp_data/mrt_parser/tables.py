@@ -359,17 +359,16 @@ class MRT_W_Metadata_Table(Generic_Table):
     name = "mrt_w_metadata"
 
     def fill_table(self):
-        assert False, "WAIT"
-        sql = """CREATE UNLOGGED TABLE {self.name} AS (
+        sql = f"""CREATE UNLOGGED TABLE {self.name} AS (
                 SELECT mrt.*,
                        --NOTE that postgres starts at 1 not 0
                        mrt.as_path[1] AS monitor_asn,
                        pom.prefix_id,
                        pom.origin_id
                        pom.prefix_origin_id
-                       pom.prefix_group_id,
+                       --pom.prefix_group_id,
                        pom.block_id,
-                       pom.roas,
+                       pom.roa_validity,
                        pom.block_prefix_id--,
                        --pom.block_origin_id,
                        --pom.block_prefix_group_id,
