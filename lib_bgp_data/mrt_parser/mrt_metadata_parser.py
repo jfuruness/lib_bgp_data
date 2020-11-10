@@ -32,13 +32,9 @@ from .mrt_installer import MRT_Installer
 from .mrt_sources import MRT_Sources
 from .tables import MRT_Announcements_Table
 from .tables import Distinct_Prefix_Origins_Table
-from .tables import Superprefixes_Table
-from .tables import Superprefix_Groups_Table
-from .tables import Prefix_Groups_Table
 from .tables import Prefix_IDs_Table
 from .tables import Origin_IDs_Table
 from .tables import Prefix_Origin_IDs_Table
-from .tables import Unknown_Prefixes_Table
 from .tables import Distinct_Prefix_Origins_W_IDs_Table
 from .tables import Blocks_Table
 from .tables import ROA_Known_Validity_Table
@@ -74,25 +70,20 @@ class MRT_Metadata_Parser(Parser):
         """
 
         self._validate()
-#        self._add_prefix_origin_index()
-#        logging.info(f"Creating {Distinct_Prefix_Origins_Table.name}")
-#        self._get_p_o_table_w_indexes(Distinct_Prefix_Origins_Table)
-#        self._get_rid_of_reserved_addresses(Distinct_Prefix_Origins_Table);
+        self._add_prefix_origin_index()
+        logging.info(f"Creating {Distinct_Prefix_Origins_Table.name}")
+        self._get_p_o_table_w_indexes(Distinct_Prefix_Origins_Table)
         # If you were a real cool cat, you would have done a compressed
         # trie, finding common ancestors, to get prefix groupings
         # def way faster than all this. Also more difficult.
-#        for Table in [Prefix_IDs_Table,
-#                      Superprefixes_Table,
-#                      Superprefix_Groups_Table,
-#                      Unknown_Prefixes_Table,
-#                      Prefix_Groups_Table,
-#                      Origin_IDs_Table,
-#                      Prefix_Origin_IDs_Table,
-#                      Distinct_Prefix_Origins_W_IDs_Table]:
-#            logging.info(f"Creating {Table.__name__}")
-#            self._get_p_o_table_w_indexes(Table)
-#        self._create_block_table(max_block_size)
-#        self._add_roas_index()
+        for Table in [Prefix_IDs_Table,
+                      Origin_IDs_Table,
+                      Prefix_Origin_IDs_Table,
+                      Distinct_Prefix_Origins_W_IDs_Table]:
+            logging.info(f"Creating {Table.__name__}")
+            self._get_p_o_table_w_indexes(Table)
+        self._create_block_table(max_block_size)
+        self._add_roas_index()
         for Table in [ROA_Known_Validity_Table,
                       ROA_Validity_Table,
                       Prefix_Origin_Blocks_Metadata_Table,
@@ -115,6 +106,9 @@ class MRT_Metadata_Parser(Parser):
         with MRT_Announcements_Table() as db:
             sql = f"""CREATE INDEX IF NOT EXISTS {db.name}_po_index ON
                   {db.name} USING GIST(prefix inet_ops, origin)"""
+            self._create_index(sql, db)
+            sql = f"""CREATE INDEX IF NOT EXISTS {db.name}_po_btree_i ON
+                    {db.name}(prefix inet_ops, origin);"""
             self._create_index(sql, db)
 
     def _get_p_o_table_w_indexes(self, Table):
@@ -145,13 +139,100 @@ class MRT_Metadata_Parser(Parser):
                 except psycopg2.errors.UndefinedColumn:
                     pass
 
-    def _get_rid_of_reserved_addresses(self, Table):
-        with Table() as db:
-            sql = f"""DELETE FROM {db.name} WHERE MASKLEN(prefix) = 0;"""
-            db.execute(sql)
+    def _create_block_table_w_prefix_anns(self, max_block_size):
+        """Creates iteration blocks as balanced as possible
 
-    def _create_block_table(self, max_block_size):
-        """Creates blocks for the extrapolator
+        Based on prefix, total # ann for that prefix
+        Needed to write a custom algo for this
+        but it's fine, since binpacking is already np hard
+        Figures out first correct number of bins, since prefixes
+        are most important
+        Then figures out which bin to place in
+        Largest ann_count first into smallest bin_weight
+        """
+
+        class Bin:
+            def __init__(self, bin_id):
+                self.bin_id = bin_id
+                self.prefixes = []
+                self.total_weight = 0
+
+            def add_prefix(self, prefix, ann_count):
+                if len(self.prefixes) + 1 <= max_block_size:
+                    self.prefixes.append(prefix)
+                    self.total_weight += ann_count
+                    return True
+                else:
+                    return False
+
+            def __lt__(self, other):
+                if isinstance(other, self.__class__):
+                    return self.total_weight < other.total_weight
+
+            @property
+            def rows(self):
+                return [[self.bin_id, x] for x in self.prefixes]
+
+        logging.info("Getting prefix blocks")
+        with Prefix_IDs_Table() as db:
+            group_counts = [[x["prefix"], x["ann_total"]]
+                            for x in db.get_all()]
+            group_counts = sorted(group_counts, lambda x: x[1], reverse=True)
+            bin_count = (len(group_counts_dict) // max_block_size) + 1
+            bins = [Bin(i) for i in range(bin_count)]
+            for prefix, ann_count in group_counts:
+                for b in sorted(bins):
+                    if b.add_prefix(prefix, ann_count):
+                        break
+            block_table_rows = []
+            for current_bin in bins:
+                block_table_rows.extend(current_bin.rows)
+            csv_path = os.path.join(self.csv_dir, "block_table.csv")
+            utils.rows_to_db(block_table_rows, csv_path, Blocks_Table)
+            for _id in ["block_id", "prefix"]:
+                sql = f"""CREATE INDEX IF NOT EXISTS
+                        {Blocks_Table.name}_{_id}
+                            ON {Blocks_Table.name}({_id})
+                      ;"""
+                self._create_index(sql, db)
+
+    def _add_roas_index(self):
+        """Creates an index on the roas table"""
+
+        with ROAs_Table() as db: 
+            sql = f"""CREATE INDEX IF NOT EXISTS roas_index
+                  ON {db.name} USING GIST(prefix inet_ops, asn);"""
+            self._create_index(sql, db)
+
+    def _add_metadata(self):
+        """Joins prefix origin metadata with MRT Anns"""
+
+        logging.info("Adding metadata to the MRT announcements")
+        with MRT_W_Metadata_Table(clear=True) as db:
+            db.fill_table()
+            sql = f"""CREATE INDEX {db.name}_block_index
+                    ON {db.name}(block_id);"""
+            self._create_index(sql, db)
+            # NOTE: you probably need other indexes on this table
+            # Depending on what application is being run
+
+    def _create_index(self, sql, db):
+        logging.info(f"Creating index on {db.name}")
+        db.execute(sql)
+        logging.info("Index complete")
+
+################
+### Old Code ###
+################
+
+    def _create_block_table_w_prefix_groups(self, max_block_size):
+        """Legacy code now
+
+        This can be used for creating blocks with groups
+        We didn't need to tackle this problem for our phd
+        We leave it for the next runner up.
+
+        Creates blocks for the extrapolator
 
         1. Counts number of prefixes per group
         2. Packs them into blocks with a fixed max size
@@ -181,27 +262,3 @@ class MRT_Metadata_Parser(Parser):
                       ;"""
                 self._create_index(sql, db)
 
-    def _add_roas_index(self):
-        """Creates an index on the roas table"""
-
-        with ROAs_Table() as db: 
-            sql = f"""CREATE INDEX IF NOT EXISTS roas_index
-                  ON {db.name} USING GIST(prefix inet_ops, asn);"""
-            self._create_index(sql, db)
-
-    def _add_metadata(self):
-        """Joins prefix origin metadata with MRT Anns"""
-
-        logging.info("Adding metadata to the MRT announcements")
-        with MRT_W_Metadata_Table(clear=True) as db:
-            db.fill_table()
-            sql = f"""CREATE INDEX {db.name}_block_index
-                    ON {db.name}(block_id);"""
-            self._create_index(sql, db)
-            # NOTE: you probably need other indexes on this table
-            # Depending on what application is being run
-
-    def _create_index(self, sql, db):
-        logging.info(f"Creating index on {db.name}")
-        db.execute(sql)
-        logging.info("Index complete")
