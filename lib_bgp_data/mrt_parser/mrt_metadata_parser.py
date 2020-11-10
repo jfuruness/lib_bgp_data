@@ -16,6 +16,7 @@ __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Production"
 
+import bisect
 import datetime
 import logging
 import os
@@ -71,16 +72,16 @@ class MRT_Metadata_Parser(Parser):
         self._validate()
         self._add_prefix_origin_index()
         logging.info(f"Creating {Distinct_Prefix_Origins_Table.name}")
-        self._get_p_o_table_w_indexes(Distinct_Prefix_Origins_Table)
+#        self._get_p_o_table_w_indexes(Distinct_Prefix_Origins_Table)
         # If you were a real cool cat, you would have done a compressed
         # trie, finding common ancestors, to get prefix groupings
         # def way faster than all this. Also more difficult.
-        for Table in [Prefix_IDs_Table,
-                      Origin_IDs_Table,
-                      Prefix_Origin_IDs_Table,
-                      Distinct_Prefix_Origins_W_IDs_Table]:
-            logging.info(f"Creating {Table.__name__}")
-            self._get_p_o_table_w_indexes(Table)
+#        for Table in [Prefix_IDs_Table,
+#                      Origin_IDs_Table,
+#                      Prefix_Origin_IDs_Table,
+#                      Distinct_Prefix_Origins_W_IDs_Table]:
+#            logging.info(f"Creating {Table.__name__}")
+#            self._get_p_o_table_w_indexes(Table)
         self._create_block_table(max_block_size)
         self._add_roas_index()
         for Table in [ROA_Known_Validity_Table,
@@ -138,7 +139,7 @@ class MRT_Metadata_Parser(Parser):
                 except psycopg2.errors.UndefinedColumn:
                     pass
 
-    def _create_block_table_w_prefix_anns(self, max_block_size):
+    def _create_block_table(self, max_block_size):
         """Creates iteration blocks as balanced as possible
 
         Based on prefix, total # ann for that prefix
@@ -174,15 +175,22 @@ class MRT_Metadata_Parser(Parser):
 
         logging.info("Getting prefix blocks")
         with Prefix_IDs_Table() as db:
-            group_counts = [[x["prefix"], x["ann_total"]]
+            group_counts = [[x["prefix"], x["ann_count"]]
                             for x in db.get_all()]
-            group_counts = sorted(group_counts, lambda x: x[1], reverse=True)
-            bin_count = (len(group_counts_dict) // max_block_size) + 1
-            bins = [Bin(i) for i in range(bin_count)]
-            for prefix, ann_count in group_counts:
-                for b in sorted(bins):
+            group_counts = sorted(group_counts, key=lambda x: x[1], reverse=True)
+            bin_count = (len(group_counts) // max_block_size) + 1
+            bins = list(sorted([Bin(i) for i in range(bin_count)]))
+            for i, (prefix, ann_count) in enumerate(group_counts):
+                if i % 100:
+                    print(i)
+                for b_index, b in enumerate(bins):
                     if b.add_prefix(prefix, ann_count):
+                        current_bucket = bins.pop(b_index)
                         break
+                # Inserts item in sorted list correctly
+                # MUCH faster than sort
+                # https://stackoverflow.com/a/38346428/8903959
+                bins = bisect.insort_left(bins, current_bucket)
             block_table_rows = []
             for current_bin in bins:
                 block_table_rows.extend(current_bin.rows)

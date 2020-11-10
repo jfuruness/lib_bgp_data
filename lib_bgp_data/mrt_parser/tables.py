@@ -94,6 +94,7 @@ class Prefix_IDs_Table(Generic_Table):
                          SELECT mrt.prefix,
                                 COUNT(*) AS ann_count
                         FROM {MRT_Announcements_Table.name} mrt
+                            GROUP BY mrt.prefix) a
                 );""" 
         self.execute(sql)
 
