@@ -21,7 +21,6 @@ import logging
 import os
 import warnings
 
-import binpacking
 import psycopg2
 import requests
 
