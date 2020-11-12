@@ -16,7 +16,6 @@ __status__ = "Development"
 import logging
 
 from ..database import Generic_Table
-from ..rovpp.tables import Attackers_Table, Victims_Table
 from ..rovpp.enums import Attack_Types, Data_Plane_Conditions
 
 class ROVPP_Extrapolator_Rib_Out_Table(Generic_Table):
@@ -48,6 +47,7 @@ class ROVPP_Extrapolator_Rib_Out_Table(Generic_Table):
 
         # Do this to more efficiently keep track of leak info
         if attack_type == Attack_Types.LEAK:
+            assert False, "Not yet implimented"
             # CHANGE LATER
             attacker = self.execute("""SELECT asn FROM tracked_ases
                                     WHERE attacker=TRUE""")[0]["asn"]

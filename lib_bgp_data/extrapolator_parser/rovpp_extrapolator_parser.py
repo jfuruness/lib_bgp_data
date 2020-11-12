@@ -23,7 +23,6 @@ import sys
 import psycopg2
 
 from .extrapolator_parser import Extrapolator_Parser
-from ..rovpp.tables import Attackers_Table, Victims_Table
 from .tables import ROVPP_Extrapolator_Rib_Out_Table
 
 from ..base_classes import Parser
@@ -48,22 +47,15 @@ class ROVPP_Extrapolator_Parser(Extrapolator_Parser):
         Installs if necessary. See README for in depth instructions.
         """
 
-        tables = [Attackers_Table.name] + table_names
-        self._input_validation(tables)
-
         logging.debug("About to run the rovpp extrapolator")
 
         # Should be moved to exr
-#        with Database() as db:
-#            sql = "SELECT MAX(list_index) AS max_list_index FROM attackers"
-#            max_index = db.execute(sql)[0]["max_list_index"]
 
         bash_args = f"{self.install_location} -v 1"
         for table_name in table_names:
             bash_args += f" -t {table_name}"
         with Database() as db:
             db.execute("DROP TABLE IF EXISTS rovpp_extrapolation_results")
-#        bash_args += f" -s {max_index + 1}"  # +1 cause the exr devs r off by 1
         logging.debug(bash_args)
         # Exr bash here for dev only
         try:

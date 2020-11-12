@@ -220,10 +220,13 @@ class ROA_Known_Validity_Table(Generic_Table):
                     SELECT DISTINCT ON (dpo.prefix, dpo.origin)
                            dpo.prefix,
                            dpo.origin,
-                           CASE WHEN r.asn != dpo.origin
-                                    THEN 2 --invalid by origin
+                           --NOTE: don't change the numbering. It's dependent elsewhere as well
+                           CASE WHEN r.asn != dpo.origin AND MASKLEN(dpo.prefix) > r.max_length
+                                    THEN 4 --invalid by origin and length
                                 WHEN MASKLEN(dpo.prefix) > r.max_length
                                     THEN 3 --invalid by max len
+                                WHEN r.asn != dpo.origin
+                                    THEN 2 --invalid by origin
                                 WHEN r.asn = dpo.origin
                                      AND MASKLEN(dpo.prefix) <= r.max_length
                                         THEN 0 --valid
@@ -357,6 +360,10 @@ class MRT_W_Metadata_Table(Generic_Table):
 
 
     name = "mrt_w_metadata"
+
+    columns = ["prefix", "as_path", "origin", "time", "monitor_asn",
+               "prefix_id", "origin_id", "prefix_origin_id", "block_id",
+               "roa_validity", "block_prefix_id"]
 
     def fill_table(self):
         sql = f"""CREATE UNLOGGED TABLE {self.name} AS (

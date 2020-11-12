@@ -104,35 +104,132 @@ class Data_Point(Parser):
         # Gets two random ases without duplicates
         attacker, victim = random.sample(ases, k=2)
 
-        # Table schema: prefix | as_path | origin | time
-        # NOTE: we use the time as an index for keeping track of atk/vic pairs
+        # Table schema: prefix | as_path | origin | time | monitor_asn |
+        # prefix_id | origin_id | prefix_origin_id | block_id |
+        # roa_validity | block_prefix_id
 
+        # ROA validity: 0 valid, 1 unknown, 2 invalid by origin, 3 invalid by len
+        # 4 invalid by origin and len
         # Subprefix hijack
         if attack_type == Attack_Types.SUBPREFIX_HIJACK:
-            attacker_rows = [['1.2.3.0/24', [attacker], attacker, 1]]
-            victim_rows = [['1.2.0.0/16', [victim], victim, 0]]
+            attacker_rows = [{"prefix": '1.2.3.0/24',
+                              "as_path": [attacker],
+                              "origin": attacker,
+                              "time": 1,
+                              "monitor_asn": None,
+                              "prefix_id": 0,
+                              "origin_id": 0,
+                              "prefix_origin_id": 0,
+                              "block_id": 0,
+                              "roa_validity": 4}]
+            victim_rows = [{"prefix": '1.2.3.0/24',
+                            "as_path": [victim],
+                            "origin": victim,
+                            "time": 0,
+                            "monitor_asn": None,
+                            "prefix_id": 1,
+                            "origin_id": 1,
+                            "prefix_origin_id": 1,
+                            "block_id": 0,
+                            "roa_validity": 0}]
 
         # Prefix hijack
         elif attack_type == Attack_Types.PREFIX_HIJACK:
-            attacker_rows = [['1.2.0.0/16', [attacker], attacker, 1]]
-            victim_rows = [['1.2.0.0/16', [victim], victim, 0]]
-
+            attacker_rows = [{"prefix": '1.2.0.0/16',
+                              "as_path": [attacker],
+                              "origin": attacker,
+                              "time": 1,
+                              "monitor_asn": None,
+                              "prefix_id": 0,
+                              "origin_id": 0,
+                              "prefix_origin_id": 0,
+                              "block_id": 0,
+                              "roa_validity": 2}]
+            victim_rows = [{"prefix": '1.2.0.0/16',
+                            "as_path": [victim],
+                            "origin": victim,
+                            "time": 0,
+                            "monitor_asn": None,
+                            "prefix_id": 0,
+                            "origin_id": 1,
+                            "prefix_origin_id": 1,
+                            "block_id": 0,
+                            "roa_validity": 0}]
         # Unannounced prefix hijack
         elif attack_type == Attack_Types.UNANNOUNCED_PREFIX_HIJACK:
-            attacker_rows = [['1.2.3.0/24', [attacker], attacker, 1]]
+            attacker_rows = [{"prefix": '1.2.3.0/24',
+                              "as_path": [attacker],
+                              "origin": attacker,
+                              "time": 1,
+                              "monitor_asn": None,
+                              "prefix_id": 0,
+                              "origin_id": 0,
+                              "prefix_origin_id": 0,
+                              "block_id": 0,
+                              "roa_validity": 4}]
             victim_rows = []
 
         elif attack_type == Attack_Types.UNANNOUNCED_SUPERPREFIX_HIJACK:
-            attacker_rows = [['1.2.3.0/24', [attacker], attacker, 1],
-                              ['1.2.0.0/16', [attacker], attacker, 1]] 
+            # ROA for subprefix not superprefix
+            attacker_rows = [{"prefix": '1.2.0.0/16',
+                              "as_path": [attacker],
+                              "origin": attacker,
+                              "time": 1,
+                              "monitor_asn": None,
+                              "prefix_id": 0,
+                              "origin_id": 0,
+                              "prefix_origin_id": 0,
+                              "block_id": 0,
+                              # ROA for superprefix is 1 for unknown
+                              "roa_validity": 1},
+                              {"prefix": '1.2.3.0/24',
+                               "as_path": [attacker],
+                               "origin": attacker,
+                               "time": 1,
+                               "monitor_asn": None,
+                               "prefix_id": 1,
+                               "origin_id": 0,
+                               "prefix_origin_id": 1,
+                               "block_id": 0,
+                               "roa_validity": 4}]
             victim_rows = []
 
         elif attack_type == Attack_Types.SUPERPREFIX_HIJACK:
-            attacker_rows = [['1.2.3.0/24', [attacker], attacker, 1],
-                              ['1.2.0.0/16', [attacker], attacker, 1]]
-            victim_rows = [['1.2.0.0/16', [victim], victim, 0]]
+            # ROA for subprefix not superprefix
+            attacker_rows = [{"prefix": '1.2.0.0/16',
+                              "as_path": [attacker],
+                              "origin": attacker,
+                              "time": 1,
+                              "monitor_asn": None,
+                              "prefix_id": 0,
+                              "origin_id": 0,
+                              "prefix_origin_id": 0,
+                              "block_id": 0,
+                              # ROA for superprefix is 1 for unknown
+                              "roa_validity": 1},
+                              {"prefix": '1.2.3.0/24',
+                               "as_path": [attacker],
+                               "origin": attacker,
+                               "time": 1,
+                               "monitor_asn": None,
+                               "prefix_id": 1,
+                               "origin_id": 0,
+                               "prefix_origin_id": 1,
+                               "block_id": 0,
+                               "roa_validity": 4}]
+            victim_rows = [{"prefix": '1.2.0.0/16',
+                            "as_path": [victim],
+                            "origin": victim,
+                            "time": 0,
+                            "monitor_asn": None,
+                            "prefix_id": 1,
+                            "origin_id": 1,
+                            "prefix_origin_id": 2,
+                            "block_id": 0,
+                            "roa_validity": 0}]
 
         elif attack_type == Attack_Types.LEAK:
+            assert False, "Not yet implimented"
             # CHange this to be the table later
             with Database() as db:
                 sql = f"""SELECT * FROM leaks ORDER BY id LIMIT 1 OFFSET {trial_num}"""
@@ -167,30 +264,21 @@ class Data_Point(Parser):
                                   1]]
                 victim_rows = []
 
+        rows = []
         # Format the lists to be arrays for insertion into postgres
-        for rows in [attacker_rows, victim_rows]:
-            for row in rows:
-                if len(row) > 0:
-                    row[1] = str(row[1]).replace("[", "{").replace("]", "}")
+        for list_of_rows in [attacker_rows, victim_rows]:
+            for mrt_dict in list_of_rows:
+                row = []
+                for col in MRT_Announcements_Table.columns:
+                    cur_item = mrt_dict.get(col)
+                    assert cur_item is not None
+                    if isinstance(cur_item, list):
+                        cur_item = str(cur_item).replace("[", "{").replace("]", "}")
+                    row.append(cur_item)
+                rows.append(row)
 
-        csv_path = join(self.csv_dir, "{}.csv")
-
-        # For each type of attacker victim definition
-        for atk_def, rows, Table in zip(["attackers", "victims"],
-                                        [attacker_rows, victim_rows],
-                                        [Attackers_Table, Victims_Table]):
-            # Insert into the database
-            utils.rows_to_db(rows, csv_path.format(atk_def), Table)
-
-        # Change to use simulation_announcements
         utils.rows_to_db(attacker_rows + victim_rows,
-                         csv_path.format("agg_ann"),
-                         Simulation_Announcements_Table)
-        attacker_victim_rows = [[attacker, True, False]]
-        if len(victim_rows) > 0:
-            attacker_victim_rows.append([victim, False, True])
-        utils.rows_to_db(attacker_victim_rows,
-                         csv_path.format("atk_vic_info"),
-                         Tracked_ASes_Table)
+                         join(self.csv_dir, "mrts.csv"),
+                         MRT_Announcements_Table)
 
         return Attack(attacker_rows, victim_rows)
