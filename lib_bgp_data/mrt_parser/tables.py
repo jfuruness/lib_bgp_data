@@ -365,6 +365,22 @@ class MRT_W_Metadata_Table(Generic_Table):
                "prefix_id", "origin_id", "prefix_origin_id", "block_id",
                "roa_validity", "block_prefix_id"]
 
+    def _create_tables(self):
+        sql = f"""CREATE UNLOGGED TABLE IF NOT EXISTS {self.name}(
+                prefix CIDR,
+                as_path BIGINT[],
+                origin BIGINT,
+                time BIGINT,
+                monitor_asn BIGINT,
+                prefix_id BIGINT,
+                origin_id BIGINT,
+                prefix_origin_id BIGINT,
+                block_id INTEGER,
+                roa_validity SMALLINT,
+                block_prefix_id INTEGER
+               );"""
+        self.execute(sql)
+
     def fill_table(self):
         sql = f"""CREATE UNLOGGED TABLE {self.name} AS (
                 SELECT mrt.*,

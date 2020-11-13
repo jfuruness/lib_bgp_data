@@ -19,12 +19,11 @@ import uuid
 
 from .attack import Attack
 from .enums import Attack_Types, Non_Default_Policies
-from .tables import Attackers_Table, Victims_Table
-from .tables import Simulation_Announcements_Table, Tracked_ASes_Table
 from .test import Test
 
 from ..base_classes import Parser
 from ..database import Database
+from ..mrt_parser.tables import MRT_W_Metadata_Table
 from ..utils import utils
 
 class Data_Point(Parser):
@@ -115,22 +114,16 @@ class Data_Point(Parser):
             attacker_rows = [{"prefix": '1.2.3.0/24',
                               "as_path": [attacker],
                               "origin": attacker,
-                              "time": 1,
-                              "monitor_asn": None,
                               "prefix_id": 0,
                               "origin_id": 0,
                               "prefix_origin_id": 0,
-                              "block_id": 0,
                               "roa_validity": 4}]
             victim_rows = [{"prefix": '1.2.3.0/24',
                             "as_path": [victim],
                             "origin": victim,
-                            "time": 0,
-                            "monitor_asn": None,
                             "prefix_id": 1,
                             "origin_id": 1,
                             "prefix_origin_id": 1,
-                            "block_id": 0,
                             "roa_validity": 0}]
 
         # Prefix hijack
@@ -138,34 +131,25 @@ class Data_Point(Parser):
             attacker_rows = [{"prefix": '1.2.0.0/16',
                               "as_path": [attacker],
                               "origin": attacker,
-                              "time": 1,
-                              "monitor_asn": None,
                               "prefix_id": 0,
                               "origin_id": 0,
                               "prefix_origin_id": 0,
-                              "block_id": 0,
                               "roa_validity": 2}]
             victim_rows = [{"prefix": '1.2.0.0/16',
                             "as_path": [victim],
                             "origin": victim,
-                            "time": 0,
-                            "monitor_asn": None,
                             "prefix_id": 0,
                             "origin_id": 1,
                             "prefix_origin_id": 1,
-                            "block_id": 0,
                             "roa_validity": 0}]
         # Unannounced prefix hijack
         elif attack_type == Attack_Types.UNANNOUNCED_PREFIX_HIJACK:
             attacker_rows = [{"prefix": '1.2.3.0/24',
                               "as_path": [attacker],
                               "origin": attacker,
-                              "time": 1,
-                              "monitor_asn": None,
                               "prefix_id": 0,
                               "origin_id": 0,
                               "prefix_origin_id": 0,
-                              "block_id": 0,
                               "roa_validity": 4}]
             victim_rows = []
 
@@ -174,23 +158,17 @@ class Data_Point(Parser):
             attacker_rows = [{"prefix": '1.2.0.0/16',
                               "as_path": [attacker],
                               "origin": attacker,
-                              "time": 1,
-                              "monitor_asn": None,
                               "prefix_id": 0,
                               "origin_id": 0,
                               "prefix_origin_id": 0,
-                              "block_id": 0,
                               # ROA for superprefix is 1 for unknown
                               "roa_validity": 1},
                               {"prefix": '1.2.3.0/24',
                                "as_path": [attacker],
                                "origin": attacker,
-                               "time": 1,
-                               "monitor_asn": None,
                                "prefix_id": 1,
                                "origin_id": 0,
                                "prefix_origin_id": 1,
-                               "block_id": 0,
                                "roa_validity": 4}]
             victim_rows = []
 
@@ -199,33 +177,24 @@ class Data_Point(Parser):
             attacker_rows = [{"prefix": '1.2.0.0/16',
                               "as_path": [attacker],
                               "origin": attacker,
-                              "time": 1,
-                              "monitor_asn": None,
                               "prefix_id": 0,
                               "origin_id": 0,
                               "prefix_origin_id": 0,
-                              "block_id": 0,
                               # ROA for superprefix is 1 for unknown
                               "roa_validity": 1},
                               {"prefix": '1.2.3.0/24',
                                "as_path": [attacker],
                                "origin": attacker,
-                               "time": 1,
-                               "monitor_asn": None,
                                "prefix_id": 1,
                                "origin_id": 0,
                                "prefix_origin_id": 1,
-                               "block_id": 0,
                                "roa_validity": 4}]
             victim_rows = [{"prefix": '1.2.0.0/16',
                             "as_path": [victim],
                             "origin": victim,
-                            "time": 0,
-                            "monitor_asn": None,
                             "prefix_id": 1,
                             "origin_id": 1,
                             "prefix_origin_id": 2,
-                            "block_id": 0,
                             "roa_validity": 0}]
 
         elif attack_type == Attack_Types.LEAK:
@@ -266,19 +235,22 @@ class Data_Point(Parser):
 
         rows = []
         # Format the lists to be arrays for insertion into postgres
-        for list_of_rows in [attacker_rows, victim_rows]:
+        for list_of_rows, time_val in zip([attacker_rows, victim_rows], [1, 0]):
             for mrt_dict in list_of_rows:
+                mrt_dict["time"] = time_val
+                mrt_dict["block_id"] = 0
+                mrt_dict["monitor_asn"] = 0
+                mrt_dict["block_prefix_id"] = mrt_dict["prefix_id"]
                 row = []
-                for col in MRT_Announcements_Table.columns:
+                for col in MRT_W_Metadata_Table.columns:
                     cur_item = mrt_dict.get(col)
-                    assert cur_item is not None
+                    assert cur_item is not None or col in ["monitor_asn", "block_id"], col
                     if isinstance(cur_item, list):
                         cur_item = str(cur_item).replace("[", "{").replace("]", "}")
                     row.append(cur_item)
                 rows.append(row)
 
-        utils.rows_to_db(attacker_rows + victim_rows,
-                         join(self.csv_dir, "mrts.csv"),
-                         MRT_Announcements_Table)
+        path = join(self.csv_dir, "mrts.csv")
+        utils.rows_to_db(rows, path, MRT_W_Metadata_Table)
 
         return Attack(attacker_rows, victim_rows)

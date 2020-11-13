@@ -16,7 +16,7 @@ __status__ = "Development"
 import logging
 
 from ..database import Generic_Table
-from ..rovpp.enums import Attack_Types, Data_Plane_Conditions
+
 
 class ROVPP_Extrapolator_Rib_Out_Table(Generic_Table):
     """Class with database functionality.
@@ -32,6 +32,9 @@ class ROVPP_Extrapolator_Rib_Out_Table(Generic_Table):
 
         Called during initialization of the database class.
         """
+
+        # Fix later
+        from ..rovpp.enums import Attack_Types, Data_Plane_Conditions
 
         logging.debug("Creating rovpp ribs out table")
 
