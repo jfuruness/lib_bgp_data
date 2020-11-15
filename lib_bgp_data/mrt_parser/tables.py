@@ -113,10 +113,10 @@ class Origin_IDs_Table(Generic_Table):
         """Fills table with data"""
 
         sql = f"""CREATE UNLOGGED TABLE {self.name} AS(
-                         SELECT DISTINCT dpo.origin,
-                                         DENSE_RANK() OVER () -1
-                                            AS origin_id
-                        FROM {Distinct_Prefix_Origins_Table.name} dpo
+                        SELECT origin, ROW_NUMBER() OVER () -1 FROM (
+                             SELECT DISTINCT origin
+                            FROM {Distinct_Prefix_Origins_Table.name} dpo
+                        ) a
                 );""" 
         self.execute(sql)
 

@@ -15,14 +15,11 @@ __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
-from .sample_selector import Sample_Selector
-
 from ..asrank_website_parser import ASRankWebsiteParser
 from ..base_classes import Parser
 from ..database import Database
-from ..mrt_parser import MRT_Parser, MRT_Sources
-from ..mrt_parser.tables import MRT_Announcements_Table
-
+from ..mrt_parser import MRT_Parser, MRT_Metadata_Parser, MRT_Sources
+from ..mrt_parser.tables import MRT_W_Metadata_Table
 
 class Verification_Parser(Parser):
     """This class generates input to the extrapolator verification
@@ -48,7 +45,15 @@ class Verification_Parser(Parser):
             if test:
                 kwargs["api_param_mods"] = {"collectors[]": ["route-views2"]}
             MRT_Parser(**self.kwargs).run(**kwargs)
+            MRT_Metadata_Parser(**self.kwargs).run(**kwargs)
+            with MRT_W_Metadata_Table() as db:
+                sql = """CREATE INDEX monitor_btree
+                        ON {db.name}(monitor_asn);"""
+                db.execute(sql)
         if as_rank:
             ASRankWebsiteParser(**self.kwargs).run()
         if sample_selection:
-            Sample_Selector().select_samples()
+            # Fills monitor stats and control table
+            for Table in [Monitors_Table, Control_Monitors_Table]:
+                with Table(clear=True) as db:
+                    db.fill_table()

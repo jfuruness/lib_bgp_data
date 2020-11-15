@@ -72,23 +72,23 @@ class MRT_Metadata_Parser(Parser):
         self._validate()
         self._add_prefix_origin_index()
         logging.info(f"Creating {Distinct_Prefix_Origins_Table.name}")
-#        self._get_p_o_table_w_indexes(Distinct_Prefix_Origins_Table)
+        self._get_p_o_table_w_indexes(Distinct_Prefix_Origins_Table)
         # If you were a real cool cat, you would have done a compressed
         # trie, finding common ancestors, to get prefix groupings
         # def way faster than all this. Also more difficult.
-#        for Table in [Prefix_IDs_Table,
-#                      Origin_IDs_Table,
-#                      Prefix_Origin_IDs_Table,
-#                      Distinct_Prefix_Origins_W_IDs_Table]:
-#            logging.info(f"Creating {Table.__name__}")
-#            self._get_p_o_table_w_indexes(Table)
-#        self._create_block_table(max_block_size)
-#        self._add_roas_index()
-#        for Table in [ROA_Known_Validity_Table,
-#                      ROA_Validity_Table,
-#                      Prefix_Origin_Blocks_Metadata_Table,
-#                      Prefix_Origin_Metadata_Table]:
-#            self._get_p_o_table_w_indexes(Table)
+        for Table in [Origin_IDs_Table,
+                      Prefix_IDs_Table,
+                      Prefix_Origin_IDs_Table,
+                      Distinct_Prefix_Origins_W_IDs_Table]:
+            logging.info(f"Creating {Table.__name__}")
+            self._get_p_o_table_w_indexes(Table)
+        self._create_block_table(max_block_size)
+        self._add_roas_index()
+        for Table in [ROA_Known_Validity_Table,
+                      ROA_Validity_Table,
+                      Prefix_Origin_Blocks_Metadata_Table,
+                      Prefix_Origin_Metadata_Table]:
+            self._get_p_o_table_w_indexes(Table)
         self._add_metadata()
 
     def _validate(self):
