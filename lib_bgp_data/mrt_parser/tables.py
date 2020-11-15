@@ -113,7 +113,8 @@ class Origin_IDs_Table(Generic_Table):
         """Fills table with data"""
 
         sql = f"""CREATE UNLOGGED TABLE {self.name} AS(
-                        SELECT origin, ROW_NUMBER() OVER () -1 FROM (
+                        SELECT origin, ROW_NUMBER() OVER () -1 AS origin_id
+                            FROM (
                              SELECT DISTINCT origin
                             FROM {Distinct_Prefix_Origins_Table.name} dpo
                         ) a
@@ -382,6 +383,8 @@ class MRT_W_Metadata_Table(Generic_Table):
         self.execute(sql)
 
     def fill_table(self):
+        self.execute(f"DROP TABLE IF EXISTS {self.name}")
+        self.execute("ANALYZE")
         sql = f"""CREATE UNLOGGED TABLE {self.name} AS (
                 SELECT mrt.*,
                        --NOTE that postgres starts at 1 not 0
