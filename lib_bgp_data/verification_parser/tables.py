@@ -23,6 +23,7 @@ import logging
 
 from ..asrank_website_parser.tables import ASRankTable
 from ..database import Generic_Table
+from ..mrt_parser.tables import MRT_W_Metadata_Table
 
 
 class Monitors_Table(Generic_Table):
@@ -53,13 +54,13 @@ class Monitors_Table(Generic_Table):
                 FROM
                     (SELECT monitor_asn,
                             COUNT(DISTINCT prefix) AS distinct_prefixes_count
-                     FROM {MRT_W_Monitors_Table.name}
+                     FROM {MRT_W_Metadata_Table.name}
                         GROUP BY monitor_asn) distinct_prefixes
                 --NOTE for later, could prob be optimized to not group twice?
                 INNER JOIN
                      (SELECT monitor_asn,
                             COUNT(*) AS total_ann_count
-                     FROM {MRT_W_Monitors_Table.name}
+                     FROM {MRT_W_Metadata_Table.name}
                         GROUP BY monitor_asn) total_anns
                     ON
                         distinct_prefixes.monitor_asn = total_anns.monitor_asn

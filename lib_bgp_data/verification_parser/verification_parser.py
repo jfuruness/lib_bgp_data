@@ -15,6 +15,8 @@ __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
+from .tables import Monitors_Table, Control_Monitors_Table
+
 from ..asrank_website_parser import ASRankWebsiteParser
 from ..base_classes import Parser
 from ..database import Database
