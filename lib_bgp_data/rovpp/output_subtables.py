@@ -79,7 +79,7 @@ class Output_Subtable:
                                                all_ases,
                                                attack),
                       self._get_control_plane_data(attack),
-                      self._get_visible_hijack_data(table_names))
+                      self._get_visible_hijack_data(table_names, attack))
 
     def _get_traceback_data(self, subtable_ases, all_ases, attack):
         """Gets the data plane data through tracing back"""
@@ -108,7 +108,7 @@ class Output_Subtable:
                 self._print_loop_debug_data(*loop_data)
         return conds
 
-    def _get_visible_hijack_data(self, t_names):
+    def _get_visible_hijack_data(self, t_names, attack):
         """Gets visible hijacks using sql for speed"""
 
         # NOTE: this will automatically remove attackersand victims
@@ -121,10 +121,9 @@ class Output_Subtable:
                     {self.Rib_Out_Table.name} og
                     INNER JOIN {ROVPP_Extrapolator_Rib_Out_Table.name} all_ases
                         ON og.received_from_asn = all_ases.asn
-                    INNER JOIN attackers
-                        ON attackers.prefix = all_ases.prefix
-                            AND attackers.origin = all_ases.origin
-                    WHERE og.as_type = {adopt_val.value}"""
+                    WHERE og.as_type = {adopt_val.value}
+                        AND all_ases.prefix = {attack.attacker_prefix}
+                        AND all_ases.origin = {attack.attacker_origin}"""
             conds[adopt_val] = self.Rib_Out_Table.get_count(sql)
         return conds
 
