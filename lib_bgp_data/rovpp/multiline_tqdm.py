@@ -26,6 +26,8 @@ class Multiline_TQDM:
 
         descs = self._get_desc()
         self.pbars = [tqdm(total=total_trials, desc=desc) for desc in descs]
+        self.total_trials = total_trials
+        self.current_trial = 0
 
     def __enter__(self):
         """Context manager to do upon entering"""
@@ -41,6 +43,7 @@ class Multiline_TQDM:
 
         for pbar in self.pbars:
             pbar.update()
+        self.current_trial += 1
 
     def update_extrapolator(self):
         """Sets the extrapolator to no longer be running"""
