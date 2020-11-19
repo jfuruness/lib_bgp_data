@@ -15,6 +15,7 @@ __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
+from copy import deepcopy
 import logging
 import os
 import time
@@ -92,23 +93,40 @@ class Dataset_Statistics_Generator(Parser):
         """
 
         with Monitors_Table() as db:
-            data = list(sorted(db.get_all(), key=lambda x: x["as_rank"]))
+            raw_data = list(sorted(db.get_all(), key=lambda x: x["as_rank"]))
 
-        x = np.arange(len(data))
-        # Width of the bars
-        width = .1
+        for data_limit in [25, 100, len(raw_data)]:
+            data = deepcopy(raw_data)[:data_limit]
+            x = np.arange(len(data))
+            # Width of the bars
+            width = .1 if data_limit > 25 else .2
 
-        fig, ax = plt.subplots()
-        rects = ax.bar(x - width / 2, [x["as_rank"] for x in data])
+            fig, ax = plt.subplots()
+            rects = ax.bar(x - width / 2, [x["as_rank"] for x in data])
 
-        ax.set_ylabel("AS_Rank")
-        ax.set_xlabel("Monitor")
-        ax.set_title("AS Rank Monitor Statistics")
+            def autolabel(rects):
+                """
+                Attach a text label above each bar displaying its height
+                """
+                for rect in rects:
+                    height = rect.get_height()
+                    ax.text(rect.get_x() + rect.get_width()/2., 1.05*height,
+                            '%d' % int(height),
+                            ha='center', va='bottom', fontsize="10")
 
-        fig.tight_layout()
+            if data_limit <= 25:
+                autolabel(rects)
 
-        plt.savefig(os.path.join(self.graph_dir, "Monitor_AS_Rank_stats.png"))
-        plt.close(fig)
+            ax.set_ylabel("AS_Rank")
+            ax.set_xlabel("Monitor")
+            ax.set_ylim([0, max([x["as_rank"] for x in data]) + 5])
+            title = f"Monitor_AS_Rank_stats_{data_limit}_Ases"
+            ax.set_title(title.replace("_", " "))
+
+            fig.tight_layout()
+
+            plt.savefig(os.path.join(self.graph_dir, title + ".png"))
+            plt.close(fig)
 
 
     def _get_rib_stats(self):
@@ -281,25 +299,18 @@ class Dataset_Statistics_Generator(Parser):
         width = .35
 
         fig, ax = plt.subplots()
-        rects = ax.bar(x - width / 2, list(data_points.values()))
+        rects = ax.barh(x - width / 2, list(data_points.values()))
 
-        ax.set_ylabel("ASes")
+        ax.set_xlabel("ASes")
         ax.set_title("Caida Relationship Statistics")
-        ax.set_xticks(x)
-        ax.set_xticklabels(list(data_points.keys()))
+        ax.set_yticks(x)
+        ax.set_xticks(list(range(0, 450001, 150000)))
+        ax.set_xlim([0, 450002])
+        ax.set_yticklabels(list(data_points.keys()))
 
-        def autolabel(rects):
-            """Attach a text label above each bar in *rects*, displaying its height."""
-            for rect in rects:
-                height = rect.get_height()
-                ax.annotate('{}'.format(height),
-                            xy=(rect.get_x() + rect.get_width() / 2, height),
-                            xytext=(0, 3),  # 3 points vertical offset
-                            textcoords="offset points",
-                            ha='center', va='bottom')
-
-        autolabel(rects)
-
+        # https://stackoverflow.com/a/30229062
+        for i, v in enumerate(list(data_points.values())):
+            ax.text(v + 3, i, str(v), fontweight="bold", va="center")
         fig.tight_layout()
 
         plt.savefig(os.path.join(self.graph_dir, "Relationships_Stats.png"))
