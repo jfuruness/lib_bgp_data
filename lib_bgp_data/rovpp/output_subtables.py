@@ -119,8 +119,8 @@ class Output_Subtable:
                     INNER JOIN {ROVPP_Extrapolator_Rib_Out_Table.name} all_ases
                         ON og.received_from_asn = all_ases.asn
                     WHERE og.as_type = {adopt_val.value}
-                        AND all_ases.prefix = {attack.attacker_prefix}
-                        AND all_ases.origin = {attack.attacker_origin}"""
+                        AND all_ases.prefix = '{attack.attacker_prefix}'
+                        AND all_ases.origin = {attack.attacker_asn}"""
             conds[adopt_val] = self.Rib_Out_Table.get_count(sql)
         return conds
 
