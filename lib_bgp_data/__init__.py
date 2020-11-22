@@ -30,6 +30,7 @@ from .extrapolator_parser import Extrapolator_Parser
 from .database import Database, Postgres, Generic_Table
 from .rovpp import ROVPP_Simulator, Simulation_Grapher
 #from .forecast import Forecast
+from .historical_roas_parser import Historical_ROAS_Parser
 from .cdn_whitelist import CDN_Whitelist
 from .blacklist_parser import Blacklist_Parser
 from .verification_parser import Verification_Parser
