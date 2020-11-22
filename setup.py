@@ -29,7 +29,7 @@ setup(
     name='lib_bgp_data',
     packages=find_packages(),
     version='0.3.1',
-    authors=['Justin Furuness', 'Matt Jaccino'],
+    authors=['Justin Furuness', "Cameron Morris", 'Matt Jaccino', "Tony Zheng", "Nicholas Shpetner", "Samarth Kasbawala"],
     author_email='jfuruness@gmail.com',
     url='https://github.com/jfuruness/lib_bgp_data.git',
     download_url='https://github.com/jfuruness/lib_bgp_data.git',
@@ -37,6 +37,7 @@ setup(
     install_requires=[
         'wheel',
         'setuptools',
+        'binpacking',
         'validators>=0.14.1',
         'tqdm>=4.40.2',
         'pytest==4.6.6',

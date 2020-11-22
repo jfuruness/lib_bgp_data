@@ -58,8 +58,6 @@ class ROAs_Automator(ROAs_Parser):
 
     # Define backup directories and make sure they exist
     backup_dir = "/nightly_runs/roas_backup"
-    if not os.path.exists(backup_dir):
-        os.mkdir(backup_dir)
     temp_backup = os.path.join(backup_dir, "roas_temp.sql.gz")
     prev_backup = os.path.join(backup_dir, "roas.sql.gz")
  
@@ -67,6 +65,10 @@ class ROAs_Automator(ROAs_Parser):
         """Downloads and stores the roas from a json while properly maintaining
         the table in the database
         """
+
+        if not os.path.exists(backup_dir):
+            os.mkdir(backup_dir)
+
 
         from ..database.config import global_section_header as gsh
         assert gsh is not None

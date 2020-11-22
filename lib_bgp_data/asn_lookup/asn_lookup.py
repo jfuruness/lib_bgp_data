@@ -1,66 +1,72 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-
 """
-Returns the country, continent, and holding organization of an ASN.
+This module contains a function to get an ASN's country and continent.
 
-The mapping of country codes to continents is retrieved from:
-http://country.io/continent.json
+The RIPE API is first used to get an IP address associated with the ASN.
+Then MaxMind's GeopIP2 API queries a downloaded database for the country
+and continent data.
 
-The BGPView API for ASN lookup is used because it returns an easy-to-use json.
-https://bgpview.docs.apiary.io/#
+Setup guide:
 
-The alternatives are:
+First you will need sign up for an account with MaxMind to use their data:
+https://www.maxmind.com/en/geolite2/signup
 
-RIRs RDAP service but the results are inconsistent. Compare these 2 results:
-
-https://rdap.apnic.net/autnum/38369
-https://rdap.arin.net/registry/autnum/13335
-
-The first has a country value, the second does not.
-
-Try RIPE's database query service:
-https://apps.db.ripe.net/db-web-ui/query
-
-On Cloudfare AS13335, no country is returned. And an inverse lookup is not
-allowed since it's not registered by RIPE but by ARIN.
-
-https://ipinfo.io/
-Is promising but it's paid.
-
-Thus all these options are incomplete, even BGPView, such as this:
-https://api.bgpview.io/asn/38369
-
-But it is the simplest and robust enough to use.
+Then you need to generate a config file on their website and paste it into
+/etc/GeoIP.conf
 """
 
 import os
-import json
 
+import geoip2.database
 import requests
+from ..utils import utils
+
+__author__ = "Tony Zheng"
+__credits__ = ["Tony Zheng"]
+__Lisence__ = "BSD"
+__maintainer__ = "Justin Furuness"
+__email__ = "jfuruness@gmail.com"
+__status__ = "Development"
 
 
 def asn_lookup(asn: int) -> dict:
 
     assert type(asn) is int, "Not a number"
 
-    # load the country code to continent mapping
-    continent_path = os.path.join(os.path.dirname(os.path.realpath(__file__)),
-        'continent.json') 
-    with open(continent_path, 'r') as f:
-        c2c_map = json.load(f)
+    db = '/usr/share/GeoIP/GeoLite2-Country.mmdb'
 
-    api = 'https://api.bgpview.io/asn/'
-    r = requests.get(api + str(asn))
+    assert os.path.exists('/etc/GeoIP.conf'), "Follow setup guide!"
+
+    if not os.path.exists(db):
+        install()
+
+    ripe = ('https://stat.ripe.net/data/announced-prefixes/',
+            f'data.json?resource=AS{asn}')
+
+    r = requests.get(ripe)
     r.raise_for_status()
-    data = r.json()['data']
+    ip = r.json()['data']['prefixes'][0]['prefix'].split('/')[0]
     r.close()
 
-    country = data['country_code']
-    continent = c2c_map[country] if country else None
-    org = data['description_short']
+    reader = geoip2.database.Reader(db)
 
-    # should it return None or an empty string?    
-    return {'country': country, 'continent': continent, 'org': org}
+    response = reader.country(ip)
+
+    reader.close()
+
+    return response.country.iso_code, response.continent.code
 
 
+def install():
+    """Installs the GeoIP Update tool (assuming Ubuntu system).
+       Also adds a cronjob to keep the database updated."""
+
+    cmds = ['add-apt-repository ppa:maxmind/ppa',
+            'apt update',
+            'apt install geoipupdate']
+
+    utils.run_cmds(cmds)
+
+    # MaxMind updates on Tuesdays, so we'll update on Wednesdays.
+    utils.add_cronjob('GeoIP_Update', 
+                      '0 0 * * 3',
+                      '/etc/geoipupdate')

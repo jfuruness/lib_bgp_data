@@ -23,27 +23,8 @@ import logging
 
 from ..asrank_website_parser.tables import ASRankTable
 from ..database import Generic_Table
-from ..mrt_parser.tables import MRT_Announcements_Table
+from ..mrt_parser.tables import MRT_W_Metadata_Table
 
-
-class MRT_W_Monitors_Table(Generic_Table):
-
-    __slots__ = []
-
-    name = "mrt_w_monitors"
-
-    def fill_table(self):
-        logging.info("Adding monitor to all MRT ann, ~20min")
-        # NOTE: postgres is 1 indexed, so as_path[1] is really first element
-        sql = f"""CREATE UNLOGGED TABLE {self.name} AS (
-                SELECT as_path[1] AS monitor_asn,
-                       prefix,
-                       as_path,
-                       origin,
-                       time
-                FROM {MRT_Announcements_Table.name}
-                );"""
-        self.execute(sql)
 
 class Monitors_Table(Generic_Table):
 
@@ -73,13 +54,13 @@ class Monitors_Table(Generic_Table):
                 FROM
                     (SELECT monitor_asn,
                             COUNT(DISTINCT prefix) AS distinct_prefixes_count
-                     FROM {MRT_W_Monitors_Table.name}
+                     FROM {MRT_W_Metadata_Table.name}
                         GROUP BY monitor_asn) distinct_prefixes
                 --NOTE for later, could prob be optimized to not group twice?
                 INNER JOIN
                      (SELECT monitor_asn,
                             COUNT(*) AS total_ann_count
-                     FROM {MRT_W_Monitors_Table.name}
+                     FROM {MRT_W_Metadata_Table.name}
                         GROUP BY monitor_asn) total_anns
                     ON
                         distinct_prefixes.monitor_asn = total_anns.monitor_asn
@@ -108,55 +89,4 @@ class Control_Monitors_Table(Generic_Table):
                 ORDER BY as_rank
                 LIMIT {self.control_total}
                 );"""
-        self.execute(sql)
-
-class Control_Announcements_Table(Generic_Table):
-
-    __slots__ = []
-
-    name = "control_announcements"
-
-    def fill_table(self):
-        logging.info("getting intersection of control monitor ann prefixes "
-                     "~10min")
-        sql = f"""CREATE UNLOGGED TABLE {self.name} AS (
-               SELECT mrt.* FROM
-                    {MRT_W_Monitors_Table.name} mrt
-                INNER JOIN {Control_Monitors_Table.name} control_monitors
-                    ON control_monitors.asn = mrt.monitor_asn
-                INNER JOIN (
-                    --gets all prefixes that occur at every asn
-                    SELECT prefix FROM (
-                        --gets all prefixes that occr from a monitor
-                        SELECT prefix, COUNT(*) AS prefix_count
-                            FROM {MRT_W_Monitors_Table.name} a
-                        INNER JOIN {Control_Monitors_Table.name} b
-                            ON a.monitor_asn = b.asn
-                        GROUP BY prefix
-                        ) prefixes_w_counts
-                    WHERE prefixes_w_counts.prefix_count = (
-                        SELECT COUNT(*) FROM {Control_Monitors_Table.name})
-                ) prefix_intersection
-                    ON prefix_intersection.prefix = mrt.prefix);"""
-
-        self.execute(sql)
-
-class Test_Announcements_Table(Generic_Table):
-
-    __slots__ = []
-
-    name = "test_announcements"
-
-    def fill_table(self):
-        logging.info("Getting all test announcements")
-        print("MIGHT NEED SOME INDEXES HERE!")
-        assert False, """1. Whenever exr wrapper is called it should assert mrt ann has index
-                        2. Whenever exr itself is called it should assert mrt ann has index
-                        3. This is way too slow without an index on the control_ann_table as well
-                        """
- 
-        sql = f"""CREATE UNLOGGED TABLE {self.name} AS (
-                SELECT mrt.* FROM {MRT_Announcements_Table.name} mrt
-                INNER JOIN {Control_Announcements_Table.name} c_ann
-                    ON mrt.prefix <<= c_ann.prefix);"""
         self.execute(sql)
