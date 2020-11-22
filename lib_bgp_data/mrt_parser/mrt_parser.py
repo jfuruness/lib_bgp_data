@@ -92,6 +92,7 @@ class MRT_Parser(Parser):
         # Parses files using multiprocessing in descending order by size
         self._multiprocess_parse_dls(parse_threads, mrt_files, bgpscanner)
         self._filter_and_clean_up_db(IPV4, IPV6)
+        self._add_announcement_metadata()
 
 ########################
 ### Helper Functions ###
@@ -217,7 +218,10 @@ class MRT_Parser(Parser):
                 p_pool.map(lambda f: f.parse_file(bgpscanner),
                            sorted(mrt_files, reverse=True))
 
-    def _filter_and_clean_up_db(self, IPV4: bool, IPV6: bool):
+    def _filter_and_clean_up_db(self,
+                                IPV4: bool,
+                                IPV6: bool,
+                                delete_duplicates=False):
         """This function filters mrt data by IPV family and cleans up db
 
         First the database is connected. Then IPV4 and/or IPV6 data is
@@ -229,11 +233,12 @@ class MRT_Parser(Parser):
         with MRT_Announcements_Table() as _ann_table:
             # First we filter by IPV4 and IPV6:
             _ann_table.filter_by_IPV_family(IPV4, IPV6)
+            logging.info("vaccuming and checkpoint")
+            # A checkpoint is run here so that RAM isn't lost
+            _ann_table.cursor.execute("CHECKPOINT;")
             # VACUUM ANALYZE to clean up data and create statistics on table
             # This is needed for better index creation and queries later on
             _ann_table.cursor.execute("VACUUM ANALYZE;")
-            # A checkpoint is run here so that RAM isn't lost
-            _ann_table.cursor.execute("CHECKPOINT;")
 
     def parse_files(self, **kwargs):
         warnings.warn(("MRT_Parser.parse_files is depreciated. "

@@ -44,12 +44,16 @@ class Policies(Enum):
     ROVPPB_LITE = 9
     ROVPPBP_LITE = 10
     ROVPPBIS_LITE = 11
-    # ON REQUST OF EXR DEVS, ALL ASPA POLICIES Must be 2048>x>= 1024 (10th bit=1)
+    # V2a but also shorten
+    ROVPP_V2_SHORTEN = 12
+    # V2s but announce to all connections
+    ROVPP_V2_SAVAGE = 13
+    # ON REQUST OF EXR DEVS, ALL ASPA POLICIES Must be 2048>x>= 1024 (10th bit=1)   
     ASPA = 1024
     ASPA_ROV = 1025
     ROVPP_ASPA = 1026
     ROVPP_LITE_ASPA = 1027
-    
+   
 
 # This creates an enum that is for non bgp policies
 _non_default_policies_dict = {x[0]: x[1].value

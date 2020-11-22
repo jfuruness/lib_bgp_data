@@ -26,11 +26,11 @@ class Attack:
 
         this is similar to the mrt announcements format""" 
 
-        self.attacker_asn = attacker_rows[0][2]
-        self.attacker_prefix = attacker_rows[0][0]
+        self.attacker_asn = attacker_rows[0]["origin"]
+        self.attacker_prefix = attacker_rows[0]["prefix"]
         if victim_rows:
-            self.victim_asn = victim_rows[0][2]
-            self.victim_prefix = victim_rows[0][0]
+            self.victim_asn = victim_rows[0]["origin"]
+            self.victim_prefix = victim_rows[0]["prefix"]
         # non competing hijack has no victim
         else:
             self.victim_asn = None

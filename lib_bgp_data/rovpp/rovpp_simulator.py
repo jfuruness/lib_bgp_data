@@ -13,6 +13,7 @@ __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
 import random
+import uuid
 
 from .data_point import Data_Point
 from .enums import Attack_Types, Non_Default_Policies
@@ -36,12 +37,16 @@ class ROVPP_Simulator(Parser):
     def _run(self,
              percents=[1],# list(range(5, 31, 5)),
              num_trials=2,
-             exr_bash=None,
-             seeded=False,
-             seed=0,
+             exr_bash=None,  # For development only
+             seed=uuid.getnode(),
              seeded_trial=None,
-             attack_types=Attack_Types.__members__.values(),
-             adopt_policy_types=Non_Default_Policies.__members__.values(),
+             deterministic=False,
+             attack_types=[x for x in Attack_Types.__members__.values()
+                           # Not yet implimented
+                           if x != Attack_Types.LEAK],
+             adopt_policy_types=[x for x in Non_Default_Policies.__members__.values()
+                                 # Not in ASPA policies (not yet implimented)
+                                 if x.value not in list(range(1024, 2048))],
              redownload_base_data=True,
              redownload_leak_data=True):
         """Runs ROVPP simulation.
@@ -55,15 +60,45 @@ class ROVPP_Simulator(Parser):
             Relationships_Parser(**self.kwargs)._run()
  
 
-        if Attack_Types.LEAK in attack_types and redownload_leak_data:
-            # Download hijack data if not done already
-            BGPStream_Website_Parser(**self.kwargs)._run(
-                data_types=[Event_Types.LEAK.value])
+#        if Attack_Types.LEAK in attack_types and redownload_leak_data:
+#            # Download hijack data if not done already
+#            BGPStream_Website_Parser(**self.kwargs)._run(
+#                data_types=[Event_Types.LEAK.value])
             # Download mrt data if not done already
 #            MRT_Parser(**self.kwargs)._run(sources=[MRT_Sources.RIPE, MRT_Sources.ROUTE_VIEWS])
 #            with Leak_Related_Announcements_Table(clear=True) as db:
 #                db.fill_table()
 
+        # prints all leaks with loops in them
+#        with Database() as db: 
+#            prepending = set()
+#            loops = set()
+#            leaked_to_many = set()
+#            leaked_to_one = set()
+#            leaks = db.execute("SELECT * FROM leaks;")
+#            for leak in leaks:
+#                if len(leak["leaked_to_number"]) == 1:
+#                    leaked_to_one.add(leak["url"].replace("/event/", ""))
+#                else:
+#                    leaked_to_many.add(leak["url"].replace("/event/", ""))
+#                cur_path = set()
+#                for _as in leak["example_as_path"]:
+#                    if _as in cur_path:
+#                        if _as != prev_as:
+#                            loops.add(leak["url"].replace("/event/", ""))
+#                        else:
+#                            prepending.add(leak["url"].replace("/event/", ""))
+#                        break
+#                    cur_path.add(_as)
+#                    prev_as = _as
+#        print("prepending = " + str(prepending))
+#        print(len(prepending))
+#        print("loops = " + str(loops))
+#        print(len(loops))
+#        print("multileak = " + str(leaked_to_many))
+#        print(len(leaked_to_many))
+#        print("single_leak = " + str(leaked_to_one))
+#        print(len(leaks))
         # Clear the table that stores all trial info
         with Simulation_Results_Table(clear=True) as _:
             pass
@@ -73,32 +108,37 @@ class ROVPP_Simulator(Parser):
         tables.fill_tables()
 
         # All data points that we want to graph
-        data_pts = [Data_Point(tables, i, percent, self.csv_dir)
+        data_pts = [Data_Point(tables, i, percent, self.csv_dir, deterministic)
                     for i, percent in enumerate(percents)]
 
-        # We do this so that we can immediatly skip to the deterministic trial
-        trials = [seeded_trial] if seeded_trial else list(range(num_trials))
+        # We run tqdm off of the number of scenarios that need to be run. The
+        # total number of scenarios is the number of Test objects that are
+        # created and run. This allows someone to input the scenario number
+        # they see in the tqdm bar and jump to that specifiic scenario. Having
+        # the tqdm be based on the number of trials is too slow, and we
+        # potentially may have to wait a while for a specific tets to be run
+        # in a specific trial. The reason we have multiple bars is so that we
+        # can display useful status using the bar.
 
-        # The reason we run tqdm off the number of trials
-        # And not number of data points is so that someone can input the
-        # deterministic trial number and have it jump straight to that trial
-        # In addition - the reason we have multiple bars is so that we can
-        # display useful stats using the bar
+        # Get total number of scenarios (Test class objects that will be run).
+        # This value will be used in the tqdm
+        total = 0
+        for trial in range(num_trials):
+            for data_pt in data_pts:
+                for test in data_pt.get_possible_tests(attack_types,
+                                                       adopt_policy_types,
+                                                       trial,
+                                                       set_up=False):
+                    total += 1
 
-        with Multiline_TQDM(len(trials)) as pbars:
-            if seeded and seed != 0:
-                random.seed(seed)
-            for trial in trials:
-                if seeded and seed == 0:
-                    random.seed(trial)
+        with Multiline_TQDM(total) as pbars:
+            for trial in range(num_trials):
                 for data_pt in data_pts:
                     data_pt.get_data(exr_bash,
-                                     self.kwargs,
-                                     pbars,
-                                     attack_types,
-                                     adopt_policy_types,
-                                     seeded,
-                                     trial)
-                pbars.update()
-
+                                        self.kwargs,
+                                        pbars,
+                                        attack_types,
+                                        adopt_policy_types,
+                                        trial,
+                                        seeded_trial)
         tables.close()

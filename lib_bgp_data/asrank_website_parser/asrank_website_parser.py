@@ -32,8 +32,8 @@ Possible Future Extensions:
 """
 
 
-__author__ = "Abhinna Adhikari"
-__credits__ = ["Abhinna Adhikari"]
+__author__ = "Abhinna Adhikari, Sam Kasbawala"
+__credits__ = ["Abhinna Adhikari", "Sam Kasbawala"]
 __Lisence__ = "MIT"
 __maintainer__ = "Abhinna Adhikari"
 __email__ = "abhinna.adhikari@uconn.edu"
@@ -174,6 +174,7 @@ class ASRankWebsiteParser(Parser):
             kwargs = {'total': len(pages),
                       'unit': 'it',
                       'unit_scale': True,
-                      'leave': True}
+                      'leave': True,
+                      'desc': "Parsing as rank"}
             for _ in tqdm(as_completed(pages), **kwargs):
                 pass

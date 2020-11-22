@@ -23,7 +23,6 @@ from psutil import process_iter
 from ..rpki_file import RPKI_File
 from ...utils import utils
 
-
 @pytest.mark.rpki_validator
 class Test_RPKI_File:
     """Tests all local functions within the RPKI_File class."""
@@ -35,8 +34,7 @@ class Test_RPKI_File:
         # This table can have very few lines in it, that's totally fine
         # Should have a structure similar to mrt_announcements_table
         # Table should delete everything in it, and fill with data
-        self.rpki_file = RPKI_File(test_table)
-        self.gz_path = self.rpki_file._dir + self.rpki_file.hosted_name
+        pass
 
     @pytest.mark.skip(reason="new hire will work on this")
     def test___init__(self):
@@ -65,8 +63,6 @@ class Test_RPKI_File:
 
         Also must assert that the original path is deleted upon gzip"""
 
-        pass
-
     @pytest.mark.skip(reason="new hire will work on this")
     def test_spawn_process(self):
         """Tests the spawn_process function.
@@ -88,6 +84,8 @@ class Test_RPKI_File:
         check that you close the file correctly, and nothing is running
         on port 8000.
         """
+
+
        
         if not contextmanager:
             self.rpki_file.spawn_process()
@@ -99,7 +97,6 @@ class Test_RPKI_File:
                 assert connection.laddr.port != self.rpki_file.port
         # check file was deleted
         assert not os.path.exists(self.gz_path)
-
     
     @pytest.mark.skip(reason="new hire will work on this")
     def test_contextmanager(self):
@@ -108,10 +105,7 @@ class Test_RPKI_File:
         Basically tests spawn_process and close, but does this using the
         with statement, instead of closing by default.
         """
-        
+
         with self.rpki_file as rpki_file:
             self.test_spawn_process(True)
         self.test_close_process(True)
-
-
-        pass
