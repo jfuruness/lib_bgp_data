@@ -19,7 +19,7 @@ import pytest
 from os import path
 from unittest.mock import patch
 
-from ..cdn_whitelist import CDN_Whitelist
+from ..cdn_whitelist import CDN_Whitelist_Parser
 from ..tables import CDN_Whitelist_Table
 from ....utils import utils
 
@@ -31,7 +31,7 @@ class Test_CDN_Whitelist:
     def parser(self):
         """Parser setup and table deleted before every test"""
         CDN_Whitelist_Table(clear=True)
-        return CDN_Whitelist()
+        return CDN_Whitelist_Parser()
 
     def test_run(self, parser):
         """Tests the _run function"""

@@ -17,11 +17,12 @@ __status__ = "Development"
 from psycopg2.errors import UndefinedTable
 import pytest
 
-from ..tables import CDN_Whitelist_Table
+from ..tables import ROAs_Table
 from ....utils.database import Generic_Table_Test
 
-@pytest.mark.cdn_whitelist
-class Test_CDN_Whitelist_Table(Generic_Table_Test):
+
+@pytest.mark.roas_parser
+class Test_ROAs_Table(Generic_Table_Test):
     """Tests all functions within the mrt announcements class."""
 
-    table_class = CDN_Whitelist_Table
+    table_class = ROAs_Table

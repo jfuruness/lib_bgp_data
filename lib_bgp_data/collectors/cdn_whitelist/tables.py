@@ -11,7 +11,7 @@ __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
 
-from ...database import Generic_Table
+from ...utils.database import Generic_Table
 
 
 class CDN_Whitelist_Table(Generic_Table):
