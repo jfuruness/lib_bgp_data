@@ -35,7 +35,7 @@ from subprocess import check_call
 
 import psycopg2
 
-from ..base_classes import Parser
+from ...utils.base_classes import Parser
 from ...utils import utils
 from .bgpstream_website_parser import BGPStream_Website_Parser
 from .tables import Hijacks_Table, Leaks_Table, Outages_Table

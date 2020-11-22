@@ -23,7 +23,7 @@ from tqdm import tqdm
 from .data_classes import Leak, Hijack, Outage
 from .event_types import Event_Types
 from .tables import Hijacks_Table, Leaks_Table, Outages_Table
-from ..base_classes import Parser
+from ...utils.base_classes import Parser
 from ...utils import utils
 
 

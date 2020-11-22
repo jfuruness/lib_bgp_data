@@ -31,7 +31,7 @@ __status__ = "Development"
 
 import logging
 
-from ...database import Generic_Table
+from ...utils.database import Generic_Table
 
 
 class Data_Table(Generic_Table):

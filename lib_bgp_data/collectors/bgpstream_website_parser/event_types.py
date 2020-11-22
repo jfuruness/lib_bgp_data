@@ -13,7 +13,7 @@ __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
-from ..base_classes import Enumerable_Enum
+from ...utils.base_classes import Enumerable_Enum
 
 
 class Event_Types(Enumerable_Enum):

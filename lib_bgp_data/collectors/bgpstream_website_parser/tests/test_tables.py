@@ -10,7 +10,7 @@ __status__ = "Development"
 
 import pytest
 from ..tables import Hijacks_Table, Leaks_Table, Outages_Table
-from ...database import Generic_Table_Test
+from ....utils.database import Generic_Table_Test
 
 class Data_Table_Test(Generic_Table_Test):
     """This class is to be inherited by the other three table testing classes

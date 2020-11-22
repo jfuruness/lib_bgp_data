@@ -19,8 +19,8 @@ from ..bgpstream_website_parser import utils, BGPStream_Website_Parser
 from ..tables import Hijacks_Table, Leaks_Table, Outages_Table
 from ..data_classes import Hijack, Leak, Outage
 from ..event_types import Event_Types
-from ...utils import utils
-from ...database import Database, Generic_Table
+from ....utils import utils
+from ....utils.database import Database, Generic_Table
 from bs4 import BeautifulSoup as Soup
 from time import strftime, gmtime, time
 import re
