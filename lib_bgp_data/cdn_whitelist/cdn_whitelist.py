@@ -19,7 +19,7 @@ dnschecker.org
 spyse.com
 ipinfo.io
 
-Using the different IRR's APIs is convuluted. They each maintain a different
+Using the different RIR's APIs is convuluted. They each maintain a different
 one. RIPE's database lookup tool says it can lookup across all the IRRs but
 when I try, I just get errors. Also to get the ASN, you first need to search
 by organisation, then get the organisation id, then perform an inverse search
@@ -27,6 +27,7 @@ for ASNs using that organisation id.
 
 The list of CDNs is in cdns.txt. It's a handpicked list. Sometimes companies
 aren't very tight on branding and register ASNs under a different name.
+For this file, each CDN should be written on its own line.
 """
 
 __authors__ = ["Tony Zheng"]
@@ -48,33 +49,48 @@ from .tables import CDN_Whitelist_Table
 class CDN_Whitelist(Parser):
     """Downloads the ASNs of listed CDNs"""
 
-    def _run(self):
+    def _run(self, input_file=None):
         """Downloads ASNs of listed CDNs into the DB"""
 
-        whitelist = []
+        if input_file is None:
+            path_here = os.path.dirname(os.path.realpath(__file__))
+            input_file = os.path.join(path_here, 'cdns.txt')
+
+        whitelist_rows = []
 
         api = 'https://api.hackertarget.com/aslookup/?q='
         with Session() as session:
-            for cdn in self._get_cdns():
-                # Get ASN data
-                response = session.get(api + cdn)
-                # Check for errors
-                response.raise_for_status()
+            for cdn in self._get_cdns(input_file):
+                # Try the request a number of times
+                max_tries = 3
+                for i in range(max_tries):
+                    response = session.get(api + cdn)
+                    response.raise_for_status()
+                    result = response.text
+                    response.close()
 
-                # Format data for db insertion
-                for line in response.text.split('\n'):
-                    asn = line.split(',')[0].replace('"', '')
-                    whitelist.append([cdn, asn])
+                    # A good result will have lines that look like:
+                    # "132892","CLOUDFLARE Cloudflare, Inc., US"
+                    # Anything other than this is an error message
 
-                response.close()
+                    if result[0] == '"':
 
-            utils.rows_to_db(whitelist, self.csv_dir, CDN_Whitelist_Table)
+                        # Extract ASN by taking the part before the 1st comma
+                        # And removing surrounding quotes
+                        for line in result.split('\n'):
+                            asn = line.split(',')[0].replace('"', '')
+                            whitelist_rows.append([cdn, asn])
+                        break
+                    else:
+                        if i == max_tries - 1:
+                            # use different exception?
+                            raise ValueError((f'Failed to get ASNs for {cdn}'
+                                             f' with error msg: {result}'))
 
-    def _get_cdns(self):
-        """Gets all CDNs from local file"""
+            utils.rows_to_db(whitelist_rows, self.csv_dir, CDN_Whitelist_Table)
 
-        path_here = os.path.dirname(os.path.realpath(__file__))
-        cdn_list_path = path_here + '/cdns.txt'
+    def _get_cdns(self, input_file):
+        """Gets all CDNs from file (default is cdns.txt in this directory)"""
 
-        with open(cdn_list_path, 'r') as f:
+        with open(input_file, 'r') as f:
             return [cdn.strip() for cdn in f if cdn.strip()]
