@@ -17,6 +17,7 @@ import os
 
 from .collectors import ASRankWebsiteParser
 from .collectors import BGPStream_Website_Parser
+from .collectors import Blacklist_Parser
 """
 from .relationships_parser import Relationships_Parser
 from .roas_parser import ROAs_Parser, ROAs_Collector

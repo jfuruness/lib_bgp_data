@@ -16,7 +16,7 @@ __email__ = "nicholas.shpetner@uconn.edu"
 __status__ = "Development"
 
 import logging
-from ..database import Generic_Table
+from ...utils.database import Generic_Table
 
 
 class Blacklist_Table(Generic_Table):
@@ -25,6 +25,8 @@ class Blacklist_Table(Generic_Table):
     __slots__ = []
 
     name = "blacklist"
+
+    columns = ["asn", "source"]
 
     def _create_tables(self):
         """ Creates the table if it does not exist"""

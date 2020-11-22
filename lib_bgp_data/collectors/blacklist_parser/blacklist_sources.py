@@ -16,7 +16,7 @@ __status__ = "Development"
 import csv
 
 from .blacklist_source import Blacklist_Source
-from ..utils import utils
+from ...utils import utils
 
 class UCE_Blacklist(Blacklist_Source):
     # Why am I using an IP for UCE's mirrors? The various mirrors

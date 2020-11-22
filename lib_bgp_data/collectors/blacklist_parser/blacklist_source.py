@@ -16,7 +16,7 @@ __status__ = "Development"
 import re
 import os
 
-from ..utils import utils
+from ...utils import utils
 
 class Blacklist_Source:
 
@@ -58,4 +58,4 @@ class Blacklist_Source:
     def get_rows(self, asns):
         """Returns rows for db insertion"""
 
-        return [[self.__class__.__name__, asn] for asn in asns]
+        return [[asn, self.__class__.__name__] for asn in asns]

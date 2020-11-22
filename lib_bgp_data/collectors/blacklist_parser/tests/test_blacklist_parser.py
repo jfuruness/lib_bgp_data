@@ -15,7 +15,7 @@ import pytest
 
 from ..blacklist_parser import Blacklist_Parser
 from ..tables import Blacklist_Table
-from ....database import Database
+from ....utils.database import Database
 
 
 @pytest.skip(reason="Modified code to be OO for future blacklist sources")

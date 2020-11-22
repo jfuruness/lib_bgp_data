@@ -19,7 +19,7 @@ from .blacklist_sources import UCE_Blacklist, UCE2, UCE3
 from .blacklist_sources import Spamhaus_Blacklist, MIT_Blacklist
 from .blacklist_source import Blacklist_Source
 from .tables import Blacklist_Table
-from ..base_classes import Parser
+from ...utils.base_classes import Parser
 from ...utils import utils
 
 class Blacklist_Parser(Parser):
