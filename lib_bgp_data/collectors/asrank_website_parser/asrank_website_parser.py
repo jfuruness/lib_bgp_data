@@ -47,10 +47,10 @@ import os
 from tqdm import tqdm
 
 from .selenium_related.sel_driver import SeleniumDriver
-from ..base_classes import Parser
 from .tables import ASRankTable
-from ...utils import utils
 
+from ...utils import utils
+from ...utils.base_classes import Parser
 
 class ASRankWebsiteParser(Parser):
     """Parses the AS rank, AS num, organization, country, and

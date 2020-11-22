@@ -14,7 +14,7 @@ __status__ = "Development"
 
 import pytest
 
-from ...database import Generic_Table_Test
+from ....utils.database import Generic_Table_Test
 from ..tables import ASRankTable
 
 

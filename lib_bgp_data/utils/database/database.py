@@ -21,7 +21,7 @@ from psycopg2.extras import RealDictCursor
 
 from .config import Config
 from .postgres import Postgres
-from ..utils import utils, config_logging
+from .. import utils, logger
 
 class Database(Postgres):
     """Interact with the database"""
@@ -32,7 +32,7 @@ class Database(Postgres):
         """Create a new connection with the database"""
 
         # Initializes self.logger
-        config_logging()
+        logger.config_logging()
         self._connect(cursor_factory)
         self._clear = clear
 
@@ -105,7 +105,7 @@ class Database(Postgres):
 
         # Must close so connection isn't duplicated
         self.close()
-        with utils.Pool(None, 1, "database execute") as db_pool:
+        with utils.utils.Pool(None, 1, "database execute") as db_pool:
             db_pool.map(lambda self, sql: self._reconnect_execute(sql),
                         [self]*len(sqls),
                         sqls)

@@ -29,7 +29,7 @@ from argparse import ArgumentParser, Action
 from logging import DEBUG
 from sys import argv
 
-from .base_classes import Parser
+from .utils.base_classes import Parser
 from .utils import config_logging
 
 

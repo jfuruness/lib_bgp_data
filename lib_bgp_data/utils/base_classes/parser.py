@@ -19,7 +19,7 @@ import sys
 import pytest
 
 from ...utils import utils, config_logging
-from ...database.config import set_global_section_header
+from ..database.config import set_global_section_header
 
 
 class Parser:

@@ -26,7 +26,7 @@ __maintainer__ = "Abhinna Adhikari"
 __email__ = "abhinna.adhikari@uconn.edu"
 __status__ = "Development"
 
-from ...database import Generic_Table
+from ...utils.database import Generic_Table
 
 
 class ASRankTable(Generic_Table):

@@ -30,7 +30,7 @@ from configparser import ConfigParser as SCP
 import pytest
 
 from .config import Config
-from ..utils import utils, config_logging
+from .. import utils, logger
 
 
 SQL_FILE_PATH = "/tmp/db_modify.sql"
@@ -43,7 +43,7 @@ class Postgres:
     sql_file_path = SQL_FILE_PATH
 
     def __init__(self, stream_level=logging.INFO, section=None):
-        config_logging(stream_level, section)
+        logger.config_logging(stream_level, section)
 
     def erase_all(self):
         """Deletes config and all database sections"""

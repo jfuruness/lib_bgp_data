@@ -5,7 +5,7 @@
 
 import pytest
 from subprocess import check_call
-from .database.config import set_global_section_header, Config
+from .utils.database.config import set_global_section_header, Config
 
 __author__ = "Justin Furuness"
 __credits__ = ["Justin Furuness"]
