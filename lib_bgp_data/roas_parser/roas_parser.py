@@ -7,8 +7,8 @@ The purpose of this class is to download ROAs from rpki and insert them
 into a database. See README for in depth explanation
 """
 
-__author__ = "Justin Furuness"
-__credits__ = ["Justin Furuness", "Xinyu"]
+__authors__ = ["Justin Furuness", "Samarth Kasbawala"]
+__credits__ = ["Justin Furuness", "Xinyu", "Samarth Kasbawala"]
 __Lisence__ = "BSD"
 __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
@@ -17,6 +17,7 @@ __status__ = "Development"
 
 from copy import deepcopy
 import re
+import time
 import warnings
 from .tables import ROAs_Table
 from ..base_classes import Parser
@@ -60,9 +61,12 @@ class ROAs_Parser(Parser):
 
         # Returns a list of lists of formatted roas
         # Formats roas for csv
+        # Formatted roas will have en extra column for time, the
+        # unformatted roas won't have this field
         return [[int(re.findall(r'\d+', roa["asn"])[0]),  # Gets ASN
                  roa["prefix"],
-                 int(roa["maxLength"])]
+                 int(roa["maxLength"]),
+                 int(time.time())]    # Adds time column
                 for roa in unformatted_roas]
 
     def parse_roas(self, **kwargs):
@@ -72,10 +76,11 @@ class ROAs_Parser(Parser):
                       stacklevel=2)
         self.run(self, **kwargs)
 
+
 class ROAs_Collector(ROAs_Parser):
     def __init__(self, **kwargs):
         warnings.warn(("ROAs_Collector is depreciated. "
                        "Use Roas_Parser instead"),
-                       DeprecationWarning,
-                       stacklevel=1)
+                      DeprecationWarning,
+                      stacklevel=1)
         super(ROAs_Collector, self).__init__(**kwargs)

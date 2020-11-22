@@ -3,8 +3,8 @@
 
 """This package contains functions used across classes"""
 
-__authors__ = ["Justin Furuness", "Matt Jaccino"]
-__credits__ = ["Justin Furuness", "Matt Jaccino"]
+__authors__ = ["Justin Furuness", "Matt Jaccino", "Samarth Kasbawala"]
+__credits__ = ["Justin Furuness", "Matt Jaccino", "Samarth Kasbawala"]
 __Lisence__ = "BSD"
 __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
@@ -23,9 +23,12 @@ import os
 from subprocess import check_call, DEVNULL
 import sys
 import time
+import smtplib
+from email.message import EmailMessage
 
 from bs4 import BeautifulSoup as Soup
 from bz2 import BZ2Decompressor
+import gzip
 from pathos.multiprocessing import ProcessingPool
 import pytz
 import requests
@@ -247,6 +250,11 @@ def unzip_bz2(old_path: str) -> str:
     delete_paths(old_path)
     return new_path
 
+def unzip_gz(path):
+    # https://stackoverflow.com/a/44712152/8903959
+    with gzip.open(path, 'rb') as f_in:
+        with open(path.replace(".gz", ""), 'wb') as f_out:
+            shutil.copyfileobj(f_in, f_out)
 
 def write_csv(rows: list, csv_path: str):
     """Writes rows into csv_path, a tab delimited csv"""
@@ -283,12 +291,18 @@ def csv_to_db(Table, csv_path: str, clear_table=False):
             t._create_tables()
         # No logging for mrt_announcements, overhead slows it down too much
         logging.debug(f"Copying {csv_path} into the database")
-        # Opens temporary file
-        with open(r'{}'.format(csv_path), 'r') as f:
-            columns = [x for x in t.columns if x != "id"]
-            # Copies data from the csv to the db, this is the fastest way
-            t.cursor.copy_from(f, t.name, sep='\t', columns=columns, null="")
-            t.cursor.execute("CHECKPOINT;")
+        try:
+            # Opens temporary file
+            with open(r'{}'.format(csv_path), 'r') as f:
+                columns = [x for x in t.columns if x != "id"]
+                # Copies data from the csv to the db, this is the fastest way
+                t.cursor.copy_from(f, t.name, sep='\t', columns=columns, null="")
+                t.cursor.execute("CHECKPOINT;")
+        except Exception as e:
+            print(e)
+            print(csv_path)
+            input()
+            raise e
         # No logging for mrt_announcements, overhead slows it down too much
         logging.debug(f"Done inserting {csv_path} into the database")
     delete_paths(csv_path)
@@ -355,6 +369,24 @@ def replace_line(path, prepend, line_to_replace, replace_with):
         line = line.replace(*lines)
         sys.stdout.write(line)
 
+def send_email(subject, body):
+    """Sends an email notification"""
+
+    # Get the adress and password from the environment variables
+    email_address = os.environ.get("BGP_EMAIL_USER")
+    password = os.environ.get("BGP_EMAIL_PASS")
+
+    # Build the message
+    message = EmailMessage()
+    message["Subject"] = subject
+    message["From"] = email_address
+    message["To"] = email_address
+    message.set_content(body)
+
+    # Send the message
+    with smtplib.SMTP_SSL("smtp.gmail.com", 465) as smtp:
+        smtp.login(email_address, password)
+        smtp.send_message(message)
 
 def kill_port(port: int, wait: bool = True):
     for proc in process_iter():
@@ -365,7 +397,6 @@ def kill_port(port: int, wait: bool = True):
                 run_cmds(f"sudo kill -9 $(lsof -t -i: {port})")
                 if wait:
                     time.sleep(120)
-
 
 def add_cronjob(name, time, executable, overwrite=False):
     """Creates a cronjob of name, that runs executable at (cron) time."""
