@@ -14,7 +14,7 @@ __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
 import os
-
+"""
 from .relationships_parser import Relationships_Parser
 from .roas_parser import ROAs_Parser, ROAs_Collector
 from .bgpstream_website_parser import BGPStream_Website_Runner
@@ -34,7 +34,7 @@ from .historical_roas_parser import Historical_ROAS_Parser
 from .cdn_whitelist import CDN_Whitelist
 from .blacklist_parser import Blacklist_Parser
 from .verification_parser import Verification_Parser
-
+"""
 class NotSudo(Exception):
     pass
 
