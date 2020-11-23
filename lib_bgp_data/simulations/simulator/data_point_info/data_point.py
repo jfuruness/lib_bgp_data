@@ -17,14 +17,15 @@ from os.path import join
 import random
 import uuid
 
-from .attack import Attack
-from .enums import Attack_Types, Non_Default_Policies
 from .test import Test
 
-from ..collectors.mrt_parser.tables import MRT_W_Metadata_Table
-from ..utils import utils
-from ..utils.base_classes import Parser
-from ..utils.database import Database
+from ..attacks import Attack
+from ..enums import Attack_Types, Non_Default_Policies
+
+from ....collectors.mrt_parser.tables import MRT_W_Metadata_Table
+from ....utils import utils
+from ....utils.base_classes import Parser
+from ....utils.database import Database
 
 
 class Data_Point(Parser):

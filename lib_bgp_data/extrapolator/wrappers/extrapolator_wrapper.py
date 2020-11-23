@@ -19,13 +19,14 @@ import logging
 from multiprocessing import cpu_count
 import os
 
-from ..base_classes import Parser
-from ..database import Database
-from ..relationships_parser.tables import Peers_Table, Provider_Customers_Table
+from ..collectors.relationships.tables import Peers_Table
+from ..collectors.relationships.tables import Provider_Customers_Table
+from ..utils.base_classes import Parser
+from ..utils.database import Database
 from ..utils import utils
 
 
-class Extrapolator_Parser(Parser):
+class Extrapolator_Wrapper(Parser):
     """This class runs the extrapolator.
 
     In depth explanation at the top of module.
@@ -42,6 +43,8 @@ class Extrapolator_Parser(Parser):
 
         Installs if necessary. See README for in depth instructions.
         """
+
+        assert False, "Not yet implimented"
 
         self._input_validation([input_table])
 

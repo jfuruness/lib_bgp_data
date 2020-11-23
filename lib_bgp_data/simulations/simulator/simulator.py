@@ -15,20 +15,20 @@ __status__ = "Development"
 import random
 import uuid
 
-from .data_point import Data_Point
+from .data_point_info import Data_Point
+from .enums import Attack_Types, Non_Default_Policies
+from . import extrapolator as exr
 from .multiline_tqdm import Multiline_TQDM
-from .subtables_base import Subtables
-
-from ..enums import Attack_Types, Non_Default_Policies
-from ..tables import Simulation_Results_Table, Leak_Related_Announcements_Table
+from .subtables import Subtables
+from .tables import Simulation_Results_Table
 
 
-from ..base_classes import Parser
-from ..relationships_parser import Relationships_Parser
-from ..bgpstream_website_parser import BGPStream_Website_Parser, Event_Types
-from ..mrt_parser import MRT_Parser, MRT_Sources
-from ..database import Database
-from .. import extrapolator_parser as exr
+
+from ...collectors import Relationships_Parser
+from ...collectors import BGPStream_Website_Parser, Event_Types
+from ...collectors import MRT_Parser, MRT_Sources
+from ...utils.base_classes import Parser
+from ...utils.database import Database
 
 class Simulator(Parser):
     """This class simulates Attack defend scenarios on the internet.

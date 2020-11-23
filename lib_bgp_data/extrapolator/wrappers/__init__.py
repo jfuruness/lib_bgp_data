@@ -11,6 +11,7 @@ __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
-from .extrapolator_parser import Extrapolator_Parser
-from .rovpp_extrapolator_parser import ROVPP_Extrapolator_Parser
-from .tables import ROVPP_Extrapolator_Rib_Out_Table
+from .extrapolator_wrapper import Extrapolator_Wrapper
+from .simulation_extrapolator_wrapper import Simulation_Extrapolator_Wrapper
+from .simulation_extrapolator_wrapper import\
+    Simulation_Extrapolator_Forwarding_Table

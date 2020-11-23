@@ -14,9 +14,9 @@ __status__ = "Development"
 
 import logging
 
-# Done this way to fix circular imports
-from .. import extrapolator_parser as exr
-from ..utils.logger import config_logging
+from ... import extrapolator as exr
+
+from ....utils.logger import config_logging
 
 class Test:
     """Test class that defines a specific scenario to be run"""
@@ -44,9 +44,8 @@ class Test:
         self.tables.change_routing_policies(self.adopt_policy)
 
         # Runs the rov++ extrapolator
-        exr.ROVPP_Extrapolator_Parser(**exr_kwargs)._run(self.tables.names,
-                                                         exr_bash=exrbash,
-                                                         attack=self.attack)
+        exr.Simulation_Extrapolator_Wrapper(**exr_kwargs)._run(
+            self.tables.names, exr_bash=exrbash, attack=self.attack)
 
         pbars.update_extrapolator()
 

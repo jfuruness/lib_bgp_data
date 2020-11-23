@@ -19,7 +19,7 @@ __status__ = "Development"
 
 from netaddr import IPNetwork
 
-from ...utils.base_classes import ROA_Validity
+from ....utils.base_classes import ROA_Validity
 
 class ROA:
     """Stores information for a ROA"""
