@@ -64,4 +64,4 @@ class Simulation_Extrapolator_Wrapper(Extrapolator_Wrapper):
         # Gets forwarding tables. Basically returns only more specific prefixes
         with Simulation_Extrapolator_Forwarding_Table(clear=True) as _db:
             logging.debug("Extrapolation complete, writing ribs out tables")
-            _db.fill_table(attack_type)
+            _db.fill_table(attack)
