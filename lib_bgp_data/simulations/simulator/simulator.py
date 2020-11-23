@@ -96,3 +96,4 @@ class Simulator(Parser):
                                                    0,  # trial
                                                    set_up=False):
                 total += trials
+        return total

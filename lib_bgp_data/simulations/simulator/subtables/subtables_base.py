@@ -13,10 +13,13 @@ __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
+import logging
+
 from .tables import Top_100_ASes_Table, Edge_ASes_Table, Etc_ASes_Table
 from .input_subtables import Input_Subtables, Input_Subtable
 from .output_subtables import Output_Subtables, Output_Subtable
 
+from ....utils.database import Database
 
 # This is probably not the best way to do this inheritance,
 # But they are all kind of messy anyways so whatever
@@ -40,6 +43,11 @@ class Subtables(Input_Subtables, Output_Subtables):
         if connect:
             for table in self.tables:
                 table.connect()
+
+            logging.info("Analyzing before beginning for speed")
+            # Without this the queries become messed up
+            with Database() as db:
+                db.execute("ANALYZE")
 
     def fill_tables(self):
         """Fill the tables with ASes"""
