@@ -26,8 +26,6 @@ class Attack_Types(Enum):
     UNANNOUNCED_PREFIX_HIJACK = "unannounced_prefix_hijack"
     UNANNOUNCED_SUPERPREFIX_HIJACK = "unannounced_superprefix_hijack"
     SUPERPREFIX_HIJACK = "superprefix_hijack"
-    LEAK = "leak"
-
 
 class Policies(Enum):
     """The possible routing policies"""

@@ -23,6 +23,7 @@ __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Production"
 
+from ...utils.base_classes import ROA_Validity
 from ...utils.database import Generic_Table
 
 
@@ -223,15 +224,15 @@ class ROA_Known_Validity_Table(Generic_Table):
                            dpo.origin,
                            --NOTE: don't change the numbering. It's dependent elsewhere as well
                            CASE WHEN r.asn != dpo.origin AND MASKLEN(dpo.prefix) > r.max_length
-                                    THEN 4 --invalid by origin and length
+                                    THEN {ROA_Validity.INVALID_BY_ALL.value}
                                 WHEN MASKLEN(dpo.prefix) > r.max_length
-                                    THEN 3 --invalid by max len
+                                    THEN {ROA_Validity.INVALID_BY_LENGTH.value}
                                 WHEN r.asn != dpo.origin
-                                    THEN 2 --invalid by origin
+                                    THEN {ROA_Validity.INVALID_BY_ORIGIN.value}
                                 WHEN r.asn = dpo.origin
                                      AND MASKLEN(dpo.prefix) <= r.max_length
-                                        THEN 0 --valid
-                                ELSE 1 --unknown
+                                        THEN {ROA_Validity.VALID.value} --valid
+                                ELSE {ROA_Validity.UNKNOWN.value} --unknown
                             END AS roa_validity
                     FROM {Distinct_Prefix_Origins_W_IDs_Table.name} dpo
                     INNER JOIN (SELECT prefix,
@@ -261,9 +262,9 @@ class ROA_Validity_Table(Generic_Table):
                     SELECT prefix, origin, roa_validity
                         FROM {ROA_Known_Validity_Table.name}
                     UNION ALL
-                    (SELECT prefix, origin, 1 AS roa_validity
+                    (SELECT prefix, origin, {ROA_Validity.UNKNOWN.value} AS roa_validity
                         FROM {Distinct_Prefix_Origins_W_IDs_Table.name}
-                    EXCEPT SELECT prefix, origin, 1 AS roa_validity
+                    EXCEPT SELECT prefix, origin, rROA_Validity.UNKNOWN.value} AS roa_validity
                         FROM {ROA_Known_Validity_Table.name})
                 );"""
         self.execute(sql)

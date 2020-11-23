@@ -94,164 +94,18 @@ class Data_Point(Parser):
             random.seed(seed)
             return random.random()
 
-    def fill_attacks(self, ases, attack_type, trial_num):
+    def fill_attacks(self, ases, Attack_Cls, trial_num):
         """Sets up the attack, inserts into the db"""
 
         if self.deterministic:
             ases = sorted(ases)
 
         # Gets two random ases without duplicates
-        attacker, victim = random.sample(ases, k=2)
+        victim, attacker = random.sample(ases, k=2)
 
-        # Table schema: prefix | as_path | origin | time | monitor_asn |
-        # prefix_id | origin_id | prefix_origin_id | block_id |
-        # roa_validity | block_prefix_id
-
-        # ROA validity: 0 valid, 1 unknown, 2 invalid by origin, 3 invalid by len
-        # 4 invalid by origin and len
-        # Subprefix hijack
-        if attack_type == Attack_Types.SUBPREFIX_HIJACK:
-            attacker_rows = [{"prefix": '1.2.3.0/24',
-                              "as_path": [attacker],
-                              "origin": attacker,
-                              "prefix_id": 0,
-                              "origin_id": 0,
-                              "prefix_origin_id": 0,
-                              "roa_validity": 4}]
-            victim_rows = [{"prefix": '1.2.3.0/24',
-                            "as_path": [victim],
-                            "origin": victim,
-                            "prefix_id": 1,
-                            "origin_id": 1,
-                            "prefix_origin_id": 1,
-                            "roa_validity": 0}]
-
-        # Prefix hijack
-        elif attack_type == Attack_Types.PREFIX_HIJACK:
-            attacker_rows = [{"prefix": '1.2.0.0/16',
-                              "as_path": [attacker],
-                              "origin": attacker,
-                              "prefix_id": 0,
-                              "origin_id": 0,
-                              "prefix_origin_id": 0,
-                              "roa_validity": 2}]
-            victim_rows = [{"prefix": '1.2.0.0/16',
-                            "as_path": [victim],
-                            "origin": victim,
-                            "prefix_id": 0,
-                            "origin_id": 1,
-                            "prefix_origin_id": 1,
-                            "roa_validity": 0}]
-        # Unannounced prefix hijack
-        elif attack_type == Attack_Types.UNANNOUNCED_PREFIX_HIJACK:
-            attacker_rows = [{"prefix": '1.2.3.0/24',
-                              "as_path": [attacker],
-                              "origin": attacker,
-                              "prefix_id": 0,
-                              "origin_id": 0,
-                              "prefix_origin_id": 0,
-                              "roa_validity": 4}]
-            victim_rows = []
-
-        elif attack_type == Attack_Types.UNANNOUNCED_SUPERPREFIX_HIJACK:
-            # ROA for subprefix not superprefix
-            attacker_rows = [{"prefix": '1.2.0.0/16',
-                              "as_path": [attacker],
-                              "origin": attacker,
-                              "prefix_id": 0,
-                              "origin_id": 0,
-                              "prefix_origin_id": 0,
-                              # ROA for superprefix is 1 for unknown
-                              "roa_validity": 1},
-                              {"prefix": '1.2.3.0/24',
-                               "as_path": [attacker],
-                               "origin": attacker,
-                               "prefix_id": 1,
-                               "origin_id": 0,
-                               "prefix_origin_id": 1,
-                               "roa_validity": 4}]
-            victim_rows = []
-
-        elif attack_type == Attack_Types.SUPERPREFIX_HIJACK:
-            # ROA for subprefix not superprefix
-            attacker_rows = [{"prefix": '1.2.0.0/16',
-                              "as_path": [attacker],
-                              "origin": attacker,
-                              "prefix_id": 0,
-                              "origin_id": 0,
-                              "prefix_origin_id": 0,
-                              # ROA for superprefix is 1 for unknown
-                              "roa_validity": 1},
-                              {"prefix": '1.2.3.0/24',
-                               "as_path": [attacker],
-                               "origin": attacker,
-                               "prefix_id": 1,
-                               "origin_id": 0,
-                               "prefix_origin_id": 1,
-                               "roa_validity": 4}]
-            victim_rows = [{"prefix": '1.2.0.0/16',
-                            "as_path": [victim],
-                            "origin": victim,
-                            "prefix_id": 1,
-                            "origin_id": 1,
-                            "prefix_origin_id": 2,
-                            "roa_validity": 0}]
-
-        elif attack_type == Attack_Types.LEAK:
-            assert False, "Not yet implimented"
-            # CHange this to be the table later
-            with Database() as db:
-                sql = f"""SELECT * FROM leaks ORDER BY id LIMIT 1 OFFSET {trial_num}"""
-                leak = db.execute(sql)[0]
-                leaker_path = leak["example_as_path"]
-                attacker = leak["leaker_as_number"]
-                # Must cut off 1 after the attacker for proper seeding
-                # Note that by one after the attacker, I mean from right to left
-                # so if path was 51, 25, 63, ATTACKER, 81,
-                # We want the new path to be 63, ATTACKER, 81
-                # If there is prepending:
-                # OG path:
-                # 51, 25, 63, ATTACKER, ATTACKER, ATTACKER, 81,
-                # New path:
-                # 63, ATTACKER, ATTACKER, ATTACKER, 81,
-                new_leaker_path = []
-                about_to_break = False
-                for asn in reversed(leaker_path):
-                    new_leaker_path.append(asn)
-                    # Must have second equality here just in case attacker prepends
-                    # (prepending is when an asn is listed multiple times
-                    #  we want one after the attacker, but if the attacker is repeated
-                    #  we must keep going)
-                    if about_to_break and asn != attacker:
-                        break
-                    if asn == attacker:
-                        about_to_break = True
-                new_leaker_path.reverse()        
-                attacker_rows = [[leak["leaked_prefix"],
-                                  new_leaker_path,
-                                  leak["example_as_path"][-1],
-                                  1]]
-                victim_rows = []
-
-
-        rows = []
-        # Format the lists to be arrays for insertion into postgres
-        for list_of_rows, time_val in zip([attacker_rows, victim_rows], [1, 0]):
-            for mrt_dict in list_of_rows:
-                mrt_dict["time"] = time_val
-                mrt_dict["block_id"] = 0
-                mrt_dict["monitor_asn"] = 0
-                mrt_dict["block_prefix_id"] = mrt_dict["prefix_id"]
-                row = []
-                for col in MRT_W_Metadata_Table.columns:
-                    cur_item = mrt_dict.get(col)
-                    assert cur_item is not None or col in ["monitor_asn", "block_id"], col
-                    if isinstance(cur_item, list):
-                        cur_item = str(cur_item).replace("[", "{").replace("]", "}")
-                    row.append(cur_item)
-                rows.append(row)
+        attack = Attack_Cls(victim, attacker)
 
         path = join(self.csv_dir, "mrts.csv")
-        utils.rows_to_db(rows, path, MRT_W_Metadata_Table)
+        utils.rows_to_db(attack.rows, path, MRT_W_Metadata_Table)
 
-        return Attack(attacker_rows, victim_rows)
+        return attack

@@ -38,7 +38,6 @@ class ROVPP_Simulator(Parser):
              percents=[1],# list(range(5, 31, 5)),
              num_trials=2,
              exr_bash=None,  # For development only
-             seed=uuid.getnode(),
              seeded_trial=None,
              deterministic=False,
              attack_types=[x for x in Attack_Types.__members__.values()
@@ -47,8 +46,7 @@ class ROVPP_Simulator(Parser):
              adopt_policy_types=[x for x in Non_Default_Policies.__members__.values()
                                  # Not in ASPA policies (not yet implimented)
                                  if x.value not in list(range(1024, 2048))],
-             redownload_base_data=True,
-             redownload_leak_data=True):
+             redownload_base_data=True):
         """Runs ROVPP simulation.
         In depth explanation at top of module.
         """
@@ -59,46 +57,6 @@ class ROVPP_Simulator(Parser):
             # Gets relationships table
             Relationships_Parser(**self.kwargs)._run()
  
-
-#        if Attack_Types.LEAK in attack_types and redownload_leak_data:
-#            # Download hijack data if not done already
-#            BGPStream_Website_Parser(**self.kwargs)._run(
-#                data_types=[Event_Types.LEAK.value])
-            # Download mrt data if not done already
-#            MRT_Parser(**self.kwargs)._run(sources=[MRT_Sources.RIPE, MRT_Sources.ROUTE_VIEWS])
-#            with Leak_Related_Announcements_Table(clear=True) as db:
-#                db.fill_table()
-
-        # prints all leaks with loops in them
-#        with Database() as db: 
-#            prepending = set()
-#            loops = set()
-#            leaked_to_many = set()
-#            leaked_to_one = set()
-#            leaks = db.execute("SELECT * FROM leaks;")
-#            for leak in leaks:
-#                if len(leak["leaked_to_number"]) == 1:
-#                    leaked_to_one.add(leak["url"].replace("/event/", ""))
-#                else:
-#                    leaked_to_many.add(leak["url"].replace("/event/", ""))
-#                cur_path = set()
-#                for _as in leak["example_as_path"]:
-#                    if _as in cur_path:
-#                        if _as != prev_as:
-#                            loops.add(leak["url"].replace("/event/", ""))
-#                        else:
-#                            prepending.add(leak["url"].replace("/event/", ""))
-#                        break
-#                    cur_path.add(_as)
-#                    prev_as = _as
-#        print("prepending = " + str(prepending))
-#        print(len(prepending))
-#        print("loops = " + str(loops))
-#        print(len(loops))
-#        print("multileak = " + str(leaked_to_many))
-#        print(len(leaked_to_many))
-#        print("single_leak = " + str(leaked_to_one))
-#        print(len(leaks))
         # Clear the table that stores all trial info
         with Simulation_Results_Table(clear=True) as _:
             pass
