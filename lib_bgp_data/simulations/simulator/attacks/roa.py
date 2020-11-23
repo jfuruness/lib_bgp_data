@@ -56,7 +56,7 @@ class ROA:
                 return ROA_Validity.INVALID_BY_LENGTH
             # If origin is not correct
             else:
-                return ROA_Validity.INVALID_BY_ASN
+                return ROA_Validity.INVALID_BY_ORIGIN
         # Prefix is not contained with ROA, unknown
         else:
             return ROA_Validity.UNKNOWN
