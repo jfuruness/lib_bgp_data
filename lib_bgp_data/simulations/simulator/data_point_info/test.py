@@ -14,8 +14,6 @@ __status__ = "Development"
 
 import logging
 
-from ... import extrapolator as exr
-
 from ....utils.logger import config_logging
 
 class Test:
@@ -43,9 +41,13 @@ class Test:
         # Changes routing policies for all subtables
         self.tables.change_routing_policies(self.adopt_policy)
 
+        # Fix later
+        from ...extrapolator import Simulation_Extrapolator_Wrapper as Exr
+
         # Runs the rov++ extrapolator
-        exr.Simulation_Extrapolator_Wrapper(**exr_kwargs)._run(
-            self.tables.names, exr_bash=exrbash, attack=self.attack)
+        Exr(**exr_kwargs)._run(self.tables.names,
+                               exr_bash=exrbash,
+                               attack=self.attack)
 
         pbars.update_extrapolator()
 

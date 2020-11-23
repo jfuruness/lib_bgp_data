@@ -264,7 +264,7 @@ class ROA_Validity_Table(Generic_Table):
                     UNION ALL
                     (SELECT prefix, origin, {ROA_Validity.UNKNOWN.value} AS roa_validity
                         FROM {Distinct_Prefix_Origins_W_IDs_Table.name}
-                    EXCEPT SELECT prefix, origin, rROA_Validity.UNKNOWN.value} AS roa_validity
+                    EXCEPT SELECT prefix, origin, {ROA_Validity.UNKNOWN.value} AS roa_validity
                         FROM {ROA_Known_Validity_Table.name})
                 );"""
         self.execute(sql)

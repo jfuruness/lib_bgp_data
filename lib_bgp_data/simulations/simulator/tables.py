@@ -13,9 +13,9 @@ __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
-from .enums import AS_Types
-from .enums import Control_Plane_Conditions as CP_Conds
-from .enums import Data_Plane_Conditions as DP_Conds
+from ..enums import AS_Types
+from ..enums import Control_Plane_Conditions as CP_Conds
+from ..enums import Data_Plane_Conditions as DP_Conds
 
 from ...utils.database import Generic_Table
 

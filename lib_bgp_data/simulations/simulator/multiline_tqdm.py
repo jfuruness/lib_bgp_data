@@ -12,7 +12,7 @@ __status__ = "Development"
 
 from tqdm import tqdm
 
-from .enums import Policies
+from ..enums import Policies
 
 
 class Multiline_TQDM:

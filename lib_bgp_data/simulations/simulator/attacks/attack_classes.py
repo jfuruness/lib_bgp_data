@@ -58,7 +58,7 @@ class Unannounced_Subprefix_Hijack(Unannounced_Hijack):
     attacker_prefixes = [Attack.default_prefix, Attack.default_subprefix]
 
 
-class Unnannounced_Prefix_Superprefix_Hijack(Unannounced_Hijack):
+class Unannounced_Prefix_Superprefix_Hijack(Unannounced_Hijack):
     """Hijack where there is a ROA for default_prefix"""
 
     attacker_prefixes = [Attack.default_prefix, Attack.default_superprefix]

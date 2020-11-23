@@ -19,11 +19,11 @@ import logging
 from multiprocessing import cpu_count
 import os
 
-from ..collectors.relationships.tables import Peers_Table
-from ..collectors.relationships.tables import Provider_Customers_Table
-from ..utils.base_classes import Parser
-from ..utils.database import Database
-from ..utils import utils
+from ...collectors.relationships.tables import Peers_Table
+from ...collectors.relationships.tables import Provider_Customers_Table
+from ...utils.base_classes import Parser
+from ...utils.database import Database
+from ...utils import utils
 
 
 class Extrapolator_Wrapper(Parser):

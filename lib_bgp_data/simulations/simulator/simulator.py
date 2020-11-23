@@ -15,18 +15,16 @@ __status__ = "Development"
 import random
 import uuid
 
+from .attacks import Attack
 from .data_point_info import Data_Point
-from .enums import Attack_Types, Non_Default_Policies
-from . import extrapolator as exr
 from .multiline_tqdm import Multiline_TQDM
 from .subtables import Subtables
 from .tables import Simulation_Results_Table
-
-
-
+from ..enums import Non_Default_Policies
 from ...collectors import Relationships_Parser
 from ...collectors import BGPStream_Website_Parser, Event_Types
 from ...collectors import MRT_Parser, MRT_Sources
+from ...extrapolator import Simulation_Extrapolator_Wrapper
 from ...utils.base_classes import Parser
 from ...utils.database import Database
 
@@ -51,7 +49,7 @@ class Simulator(Parser):
 
         if redownload_base_data:
             # forces new install of extrapolator
-            exr.ROVPP_Extrapolator_Parser(**self.kwargs).install(force=True)
+            Simulation_Extrapolator_Wrapper(**self.kwargs).install(force=True)
             # Gets relationships table
             Relationships_Parser(**self.kwargs)._run()
  
@@ -78,7 +76,7 @@ class Simulator(Parser):
                                      adopt_policy_types,
                                      trial,
                                      exr_bash=exr_bash,
-                                     exr_kwargs=self.kwargs
+                                     exr_kwargs=self.kwargs,
                                      seeded_trial=seeded_trial)
         tables.close()
 

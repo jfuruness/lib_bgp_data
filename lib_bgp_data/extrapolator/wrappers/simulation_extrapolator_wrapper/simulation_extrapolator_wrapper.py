@@ -18,7 +18,7 @@ __status__ = "Development"
 
 import logging
 
-from .tables import Simulation_Extrapolation_Results_Table
+from .tables import Simulation_Extrapolator_Results_Table
 from .tables import Simulation_Extrapolator_Forwarding_Table
 
 from ..extrapolator_wrapper import Extrapolator_Wrapper

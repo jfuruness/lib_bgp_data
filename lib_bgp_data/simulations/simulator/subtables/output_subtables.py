@@ -15,12 +15,11 @@ __status__ = "Development"
 import logging
 import sys
 
-from .enums import AS_Types
-from .enums import Control_Plane_Conditions as C_Plane_Conds
-from .enums import Data_Plane_Conditions 
-from .tables import Simulation_Results_Table
-
-from ..extrapolator_parser.tables import ROVPP_Extrapolator_Forwarding_Table
+from ..tables import Simulation_Results_Table
+from ...enums import AS_Types
+from ...enums import Control_Plane_Conditions as C_Plane_Conds
+from ...enums import Data_Plane_Conditions 
+from ....extrapolator import Simulation_Extrapolator_Forwarding_Table
 
 class Output_Subtables:
     """Subtables that deal with the output functions from the extrapolator"""

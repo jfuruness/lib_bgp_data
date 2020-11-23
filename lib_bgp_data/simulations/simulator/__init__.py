@@ -10,12 +10,12 @@ __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
-from .attack import Attack
-from .attack import Subprefix_Hijack
-from .attack import Prefix_Hijack
-from .attack import Prefix_Superprefix_Hijack
-from .attack import Unannounced_Prefix_Hijack
-from .attack import Unannounced_Subprefix_Hijack
-from .attack import Unannounced_Prefix_Superprefix_Hijack
+from .attacks import Attack
+from .attacks import Subprefix_Hijack
+from .attacks import Prefix_Hijack
+from .attacks import Prefix_Superprefix_Hijack
+from .attacks import Unannounced_Prefix_Hijack
+from .attacks import Unannounced_Subprefix_Hijack
+from .attacks import Unannounced_Prefix_Superprefix_Hijack
 
 from .simulator import Simulator

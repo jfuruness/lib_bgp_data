@@ -88,7 +88,7 @@ class Attack:
 
         row_lists = [self.victim_rows, self.attacker_rows]
         asns = [self.victim, self.attacker]
-        for i, asn, rows in enumerate(zip(asns, row_lists))::
+        for i, asn, rows in enumerate(zip(asns, row_lists)):
             # for each announcement object
             for asn_dict in rows:
                 self._add_default_metadata(asn_dict, asn, i)
@@ -102,7 +102,7 @@ class Attack:
                 # 1 if attacker, 0 if victim
                 "time": _time,
                 "block_id": 0,
-                "monitor_asn": 0
+                "monitor_asn": 0,
                 "roa_validity": self.rpki.check_ann(asn_dict["prefix"], asn)}
         asn_dict.update(metadata)
 

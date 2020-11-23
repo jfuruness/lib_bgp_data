@@ -27,15 +27,15 @@ __status__ = "Development"
 import logging
 from random import random, sample
 
-from ...enums import Non_Default_Policies, Policies, Attack_Types
+from ...enums import Non_Default_Policies, Policies
 from ...enums import AS_Types, Data_Plane_Conditions as DP_Conds
 from ...enums import Control_Plane_Conditions as CP_Conds
 
-from ...utils.database import Database, Generic_Table
-from ...collectors.mrt.tables import MRT_Announcements_Table
-from ...collectors.relationships.tables import AS_Connectivity_Table
-from ...collectors.relationships.tables import ASes_Table
-from ...extrapolator import Simulation_Extrapolator_Forwarding_Table
+from ....utils.database import Database, Generic_Table
+from ....collectors.mrt.tables import MRT_Announcements_Table
+from ....collectors.relationships.tables import AS_Connectivity_Table
+from ....collectors.relationships.tables import ASes_Table
+from ....extrapolator import Simulation_Extrapolator_Forwarding_Table
 
 #################
 ### Subtables ###

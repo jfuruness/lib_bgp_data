@@ -20,9 +20,10 @@ import uuid
 from .test import Test
 
 from ..attacks import Attack
-from ..enums import Attack_Types, Non_Default_Policies
 
-from ....collectors.mrt_parser.tables import MRT_W_Metadata_Table
+from ...enums import Non_Default_Policies
+
+from ....collectors.mrt.tables import MRT_W_Metadata_Table
 from ....utils import utils
 from ....utils.base_classes import Parser
 from ....utils.database import Database
@@ -98,7 +99,7 @@ class Data_Point(Parser):
 
     def get_set_random_seed(self, attack_cls, trial_num):
         if self.deterministic:
-            random.seed(f"{attack_type}{self.percent_iter)}{trial_num}")
+            random.seed(f"{attack_type}{self.percent_iter}{trial_num}")
             return random.random()
 
     def fill_attacks(self, ases, Attack_Cls, trial_num):

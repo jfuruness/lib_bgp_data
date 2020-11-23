@@ -12,7 +12,7 @@ __status__ = "Development"
 
 
 from .asrank_website import ASRankWebsiteParser
-from .bgpstream_website import BGPStream_Website_Parser
+from .bgpstream_website import BGPStream_Website_Parser, Event_Types
 from .blacklist import Blacklist_Parser
 from .cdn_whitelist import CDN_Whitelist_Parser
 from .historical_roas import Historical_ROAs_Parser

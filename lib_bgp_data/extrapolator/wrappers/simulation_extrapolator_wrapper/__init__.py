@@ -13,4 +13,4 @@ __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
 from .simulation_extrapolator_wrapper import Simulation_Extrapolator_Wrapper
-from .tables import ROVPP_Extrapolator_Forwarding_Table
+from .tables import Simulation_Extrapolator_Forwarding_Table
