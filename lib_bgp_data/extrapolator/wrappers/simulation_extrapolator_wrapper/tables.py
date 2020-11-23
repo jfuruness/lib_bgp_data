@@ -40,9 +40,6 @@ class Simulation_Extrapolator_Forwarding_Table(Generic_Table):
         Called during initialization of the database class.
         """
 
-        # Fix later
-        from ....simulation.enums import Attack_Types, Data_Plane_Conditions
-
         logging.debug("Creating rovpp ribs out table")
 
         sql = f"""CREATE UNLOGGED TABLE {self.name} AS (
