@@ -47,6 +47,7 @@ setup(
         'pathos>=0.2.5',
         'flasgger>=0.9.3',
         'multiprocess>=0.70.9',
+        'netaddr',
         'psycopg2_binary>=2.8.4',
         'Werkzeug>=0.16.0',
         'pytz>=2019.3',

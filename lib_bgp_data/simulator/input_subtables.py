@@ -3,6 +3,7 @@
 
 """Contains class Input_Subtables
 These subtables act as input to the extrapolator
+
 In depth explanation in README
 """
 
@@ -18,7 +19,11 @@ import logging
 
 
 class Input_Subtables:
-    """Contains subtable functionality for pre exr functions"""
+    """Contains subtable functionality for pre exr functions
+
+    Parent to Tables class
+    may not strictly follow inheritance, but way easier to understand
+    """
 
     def fill_input_tables(self):
         """Fills all the subtables"""
@@ -27,11 +32,11 @@ class Input_Subtables:
             subtable.clear_table()
             subtable.fill_input_table(self.tables)
 
-    def set_adopting_ases(self, percent_iter, attack, random_seed):
+    def set_adopting_ases(self, percent_iter, attack, seed):
         """Sets adopting ases"""
 
         for subtable in self.tables:
-            subtable.set_adopting_ases(percent_iter, attack, self.names, random_seed)
+            subtable.set_adopting_ases(percent_iter, attack, self.names, seed)
 
     def change_routing_policies(self, policy):
         """Changes the routing policy for that percentage of ASes"""

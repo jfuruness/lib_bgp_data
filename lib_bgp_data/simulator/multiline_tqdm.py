@@ -48,27 +48,23 @@ class Multiline_TQDM:
     def update_extrapolator(self):
         """Sets the extrapolator to no longer be running"""
 
-        self.set_desc(self.scenario,
-                      self.adopt_pol,
+        self.set_desc(self.adopt_pol,
                       self.percent,
                       self.attack,
                       exr_running=False)
 
     def set_desc(self,
-                 scenario,
                  adopt_pol,
                  percent,
                  attack,
                  exr_running=True):
         """Sets all descriptions"""
 
-        self.scenario = scenario
         self.adopt_pol = adopt_pol
         self.percent = percent
         self.attack = attack
 
-        descs = self._get_desc(scenario,
-                               adopt_pol,
+        descs = self._get_desc(adopt_pol,
                                percent,
                                attack,
                                exr_running)
@@ -81,22 +77,21 @@ class Multiline_TQDM:
             pbar.refresh()
 
     def _get_desc(self,
-                  scenario=None,
                   policy=None,
                   percent=None,
                   attack=None,
                   exr_running=True):
         """Gets descriptions to use in the progress bars"""
 
-        # Gets adoption policy name
-        adopt_pol_name = Policies(policy.value).name if policy else ""
+
+        default = lambda x: x if x is not None else ""
 
         # Descriptions
-        descs = [f"Scenario: {scenario.value if scenario else ''}",
-                 f"Adopt Policy: {adopt_pol_name}",
-                 f"Adoption Percentage: {percent if percent is not None else ''}",
-                 f"Attacker: {attack.attacker_asn if attack else ''}",
-                 f"Victim: {attack.victim_asn if attack else ''}",
+        descs = [f"Attack_cls: {default(attack.__class__.__name__)}",
+                 f"Adopt Policy: {default(Policies(policy.value).name)}",
+                 f"Adoption Percentage: {default(percent)}",
+                 f"Attacker: {default(attack.attacker)}",
+                 f"Victim: {default(attack.victim)}",
                  f"Extrapolator Running: {exr_running}"]
         # Pads descriptions out to 35 spaces
         return [f"{desc:<42}" for desc in descs]

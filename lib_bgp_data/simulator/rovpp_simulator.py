@@ -51,6 +51,7 @@ class ROVPP_Simulator(Parser):
         In depth explanation at top of module.
         """
 
+
         if redownload_base_data:
             # forces new install of extrapolator
             exr.ROVPP_Extrapolator_Parser(**self.kwargs).install(force=True)
@@ -92,11 +93,11 @@ class ROVPP_Simulator(Parser):
         with Multiline_TQDM(total) as pbars:
             for trial in range(num_trials):
                 for data_pt in data_pts:
-                    data_pt.get_data(exr_bash,
-                                        self.kwargs,
-                                        pbars,
-                                        attack_types,
-                                        adopt_policy_types,
-                                        trial,
-                                        seeded_trial)
+                    data_pt.get_data(pbars,
+                                     attack_types,
+                                     adopt_policy_types,
+                                     trial,
+                                     exr_bash=exr_bash,
+                                     exr_kwargs=self.kwargs
+                                     seeded_trial=seeded_trial)
         tables.close()

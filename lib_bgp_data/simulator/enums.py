@@ -13,19 +13,8 @@ __status__ = "Development"
 
 from enum import Enum
 
-from ..base_classes import Enumerable_Enum
-###########################
-### Attack/Defend Enums ###
-###########################
+from ..utils.base_classes import Enumerable_Enum
 
-class Attack_Types(Enum):
-    """Types of scenarios for attacks"""
-
-    SUBPREFIX_HIJACK = "subprefix_hijack"
-    PREFIX_HIJACK = "prefix_hijack"
-    UNANNOUNCED_PREFIX_HIJACK = "unannounced_prefix_hijack"
-    UNANNOUNCED_SUPERPREFIX_HIJACK = "unannounced_superprefix_hijack"
-    SUPERPREFIX_HIJACK = "superprefix_hijack"
 
 class Policies(Enum):
     """The possible routing policies"""
@@ -46,12 +35,6 @@ class Policies(Enum):
     ROVPP_V2_SHORTEN = 12
     # V2s but announce to all connections
     ROVPP_V2_SAVAGE = 13
-    # ON REQUST OF EXR DEVS, ALL ASPA POLICIES Must be 2048>x>= 1024 (10th bit=1)   
-    ASPA = 1024
-    ASPA_ROV = 1025
-    ROVPP_ASPA = 1026
-    ROVPP_LITE_ASPA = 1027
-   
 
 # This creates an enum that is for non bgp policies
 _non_default_policies_dict = {x[0]: x[1].value

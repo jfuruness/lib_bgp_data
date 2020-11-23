@@ -19,12 +19,13 @@ from .enums import AS_Types
 from .enums import Control_Plane_Conditions as C_Plane_Conds
 from .enums import Data_Plane_Conditions 
 from .tables import Simulation_Results_Table
-from ..extrapolator_parser.tables import ROVPP_Extrapolator_Rib_Out_Table
+
+from ..extrapolator_parser.tables import ROVPP_Extrapolator_Local_Rib_Table
 
 class Output_Subtables:
     """Subtables that deal with the output functions from the extrapolator"""
 
-    def store(self, attack, scenario, adopt_policy, percent, percent_iter):
+    def store(self, attack, adopt_policy, percent, percent_iter):
         """Stores data"""
 
         # Gets all the asn data
@@ -33,15 +34,14 @@ class Output_Subtables:
 
         # Stores the data for the specific subtables
         for table in self.tables:
-            table.Rib_Out_Table.clear_table()
-            table.Rib_Out_Table.fill_rib_out_table()
+            table.Local_Rib_Table.clear_table()
+            table.Local_Rib_Table.fill_local_rib_table()
             table.store_output(ases,
                                attack,
-                               scenario,
                                adopt_policy,
                                percent,
                                percent_iter,
-                               [x.Rib_Out_Table.name for x in self.tables])
+                               [x.Local_Rib_Table.name for x in self.tables])
 
 
 class Output_Subtable:
@@ -50,7 +50,6 @@ class Output_Subtable:
     def store_output(self,
                      all_ases,
                      attack,
-                     scenario,
                      adopt_policy,
                      percent,
                      percent_iter,
@@ -58,7 +57,7 @@ class Output_Subtable:
         """Stores output in the simulation results table"""
 
         # All ases for that subtable
-        subtable_ases = {x["asn"]: x for x in self.Rib_Out_Table.get_all()}
+        subtable_ases = {x["asn"]: x for x in self.Local_Rib_Table.get_all()}
         # We don't want to track the attacker, faster than filtering dict comp
         for uncountable_asn in [attack.attacker_asn, attack.victim_asn]:
             if uncountable_asn in subtable_ases:
@@ -68,7 +67,6 @@ class Output_Subtable:
         with Simulation_Results_Table() as db:
             db.insert(self.table.name,
                       attack,
-                      scenario,
                       adopt_policy,
                       percent,
                       percent_iter,

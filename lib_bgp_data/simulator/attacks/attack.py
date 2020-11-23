@@ -16,53 +16,8 @@ __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
-
-class RPKI:
-    def __init__(self, roas):
-        self.roas = roas
-
-    def check_ann(self, prefix, origin):
-        """Checks announcement validity. Returns worst validity found
-
-        NOTE: if you end up doing this with lots of announcements,
-        This should probably be done in SQL
-        """
-
-        worst_validity = ROA_Validity.UNKNOWN
-        prefix = IPNetwork(prefix)
-        for roa in self.roas:
-            validity = roa.check_validity(prefix, origin)
-            # If valid, return
-            if validity == ROA_Validity.VALID:
-                return validity
-            # Continue looking for worst validity possible
-            else:
-                if worst_validity.value > validity.value:
-                    worst_validity = validity
-
-        return worst_validity
-
-class ROA:
-    def __init__(self, prefix: IPNetwork, origin: int):
-        self.prefix = IPNetwork(prefix)
-        self.origin = origin
-        self.max_len = self.prefix.prefixlen
-
-    def check_validity(prefix: IPNetwork, origin: int):
-        assert isinstance(prefix, IPNetwork), "Convert to IPNetwork"
-        if prefix in self.prefix:
-            length = True if prefix.prefix_len <= self.max_len else False
-            correct_origin = True if origin == self.origin else False
-            if length and correct_origin:
-                return ROA_Validity.VALID
-            elif not length and not correct_origin:
-                return ROA_Validity.INVALID_BY_ALL
-            elif not length:
-                return ROA_Validity.INVALID_BY_LENGTH
-            else:
-                return ROA_Validity.INVALID_BY_ASN
-        else:
-            return ROA_Validity.UNKNOWN
+from .rpki import RPKI
+from .roa import ROA
 
 class Attack:
     """Attack class that contains information for a victim and an attacker
@@ -74,37 +29,70 @@ class Attack:
     default_prefix = "1.2.0.0/16"
     default_superprefix = "1.0.0.0/8"
 
+    runnable_attacks = []
+    # https://stackoverflow.com/a/43057166/8903959
+    def __init_subclass__(cls, **kwargs):
+        """This method essentially creates a list of all subclasses
+
+        This is incredibly useful for a few reasons. Mainly, you can
+        strictly enforce proper templating with this. And also, you can
+        automatically add all of these things to things like argparse
+        calls and such. Very powerful tool.
+        """
+
+        super().__init_subclass__(**kwargs)
+        if hasattr(cls, "attacker_prefixes"):
+            cls.runnable_attacks.append(cls)
 
     def __init__(self, victim, attacker):
+        """Inits attack metadata and roas"""
 
+        # Fills RPKI with roa, in separate method for easy inheritance
         self._get_rpki(victim)
+        # Victim and attacker ASNs
         self.victim = victim
         self.attacker = attacker
+        # Gets announcements
         self._fill_attacker_victim_rows()
+        # Adds data for MRT_Metdata table like ids and such
         self._add_mrt_data()
 
     def _get_rpki(self, victim):
+        """Returns instance of RPKI"""
+
         self.rpki = [ROA(self.default_prefix, victim)]
 
     def fill_attacker_victim_rows(self):
+        """Gets victim and attacker rows for announcements for db"""
+
         self.victim_rows = []
         for prefix in self.victim_prefixes:
+            # Rows for db are filled with dictionaries of announcements
             self.victim_rows.append({"prefix": prefix})
 
         self.attacker_rows = []
         for prefix in self.attacker_prefixes:
+            # Rows for db are filled with dict of announcements
             self.attacker_rows.append({"prefix": prefix})
 
     def _add_mrt_data(self):
+        """Adds default data to MRT announcements
+
+        for which data is added, see MRT_Metadata_Table
+        in mrt parser
+        """
+
         row_lists = [self.victim_rows, self.attacker_rows]
         asns = [self.victim, self.attacker]
         for i, asn, rows in enumerate(zip(asns, row_lists))::
+            # for each announcement object
             for asn_dict in rows:
                 self._add_default_metadata(asn_dict, asn, i)
         self._add_ids()
 
     def _add_default_metadata(self, asn_dict, asn, _time):
-        """Adds as path and origin"""
+        """Adds as path, origin, time, roa_validity, other defaults"""
+
         meta = {"as_path": [asn],
                 "origin": asn,
                 # 1 if attacker, 0 if victim
@@ -166,58 +154,32 @@ class Attack:
 
     @property
     def db_rows(self):
+        """Gets rows for database insertion to the MRT_W_Metadata table"""
+
+        # Flattens the two lists into one list of announcement dicts
         dict_list = []
         for row_list in [self.victim_rows, self.attacker_rows]:
             for row_dict in row_list:
                 dict_list.append(row_dict)
 
         rows = []
+        # For each announcement
         for ann in dict_list:
-            row = []
-            for col in MRT_W_Metadata_Table.columns:
-                cur_item = ann.get(col)
-                if isinstance(cur_item, list):
-                    cur_item = str(cur_item).replace("[", "{").replace("]", "}")
-                row.append(cur_item)
-            rows.append(row)
+            # Formats row by converting into a list
+            # Formats list strings properly
+            rows.append([self._format(ann, x)
+                         for x in MRT_W_Metadata_Table.columns])
         return rows
 
-class Subprefix_Hijack(Attack):
-    """Hijack where there is a ROA for default_prefix"""
+    def _forma(self, announcement_dict, column):
+        """Formats item for db insertion
 
-    attacker_prefixes = [Attack.default_subprefix]
-    victim_prefixes = [Attack.default_prefix]
+        Gets item from dictionary. Formats list if nesseccary
+        """
 
-
-class Prefix_Hijack(Attack):
-    """Hijack where there is a ROA for default_prefix"""
-
-    attacker_prefixes = [Attack.default_prefix]
-    victim_prefixes = [Attack.default_prefix]
-
-class Prefix_Superprefix_Hijack(Attack):
-    """Hijack where there is a ROA for default_prefix"""
-
-    attacker_prefixes = [Attack.default_prefix, Attack.default_superprefix]
-    victim_prefixes = [Attack.default_prefix]
-
-class Unannounced_Hijack(Attack):
-    """Should be inherited, unnanounced attacks"""
-
-    victim_prefixes = []
-
-class Unannounced_Prefix_Hijack(Unannounced_Hijack):
-    """Hijack where there is a ROA for default_prefix"""
-
-    attacker_prefixes = [Attack.default_prefix]
-
-
-class Unannounced_Subprefix_Hijack(Unannounced_Hijack):
-    """Hijack where there is a ROA for default_prefix"""
-
-    attacker_prefixes = [Attack.default_prefix, Attack.default_subprefix]
-
-class Unnannounced_Prefix_Superprefix_Hijack(Unannounced_Hijack):
-    """Hijack where there is a ROA for default_prefix"""
-
-    attacker_prefixes = [Attack.default_prefix, Attack.default_superprefix]
+        # Format items if nessecary
+        cur_item = announcement_dict.get(column)
+        if isinstance(cur_item, list):
+            cur_item = str(cur_item).replace("[", "{").replace("]", "}")
+        return cur_item
+ 
