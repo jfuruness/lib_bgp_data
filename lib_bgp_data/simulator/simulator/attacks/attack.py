@@ -56,6 +56,10 @@ class Attack:
         self._fill_attacker_victim_rows()
         # Adds data for MRT_Metdata table like ids and such
         self._add_mrt_data()
+        # Path manipulation attacks are disabled
+        # If you ever change this, make sure to check out get_visible_hijacks
+        for asn_dict in attacker_rows:
+            assert asn_dict["origin"] == attacker
 
     def _get_rpki(self, victim):
         """Returns instance of RPKI"""
@@ -171,7 +175,7 @@ class Attack:
                          for x in MRT_W_Metadata_Table.columns])
         return rows
 
-    def _forma(self, announcement_dict, column):
+    def _format(self, announcement_dict, column):
         """Formats item for db insertion
 
         Gets item from dictionary. Formats list if nesseccary
@@ -182,4 +186,3 @@ class Attack:
         if isinstance(cur_item, list):
             cur_item = str(cur_item).replace("[", "{").replace("]", "}")
         return cur_item
- 

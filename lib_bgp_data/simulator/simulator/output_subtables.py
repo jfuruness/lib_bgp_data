@@ -20,7 +20,7 @@ from .enums import Control_Plane_Conditions as C_Plane_Conds
 from .enums import Data_Plane_Conditions 
 from .tables import Simulation_Results_Table
 
-from ..extrapolator_parser.tables import ROVPP_Extrapolator_Local_Rib_Table
+from ..extrapolator_parser.tables import ROVPP_Extrapolator_Forwarding_Table
 
 class Output_Subtables:
     """Subtables that deal with the output functions from the extrapolator"""
@@ -29,19 +29,19 @@ class Output_Subtables:
         """Stores data"""
 
         # Gets all the asn data
-        with ROVPP_Extrapolator_Rib_Out_Table() as _db:
+        with ROVPP_Extrapolator_Forwarding_Table() as _db:
             ases = {x["asn"]: x for x in _db.get_all()}
 
         # Stores the data for the specific subtables
         for table in self.tables:
-            table.Local_Rib_Table.clear_table()
-            table.Local_Rib_Table.fill_local_rib_table()
+            table.Forwarding_Table.clear_table()
+            table.Forwarding_Table.fill_forwarding_table()
             table.store_output(ases,
                                attack,
                                adopt_policy,
                                percent,
                                percent_iter,
-                               [x.Local_Rib_Table.name for x in self.tables])
+                               [x.Forwarding_Table.name for x in self.tables])
 
 
 class Output_Subtable:
@@ -57,7 +57,7 @@ class Output_Subtable:
         """Stores output in the simulation results table"""
 
         # All ases for that subtable
-        subtable_ases = {x["asn"]: x for x in self.Local_Rib_Table.get_all()}
+        subtable_ases = {x["asn"]: x for x in self.Forwarding_Table.get_all()}
         # We don't want to track the attacker, faster than filtering dict comp
         for uncountable_asn in [attack.attacker_asn, attack.victim_asn]:
             if uncountable_asn in subtable_ases:
@@ -90,6 +90,7 @@ class Output_Subtable:
             # SHOULD NEVER BE LONGER THAN 64
             # Done to catch extrapolator loops
             for i in range(64):
+                # Conds are end conditions. See README.
                 if (condition := as_data["received_from_asn"]) in conds:
                     conds[condition][og_as_data["impliment"]] += 1
                     looping = False
@@ -97,7 +98,9 @@ class Output_Subtable:
                 else:
                     asn = as_data["received_from_asn"]
                     as_data = all_ases[asn]
+
             # NEEDED FOR EXR DEVS
+            # If it ends the for loop and didn't change looping...
             if looping:
                 loop_data = [all_ases, og_asn, og_as_data, attack]
                 self._print_loop_debug_data(*loop_data)
@@ -106,19 +109,31 @@ class Output_Subtable:
     def _get_visible_hijack_data(self, t_names, attack):
         """Gets visible hijacks using sql for speed"""
 
-        # NOTE: this will automatically remove attackersand victims
+        # NOTE: this will automatically remove attackers and victims
         # Since they will have nothing in their rib
         conds = {}
-        # all_ases = " UNION ALL ".join(f"SELECT * FROM {x}" for x in t_names)
+
+        # Gets one before the final AS. If that AS had the attacker,
+        # Then that is a visible hijacking
+        # We must include prefix and origin here due to preventive ann
+        # And other blackhole mechanisms
+        attacker_ann = []
+        # NOTE: This won't work for path manipulation attacks
+        # I set an assert statement in attack class for this
+        for prefix in attack.attacker_prefixes:
+            sql = "(all_ases.prefix = {} AND all_ases.origin = {})".format(
+                prefix, attack.attacker)
+            attacker_ann.append(sql)
+
+        attacker_sql = " OR ".join(attacker_ann)
 
         for adopt_val in AS_Types.__members__.values():
             sql = f"""SELECT COUNT(*) FROM
-                    {self.Rib_Out_Table.name} og
-                    INNER JOIN {ROVPP_Extrapolator_Rib_Out_Table.name} all_ases
-                        ON og.received_from_asn = all_ases.asn
-                    WHERE og.as_type = {adopt_val.value}
-                        AND all_ases.prefix = '{attack.attacker_prefix}'
-                        AND all_ases.origin = {attack.attacker_asn}"""
+                    {self.Forwarding_Table.name} og
+                    INNER JOIN {ROVPP_Extrapolator_Forwarding_Table.name}
+                        all_ases
+                            ON og.received_from_asn = all_ases.asn
+                    WHERE og.as_type = {adopt_val.value} AND {attacker_sql}"""
             conds[adopt_val] = self.Rib_Out_Table.get_count(sql)
         return conds
 
@@ -134,7 +149,8 @@ class Output_Subtable:
             asn = as_data["received_from_asn"]
             as_data = all_ases[asn]
             if asn in loop_asns_set:
-                err_str = "\n" * 20 + "Loop:\n\t" + "\n\t".join(loop_str_list) + str(attack) + "\n" * 20
+                err_str = "\n" * 20 + "Loop:\n\t"
+                err_str += "\n\t".join(loop_str_list) + str(attack) + "\n" * 20
                 logging.error(err_str)
                 sys.exit(1)
             else:
@@ -149,32 +165,38 @@ class Output_Subtable:
         for adopt_val in AS_Types.list_values():
             # NOTE: we no longer do it by prefix because now an atk can
             # have multiple prefixes. Only by origin should be fine tho
-            sql = (f"SELECT COUNT(*) FROM {self.Rib_Out_Table.name}"
+            # NOTE: This will break for attack manipulation attacks
+            sql = (f"SELECT COUNT(*) FROM {self.Forwarding_Table.name}"
                    " WHERE origin = %s AND asn != %s"
                    f" AND asn != %s AND impliment = {bool(adopt_val)}")
-            conds[C_Plane_Conds.RECEIVED_ATTACKER_PREFIX_ORIGIN.value][adopt_val] =\
-                self.Rib_Out_Table.get_count(sql, [attack.attacker_asn,
-                                                   attack.attacker_asn,
-                                                   attack.victim_asn])
-            conds[C_Plane_Conds.RECEIVED_ONLY_VICTIM_PREFIX_ORIGIN.value][adopt_val] =\
-                self.Rib_Out_Table.get_count(sql, [attack.victim_asn,
-                                                   attack.attacker_asn,
-                                                   attack.victim_asn])
-            conds[C_Plane_Conds.RECEIVED_BHOLE.value][adopt_val] =\
-                self.Rib_Out_Table.get_count(sql, 
+            conds[C_Plane_Conds.RECV_ATK_PREF_ORIGIN.value][adopt_val] =\
+                self.Fowarding_Table.get_count(sql, [attack.attacker,
+                                                     attack.attacker,
+                                                     attack.victim])
+            conds[C_Plane_Conds.RECV_ONLY_VIC_PREF_ORIGIN.value][adopt_val] =\
+                self.Forwarding_Table.get_count(sql, [attack.victim,
+                                                      attack.attacker,
+                                                      attack.victim])
+            conds[C_Plane_Conds.RECV_BHOLE.value][adopt_val] =\
+                self.Forwarding_Table.get_count(sql, 
                     [Data_Plane_Conditions.BHOLED.value,
-                     attack.attacker_asn,
-                     attack.victim_asn])
+                     attack.attacker,
+                     attack.victim])
 
             no_rib_sql = """SELECT COUNT(*) FROM {0}
                          LEFT JOIN {1} ON {0}.asn = {1}.asn
                          WHERE {1}.asn IS NULL AND {0}.impliment = {2}
                          AND {0}.asn != {3} AND {0}.asn != {4}
                          """.format(self.Input_Table.name,
-                                    self.Rib_Out_Table.name,
+                                    self.Forwarding_Table.name,
                                     bool(adopt_val),
-                                    attack.attacker_asn if attack.attacker_asn else 0,
-                                    attack.victim_asn if attack.victim_asn else 0)
+                                    attack.attacker,
+                                    attack.victim)
+            # I had defaulted these to 0, but I don't think that should happen
+            # So lets error if it does
+            assert attack.attacker is not None
+            assert attack.victim is not None
+
             conds[C_Plane_Conds.NO_RIB.value][adopt_val] =\
                 self.Rib_Out_Table.get_count(no_rib_sql)
 

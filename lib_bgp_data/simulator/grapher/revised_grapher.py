@@ -62,7 +62,7 @@ class Simulation_Grapher(Parser):
             save_paths = []
             for tkiz, line_type, subtable, attack_type, policy_list, policies_dict in graphs:
                 lines = [v for k, v in policies_dict.items() if k in set(policy_list)]
-                # They want this hardcoded in, whatever
+                # They want this hardcoded in
                 if (line_type == Line_Type.DATA_PLANE_HIJACKED.value.format("adopting")
                     and subtable == "edge_ases"
                     and attack_type == "subprefix_hijack"):
