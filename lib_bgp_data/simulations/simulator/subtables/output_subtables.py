@@ -132,7 +132,7 @@ class Output_Subtable:
                     INNER JOIN {Simulation_Extrapolator_Forwarding_Table.name}
                         all_ases
                             ON og.received_from_asn = all_ases.asn
-                    WHERE og.as_type = {adopt_val.value} AND {attacker_sql}"""
+                    WHERE og.as_type = {adopt_val.value} AND ({attacker_sql})"""
             conds[adopt_val] = self.Forwarding_Table.get_count(sql)
         return conds
 
