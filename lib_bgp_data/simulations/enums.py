@@ -63,8 +63,8 @@ class Data_Plane_Conditions(Enumerable_Enum):
 class Control_Plane_Conditions(Enumerable_Enum):
     """Conditions you see in the control plane"""
 
-    RECV_ATTACKER_PREF_ORIGIN = "received_attacker_prefix_origin"
-    RECV_ONLY_VICTIM_PREF_ORIGIN = "recieved_only_victim_prefix_origin"
+    RECV_ATK_PREF_ORIGIN = "received_attacker_prefix_origin"
+    RECV_ONLY_VIC_PREF_ORIGIN = "recieved_only_victim_prefix_origin"
     RECV_BHOLE = "received_blackhole"
     NO_RIB = "no_rib"
 

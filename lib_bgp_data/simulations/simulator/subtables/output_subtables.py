@@ -28,7 +28,7 @@ class Output_Subtables:
         """Stores data"""
 
         # Gets all the asn data
-        with ROVPP_Extrapolator_Forwarding_Table() as _db:
+        with Simulation_Extrapolator_Forwarding_Table() as _db:
             ases = {x["asn"]: x for x in _db.get_all()}
 
         # Stores the data for the specific subtables
@@ -58,7 +58,7 @@ class Output_Subtable:
         # All ases for that subtable
         subtable_ases = {x["asn"]: x for x in self.Forwarding_Table.get_all()}
         # We don't want to track the attacker, faster than filtering dict comp
-        for uncountable_asn in [attack.attacker_asn, attack.victim_asn]:
+        for uncountable_asn in [attack.attacker, attack.victim]:
             if uncountable_asn in subtable_ases:
                 del subtable_ases[uncountable_asn]
 
@@ -120,7 +120,7 @@ class Output_Subtable:
         # NOTE: This won't work for path manipulation attacks
         # I set an assert statement in attack class for this
         for prefix in attack.attacker_prefixes:
-            sql = "(all_ases.prefix = {} AND all_ases.origin = {})".format(
+            sql = "(all_ases.prefix = '{}' AND all_ases.origin = {})".format(
                 prefix, attack.attacker)
             attacker_ann.append(sql)
 
@@ -129,11 +129,11 @@ class Output_Subtable:
         for adopt_val in AS_Types.__members__.values():
             sql = f"""SELECT COUNT(*) FROM
                     {self.Forwarding_Table.name} og
-                    INNER JOIN {ROVPP_Extrapolator_Forwarding_Table.name}
+                    INNER JOIN {Simulation_Extrapolator_Forwarding_Table.name}
                         all_ases
                             ON og.received_from_asn = all_ases.asn
                     WHERE og.as_type = {adopt_val.value} AND {attacker_sql}"""
-            conds[adopt_val] = self.Rib_Out_Table.get_count(sql)
+            conds[adopt_val] = self.Forwarding_Table.get_count(sql)
         return conds
 
     def _print_loop_debug_data(self, all_ases, og_asn, og_as_data, attack):
@@ -169,7 +169,7 @@ class Output_Subtable:
                    " WHERE origin = %s AND asn != %s"
                    f" AND asn != %s AND impliment = {bool(adopt_val)}")
             conds[C_Plane_Conds.RECV_ATK_PREF_ORIGIN.value][adopt_val] =\
-                self.Fowarding_Table.get_count(sql, [attack.attacker,
+                self.Forwarding_Table.get_count(sql, [attack.attacker,
                                                      attack.attacker,
                                                      attack.victim])
             conds[C_Plane_Conds.RECV_ONLY_VIC_PREF_ORIGIN.value][adopt_val] =\
@@ -197,6 +197,6 @@ class Output_Subtable:
             assert attack.victim is not None
 
             conds[C_Plane_Conds.NO_RIB.value][adopt_val] =\
-                self.Rib_Out_Table.get_count(no_rib_sql)
+                self.Forwarding_Table.get_count(no_rib_sql)
 
         return conds

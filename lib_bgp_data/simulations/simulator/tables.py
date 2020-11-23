@@ -16,6 +16,7 @@ __status__ = "Development"
 from ..enums import AS_Types
 from ..enums import Control_Plane_Conditions as CP_Conds
 from ..enums import Data_Plane_Conditions as DP_Conds
+from ..enums import Non_Default_Policies
 
 from ...utils.database import Generic_Table
 
@@ -85,9 +86,9 @@ class Simulation_Results_Table(Generic_Table):
                  attack_type,
                  subtable_name,
                  attacker_asn,
-                 attacker_prefix,
+                 attacker_prefixes,
                  victim,
-                 victim_prefix,
+                 victim_prefixes,
                  adopt_pol,
                  percent,
                  percent_iter,
@@ -135,9 +136,9 @@ class Simulation_Results_Table(Generic_Table):
 
         test_info = [hijack.__class__.__name__,
                      subtable_name,
-                     hijack.attacker_asn,
+                     hijack.attacker,
                      "{" + ",".join(hijack.attacker_prefixes) + "}",
-                     hijack.victim_asn,
+                     hijack.victim,
                      "{" + ",".join(hijack.victim_prefixes) + "}",
                      Non_Default_Policies(adopt_pol_name).name,
                      percent,
@@ -155,17 +156,17 @@ class Simulation_Results_Table(Generic_Table):
             total_traceback_adopting]
 
         cplane_info = [
-            cp_non_adopting[CP_Conds.RECEIVED_ATTACKER_PREFIX_ORIGIN.value],
-            cp_non_adopting[CP_Conds.RECEIVED_ONLY_VICTIM_PREFIX_ORIGIN.value],
-            cp_non_adopting[CP_Conds.RECEIVED_BHOLE.value],
+            cp_non_adopting[CP_Conds.RECV_ATK_PREF_ORIGIN.value],
+            cp_non_adopting[CP_Conds.RECV_ONLY_VIC_PREF_ORIGIN.value],
+            cp_non_adopting[CP_Conds.RECV_BHOLE.value],
             cp_non_adopting[CP_Conds.NO_RIB.value],
 
-            cp_adopting[CP_Conds.RECEIVED_ATTACKER_PREFIX_ORIGIN.value],
-            cp_adopting[CP_Conds.RECEIVED_ONLY_VICTIM_PREFIX_ORIGIN.value],
-            cp_adopting[CP_Conds.RECEIVED_BHOLE.value],
+            cp_adopting[CP_Conds.RECV_ATK_PREF_ORIGIN.value],
+            cp_adopting[CP_Conds.RECV_ONLY_VIC_PREF_ORIGIN.value],
+            cp_adopting[CP_Conds.RECV_BHOLE.value],
             cp_adopting[CP_Conds.NO_RIB.value]]
 
         v_hjack_info = [visible_hijack_data[x] for x in 
-                               [AS_Types.ADOPTING, AS_Types.COLLATERAL]]
+                        [AS_Types.ADOPTING, AS_Types.COLLATERAL]]
 
         self.execute(sql, test_info + trace_info + cplane_info + v_hjack_info)

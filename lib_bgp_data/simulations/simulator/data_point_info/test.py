@@ -52,5 +52,8 @@ class Test:
         pbars.update_extrapolator()
 
         # Stores the run's data
-        subtables.store(self.attack, self.adopt_pol, self.percent, self.p_iter)
+        self.tables.store(self.attack,
+                          self.adopt_pol,
+                          self.percent,
+                          self.p_iter)
         pbars.update()
