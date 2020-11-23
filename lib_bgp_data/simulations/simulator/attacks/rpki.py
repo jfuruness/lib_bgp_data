@@ -20,6 +20,7 @@ __status__ = "Development"
 
 from netaddr import IPNetwork
 
+from ....utils.base_classes import ROA_Validity
 
 class RPKI:
     """Contains info about RPKI
@@ -49,7 +50,7 @@ class RPKI:
             validity = roa.check_validity(prefix, origin)
             # If valid, return
             if validity == ROA_Validity.VALID:
-                return validity
+                return validity.value
             # Continue looking for worst validity possible
             else:
                 # If validity is worse, set worst_validity
@@ -57,4 +58,4 @@ class RPKI:
                 if worst_validity.value > validity.value:
                     worst_validity = validity
 
-        return worst_validity
+        return worst_validity.value

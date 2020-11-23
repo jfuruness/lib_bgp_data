@@ -73,11 +73,11 @@ class Simulator(Parser):
                 for data_pt in data_pts:
                     data_pt.get_data(pbars,
                                      attack_types,
-                                     adopt_policy_types,
+                                     adopt_policies,
                                      trial,
+                                     seeded_trial=seeded_trial,
                                      exr_bash=exr_bash,
-                                     exr_kwargs=self.kwargs,
-                                     seeded_trial=seeded_trial)
+                                     exr_kwargs=self.kwargs)
         tables.close()
 
     def _total(self, data_pts, attack_types, adopt_pols, trials):
@@ -92,7 +92,7 @@ class Simulator(Parser):
         total = 0
         for data_pt in data_pts:
             for test in data_pt.get_possible_tests(attack_types,
-                                                   adopt_policy_types,
-                                                   trial,
+                                                   adopt_pols,
+                                                   0,  # trial
                                                    set_up=False):
-                total += num_trials
+                total += trials

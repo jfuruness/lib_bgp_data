@@ -29,7 +29,7 @@ class Test:
         # Percent iteration
         self.p_iter = p_iter
 
-    def run(self, pbars, exrbash=None, exr_kwargs=None):
+    def run(self, pbars, exr_bash=None, exr_kwargs=None):
         """Simulates a test:
         the scenario is usually an attack type, Ex: subprefix hijack
         the adopt policy is the policy that (percent) percent of the internet
@@ -37,16 +37,16 @@ class Test:
         """
 
         # Sets description with this tests info
-        pbars.set_desc(self.adopt_policy, percent, self.attack)
+        pbars.set_desc(self.adopt_pol, self.percent, self.attack)
         # Changes routing policies for all subtables
-        self.tables.change_routing_policies(self.adopt_policy)
+        self.tables.change_routing_policies(self.adopt_pol)
 
         # Fix later
-        from ...extrapolator import Simulation_Extrapolator_Wrapper as Exr
+        from ....extrapolator import Simulation_Extrapolator_Wrapper as Exr
 
         # Runs the rov++ extrapolator
         Exr(**exr_kwargs)._run(self.tables.names,
-                               exr_bash=exrbash,
+                               exr_bash=exr_bash,
                                attack=self.attack)
 
         pbars.update_extrapolator()

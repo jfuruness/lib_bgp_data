@@ -19,6 +19,8 @@ __status__ = "Development"
 from .rpki import RPKI
 from .roa import ROA
 
+from ....collectors.mrt.tables import MRT_W_Metadata_Table
+
 class Attack:
     """Attack class that contains information for a victim and an attacker
 
@@ -58,15 +60,15 @@ class Attack:
         self._add_mrt_data()
         # Path manipulation attacks are disabled
         # If you ever change this, make sure to check out get_visible_hijacks
-        for asn_dict in attacker_rows:
+        for asn_dict in self.attacker_rows:
             assert asn_dict["origin"] == attacker
 
     def _get_rpki(self, victim):
         """Returns instance of RPKI"""
 
-        self.rpki = [ROA(self.default_prefix, victim)]
+        self.rpki = RPKI([ROA(self.default_prefix, victim)])
 
-    def fill_attacker_victim_rows(self):
+    def _fill_attacker_victim_rows(self):
         """Gets victim and attacker rows for announcements for db"""
 
         self.victim_rows = []
@@ -88,7 +90,7 @@ class Attack:
 
         row_lists = [self.victim_rows, self.attacker_rows]
         asns = [self.victim, self.attacker]
-        for i, asn, rows in enumerate(zip(asns, row_lists)):
+        for i, (asn, rows) in enumerate(zip(asns, row_lists)):
             # for each announcement object
             for asn_dict in rows:
                 self._add_default_metadata(asn_dict, asn, i)
@@ -104,7 +106,7 @@ class Attack:
                 "block_id": 0,
                 "monitor_asn": 0,
                 "roa_validity": self.rpki.check_ann(asn_dict["prefix"], asn)}
-        asn_dict.update(metadata)
+        asn_dict.update(meta)
 
     def _add_ids(self):
         """Adds prefix ID, origin ID, prefix origin ID

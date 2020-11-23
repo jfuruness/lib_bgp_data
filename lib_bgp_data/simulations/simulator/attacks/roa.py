@@ -35,7 +35,7 @@ class ROA:
         # Default to prefix max len
         self.max_len = max_len if max_len else self.prefix.prefixlen
 
-    def check_validity(prefix: IPNetwork, origin: int):
+    def check_validity(self, prefix: IPNetwork, origin: int):
         """Checks the validity of an announcement"""
 
         assert isinstance(prefix, IPNetwork), "Convert to IPNetwork"
@@ -43,7 +43,7 @@ class ROA:
         # If a prefix is within our prefix, this ROA matter
         if prefix in self.prefix:
             # Get length and origin validity
-            length = True if prefix.prefix_len <= self.max_len else False
+            length = True if prefix.prefixlen <= self.max_len else False
             correct_origin = True if origin == self.origin else False
             # If all are correct
             if length and correct_origin:

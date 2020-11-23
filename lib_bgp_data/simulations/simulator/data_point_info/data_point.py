@@ -41,6 +41,7 @@ class Data_Point(Parser):
         # This is legacy code that is no longer needed,
         # meant to have multiple levels adopting at different percents
         self.percent_iter = percent_iter
+        self.p_iter = percent_iter
         # int
         self.percent = percent
         # path
@@ -49,10 +50,10 @@ class Data_Point(Parser):
         self.deterministic = deterministic
 
     def get_data(self,
+                 pbars,
                  atk_classes,
                  pols,
                  trial,
-                 pbars,
                  seeded_trial=None,
                  exr_bash=None,
                  exr_kwargs=None):
@@ -114,6 +115,6 @@ class Data_Point(Parser):
         attack = Attack_Cls(victim, attacker)
 
         path = join(self.csv_dir, "mrts.csv")
-        utils.rows_to_db(attack.rows, path, MRT_W_Metadata_Table)
+        utils.rows_to_db(attack.db_rows, path, MRT_W_Metadata_Table)
 
         return attack

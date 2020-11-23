@@ -86,12 +86,13 @@ class Multiline_TQDM:
 
         default = lambda x: x if x is not None else ""
 
+        policy_name = "" if policy is None else Policies(policy.value).name
         # Descriptions
         descs = [f"Attack_cls: {default(attack.__class__.__name__)}",
-                 f"Adopt Policy: {default(Policies(policy.value).name)}",
+                 f"Adopt Policy: {policy_name}",
                  f"Adoption Percentage: {default(percent)}",
-                 f"Attacker: {default(attack.attacker)}",
-                 f"Victim: {default(attack.victim)}",
+                 f"Attacker: {'' if not attack else default(attack.attacker)}",
+                 f"Victim: {'' if not attack else default(attack.victim)}",
                  f"Extrapolator Running: {exr_running}"]
         # Pads descriptions out to 35 spaces
         return [f"{desc:<42}" for desc in descs]

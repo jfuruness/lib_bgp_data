@@ -17,8 +17,8 @@ class ROA_Validity(Enum):
 
     # NOTE: other parts rely on this ordering (worse asc).
     # DO NOT CHANGE IT!
-    VALID: 0
-    UNKNOWN: 1
-    INVALID_BY_LENGTH: 2
-    INVALID_BY_ORIGIN: 3
-    INVALID_BY_ALL: 4
+    VALID = 0
+    UNKNOWN = 1
+    INVALID_BY_LENGTH = 2
+    INVALID_BY_ORIGIN = 3
+    INVALID_BY_ALL = 4

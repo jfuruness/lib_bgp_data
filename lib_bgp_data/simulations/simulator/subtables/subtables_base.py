@@ -77,10 +77,10 @@ class Subtable(Input_Subtable, Output_Subtable):
         """Connects table to database"""
 
         self.Input_Table = self.table(clear=True)
-        self.Rib_Out_Table = self.Input_Table.Rib_Out_Table(clear=True)
+        self.Forwarding_Table = self.Input_Table.Forwarding_Table(clear=True)
 
     def close(self):
         """Closes connection"""
 
         self.Input_Table.close()
-        self.Rib_Out_Table.close()
+        self.Forwarding_Table.close()

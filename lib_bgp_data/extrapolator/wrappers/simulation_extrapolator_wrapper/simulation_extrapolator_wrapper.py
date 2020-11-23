@@ -49,16 +49,16 @@ class Simulation_Extrapolator_Wrapper(Extrapolator_Wrapper):
         # Default bash args
         default_bash_args = f"{self.install_location} -v 1 "
         default_bash_args += "".join(f" -t {x}" for x in table_names)
-        logging.debug(bash_args)
+        logging.debug(default_bash_args)
 
         # Clear db before run so it errors properly
-        with Simulation_Extrapolation_Results_Table(clear=True) as _:
+        with Simulation_Extrapolator_Results_Table(clear=True) as _:
             pass
 
         # Exr bash here for dev only. If set override default args
         utils.run_cmds(exr_bash if exr_bash else default_bash_args)
 
-        with Simulation_Extrapolation_Results_Table() as db:
+        with Simulation_Extrapolator_Results_Table() as db:
             assert db.get_count() > 0, "Extrapolator didn't populate results"
 
         # Gets forwarding tables. Basically returns only more specific prefixes
