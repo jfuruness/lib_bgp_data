@@ -233,6 +233,7 @@ class Data_Point(Parser):
                                   1]]
                 victim_rows = []
 
+
         rows = []
         # Format the lists to be arrays for insertion into postgres
         for list_of_rows, time_val in zip([attacker_rows, victim_rows], [1, 0]):
