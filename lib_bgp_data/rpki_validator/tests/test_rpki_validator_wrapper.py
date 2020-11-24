@@ -94,15 +94,9 @@ class Test_RPKI_Validator_Wrapper:
             p.daemon = True
             p.start()
             # finish within 25 minutes
-            p.join(1500)
+            p.join(1500) 
             assert not p.is_alive()
 
-            # closing the multiprocessing
-            p.close()
-            p.terminate()
-            p.join()
-            p.clear()
- 
     @pytest.mark.slow
     def test_make_query(self, wrapper):
         """Initializes the RPKI Validator and tests make_query function
@@ -115,7 +109,6 @@ class Test_RPKI_Validator_Wrapper:
             validator.load_trust_anchors()
             # API call to validate prefix 1.2.0.0/16
             result = validator.make_query('validate/prefix?p=1.2.0.0%2F16')
-            print(result)
             assert result == 'OK'
 
     @pytest.mark.slow

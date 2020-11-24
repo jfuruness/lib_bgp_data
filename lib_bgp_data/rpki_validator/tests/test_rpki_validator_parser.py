@@ -90,8 +90,17 @@ class Test_RPKI_Validator_Parser:
             for pair in db.execute('SELECT * FROM mrt_announcements'):
                 prefix = pair['prefix']
                 origin = pair['origin']
-                count =  db.get_count('SELECT * FROM rov_validity WHERE '
-                                   f"prefix = '{prefix}' AND origin = {origin}")
+
+                sql = f"SELECT * FROM rov_validity WHERE prefix = '{prefix}'"
+                print('PREFIXES')
+                print(db.execute(sql))
+
+                sql = f"SELECT * FROM rov_validity WHERE origin = '{origin}'"
+                print('ORIGINS')
+                print(db.execute(sql))
+
+                count =  db.get_count(('SELECT * FROM rov_validity WHERE '
+                                f"prefix = '{prefix}' AND origin = {origin}"))
                 # asserts for existance and removal of dupes
                 assert count == 1
 

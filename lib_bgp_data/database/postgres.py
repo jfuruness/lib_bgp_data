@@ -205,6 +205,7 @@ class Postgres:
 
 
         logging.info("rehinging db")
+        from .config import global_section_header
         # This will make it so that your database never writes to
         # disk unless you tell it to. It's faster, but harder to use
         sqls = [  # https://www.2ndquadrant.com/en/blog/

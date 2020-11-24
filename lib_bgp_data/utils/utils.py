@@ -288,7 +288,7 @@ def csv_to_db(Table, csv_path: str, clear_table=False):
     with Table() as t:
         if clear_table:
             t.clear_table()
-            t._create_tables()
+        t._create_tables()
         # No logging for mrt_announcements, overhead slows it down too much
         logging.debug(f"Copying {csv_path} into the database")
         try:

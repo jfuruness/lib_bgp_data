@@ -5,41 +5,56 @@
 
 import pytest
 from subprocess import run, check_call
+from datetime import datetime
 from .database.config import set_global_section_header, Config
 from .utils import utils
 
-__author__ = "Justin Furuness"
+__author__ = ["Justin Furuness", "Tony Zheng"]
 __credits__ = ["Justin Furuness", "Tony Zheng"]
 __Lisence__ = "BSD"
 __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
-section = 'test'
+#section = 'test_'
 
-def pytest_runtest_setup():
+def bash(query, section=None):
+    """A helper for writing SQL queries to be used with psql"""
+    if section:
+        return f"sudo -i -u postgres psql -d {section} -c '{query}'"
+    else:
+        return f"sudo -i -u postgres psql -c '{query}'" 
+
+@pytest.fixture(scope="session", autouse=True)
+def db_setup(request):
+    """This fixture creates a new test db for every test session"""
+
+    # I think this attribute is only really needed for the postgres restart
+    # command in config? But it's a property so it's hard to rewrite.
     pytest.global_running_test = True
 
-    # isn't this done in the Config constructor?
-    set_global_section_header(section)
+    # Underscores are like the only character I can use here that SQL allows
+    section = 'test_' + utils.now().strftime('%Y_%m_%d_%H_%M_%S')
+    #set_global_section_header(section)
 
     Config(section).install()
-    bash = f"sudo -i -u postgres psql -d {section} -c "
-    bash += "'CREATE SCHEMA IF NOT EXISTS public;'"
-    check_call(bash, shell=True)
 
-def pytest_runtest_teardown():
-    """Drop all tables in public schema instead of dropping schema itself
-    because we ran into errors where public schema was not found."""
+    # Look for and drop any test dbs that are older than 1 week
+    # Done by parsing the SQL output of listing all dbs for their dates
+    b = bash('SELECT datname FROM pg_database;')
+    result = run(b, shell=True, check=True, capture_output=True, text=True)
 
-    pg = f'sudo -i -u postgres psql -d {section} -c "'
+    for db in result.stdout.split('\n')[2:-3]:
+        if 'test_2' in db:
+            d = db.split('_')
+            db_date = datetime(int(d[1]), int(d[2]), int(d[3]))
 
-    # Using an anonymous block was attempted but issues with bash evaluating
-    # $$ into the PID and 'public' specifically needing single quotes
-    bash = pg + "SELECT 'DROP TABLE IF EXISTS ' || quote_ident(tablename) || "
-    bash += "' CASCADE;' FROM pg_tables WHERE schemaname = 'public';\""
+            difference = datetime.now() - db_date
 
-    output = run(bash, shell=True, check=True, capture_output=True, text=True)
+            if difference.days >= 7:
+                check_call(bash(f'DROP DATABASE {db};'), shell=True)
+ 
+    # everything after yield serves as the teardown
+    yield
+    check_call(bash(f'DROP DATABASE {section};'), shell=True)
 
-    for drop_cmd in output.stdout.split('\n')[2:-3]:
-        check_call(pg + drop_cmd  + '"', shell=True)
