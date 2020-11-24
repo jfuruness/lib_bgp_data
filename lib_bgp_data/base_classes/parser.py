@@ -79,16 +79,12 @@ class Parser:
 
         # IS THIS AN APPROPRIATE LOCATION TO STORE BACKUPS???
         self.backup_dir = kwargs.get("backup_dir", f"/dev/shm/{name}_backups")
-        self.cronjob = f'{self.name}_automate'
 
         # If parser can be backed up, make sure it has tables class attribute
         if self.backup:
             assert hasattr(self, "tables"), ("Please have a class attribute that "
                                              "lists the tables that should be "
                                              "backed up.")
-            # NOTE: Do we need this? We just need one cronjob to run everything
-            assert hasattr(self, "crontime"), ("Define the (cron) time that "
-                                               "this parser should be run.")
 
         # Recreates empty directories
         utils.clean_paths([self.path, self.csv_dir])
@@ -123,12 +119,6 @@ class Parser:
         if error:
             sys.exit(1)
 
-        # NOTE: Do we need this too?
-        # Adding the automating cronjob if necessary
-        if self.backup and not os.path.exists(f'/etc/cron.d/{self.cronjob}'):
-            utils.add_cronjob(self.cronjob, *self.crontime,
-                f'/env/bin/lib_bgp_data --{self.name}')
-
     def backup_tables(self):
         """Runs the parser and properly maintains the table(s) that it uses"""
 
@@ -145,14 +135,33 @@ class Parser:
                     assert gsh is not None
                     if os.path.exists(backup):
                         t.restore_table(gsh, backup)
-                        # NOTE: might need to create index? idk
 
         # Run the specific parser
-        self.run()
+        # NOTE: Is there a way to do this better?
+        if self.__class__.__name__ == "ROAs_Parser":
+            self.run(clear_table=False)
+        else:
+            self.run()
 
         # Back up the tables
         for table in self.tables:
-            self.backup(table)
+            try:
+                self.backup(table)
+            except Exception as e:
+                if not pytest.global_running_test:
+                    subject = f"Failed to Backup {table} Table at {utils.now()}"
+
+                    # Construct body of email
+                    body = (f"There was an error backing up the {table} table. "
+                            "Below are the outputs:\n")
+                    if hasattr(e, "stdout"):
+                        body += f"STD_OUT Message: {e.stdout}\n"
+                    if hasattr(e, "stderr"):
+                        body += f"STD_ERR Message: {e.stderr}\n"
+                    body += f"Error: {e}"
+
+                    # TODO: Send email to maintainers
+                    utils.send_email(subject, body)
 
     def backup(self, table):
         """Makes a new backup if live table has more data than old backup."""
@@ -168,6 +177,7 @@ class Parser:
             os.mkdir(self.backup_dir)
 
         # if previous backups don't exists, make backups right now
+        prev_existed = os.path.exists(prev_backup)
         if not os.path.exists(prev_backup):
             table.backup_table(table.name, gsh, prev_backup)
  
@@ -197,6 +207,17 @@ class Parser:
 
             if os.path.exists(tmp_backup):
                 os.remove(tmp_backup)
+
+        # If there was a previous backup and count_tmp is not greater than
+        # count_prev, then the new backup made does not reflect the new
+        # changes that were added into the table.
+        if prev_existed and count_temp <= count_prev:
+            error_msg = (f"When making the backup for the {table.name} table "
+                         "after it was updated, the backup file generated was "
+                         "not consistent with the live table. Therefore, the "
+                         "previous backup file was not overwritten and does "
+                         "not reflect the most updated state of the table.")
+            raise Exception(error_msg)
 
     @classmethod
     def run_backupables(cls):

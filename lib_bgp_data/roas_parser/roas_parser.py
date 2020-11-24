@@ -32,12 +32,12 @@ class ROAs_Parser(Parser):
     backup = True
     tables = [ROAs_Table]
 
-    def _run(self):
+    def _run(self, clear_table=True):
         """Downloads and stores roas from a json
 
         For more in depth explanation see README"""
 
-        with ROAs_Table(clear=True) as _roas_table:
+        with ROAs_Table(clear=clear_table) as _roas_table:
             roas = self._format_roas(self._get_json_roas())
             # Inserts the data into a CSV and then the database
             _csv_dir = f"{self.csv_dir}/roas.csv"
