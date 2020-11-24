@@ -1,4 +1,4 @@
-# NOTE: These docs are currently being moved to the wiki, so this readme may not be up to date just yet
+# NOTE: Docs are in the wiki. There is currently a refactor going on. Stable version coming Feb. 2021. Ignore README below.
 
 
 ## Base Parser
