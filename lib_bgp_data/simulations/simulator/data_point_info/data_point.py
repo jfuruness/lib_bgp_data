@@ -23,7 +23,7 @@ from ..attacks import Attack
 
 from ...enums import Non_Default_Policies
 
-from ....collectors.mrt.tables import MRT_W_Metadata_Table
+from ....collectors.mrt.mrt_metadata.tables import MRT_W_Metadata_Table
 from ....utils import utils
 from ....utils.base_classes import Parser
 from ....utils.database import Database

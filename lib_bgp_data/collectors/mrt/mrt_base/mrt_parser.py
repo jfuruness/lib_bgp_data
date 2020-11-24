@@ -23,12 +23,12 @@ import warnings
 
 import requests
 
-from ...utils.base_classes import Parser
+from ....utils.base_classes import Parser
 from .mrt_file import MRT_File
 from .mrt_installer import MRT_Installer
 from .mrt_sources import MRT_Sources
 from .tables import MRT_Announcements_Table
-from ...utils import utils
+from ....utils import utils
 
 
 class MRT_Parser(Parser):

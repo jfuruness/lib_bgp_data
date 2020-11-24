@@ -23,34 +23,10 @@ __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Production"
 
-from ...utils.base_classes import ROA_Validity
-from ...utils.database import Generic_Table
+from ..mrt_base.tables import MRT_Announcements_Table
 
-
-class MRT_Announcements_Table(Generic_Table):
-    """Class with database functionality.
-
-    In depth explanation at the top of the file."""
-
-    __slots__ = []
-
-    name = "mrt_announcements"
-
-    columns = ["prefix", "as_path", "origin", "time"]
-
-    def _create_tables(self):
-        """Creates tables if they do not exist.
-
-        Called during initialization of the database class.
-        """
-
-        sql = f"""CREATE UNLOGGED TABLE IF NOT EXISTS {self.name} (
-                 prefix cidr,
-                 as_path bigint ARRAY,
-                 origin bigint,
-                 time bigint
-                 );"""
-        self.execute(sql)
+from ....utils.base_classes import ROA_Validity
+from ....utils.database import Generic_Table
 
 
 class Distinct_Prefix_Origins_Table(Generic_Table):

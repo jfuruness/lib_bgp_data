@@ -32,7 +32,7 @@ from ...enums import AS_Types, Data_Plane_Conditions as DP_Conds
 from ...enums import Control_Plane_Conditions as CP_Conds
 
 from ....utils.database import Database, Generic_Table
-from ....collectors.mrt.tables import MRT_Announcements_Table
+from ....collectors.mrt.mrt_base.tables import MRT_Announcements_Table
 from ....collectors.relationships.tables import AS_Connectivity_Table
 from ....collectors.relationships.tables import ASes_Table
 from ....extrapolator import Simulation_Extrapolator_Forwarding_Table

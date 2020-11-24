@@ -18,8 +18,8 @@ import os
 import logging
 
 from .tables import MRT_Announcements_Table
-from ...utils import utils
-from ...utils.base_classes import File
+from ....utils import utils
+from ....utils.base_classes import File
 
 class MRT_File(File):
     """Converts MRT files to CSVs and then inserts them into a database.

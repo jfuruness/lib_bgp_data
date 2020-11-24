@@ -19,7 +19,7 @@ __status__ = "Development"
 from .rpki import RPKI
 from .roa import ROA
 
-from ....collectors.mrt.tables import MRT_W_Metadata_Table
+from ....collectors.mrt.mrt_metadata.tables import MRT_W_Metadata_Table
 
 class Attack:
     """Attack class that contains information for a victim and an attacker
