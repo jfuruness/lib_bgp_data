@@ -13,6 +13,8 @@ __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
 from .enums import Non_Default_Policies
+# Grapher
+from .grapher import Simulation_Grapher
 # Simulator attacks
 from .simulator import Attack
 from .simulator import Subprefix_Hijack

@@ -55,7 +55,7 @@ class RPKI:
             else:
                 # If validity is worse, set worst_validity
                 # valid < unknown < invalid by asn or length < invalid by all
-                if worst_validity.value > validity.value:
+                if worst_validity.value < validity.value:
                     worst_validity = validity
 
         return worst_validity.value
