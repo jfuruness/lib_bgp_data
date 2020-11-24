@@ -36,7 +36,7 @@ class Simulation_Extrapolator_Wrapper(Extrapolator_Wrapper):
 
     __slots__ = []
 
-    branch = "rovpp_tbl_chg"
+    branch = "v2s"#"rovpp_tbl_chg"
 
     def _run(self, table_names, exr_bash=None, attack=None):
         """Runs the bgp-extrapolator and verifies input.

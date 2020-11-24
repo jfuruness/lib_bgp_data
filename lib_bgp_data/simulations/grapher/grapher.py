@@ -476,4 +476,3 @@ class Policy_Line:
                 self.data[Graph_Values.X].append(int(result["percent"]))
                 self.data[Graph_Values.Y].append(float(result[self.line_type]) * 100)
                 self.data[Graph_Values.YERR].append(float(result[self.conf_line_type]) * 100)
-
