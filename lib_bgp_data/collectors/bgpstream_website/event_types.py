@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-"""This module contains enum Event_Types
+"""This module contains enum BGPStream_Website_Event_Types
 
 This class contains the event types in the bgpstream.com website.
 """
@@ -16,7 +16,7 @@ __status__ = "Development"
 from ...utils.base_classes import Enumerable_Enum
 
 
-class Event_Types(Enumerable_Enum):
+class BGPStream_Website_Event_Types(Enumerable_Enum):
     """Possible bgpstream.com event types"""
 
     HIJACK = "Possible Hijack"

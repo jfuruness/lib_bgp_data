@@ -22,7 +22,7 @@ from .subtables import Subtables
 from .tables import Simulation_Results_Table
 from ..enums import Non_Default_Policies
 from ...collectors import Relationships_Parser
-from ...collectors import BGPStream_Website_Parser, Event_Types
+from ...collectors import BGPStream_Website_Parser, BGPStream_Website_Event_Types
 from ...collectors import MRT_Parser, MRT_Sources
 from ...extrapolator import Simulation_Extrapolator_Wrapper
 from ...utils.base_classes import Parser
