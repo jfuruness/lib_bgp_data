@@ -92,7 +92,6 @@ class MRT_Parser(Parser):
         # Parses files using multiprocessing in descending order by size
         self._multiprocess_parse_dls(parse_threads, mrt_files, bgpscanner)
         self._filter_and_clean_up_db(IPV4, IPV6)
-        self._add_announcement_metadata()
 
 ########################
 ### Helper Functions ###

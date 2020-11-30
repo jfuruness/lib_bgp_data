@@ -11,6 +11,7 @@ __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
+from .verification_parser import Verification_Parser
 from .wrappers import Extrapolator_Wrapper
 from .wrappers import Simulation_Extrapolator_Wrapper
 from .wrappers import Simulation_Extrapolator_Forwarding_Table

@@ -18,12 +18,14 @@ __status__ = "Development"
 from .dataset_statistics_generator import Dataset_Statistics_Generator
 from .tables import Monitors_Table, Control_Monitors_Table
 
-from ..asrank_website_parser import ASRankWebsiteParser
-from ..base_classes import Parser
-from ..database import Database
-from ..mrt_parser import MRT_Parser, MRT_Metadata_Parser, MRT_Sources
-from ..mrt_parser.tables import MRT_W_Metadata_Table
-from ..relationships_parser import Relationships_Parser
+from ...collectors import ASRankWebsiteParser, Relationships_Parser
+from ...collectors.mrt import MRT_Parser, MRT_Metadata_Parser, MRT_Sources
+from ...collectors.mrt.mrt_metadata.tables import MRT_W_Metadata_Table
+from ...collectors.relationships.tables import Peers_Table
+from ...collectors.relationships.tables import Provider_Customers_Table
+from ...utils.base_classes import Parser
+from ...utils.database import Database
+
 
 class Verification_Parser(Parser):
     """This class generates input to the extrapolator verification
@@ -36,11 +38,13 @@ class Verification_Parser(Parser):
     def _run(self,
              test=False,
              clear_db=False,
-             relationships=False,
-             mrt_announcements=False,
-             as_rank=False,
-             sample_selection=False,
-             dataset_stats=False,
+             relationships=True,
+             mrt_announcements=True,
+             mrt_metadata=True,
+             as_rank=True,
+             sample_selection=True,
+             dataset_stats=True,
+             block_size=100,
              ):
         if clear_db and not test:
             assert False, "Clear db, checkpoint, vaccum analyze"
@@ -53,7 +57,8 @@ class Verification_Parser(Parser):
             if test:
                 kwargs["api_param_mods"] = {"collectors[]": ["route-views2"]}
             MRT_Parser(**self.kwargs)._run(**kwargs)
-            MRT_Metadata_Parser(**self.kwargs)._run(**kwargs)
+        if mrt_metadata:
+            MRT_Metadata_Parser(**self.kwargs)._run(max_block_size=block_size)
             with MRT_W_Metadata_Table() as db:
                 sql = """CREATE INDEX monitor_btree
                         ON {db.name}(monitor_asn);"""

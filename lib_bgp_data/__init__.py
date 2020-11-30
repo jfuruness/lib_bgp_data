@@ -27,7 +27,8 @@ from .collectors import MRT_Metadata_Parser
 from .collectors import Relationships_Parser
 from .collectors import ROAs_Parser
 from .collectors import RPKI_Validator_Parser, RPKI_Validator_Wrapper
-
+# Extrapolator
+from .extrapolator import Verification_Parser
 # enum for adopt policies
 from .simulations import Non_Default_Policies
 # Simulator attacks

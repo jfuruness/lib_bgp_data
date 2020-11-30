@@ -27,12 +27,13 @@ from shutil import rmtree
 
 from .tables import Monitors_Table, Control_Monitors_Table
 
-from ..asrank_website_parser import ASRankWebsiteParser
-from ..base_classes import Parser
-from ..database import Database
-from ..mrt_parser import MRT_Parser, MRT_Metadata_Parser, MRT_Sources
-from ..mrt_parser.tables import MRT_W_Metadata_Table
-from ..relationships_parser.tables import Peers_Table, Provider_Customers_Table
+from ...collectors import ASRankWebsiteParser
+from ...collectors.mrt import MRT_Parser, MRT_Metadata_Parser, MRT_Sources
+from ...collectors.mrt.mrt_metadata.tables import MRT_W_Metadata_Table
+from ...collectors.relationships.tables import Peers_Table
+from ...collectors.relationships.tables import Provider_Customers_Table
+from ...utils.base_classes import Parser
+from ...utils.database import Database
 
 class Dataset_Statistics_Generator(Parser):
     """This class generates statistics for the dataset

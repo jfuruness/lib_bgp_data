@@ -21,10 +21,9 @@ __status__ = "Development"
 
 import logging
 
-from ..asrank_website_parser.tables import ASRankTable
-from ..database import Generic_Table
-from ..mrt_parser.tables import MRT_W_Metadata_Table
-
+from ...collectors.asrank_website.tables import ASRankTable
+from ...collectors.mrt.mrt_metadata.tables import MRT_W_Metadata_Table
+from ...utils.database import Generic_Table
 
 class Monitors_Table(Generic_Table):
 
