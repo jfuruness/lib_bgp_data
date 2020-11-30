@@ -60,7 +60,7 @@ class Verification_Parser(Parser):
         if mrt_metadata:
             MRT_Metadata_Parser(**self.kwargs)._run(max_block_size=block_size)
             with MRT_W_Metadata_Table() as db:
-                sql = """CREATE INDEX monitor_btree
+                sql = f"""CREATE INDEX monitor_btree
                         ON {db.name}(monitor_asn);"""
                 db.execute(sql)
         if as_rank:
