@@ -75,7 +75,7 @@ class Test_RPKI_Validator_Parser:
         """
         with ROV_Validity_Table() as db:
 
-            # use only one collector and remove isolario to make it a  little faster
+            # use only one collector and remove isolario to make it a little faster
             mods = {'collectors[]': ['route-views2', 'rrc03']}
             no_isolario = [MRT_Sources.RIPE, MRT_Sources.ROUTE_VIEWS]
             
@@ -86,23 +86,31 @@ class Test_RPKI_Validator_Parser:
             sql = 'SELECT COUNT(*) FROM rov_validity'
             initial_count = db.get_count(sql)
 
+            print('Initial count', initial_count)
+            sample = db.execute('SELECT * FROM rov_validity LIMIT 10;')
+            print(sample)
+            for i in range(len(sample)):
+                print(sample[i]['prefix'])
+                print(sample[i]['origin'])
             # no mrt announcements missing in rov_validity
+            c = 0
             for pair in db.execute('SELECT * FROM mrt_announcements'):
                 prefix = pair['prefix']
                 origin = pair['origin']
 
-                sql = f"SELECT * FROM rov_validity WHERE prefix = '{prefix}'"
-                print('PREFIXES')
-                print(db.execute(sql))
-
-                sql = f"SELECT * FROM rov_validity WHERE origin = '{origin}'"
-                print('ORIGINS')
-                print(db.execute(sql))
-
-                count =  db.get_count(('SELECT * FROM rov_validity WHERE '
-                                f"prefix = '{prefix}' AND origin = {origin}"))
-                # asserts for existance and removal of dupes
-                assert count == 1
+                print(prefix)
+                print(origin)
+                print(db.execute(f"SELECT * FROM rov_validity WHERE prefix = '{prefix}'"))
+                print(db.execute(f"SELECT * FROM rov_validity WHERE origin = {origin}"))
+                try:
+                    count =  db.get_count(('SELECT * FROM rov_validity WHERE '
+                                    f"prefix = '{prefix}' AND origin = {origin}"))
+                    # asserts for existance and removal of dupes
+                    count += 1
+                    print(f"WE FOUND ONE {c}")
+                    assert count == 1
+                except:
+                    print(f'not found')
 
             # no new data
             sleep(120)
