@@ -25,10 +25,7 @@ from psutil import virtual_memory
 
 def set_global_section_header(section=None):
     global global_section_header
-    if hasattr(pytest, 'global_running_test') and pytest.global_running_test:
-        global_section_header = "test"
-    else:
-        global_section_header = section if section is not None else "bgp"
+    global_section_header = section if section is not None else "bgp"
     return global_section_header
 
 class Config:
@@ -49,13 +46,7 @@ class Config:
         """Creates the default config file."""
 
         # Do this here so that ram is set correctly
-        if hasattr(pytest, 'global_running_install_test') \
-           and pytest.global_running_install_test:
-                # Can't take input during tests
-                restart = "sudo systemctl restart postgresql@12-main.service"
-        else:
-                # Do this here so that ram is set correctly
-                restart = self.restart_postgres_cmd
+        restart = self.restart_postgres_cmd
 
         # Creates the /etc/bgp directory
         self._create_config_dir()
@@ -143,7 +134,7 @@ class Config:
             # Database section is not installed, install it
             # Needed here due to circular imports
             from .postgres import Postgres
-            Postgres().install(self.section)
+            Postgres(section=self.section).install(self.section)
             self.__init__(self.section)
             return self.get_db_creds()
 

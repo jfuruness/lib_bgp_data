@@ -30,7 +30,7 @@ from configparser import ConfigParser as SCP
 import pytest
 
 from .config import Config
-from .. import utils, logger
+from .. import utils, config_logging
 
 
 SQL_FILE_PATH = "/tmp/db_modify.sql"
@@ -43,7 +43,7 @@ class Postgres:
     sql_file_path = SQL_FILE_PATH
 
     def __init__(self, stream_level=logging.INFO, section=None):
-        logger.config_logging(stream_level, section)
+        config_logging(stream_level, section)
 
     def erase_all(self):
         """Deletes config and all database sections"""
@@ -205,6 +205,7 @@ class Postgres:
 
 
         logging.info("rehinging db")
+        from .config import global_section_header
         # This will make it so that your database never writes to
         # disk unless you tell it to. It's faster, but harder to use
         sqls = [  # https://www.2ndquadrant.com/en/blog/
