@@ -16,9 +16,6 @@ import os
 
 import multiprocessing_logging
 
-from ..database.config import set_global_section_header
-
-
 def config_logging(level=logging.INFO, section=None, reconfigure=False):
     """Configures logging to log to a file"""
 
@@ -30,8 +27,9 @@ def config_logging(level=logging.INFO, section=None, reconfigure=False):
                 handler.close()
                 logging.root.removeHandler(handler)
         try:
-            from ..database.config import global_section_header
+            from .database.config import global_section_header
         except ImportError:
+            from .database.config import set_global_section_header
             global_section_header = set_global_section_header(section)
     
         # Makes log path and returns it

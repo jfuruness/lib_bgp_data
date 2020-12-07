@@ -4,10 +4,10 @@
 """This file sets a pytest variable so that the logger doesn't exit nicely"""
 
 import pytest
-from subprocess import run, check_call
 from datetime import datetime
-from .database.config import set_global_section_header, Config
+from subprocess import check_call
 from .utils import utils
+from .utils.database.config import set_global_section_header, Config
 
 __author__ = ["Justin Furuness", "Tony Zheng"]
 __credits__ = ["Justin Furuness", "Tony Zheng"]
