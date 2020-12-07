@@ -12,8 +12,7 @@ import pytest
 from ..rpki_validator_parser import RPKI_Validator_Parser
 from ..rpki_validator_wrapper import RPKI_Validator_Wrapper
 from ..tables import ROV_Validity_Table
-from ...mrt_parser import MRT_Parser
-from ...mrt_parser import MRT_Sources
+from ...mrt.mrt_base import MRT_Parser, MRT_Sources
 from ....utils import utils
 
 

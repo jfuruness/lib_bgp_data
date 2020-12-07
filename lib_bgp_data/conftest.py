@@ -5,7 +5,7 @@
 
 import pytest
 from datetime import datetime
-from subprocess import check_call
+from subprocess import run, check_call
 from .utils import utils
 from .utils.database.config import set_global_section_header, Config
 
