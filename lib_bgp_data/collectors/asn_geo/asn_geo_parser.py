@@ -66,20 +66,23 @@ class ASN_Geo_Parser(Parser):
             if len(t.execute(sql)) == 0:
                 Relationships_Parser().run()
 
-            sql = f"SELECT asn FROM {table}"
-            asns = t.execute(sql)
+            # Skip lookups for any asns already searched.
+            sql = ("SELECT * FROM INFORMATION_SCHEMA.TABLES "
+                    f"WHERE TABLE_NAME = '{t.name}'")
+            if len(t.execute(sql)) == 0:
+                asns = t.execute(f"SELECT asn FROM {table}")
+            else:
+                asns = t.execute((f"SELECT asn FROM {table} "
+                                   "EXCEPT "
+                                  f"SELECT asn FROM {t.name}")) 
 
             for _ in asns:
                 asn = _['asn']
+                rows.append(self.asn_lookup(asn, sess, reader))
 
-                # skip if already in the table
-                sql = f"SELECT * FROM {t.name} WHERE asn = {asn}"
-                if len(t.execute(sql)) == 0:
-                    rows.append(self.asn_lookup(asn, sess, reader))
+            utils.rows_to_db(rows, self.csv_dir, ASN_Geo_Table)
 
-                utils.rows_to_db(rows, self.csv_dir, ASN_Geo_Table)
-
-            db.create_index()
+            t.create_index()
 
     def asn_lookup(self, asn: int, requests_session=None, mmdb_reader=None):
 
@@ -103,7 +106,7 @@ class ASN_Geo_Parser(Parser):
                 print('this really not working')
 
         if not r.status_code == requests.codes.ok:
-            return asn, 'n/a', 'n/a'
+            return asn, 'n/a', 'n/a', 'n/a'
                         
 
         prefixes = r.json()['data']['prefixes']
@@ -121,7 +124,8 @@ class ASN_Geo_Parser(Parser):
         except geoip2.errors.AddressNotFoundError:
             return self._backup_lookup(asn, requests_session)
 
-        return asn, response.country.iso_code, response.continent.code
+        return asn, response.country.iso_code, response.continent.code, \
+            'MaxMind'
 
     def _backup_lookup(self, asn, requests_session):
         """Sometimes RIPE doesn't return IP for an ASN, so MaxMind won't work.
@@ -151,7 +155,7 @@ class ASN_Geo_Parser(Parser):
         except KeyError:
             continent = country
         
-        return asn, country, continent
+        return asn, country, continent, 'BGPView'
         
     def install(self):
         """Installs the GeoIP Update tool (assuming Ubuntu system).

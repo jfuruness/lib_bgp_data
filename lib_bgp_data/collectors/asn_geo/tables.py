@@ -21,7 +21,8 @@ class ASN_Geo_Table(Generic_Table):
         sql = f"""CREATE UNLOGGED TABLE IF NOT EXISTS {self.name} (
               asn bigint,
               country varchar(2),
-              continent varchar(2));"""
+              continent varchar(2),
+              source varchar(7));"""
 
         self.cursor.execute(sql)
 
