@@ -18,7 +18,6 @@ __status__ = "Development"
 import pytest
 from os import path
 from unittest.mock import patch
-from io import StringIO
 
 from ..cdn_whitelist_parser import CDN_Whitelist_Parser
 from ..tables import CDN_Whitelist_Table
