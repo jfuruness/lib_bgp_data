@@ -66,7 +66,7 @@ class Test_Historical_ROAS_Parser:
         Tests the reformatting. See the docstring for the method
         for what it does exactly.
         """
-        path = './test_reformat.csv'
+        path = '/tmp/test_reformat.csv'
         correct = '37674	41.191.212.0/22	24	'
         correct += '2015-10-30 13:21:35	2016-10-30 13:21:35	.-test_ref\n'
 
@@ -76,8 +76,9 @@ class Test_Historical_ROAS_Parser:
             s += '2015-10-30 13:21:35,2016-10-30 13:21:35\n'
             f.write(s)
 
-        Historical_ROAS_Parser()._reformat_csv(path)
-        with open(path, 'r') as f:
-            assert f.read() == correct
-
-        utils.delete_paths(path)
+        try:
+            Historical_ROAS_Parser()._reformat_csv(path)
+            with open(path, 'r') as f:
+                assert f.read() == correct
+        finally:
+            utils.delete_paths(path)
