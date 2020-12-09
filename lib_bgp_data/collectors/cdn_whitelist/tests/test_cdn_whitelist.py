@@ -56,18 +56,30 @@ class Test_CDN_Whitelist:
         Tests that the CDN organisations are correctly
         being retrieved from the text file.
         """
-        test_file = './test_cdns.txt'
+        test_file = '/tmp/test_cdns.txt'
+        utils.delete_paths(test_file)
+
         with open(test_file, 'w+') as f:
             f.write('IMACDN')
-        assert parser._get_cdns(test_file) == ['IMACDN']
-        utils.delete_paths(test_file)
+
+        try:
+            assert parser._get_cdns(test_file) == ['IMACDN']
+        finally:
+            utils.delete_paths(test_file)
 
     def test_api_limit(self, parser):
-        test_contents = StringIO()
-        for i in range(101):
-            test_contents.write('TESLA\n')
+        """
+        Tests that the parser rejects input files with more than 100 CDNs.
+        """
 
-        with pytest.raises(AssertionError):
-            parser.run(test_contents)
-        utils.delete_paths(test_file)
+        test_file = '/tmp/test_api_limit.txt'
+        with open(test_file, 'w+') as f:
+            for i in range(101):
+                f.write('TESLA\n')
+
+        try:
+            with pytest.raises(AssertionError):
+                parser.run(test_contents)
+        finally:
+            utils.delete_paths(test_file)
 
