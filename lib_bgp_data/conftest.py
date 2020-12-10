@@ -6,7 +6,7 @@
 import pytest
 from subprocess import run, check_call
 from datetime import datetime
-from .utils.database.config import set_global_section_header, Config
+from .utils.database.config import Config
 from .utils import utils
 
 __author__ = ["Justin Furuness", "Tony Zheng"]
@@ -16,7 +16,6 @@ __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
-#section = 'test_'
 
 def bash(query, section=None):
     """A helper for writing SQL queries to be used with psql"""
@@ -29,13 +28,12 @@ def bash(query, section=None):
 def db_setup(request):
     """This fixture creates a new test db for every test session"""
 
-    # I think this attribute is only really needed for the postgres restart
-    # command in config? But it's a property so it's hard to rewrite.
+    # used for postgres restart command in config.py
+    # and random page cost and ulimit in postgres.py
     pytest.global_running_test = True
 
     # Underscores are like the only character I can use here that SQL allows
     section = 'test_' + utils.now().strftime('%Y_%m_%d_%H_%M_%S')
-    #set_global_section_header(section)
 
     Config(section).install()
 
