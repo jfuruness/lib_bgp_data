@@ -14,24 +14,32 @@ __status__ = "Development"
 
 import pytest
 
-from ..historical_roas_parser import Historical_ROAS_Parser
-from ..tables import Historical_ROAS_Table, Historical_ROAS_Parsed_Table
+from ..historical_roas_parser import Historical_ROAs_Parser
+from ..tables import Historical_ROAs_Table, Historical_ROAs_Parsed_Table
 from ....utils import utils
 
-class Test_Historical_ROAS_Parser:
+class Test_Historical_ROAs_Parser:
 
     @pytest.mark.slow()
     #@pytest.mark.skip()
     def test_clean_run(self):
         """Performs a clean run by dropping the tables."""
-        Historical_ROAS_Parsed_Table(clear=True)
-        with Historical_ROAS_Table(clear=True) as t:
-            Historical_ROAS_Parser().run()
+        Historical_ROAs_Parsed_Table(clear=True)
+        with Historical_ROAs_Table(clear=True) as t:
+            Historical_ROAs_Parser().run()
             assert t.get_count() > 1000000
+
+    def test_run_date(self):
+        """Performs a run for specific date."""
+        Historical_ROAs_Parsed_Table(clear=True)
+        with Historical_ROAs_Table(clear=True) as t:
+            Historical_ROAs_Parser(year='2019', month='08', day='01')
+            sql = f"SELECT * FROM {t.name} WHERE date_added = '2019-08-01'"
+            assert t.get_count(sql) > 2
 
     def test_no_duplicates(self):
         """Tests no duplicates rows exist in the table"""
-        with Historical_ROAS_Table() as t:
+        with Historical_ROAs_Table() as t:
             sql = f"SELECT DISTINCT({','.join(t.columns[:-1])}) FROM {t.name}"
             distinct = len(t.execute(sql))
             sql = f"SELECT * FROM {t.name}"
@@ -42,8 +50,8 @@ class Test_Historical_ROAS_Parser:
         Tests that the method correctly returns all the rows of
         the parsed files table.
         """
-        files = Historical_ROAS_Parser()._get_parsed_files()
-        with Historical_ROAS_Parsed_Table() as t:
+        files = Historical_ROAs_Parser()._get_parsed_files()
+        with Historical_ROAs_Parsed_Table() as t:
             for f in files:
                 sql = f"SELECT * FROM {t.name} WHERE file = '{f}'"
                 assert len(t.execute(sql)) == 1
@@ -54,8 +62,8 @@ class Test_Historical_ROAS_Parser:
         to the parsed files table.
         """
         file_name = 'a_test_file'
-        Historical_ROAS_Parser()._add_parsed_files([file_name])
-        with Historical_ROAS_Parsed_Table() as t:
+        Historical_ROAs_Parser()._add_parsed_files([file_name])
+        with Historical_ROAs_Parsed_Table() as t:
             sql = f"SELECT * FROM {t.name} WHERE file = '{file_name}'"
             assert len(t.execute(sql)) == 1
             sql = f"DELETE FROM {t.name} WHERE file = '{file_name}'"
@@ -76,7 +84,7 @@ class Test_Historical_ROAS_Parser:
             s += '2015-10-30 13:21:35,2016-10-30 13:21:35\n'
             f.write(s)
 
-        Historical_ROAS_Parser()._reformat_csv(path)
+        Historical_ROAs_Parser()._reformat_csv(path)
         with open(path, 'r') as f:
             assert f.read() == correct
 
