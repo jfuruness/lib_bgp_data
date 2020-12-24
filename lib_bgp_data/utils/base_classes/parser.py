@@ -51,7 +51,6 @@ class Parser:
         Section is the arg for the config. You can run on entirely
         separate databases with different sections."""
 
-        set_global_section_header(kwargs.get("section"))
         from ..database.config import global_section_header
         kwargs["section"] = kwargs.get("section", global_section_header)
         # The class name. This because when parsers are done,
