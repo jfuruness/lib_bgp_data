@@ -5,8 +5,11 @@
 For specifics on each test, see docstrings under each function.
 """
 
+import os
+
 import pytest
 from unittest.mock import Mock, patch
+
 from ..relationships_file import Rel_File, Rel_Types
 from ..relationships_parser import Relationships_Parser
 from ..tables import Provider_Customers_Table, Peers_Table
@@ -102,10 +105,10 @@ class Test_Relationships_File:
 
         # Patch the utils.download and utils.unzip_bz2 methods and then run
         # the parse_file method
-        dl = ("lib_bgp_data.relationships_parser.relationships_file.utils."
-              "download_file")
-        uz = ("lib_bgp_data.relationships_parser.relationships_file.utils."
-              "unzip_bz2")
+        dl = ("lib_bgp_data.collectors.relationships.relationships_file"
+              ".utils.download_file")
+        uz = ("lib_bgp_data.collectors.relationships.relationships_file"
+              ".utils.unzip_bz2")
         with patch(dl) as dl_mock, patch(uz) as uz_mock:
             dl_mock.side_effect = self._custom_download_file
             uz_mock.side_effect = self._custom_unzip_bz2
@@ -148,7 +151,10 @@ class Test_Relationships_File:
         downloaded
         """
 
-        test_path = "/tmp/test_Relationships_Parser/1.decompressed"
+        test_folder = "/tmp/test_Relationships_Parser/"
+        if not os.path.exists(test_folder):
+            os.makedirs(test_folder)
+        test_path = test_folder + "1.decompressed"
         test_file = ["1|11537|0|bgp\n",
                      "1|21616|-1|bgp\n",
                      "1|34732|-1|bgp\n",

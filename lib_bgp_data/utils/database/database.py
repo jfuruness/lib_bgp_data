@@ -21,7 +21,10 @@ from psycopg2.extras import RealDictCursor
 
 from .config import Config
 from .postgres import Postgres
-from .. import utils, config_logging
+
+from ..logger import config_logging
+from .. import utils
+
 
 class Database(Postgres):
     """Interact with the database"""
@@ -62,11 +65,8 @@ class Database(Postgres):
 
         Note that RealDictCursor returns everything as a dictionary."""
 
-        # Gets the global section header to connect to that db
-        from .config import global_section_header
-        assert global_section_header is not None
         # Database needs access to the section header
-        kwargs = Config(global_section_header).get_db_creds()
+        kwargs = Config().get_db_creds()
         if cursor_factory:
             kwargs["cursor_factory"] = cursor_factory
         # In case the database is somehow off we wait

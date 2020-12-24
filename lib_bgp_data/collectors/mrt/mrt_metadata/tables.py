@@ -194,9 +194,8 @@ class ROA_Known_Validity_Table(Generic_Table):
     def fill_table(self):
         """Fills table with data"""
 
-        sql = f"""CREATE UNLOGGED TABLE IF NOT EXISTS {self.name} AS (
-                    SELECT DISTINCT ON (dpo.prefix, dpo.origin)
-                           dpo.prefix,
+        sql = f"""CREATE UNLOGGED TABLE {self.name} AS (
+                    SELECT dpo.prefix,
                            dpo.origin,
                            --NOTE: don't change the numbering. It's dependent elsewhere as well
                            CASE WHEN r.asn != dpo.origin AND MASKLEN(dpo.prefix) > r.max_length
@@ -218,6 +217,28 @@ class ROA_Known_Validity_Table(Generic_Table):
                                                 FROM roas) = created_at) r
                         ON dpo.prefix <<= r.prefix
                 );"""
+        self.execute(sql)
+
+        # If there are overlapping ROAs, keep the most valid one
+        # https://stackoverflow.com/a/6584134
+        sql = f"""DELETE FROM {self.name} a USING (
+                SELECT MIN(roa_validity) AS roa_validity, prefix, origin
+                    FROM {self.name}
+                    GROUP BY prefix, origin HAVING COUNT(*) > 1
+                ) b
+                WHERE a.prefix = b.prefix
+                    AND a.origin = b.origin
+                    AND a.roa_validity != b.roa_validity"""
+        self.execute(sql)
+
+        # https://stackoverflow.com/a/6584134
+        # In case there are any other duplicates, remove them
+        sql = f"""DELETE FROM {self.name} a USING (
+                SELECT MIN(ctid) as ctid, prefix, origin, roa_validity FROM {self.name}
+                GROUP BY prefix, origin, roa_validity HAVING COUNT(*) > 1
+                ) b
+                WHERE a.prefix = b.prefix AND a.origin = b.origin AND
+                    a.roa_validity = b.roa_validity AND a.ctid <> b.ctid;"""
         self.execute(sql)
 
 class ROA_Validity_Table(Generic_Table):
