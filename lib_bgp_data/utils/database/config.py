@@ -28,7 +28,7 @@ def set_global_section_header(section=None):
     if section is not None:
         global_section_header = section
     # More readable to write it this way imo
-    elif global_section_header is not None:
+    elif "global_section_header" in locals() and global_section_header is not None:
         pass
     else:
         global_section_header = "bgp"
