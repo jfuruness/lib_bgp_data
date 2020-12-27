@@ -14,6 +14,7 @@ __email__ = "jfuruness@gmail.com"
 __status__ = "Production"
 
 import os
+import random
 import re
 import time
 
@@ -87,7 +88,7 @@ class AS_Rank_Website_Parser(Parser):
                 try:
                     new_row.append(re.findall(r'flag-icon-(..)', str(attr))[0])
                 # Sometimes there is no country
-                except IndexError as e:
+                except IndexError:
                     new_row.append(None)
             else:
                 new_row.append(attr.text)
