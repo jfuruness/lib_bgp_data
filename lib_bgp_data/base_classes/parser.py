@@ -160,7 +160,7 @@ class Parser:
                         body += f"STD_ERR Message: {e.stderr}\n"
                     body += f"Error: {e}"
 
-                    # TODO: Send email to maintainers
+                    # TODO: Send email to maintainers once done testing
                     utils.send_email(subject, body)
 
     def backup(self, table):
