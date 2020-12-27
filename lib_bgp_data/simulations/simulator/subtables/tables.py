@@ -32,6 +32,7 @@ from ...enums import AS_Types, Data_Plane_Conditions as DP_Conds
 from ...enums import Control_Plane_Conditions as CP_Conds
 
 from ....utils.database import Database, Generic_Table
+from ....collectors.as_rank_website.tables import AS_Rank_Table
 from ....collectors.mrt.mrt_base.tables import MRT_Announcements_Table
 from ....collectors.relationships.tables import AS_Connectivity_Table
 from ....collectors.relationships.tables import ASes_Table
@@ -114,22 +115,9 @@ class Top_100_ASes_Table(ASes_Subtable):
 
     def fill_table(self, *args):
 
-        ases = ['3356', '1299', '174', '3257', '2914', '6762', '6939',
-                '6453', '3491', '6461', '1273', '3549', '9002', '5511',
-                '4637', '12956', '7473', '209', '12389', '3320', '701',
-                '7018', '7922', '20485', '3216', '16735', '9498', '31133',
-                '6830', '20764', '2828', '52320', '15412', '1239', '8359',
-                '286', '43531', '58453', '10429', '262589', '28917', '37468',
-                '4809', '4755', '7738', '33891', '31500', '41095', '4766',
-                '8220', '4826', '11537', '7843', '18881', '29076',
-                '34800', '46887', '4230', '5483', '20804', '4134',
-                '8167', '267613', '7029', '9304', '5588', '26615',
-                '11164', '3303', '3267', '8218', '9049', '9505', '28598',
-                '6663', '1221', '22773', '7474', '132602', '61832', '28329',
-                '12741', '13786', '3326', '9318', '2516', '7545', '22356',
-                '2497', '577', '50607', '3786', '55410', '20115', '23520',
-                '20562', '6128', '3223', '5617', '3255']
-
+        ases = None
+        with AS_Rank_Table() as db:
+            ases = db.get_top_100_ases()
         ases_str = " OR asn = ".join([str(x) for x in ases])
         # TODO deadlines so fuck it
         sql = f"""CREATE UNLOGGED TABLE IF NOT EXISTS {self.name} AS (

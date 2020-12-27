@@ -21,6 +21,7 @@ from .multiline_tqdm import Multiline_TQDM
 from .subtables import Subtables
 from .tables import Simulation_Results_Table
 from ..enums import Non_Default_Policies
+from ...collectors import AS_Rank_Website_Parser
 from ...collectors import Relationships_Parser
 from ...collectors import BGPStream_Website_Parser, BGPStream_Website_Event_Types
 from ...collectors import MRT_Parser, MRT_Sources
@@ -39,8 +40,8 @@ class Simulator(Parser):
              exr_bash=None,  # For development only
              seeded_trial=None,
              deterministic=False,
-             attack_types=Attack.runnable_attacks,
-             adopt_policies=Non_Default_Policies.__members__.values(),
+             attack_types=Attack.runnable_attacks[:1],
+             adopt_policies=list(Non_Default_Policies.__members__.values())[:1],
              redownload_base_data=True):
         """Runs Attack/Defend simulation.
         In depth explanation at top of module.
@@ -52,6 +53,8 @@ class Simulator(Parser):
             Simulation_Extrapolator_Wrapper(**self.kwargs).install(force=True)
             # Gets relationships table
             Relationships_Parser(**self.kwargs)._run()
+            # Get as rank data
+            AS_Rank_Website_Parser().run(max_workers=1, random_delay=False)
  
         # Clear the table that stores all trial info
         with Simulation_Results_Table(clear=True) as _:

@@ -16,7 +16,7 @@ __status__ = "Development"
 import os
 
 # Collectors
-from .collectors import ASRankWebsiteParser
+from .collectors import AS_Rank_Website_Parser
 from .collectors import BGPStream_Website_Parser
 from .collectors.bgpstream_website import BGPStream_Website_Event_Types as BGPStream_Types
 from .collectors import Blacklist_Parser

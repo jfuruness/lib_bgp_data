@@ -18,7 +18,7 @@ __status__ = "Development"
 from .dataset_statistics_generator import Dataset_Statistics_Generator
 from .tables import Monitors_Table, Control_Monitors_Table
 
-from ...collectors import ASRankWebsiteParser, Relationships_Parser
+from ...collectors import AS_Rank_Website_Parser, Relationships_Parser
 from ...collectors.mrt import MRT_Parser, MRT_Metadata_Parser, MRT_Sources
 from ...collectors.mrt.mrt_metadata.tables import MRT_W_Metadata_Table
 from ...collectors.relationships.tables import Peers_Table
@@ -64,7 +64,7 @@ class Verification_Parser(Parser):
                         ON {db.name}(monitor_asn);"""
                 db.execute(sql)
         if as_rank:
-            ASRankWebsiteParser(**self.kwargs)._run()
+            AS_Rank_Website_Parser(**self.kwargs)._run()
         if sample_selection:
             # Fills monitor stats and control table
             for Table in [Monitors_Table, Control_Monitors_Table]:

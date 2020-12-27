@@ -27,7 +27,7 @@ from shutil import rmtree
 
 from .tables import Monitors_Table, Control_Monitors_Table
 
-from ...collectors import ASRankWebsiteParser
+from ...collectors import AS_Rank_Website_Parser
 from ...collectors.mrt import MRT_Parser, MRT_Metadata_Parser, MRT_Sources
 from ...collectors.mrt.mrt_metadata.tables import MRT_W_Metadata_Table
 from ...collectors.relationships.tables import Peers_Table
