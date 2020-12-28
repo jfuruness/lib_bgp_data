@@ -18,7 +18,6 @@ from ..tables import Blacklist_Table
 from ....utils.database import Database
 
 
-@pytest.skip(reason="Modified code to be OO for future blacklist sources")
 @pytest.mark.blacklist_parser
 class Test_Blacklist_Parser:
     """Tests functions within the Blacklist Parser class."""
@@ -63,11 +62,14 @@ class Test_Blacklist_Parser:
             assert len(entry) == 2
         return formatted
 
+    @pytest.mark.run
     def test_run(self):
         """Test that should make sure that there are no errors and that
         the table is populated with the correct amount of ASNs"""
         # Run the parser
         self.parser._run()
+        #old code
+        """
         # Get the raw data.
         raw_dict = self.test_parse_lists()
         # Get # of ASNs in each source
@@ -86,3 +88,4 @@ class Test_Blacklist_Parser:
                 table_sizes.append(len(asn_list))
         # Ensure that # of asns in raw data = size of columns.
         assert raw_sizes == table_sizes
+        """

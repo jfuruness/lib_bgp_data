@@ -26,12 +26,13 @@ class Blacklist_Table(Generic_Table):
 
     name = "blacklist"
 
-    columns = ["asn", "source"]
+    columns = ["asn", "prefix", "source"]
 
     def _create_tables(self):
         """ Creates the table if it does not exist"""
         sql = """CREATE UNLOGGED TABLE IF NOT EXISTS blacklist(
                 asn INTEGER,
+                prefix cidr,
                 source TEXT) ;"""
         self.execute(sql)
 
