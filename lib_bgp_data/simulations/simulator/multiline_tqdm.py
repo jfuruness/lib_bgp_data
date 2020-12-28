@@ -84,8 +84,8 @@ class Multiline_TQDM:
                   exr_running=True):
         """Gets descriptions to use in the progress bars"""
 
-
-        default = lambda x: x if x is not None else ""
+        def default(x):
+            return x if x is not None else ""
 
         policy_name = "" if policy is None else Policies(policy.value).name
         # Descriptions

@@ -18,8 +18,9 @@ import sys
 from ..tables import Simulation_Results_Table
 from ...enums import AS_Types
 from ...enums import Control_Plane_Conditions as C_Plane_Conds
-from ...enums import Data_Plane_Conditions 
+from ...enums import Data_Plane_Conditions
 from ....extrapolator import Simulation_Extrapolator_Forwarding_Table
+
 
 class Output_Subtables:
     """Subtables that deal with the output functions from the extrapolator"""
@@ -132,7 +133,8 @@ class Output_Subtable:
                     INNER JOIN {Simulation_Extrapolator_Forwarding_Table.name}
                         all_ases
                             ON og.received_from_asn = all_ases.asn
-                    WHERE og.as_type = {adopt_val.value} AND ({attacker_sql})"""
+                    WHERE og.as_type = {adopt_val.value} AND ({attacker_sql})
+                    """
             conds[adopt_val] = self.Forwarding_Table.get_count(sql)
         return conds
 
@@ -170,17 +172,17 @@ class Output_Subtable:
                    f" AND asn != %s AND impliment = {bool(adopt_val)}")
             conds[C_Plane_Conds.RECV_ATK_PREF_ORIGIN.value][adopt_val] =\
                 self.Forwarding_Table.get_count(sql, [attack.attacker,
-                                                     attack.attacker,
-                                                     attack.victim])
+                                                      attack.attacker,
+                                                      attack.victim])
             conds[C_Plane_Conds.RECV_ONLY_VIC_PREF_ORIGIN.value][adopt_val] =\
                 self.Forwarding_Table.get_count(sql, [attack.victim,
                                                       attack.attacker,
                                                       attack.victim])
             conds[C_Plane_Conds.RECV_BHOLE.value][adopt_val] =\
-                self.Forwarding_Table.get_count(sql, 
-                    [Data_Plane_Conditions.BHOLED.value,
-                     attack.attacker,
-                     attack.victim])
+                self.Forwarding_Table.get_count(sql,
+                                         [Data_Plane_Conditions.BHOLED.value,
+                                          attack.attacker,
+                                          attack.victim])
 
             no_rib_sql = """SELECT COUNT(*) FROM {0}
                          LEFT JOIN {1} ON {0}.asn = {1}.asn

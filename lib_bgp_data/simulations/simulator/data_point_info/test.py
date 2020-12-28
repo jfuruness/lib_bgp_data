@@ -12,9 +12,6 @@ __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
-import logging
-
-from ....utils.logger import config_logging
 
 class Test:
     """Test class that defines a specific scenario to be run"""
