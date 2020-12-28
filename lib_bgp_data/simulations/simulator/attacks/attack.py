@@ -21,6 +21,7 @@ from .roa import ROA
 
 from ....collectors.mrt.mrt_metadata.tables import MRT_W_Metadata_Table
 
+
 class Attack:
     """Attack class that contains information for a victim and an attacker
 
@@ -32,6 +33,7 @@ class Attack:
     default_superprefix = "1.0.0.0/8"
 
     runnable_attacks = []
+
     # https://stackoverflow.com/a/43057166/8903959
     def __init_subclass__(cls, **kwargs):
         """This method essentially creates a list of all subclasses

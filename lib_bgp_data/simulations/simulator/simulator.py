@@ -12,9 +12,6 @@ __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
-import random
-import uuid
-
 from .attacks import Attack
 from .data_point_info import Data_Point
 from .multiline_tqdm import Multiline_TQDM
@@ -25,10 +22,9 @@ from ...collectors import AS_Rank_Website_Parser
 from ...collectors.as_rank_website.tables import AS_Rank_Table
 from ...collectors import Relationships_Parser
 from ...collectors.relationships.tables import ASes_Table
-from ...collectors import MRT_Parser, MRT_Sources
 from ...extrapolator import Simulation_Extrapolator_Wrapper as Sim_Exr
 from ...utils.base_classes import Parser
-from ...utils.database import Database
+
 
 class Simulator(Parser):
     """This class simulates Attack defend scenarios on the internet.

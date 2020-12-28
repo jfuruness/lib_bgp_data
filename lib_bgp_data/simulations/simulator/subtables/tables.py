@@ -25,15 +25,11 @@ __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
 import logging
-from random import random, sample
 
-from ...enums import Non_Default_Policies, Policies
-from ...enums import AS_Types, Data_Plane_Conditions as DP_Conds
-from ...enums import Control_Plane_Conditions as CP_Conds
+from ...enums import Policies
 
-from ....utils.database import Database, Generic_Table
+from ....utils.database import Generic_Table
 from ....collectors.as_rank_website.tables import AS_Rank_Table
-from ....collectors.mrt.mrt_base.tables import MRT_Announcements_Table
 from ....collectors.relationships.tables import AS_Connectivity_Table
 from ....collectors.relationships.tables import ASes_Table
 from ....extrapolator import Simulation_Extrapolator_Forwarding_Table
@@ -41,6 +37,7 @@ from ....extrapolator import Simulation_Extrapolator_Forwarding_Table
 #################
 ### Subtables ###
 #################
+
 
 class ASes_Subtable(Generic_Table):
     """Ases subtable (generic type of subtable)"""
@@ -63,7 +60,6 @@ class ASes_Subtable(Generic_Table):
                 ases_to_set = 0
         if percent == 100:
             ases_to_set -= 1
-
 
         if percent > 0:
             assert ases_to_set > 0, f"{percent}|{len(ases)}|{self.name}"
@@ -89,8 +85,9 @@ class ASes_Subtable(Generic_Table):
                  WHERE impliment = TRUE;"""
         self.execute(sql)
 
+
 class Subtable_Forwarding_Table(Generic_Table):
-    """The rib out table for whatever subtable. Rib out from the extrapolator"""
+    """The forwarding table for whatever subtable."""
 
     def fill_forwarding_table(self):
         sql = f"""CREATE UNLOGGED TABLE IF NOT EXISTS {self.name} AS (
@@ -100,6 +97,7 @@ class Subtable_Forwarding_Table(Generic_Table):
               INNER JOIN {self.input_name} b
                 ON a.asn = b.asn);"""
         self.execute(sql)
+
 
 class Top_100_ASes_Table(ASes_Subtable):
     """Class with database functionality.
@@ -123,8 +121,9 @@ class Top_100_ASes_Table(ASes_Subtable):
                 INNER JOIN {AS_Rank_Table.name} b
                     ON b.asn = a.asn
                 WHERE b.as_rank <= 100
-                 );"""              
+                 );"""
         self.cursor.execute(sql)
+
 
 class Top_100_ASes_Forwarding_Table(Top_100_ASes_Table,
                                     Subtable_Forwarding_Table):
@@ -154,6 +153,7 @@ class Edge_ASes_Table(ASes_Subtable):
                      WHERE c.connectivity = 0
                  );"""
         self.execute(sql)
+
 
 class Edge_ASes_Forwarding_Table(Edge_ASes_Table,
                                  Subtable_Forwarding_Table):
@@ -191,6 +191,7 @@ class Etc_ASes_Table(ASes_Subtable):
         sql += ");"
         logging.debug(f"ETC AS SQL:\n\n{sql}\n")
         self.execute(sql)
+
 
 class Etc_ASes_Forwarding_Table(Etc_ASes_Table,
                                 Subtable_Forwarding_Table):
