@@ -31,6 +31,7 @@ class Multiline_TQDM:
 
     def __enter__(self):
         """Context manager to do upon entering"""
+
         return self
 
     def __exit__(self, type, value, traceback):

@@ -46,4 +46,4 @@ class AS_Rank_Table(Generic_Table):
         """Returns top 100 ases by as rank"""
 
         sql = f"""SELECT * FROM {self.name} ORDER BY as_rank LIMIT 100;"""
-        return [x["as_number"] for x in self.execute(sql)]
+        return [x["asn"] for x in self.execute(sql)]

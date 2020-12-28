@@ -53,7 +53,8 @@ class AS_Rank_Website_Parser(Parser):
         if random_delay:
             time.sleep(random.random() * 20)
 
-        for page in trange(self._total_pages, desc="Parsing AS Rank"):
+        # Start from 1 because page 0 and page 1 are the same
+        for page in trange(1, self._total_pages, desc="Parsing AS Rank"):
             self._parse_page(page)
 
     def _parse_page(self, page_num):

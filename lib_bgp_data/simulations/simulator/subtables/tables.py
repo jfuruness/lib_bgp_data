@@ -115,19 +115,16 @@ class Top_100_ASes_Table(ASes_Subtable):
 
     def fill_table(self, *args):
 
-        ases = None
-        with AS_Rank_Table() as db:
-            ases = db.get_top_100_ases()
-        ases_str = " OR asn = ".join([str(x) for x in ases])
-        # TODO deadlines so fuck it
         sql = f"""CREATE UNLOGGED TABLE IF NOT EXISTS {self.name} AS (
                  SELECT a.asn,
                     {Policies.DEFAULT.value} AS as_type,
                     FALSE as impliment
-                FROM {ASes_Table.name} a WHERE asn = {ases_str}
+                FROM {ASes_Table.name} a
+                INNER JOIN {AS_Rank_Table.name} b
+                    ON b.asn = a.asn
+                WHERE b.as_rank <= 100
                  );"""              
         self.cursor.execute(sql)
-
 
 class Top_100_ASes_Forwarding_Table(Top_100_ASes_Table,
                                     Subtable_Forwarding_Table):

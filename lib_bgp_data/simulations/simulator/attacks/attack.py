@@ -99,7 +99,7 @@ class Attack:
     def _add_default_metadata(self, asn_dict, asn, _time):
         """Adds as path, origin, time, roa_validity, other defaults"""
 
-        meta = {"as_path": [asn],
+        meta = {"as_path": self._get_as_path(asn, _time),
                 "origin": asn,
                 # 1 if attacker, 0 if victim
                 "time": _time,
@@ -107,6 +107,11 @@ class Attack:
                 "monitor_asn": 0,
                 "roa_validity": self.rpki.check_ann(asn_dict["prefix"], asn)}
         asn_dict.update(meta)
+
+    def _get_as_path(self, asn, _time):
+        """_time is 1 if attacker, 0 if victim"""
+
+        return [asn]
 
     def _add_ids(self):
         """Adds prefix ID, origin ID, prefix origin ID
