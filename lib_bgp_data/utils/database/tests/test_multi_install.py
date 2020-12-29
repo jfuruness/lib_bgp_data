@@ -16,8 +16,8 @@ import pytest
 from ..config import Config
 from ...relationships_parser import Relationships_Parser
 
-@pytest.mark.database
-@pytest.mark.xfail(reason="New hire fix, problem in conftest?")
+@pytest.mark.parsers
+#@pytest.mark.xfail(reason="New hire fix, problem in conftest?")
 def test_parsers():
     """This will test the ability to run two parsers simultaneosuly"""
 
@@ -38,16 +38,17 @@ def test_parsers():
     assert data1 == data2
 
 @pytest.mark.database
-@pytest.mark.xfail(reason="New hires fix, problem in conftest?")
+#@pytest.mark.xfail(reason="New hires fix, problem in conftest?")
 def test_cleanup():
     """This is just to delete the sections created in these tests"""
 
     for test in ["test1", "test2"]:
-        # Redundant but the Config initializer needs the section header
-        Config(test)._remove_old_config_section(test)
         # Delete the databases
         bash = f"sudo -i -u postgres psql -c 'DROP DATABASE {test};'"
         check_call(bash, shell=True)
+        # Redundant but the Config initializer needs the section header
+        Config(test)._remove_old_config_section(test)
+
 
 
 def parser(section):
