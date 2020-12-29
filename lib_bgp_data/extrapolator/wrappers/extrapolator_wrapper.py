@@ -32,11 +32,15 @@ class Extrapolator_Wrapper(Parser):
     In depth explanation at the top of module.
     """
 
-    __slots__ = []
+    __slots__ = ["branch"]
 
     default_results_table = "exr_results"
     default_depref_table = "exr_results_depref"
-    branch = "master"
+    default_branch = "master"
+
+    def __init__(self, *args, **kwargs):
+        super(Extrapolator_Wrapper, self).__init__(*args, **kwargs)
+        self.branch = kwargs.get("exr_branch", self.default_branch)
 
     def _run(self, input_table="filtered_mrt_announcements"):
         """Runs the bgp-extrapolator and verifies input.
@@ -111,7 +115,8 @@ class Extrapolator_Wrapper(Parser):
     def _install_extrapolator(self):
         """Installs extrapolator and moves it to /usr/bin"""
 
-        cmds = ["git clone https://github.com/c-morris/BGPExtrapolator.git",
+        cmds = [f"cd {self.path} ",
+                "git clone https://github.com/c-morris/BGPExtrapolator.git",
                 "cd BGPExtrapolator"]
         # Sometimes dev team moves stuff to other branches
         if self.branch:

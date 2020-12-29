@@ -15,8 +15,8 @@ __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Production"
 
-from ...utils import utils
-from ...utils.logger import config_logging
+from ....utils import utils
+from ....utils.logger import config_logging
 
 
 class MRT_Installer:

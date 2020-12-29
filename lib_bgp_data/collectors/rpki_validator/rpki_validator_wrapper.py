@@ -20,6 +20,7 @@ import urllib
 from .rpki_file import RPKI_File
 from .tables import Unique_Prefix_Origins_Table, ROV_Validity_Table
 from ...utils import utils, config_logging
+from ...utils.base_classes import ROA_Validity
 
 __author__ = "Justin Furuness", "Cameron Morris"
 __credits__ = ["Cameron Morris", "Justin Furuness"]
@@ -170,10 +171,10 @@ class RPKI_Validator_Wrapper:
         I could have this as a class attribute but too messy I think.
         """
 
-        return {"VALID": 1,
-                "UNKNOWN": 0,
-                "INVALID_LENGTH": -1,
-                "INVALID_ASN": -2}
+        return {"VALID": ROA_Validity.VALID.value,
+                "UNKNOWN": ROA_Validity.UNKNOWN.value,
+                "INVALID_LENGTH": ROA_Validity.INVALID_BY_LENGTH.value,
+                "INVALID_ASN": ROA_Validity.INVALID_BY_ORIGIN.value}
 
     @staticmethod
     def get_headers() -> dict:

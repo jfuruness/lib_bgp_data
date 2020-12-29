@@ -19,7 +19,8 @@ __status__ = "Development"
 from .rpki import RPKI
 from .roa import ROA
 
-from ....collectors.mrt.tables import MRT_W_Metadata_Table
+from ....collectors.mrt.mrt_metadata.tables import MRT_W_Metadata_Table
+
 
 class Attack:
     """Attack class that contains information for a victim and an attacker
@@ -32,6 +33,7 @@ class Attack:
     default_superprefix = "1.0.0.0/8"
 
     runnable_attacks = []
+
     # https://stackoverflow.com/a/43057166/8903959
     def __init_subclass__(cls, **kwargs):
         """This method essentially creates a list of all subclasses
@@ -99,7 +101,7 @@ class Attack:
     def _add_default_metadata(self, asn_dict, asn, _time):
         """Adds as path, origin, time, roa_validity, other defaults"""
 
-        meta = {"as_path": [asn],
+        meta = {"as_path": self._get_as_path(asn, _time),
                 "origin": asn,
                 # 1 if attacker, 0 if victim
                 "time": _time,
@@ -107,6 +109,11 @@ class Attack:
                 "monitor_asn": 0,
                 "roa_validity": self.rpki.check_ann(asn_dict["prefix"], asn)}
         asn_dict.update(meta)
+
+    def _get_as_path(self, asn, _time):
+        """_time is 1 if attacker, 0 if victim"""
+
+        return [asn]
 
     def _add_ids(self):
         """Adds prefix ID, origin ID, prefix origin ID

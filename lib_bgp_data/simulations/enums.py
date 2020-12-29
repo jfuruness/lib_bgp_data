@@ -34,7 +34,8 @@ class Policies(Enum):
     # V2a but also shorten
     ROVPP_V2_SHORTEN = 12
     # V2s but announce to all connections
-    ROVPP_V2_SAVAGE = 13
+    ROVPP_V2_SHORTEN_EXPLODE = 13
+
 
 # This creates an enum that is for non bgp policies
 _non_default_policies_dict = {x[0]: x[1].value
@@ -59,6 +60,7 @@ class Data_Plane_Conditions(Enumerable_Enum):
     BHOLED = 64512
     HIJACKED = 64513
     NOTHIJACKED = 64514
+
 
 class Control_Plane_Conditions(Enumerable_Enum):
     """Conditions you see in the control plane"""

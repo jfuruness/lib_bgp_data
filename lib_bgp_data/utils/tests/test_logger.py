@@ -22,7 +22,7 @@ import contextlib
 import warnings
 from datetime import datetime
 from ..logger import config_logging, _get_log_path
-
+from ...database import config
 
 @pytest.mark.logging
 class Test_Logging:
@@ -37,14 +37,10 @@ class Test_Logging:
         Should be able to change the default log level
         Should capture warnings
         """
-        try:
-            from ...database.config import global_section_header
-        except ImportError:
-            global_section_header = set_global_section_header(section)
         # Make a test logger
         config_logging()
         # Get the path of the log file
-        path = _get_log_path(global_section_header)
+        path = _get_log_path(config.global_section_header)
         # Clear it
         open(path, 'w').close()
         # Prepare to capture stdout

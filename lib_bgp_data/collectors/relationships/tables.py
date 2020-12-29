@@ -50,7 +50,7 @@ def make_sure_tables_exist(table_classes: list):
                 assert _db.get_count() > 0
     except AssertionError:
         # Needed here to avoid cirular imports
-        from ..relationships_parser import Relationships_Parser
+        from .relationships_parser import Relationships_Parser
         Relationships_Parser().run()
 
 

@@ -18,7 +18,7 @@ from itertools import chain, combinations
 from ..bgpstream_website_parser import utils, BGPStream_Website_Parser
 from ..tables import Hijacks_Table, Leaks_Table, Outages_Table
 from ..data_classes import Hijack, Leak, Outage
-from ..event_types import Event_Types
+from ..event_types import BGPStream_Website_Event_Types
 from ....utils import utils
 from ....utils.database import Database, Generic_Table
 from bs4 import BeautifulSoup as Soup
@@ -32,7 +32,7 @@ import re
 def generate_event_combos():
     """Returns all possible combinations of Hijacks, Leaks, and Outages"""
     # https://stackoverflow.com/questions/1482308/how-to-get-all-subsets-of-a-set-powerset
-    events = Event_Types.list_values()
+    events = BGPStream_Website_Event_Types.list_values()
     return chain.from_iterable(combinations(events, r)
                                for r in range(len(events) + 1))
 
@@ -54,7 +54,7 @@ def generate_params():
 
 def type_table_list():
     """Convenient for associating the the data type to its table"""
-    for _type, table in zip(Event_Types.list_values(),
+    for _type, table in zip(BGPStream_Website_Event_Types.list_values(),
                            [Hijacks_Table, Leaks_Table, Outages_Table]):
         yield _type, table
 
@@ -105,7 +105,7 @@ class Test_BGPStream_Website_Parser:
             for IPV, num in zip([IPV4, IPV6], [4, 6]):
                 with table() as t:
                     # checks unselected IPV are not in tables
-                    if not IPV and _type != Event_Types.OUTAGE.value:
+                    if not IPV and _type != BGPStream_Website_Event_Types.OUTAGE.value:
                        sql = f'SELECT COUNT({t.prefix_column}) FROM {t.name}\
                                 WHERE family({t.prefix_column}) = {num}'
                        assert t.get_count(sql) == 0

@@ -18,14 +18,13 @@ Possible Future Extensions:
 """
 
 
-__author__ = "Abhinna Adhikari"
-__credits__ = ["Abhinna Adhikari"]
-__Lisence__ = "MIT"
-__maintainer__ = "Abhinna Adhikari"
-__email__ = "abhinna.adhikari@uconn.edu"
+__author__ = "Abhinna Adhikari, Justin Furuness"
+__credits__ = ["Abhinna Adhikari", "Justin Furuness"]
+__Lisence__ = "BSD"
+__maintainer__ = "Justin Furuness"
+__email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
-import logging
 import os
 
 from selenium.common.exceptions import TimeoutException
@@ -38,7 +37,7 @@ from bs4 import BeautifulSoup
 from .install_selenium_dependencies import install_selenium_driver
 
 
-class SeleniumDriver:
+class Selenium_Driver:
     """Class where Selenium webdriver functions are abstracted to simplify
     code. For a more in depth explanation see the top of the file.
 
@@ -50,23 +49,24 @@ class SeleniumDriver:
     __slots__ = ['_driver']
 
     driver_path = '/usr/bin/chromedriver'
-    retries = 3
 
     def __init__(self):
         if not os.path.exists(self.driver_path):
             install_selenium_driver()
-        self._driver = SeleniumDriver.init_driver()
+
+        options = webdriver.ChromeOptions()
+        # No GUI
+        options.add_argument("--headless")
+        # Bypass OS Security
+        options.add_argument("--no-sandbox")
+        self._driver = webdriver.Chrome(self.driver_path, options=options)
 
     def __enter__(self):
-        """Allows the SeleniumDriver to be
-        instantiated using a context manager.
+        """Allows this to be instantiated with a context manager
 
-        Returns:
-            The class itself.
+        With this you don't need to worry about closing the connection
         """
 
-        if not self._driver:
-            self._driver = SeleniumDriver.init_driver()
         return self
 
     def __exit__(self, exc_type, exc_value, exc_traceback):
@@ -74,27 +74,9 @@ class SeleniumDriver:
 
         self.close()
 
-    @staticmethod
-    def init_driver():
-        """Initialize the headless chrome webdriver
-        that is used to retrieve the dynamic HTML.
-
-        The --headless argument makes sure that chrome is run headless
-
-        Returns:
-            A headless selenium.webdriver.Chrome object.
-        """
-
-        chrome_options = webdriver.ChromeOptions()
-        chrome_options.add_argument("--headless")
-        chrome_options.add_argument("--no-sandbox")
-        chrome_options.add_argument("--disable-dev-shm-usage")
-        path = os.path.join(SeleniumDriver.driver_path)
-        driver = webdriver.Chrome(path, options=chrome_options)
-        return driver
-
     def get_page(self,
                  url,
+                 retries=3,
                  timeout=20,
                  dynamic_class_name="asrank-row-org"):
         """Run the url on the driver to get dynamic HTML of
@@ -112,22 +94,19 @@ class SeleniumDriver:
             retrived using selenium's chrome webdriver.
         """
 
-        for retry in range(self.retries):
+        for retry in range(retries):
             try:
                 self._driver.get(url)
                 # Wait for the page to load dynamically
                 wait = WebDriverWait(self._driver, timeout)
                 wait.until(EC.visibility_of_element_located(
                     (By.CLASS_NAME, dynamic_class_name)))
+                break
             except TimeoutException:
                 timeout *= 2
-                continue
-            break
 
         # Extract the html and then use it to create a beautiful soup object
-        data = self._driver.page_source
-        soup = BeautifulSoup(data, "html.parser")
-        return soup
+        return BeautifulSoup(self._driver.page_source, "html.parser")
 
     def close(self):
         """Close the selenium driver instance."""

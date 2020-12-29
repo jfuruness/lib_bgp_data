@@ -25,14 +25,11 @@ __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
 import logging
-from random import random, sample
 
-from ...enums import Non_Default_Policies, Policies
-from ...enums import AS_Types, Data_Plane_Conditions as DP_Conds
-from ...enums import Control_Plane_Conditions as CP_Conds
+from ...enums import Policies
 
-from ....utils.database import Database, Generic_Table
-from ....collectors.mrt.tables import MRT_Announcements_Table
+from ....utils.database import Generic_Table
+from ....collectors.as_rank_website.tables import AS_Rank_Table
 from ....collectors.relationships.tables import AS_Connectivity_Table
 from ....collectors.relationships.tables import ASes_Table
 from ....extrapolator import Simulation_Extrapolator_Forwarding_Table
@@ -40,6 +37,7 @@ from ....extrapolator import Simulation_Extrapolator_Forwarding_Table
 #################
 ### Subtables ###
 #################
+
 
 class ASes_Subtable(Generic_Table):
     """Ases subtable (generic type of subtable)"""
@@ -62,7 +60,6 @@ class ASes_Subtable(Generic_Table):
                 ases_to_set = 0
         if percent == 100:
             ases_to_set -= 1
-
 
         if percent > 0:
             assert ases_to_set > 0, f"{percent}|{len(ases)}|{self.name}"
@@ -88,8 +85,9 @@ class ASes_Subtable(Generic_Table):
                  WHERE impliment = TRUE;"""
         self.execute(sql)
 
+
 class Subtable_Forwarding_Table(Generic_Table):
-    """The rib out table for whatever subtable. Rib out from the extrapolator"""
+    """The forwarding table for whatever subtable."""
 
     def fill_forwarding_table(self):
         sql = f"""CREATE UNLOGGED TABLE IF NOT EXISTS {self.name} AS (
@@ -99,6 +97,7 @@ class Subtable_Forwarding_Table(Generic_Table):
               INNER JOIN {self.input_name} b
                 ON a.asn = b.asn);"""
         self.execute(sql)
+
 
 class Top_100_ASes_Table(ASes_Subtable):
     """Class with database functionality.
@@ -114,30 +113,15 @@ class Top_100_ASes_Table(ASes_Subtable):
 
     def fill_table(self, *args):
 
-        ases = ['3356', '1299', '174', '3257', '2914', '6762', '6939',
-                '6453', '3491', '6461', '1273', '3549', '9002', '5511',
-                '4637', '12956', '7473', '209', '12389', '3320', '701',
-                '7018', '7922', '20485', '3216', '16735', '9498', '31133',
-                '6830', '20764', '2828', '52320', '15412', '1239', '8359',
-                '286', '43531', '58453', '10429', '262589', '28917', '37468',
-                '4809', '4755', '7738', '33891', '31500', '41095', '4766',
-                '8220', '4826', '11537', '7843', '18881', '29076',
-                '34800', '46887', '4230', '5483', '20804', '4134',
-                '8167', '267613', '7029', '9304', '5588', '26615',
-                '11164', '3303', '3267', '8218', '9049', '9505', '28598',
-                '6663', '1221', '22773', '7474', '132602', '61832', '28329',
-                '12741', '13786', '3326', '9318', '2516', '7545', '22356',
-                '2497', '577', '50607', '3786', '55410', '20115', '23520',
-                '20562', '6128', '3223', '5617', '3255']
-
-        ases_str = " OR asn = ".join([str(x) for x in ases])
-        # TODO deadlines so fuck it
         sql = f"""CREATE UNLOGGED TABLE IF NOT EXISTS {self.name} AS (
                  SELECT a.asn,
                     {Policies.DEFAULT.value} AS as_type,
                     FALSE as impliment
-                FROM {ASes_Table.name} a WHERE asn = {ases_str}
-                 );"""              
+                FROM {ASes_Table.name} a
+                INNER JOIN {AS_Rank_Table.name} b
+                    ON b.asn = a.asn
+                WHERE b.as_rank <= 100
+                 );"""
         self.cursor.execute(sql)
 
 
@@ -169,6 +153,7 @@ class Edge_ASes_Table(ASes_Subtable):
                      WHERE c.connectivity = 0
                  );"""
         self.execute(sql)
+
 
 class Edge_ASes_Forwarding_Table(Edge_ASes_Table,
                                  Subtable_Forwarding_Table):
@@ -206,6 +191,7 @@ class Etc_ASes_Table(ASes_Subtable):
         sql += ");"
         logging.debug(f"ETC AS SQL:\n\n{sql}\n")
         self.execute(sql)
+
 
 class Etc_ASes_Forwarding_Table(Etc_ASes_Table,
                                 Subtable_Forwarding_Table):

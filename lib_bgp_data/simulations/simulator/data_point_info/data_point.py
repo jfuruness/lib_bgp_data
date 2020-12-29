@@ -15,18 +15,12 @@ __status__ = "Development"
 
 from os.path import join
 import random
-import uuid
 
 from .test import Test
 
-from ..attacks import Attack
-
-from ...enums import Non_Default_Policies
-
-from ....collectors.mrt.tables import MRT_W_Metadata_Table
+from ....collectors.mrt.mrt_metadata.tables import MRT_W_Metadata_Table
 from ....utils import utils
 from ....utils.base_classes import Parser
-from ....utils.database import Database
 
 
 class Data_Point(Parser):
@@ -65,7 +59,7 @@ class Data_Point(Parser):
             # But it's only for development, so whatever
             # Skips trials if we have seeded the trial
             if (pbars.current_trial != seeded_trial
-                and seeded_trial is not None):
+                    and seeded_trial is not None):
 
                 pbars.update()
             else:
@@ -100,7 +94,7 @@ class Data_Point(Parser):
 
     def get_set_random_seed(self, attack_cls, trial_num):
         if self.deterministic:
-            random.seed(f"{attack_type}{self.percent_iter}{trial_num}")
+            random.seed(f"{attack_cls}{self.percent_iter}{trial_num}")
             return random.random()
 
     def fill_attacks(self, ases, Attack_Cls, trial_num):

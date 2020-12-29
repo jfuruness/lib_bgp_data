@@ -25,12 +25,12 @@ import warnings
 import psycopg2
 import requests
 
-from ...utils.base_classes import Parser
-from ..roas.tables import ROAs_Table
-from .mrt_file import MRT_File
-from .mrt_installer import MRT_Installer
-from .mrt_sources import MRT_Sources
-from .tables import MRT_Announcements_Table
+from ....utils.base_classes import Parser
+from ...roas.tables import ROAs_Table
+from ..mrt_base.mrt_file import MRT_File
+from ..mrt_base.mrt_installer import MRT_Installer
+from ..mrt_base.mrt_sources import MRT_Sources
+from ..mrt_base.tables import MRT_Announcements_Table
 from .tables import Distinct_Prefix_Origins_Table
 from .tables import Prefix_IDs_Table
 from .tables import Origin_IDs_Table
@@ -42,7 +42,7 @@ from .tables import ROA_Validity_Table
 from .tables import Prefix_Origin_Blocks_Metadata_Table
 from .tables import Prefix_Origin_Metadata_Table
 from .tables import MRT_W_Metadata_Table
-from ...utils import utils
+from ....utils import utils
 
 
 class MRT_Metadata_Parser(Parser):

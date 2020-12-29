@@ -6,6 +6,7 @@
 from copy import deepcopy
 from enum import Enum
 from itertools import chain, combinations
+import logging
 import os
 import sys
 
@@ -18,14 +19,14 @@ import shutil
 import tarfile
 from tqdm import tqdm
 
-from .enums import AS_Types
-from .tables import Simulation_Results_Table
+from ..enums import AS_Types
+from ..simulator.tables import Simulation_Results_Table
 from .tables import Simulation_Results_Agg_Table
 from .tables import Simulation_Results_Avg_Table
 
-from ..base_classes import Parser
-from ..database import Database
-from ..utils import utils
+from ...utils.base_classes import Parser
+from ...utils.database import Database
+from ...utils import utils
 
 __authors__ = ["Justin Furuness", "Samarth Kasbawala"]
 __credits__ = ["Justin Furuness", "Samarth Kasbawala"]
@@ -95,8 +96,12 @@ class Simulation_Grapher(Parser):
                   tkiz_l,
                   save_paths)
 
-        self.graph_deltas(scenarios_dict, tkiz)
-        self.rov_data_v_ctrl(scenarios_dict, tkiz)
+        try:
+            self.graph_deltas(scenarios_dict, tkiz)
+            self.rov_data_v_ctrl(scenarios_dict, tkiz)
+        except KeyError:
+            logging.warning("Couldn't plot certain graphs for papers,"
+                            " not enough data")
         self.tar_graphs()
 
     def rov_data_v_ctrl(self, scenarios_dict, tkiz):
@@ -393,6 +398,7 @@ class Simulation_Grapher(Parser):
                 "ROVPPB_LITE": Label("ROV++v2a_Lite", "dotted", "s", "r"),
                 "ROVPPBP_LITE": Label("ROV++v3_Lite", "-", "*", "c"),
                 "ROVPPBIS_LITE": Label("ROV++v2_Lite", "-.", "^", "m"),
+                "ROVPP_V2_SHORTEN": Label("ROV++v2s", "-", "P", "r"),
                 "ASPA": Label("ASPA", "-.", "^", "m"),
                 "rov_hidden_hijack_adopting": Label("ROV_hidden_hijacks",
                                                     "dashed",
@@ -476,4 +482,3 @@ class Policy_Line:
                 self.data[Graph_Values.X].append(int(result["percent"]))
                 self.data[Graph_Values.Y].append(float(result[self.line_type]) * 100)
                 self.data[Graph_Values.YERR].append(float(result[self.conf_line_type]) * 100)
-

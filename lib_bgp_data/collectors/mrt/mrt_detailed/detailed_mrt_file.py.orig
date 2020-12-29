@@ -1,33 +1,47 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-"""This module contains class MRT_File.
+"""This module contains class Detailed_File.
 
-The MRT_File class contains the functionality to load and parse
-mrt files. This is done through a series of steps, detailed in README.
+The Detailed_File class contains the functionality to load and parse
+mrt files. It's an extention of MRT_File but with a few changes in
+regex to also get update type, if necessary.
 """
 
-__authors__ = ["Justin Furuness", "Matt Jaccino"]
+__authors__ = ["Justin Furuness", "Matt Jaccino", "Nicholas Shpetner"]
 __credits__ = ["Justin Furuness", "Matt Jaccino", "Cameron Morris"]
 __Lisence__ = "BSD"
-__maintainer__ = "Justin Furuness"
-__email__ = "jfuruness@gmail.com"
-__status__ = "Production"
+__maintainer__ = "Nicholas Shpetner"
+__email__ = "nicholas.shpetner@uconn.edu"
+__status__ = "Development"
 
 import os
 import logging
+# HEY, LISTEN! TAKE OUT SHUTIL WHEN PUSHING!
+from shutil import copyfile
+from ..base_classes import File
+from .detailed_tables import MRT_Detailed_Table
+from ..utils import utils
 
-from .tables import MRT_Announcements_Table
-from ...utils import utils
-from ...utils.base_classes import File
 
-class MRT_File(File):
+class Detailed_MRT_File(File):
     """Converts MRT files to CSVs and then inserts them into a database.
 
     In depth explanation in README.
     """
 
-    __slots__ = []
+    __slots__ = ['path', 'csv_dir', 'url', 'start', 'end', 'num', 'csv_name']
+
+    def __init__(self,
+                 path: str,
+                 csv_dir: str,
+                 url: str,
+                 start: int,
+                 end: int,
+                 num: int = 1):
+        self.start = start
+        self.end = end
+        super().__init__(path, csv_dir, url, num)
 
     def parse_file(self, bgpscanner=True):
         """Parses a downloaded file and inserts it into the database
@@ -42,13 +56,16 @@ class MRT_File(File):
         Note that when tested for speed, logging doesn't slow down parse_files
         Or it does, and I just turned it off wrong.
         """
-
         # Sets CSV path
         self.csv_name = f"{self.csv_dir}/{os.path.basename(self.path)}.csv"
         # Parses the MRT file into a csv file
+        print("Paths set, converting dump")
         self._convert_dump_to_csv(bgpscanner)
-        # Inserts the csv file into the MRT_Announcements Table
-        utils.csv_to_db(MRT_Announcements_Table, self.csv_name)
+        print("Inserted file from " + self.url)
+        dst = "/new_hires/nicholas/lib_bgp_mrt_detailed/lib_bgp_data/lib_bgp_data/mrt_parser/tests/test.txt"
+        copyfile(self.csv_name, dst)
+        # Inserts the csv file into the MRT_Detailed Table
+        utils.csv_to_db(MRT_Detailed_Table, self.csv_name)
         # Deletes all old files
         utils.delete_paths([self.path, self.csv_name])
         utils.incriment_bar(logging.root.level)
@@ -74,9 +91,11 @@ class MRT_File(File):
         """
 
         args = self._bgpscanner_args() if bgpscanner else self._bgpdump_args()
-        # writes to a csv
         args += '> ' + self.csv_name
+        print("Arg set 1 complete, as:\n" + args)
+        # writes to the temp txt
         utils.run_cmds(args)
+        print("Argset 1 ran")
         logging.debug(f"Wrote {self.csv_name}\n\tFrom {self.url}")
         utils.delete_paths(self.path)
 
@@ -86,7 +105,8 @@ class MRT_File(File):
         For a more in depth explanation see _convert_dump_to_csv. For
         explanation on specifics of the parsing, see below.
         """
-
+        # TODO: Type, prefix, time first seen, time of update itself, ASN for updates, ribs stay as is
+        # TODO: Check if updates == announcements
         # I know this may seem unmaintanable, that's because this is a
         # Fast way to to this. Please, calm down.
         # Turns out not fast - idk if other regexes are faster
@@ -117,9 +137,10 @@ class MRT_File(File):
         # Now we have TYPE|SUBNETS|AS_PATH|TIMESTAMP
         # Ex: =|1.23.250.0/24|14061 6453 9498 45528 45528|1545345848
 
-        # Makes sure gets announcement, withdrawl, or rib
-        # -n for no output if nothing there
-        bash_args += ' | sed -n "s/[=|+|-]|'
+        # This is where my (nicholas) modifications start. We want to
+        # keep the update type here:
+        bash_args += ' | sed "s/'
+        # Then we continue with the original code for a bit
         # Now we focus on SUBNETS|AS_PATH|TIMESTAMP
         # Ex: 1.23.250.0/24|14061 6453 9498 45528 45528|1545345848
         # Gets three capture groups.
@@ -159,12 +180,50 @@ class MRT_File(File):
         bash_args += '|\(.*\)'
         # Replacement with the capture groups
         # Must double escape here or python freaks out
-        bash_args += '/\\1\\t{\\2\\3}\\t\\3\\t\\4/p" | '
+        bash_args += '/\\1\\t{\\2\\3}\\t\\3\\t\\4/p" '
         # Replaces spaces in array to commas
         # Need to pipe to new sed because you need the -n -p args
         # to make sed not output the full string if it doesn't match
         # And you cannot add -e args after that
-        bash_args += 'sed -e "s/ /, /g" '
+        bash_args += '| sed "s/ /, /g" '
+        bash_args += '| sed "s/|/\\t/g" |'
+        # Since this is also a detailed mrt file, we gotta add
+        # the interval timestamp.
+        bash_args += 'sed -e "s/$/\\t' + str(int(self.start)) + '\\t' + str(int(self.end)) + '/"'
+        # For various reasons, we also need to swap the columns around
+        # for input into the table:
+        bash_args += " | awk '{print $7,$6,$5,$4,$2,$3,$1}' FS='\\t' OFS='\\t'"
+        # Finally, a bit more sed magic to fix some malformed arrays
+        # We do this by first inserting a { in front of element 0
+        bash_args += " | sed 's/\\t\\([[:digit:]]\\+,\\s\\)/\t{\\1/' "
+        # Then we remove the second { from the line
+        bash_args += " | sed 's/{//2'"
+        # We do the same for the right side
+        bash_args += " | sed -e 's/,\\s\\([[:digit:]]\\+\\)\\t/, \\1}\\t/'"
+        bash_args += " | sed 's/},/, /' "
+        # Just in case:
+        bash_args += " | sed -e 's/\\t{\\([[:digit:]]\\+\\)\\t/{\\1}\\t/' "
+        bash_args += " | sed -e 's/\\(\\/[[:digit:]]\\+\\){/\\1\\t{/' "
+        bash_args += " | sed -e 's/\\t\\([[:digit:]]\\+\\)\\.\\([[:digit:]]\\+\\)\\t/\\t\\1\\t\\2\\t/' "
+        bash_args += " | sed -e 's/\\([[:digit:]]\\+\\)\\s\\([[:digit:]]\\+\\)\\s\\([[:digit:]]\\+\\)\\s\\([[:digit:]]\\+\\)[[:blank:]]\\+[[:digit:]]\\+[[:blank:]]\\+/\\1\\t\\2\\t\\3\\t\\4\\t/' "
+        bash_args += " | sed 's/\\([[:digit:]]\\+\\.[[:digit:]]\\+\\.[[:digit:]]\\+\\.[[:digit:]]\\+\\/[[:digit:]]\\+,\\)//2g' "
+        bash_args += " | sed 's/\\([[:digit:]]\\+\\.[[:digit:]]\\+\\.[[:digit:]]\\+\\.[[:digit:]]\\+\\/[[:digit:]]\\+\\)//2g' " 
+        bash_args += " | sed 's/\\/\\([[:digit:]]\\+\\)[[:blank:]]\\+{/\\1\\t{/' "
+        # TODO: duped prefixes: makes mutiple announcements with different prefix
+        bash_args += " | sed -e 's/\\(\\/[[:digit:]]\\+\\)\\s\\+/\\1\\t/' "
+        bash_args += " | sed -e 's/\\(\\/[[:digit:]]\\+\\)\\s/\\1\\t/' "
+        bash_args += " | sed -e 's/\\(\\/[[:digit:]]\\+\\) \\+/\\1\\t/' "
+        bash_args += " | sed -e 's/\\(\\/[[:digit:]]\\+\\)[[:blank:]]\+/\\1\\t/' "
+        bash_args += " | sed -e 's/\\(\\/[[:digit:]]\\+\\)\\t\\+/\\1\\t/' "
+        bash_args += " | sed 's/[[:blank:]]\\,\\+//g' "
+        bash_args += " | sed 's/\\(\\/[[:digit:]]\\+\\),/\\1/' "
+        # bash_args += " | sed -r 's/\\(^[0123456789\.:abcde\\/]+\\)[[:space:]]*/\\1\\t/'"
+        # Add quotes around type:
+        bash_args += """ | sed -e 's/\\([+|=|-]\\)/'"'"'\\1'"'"'/' """
+        bash_args += " | sed 's/\t\+/\t/' "
+        # And we also gotta check for spaces in arrays with 1 AS
+        bash_args += " | sed 's/{ /{/' "
+        bash_args += " | sed 's/{\\t/{/' "
         return bash_args
 
     def _bgpdump_args(self):

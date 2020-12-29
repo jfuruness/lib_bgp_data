@@ -14,7 +14,7 @@ __credits__ = ["Justin Furuness", "Matt Jaccino"]
 __Lisence__ = "BSD"
 __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
-__status__ = "Production"
+__status__ = "Development"
 
 import datetime
 import logging
@@ -23,12 +23,12 @@ import warnings
 
 import requests
 
-from ...utils.base_classes import Parser
+from ..base_classes import Parser
 from .mrt_file import MRT_File
 from .mrt_installer import MRT_Installer
 from .mrt_sources import MRT_Sources
 from .tables import MRT_Announcements_Table
-from ...utils import utils
+from ..utils import utils
 
 
 class MRT_Parser(Parser):
@@ -92,7 +92,6 @@ class MRT_Parser(Parser):
         # Parses files using multiprocessing in descending order by size
         self._multiprocess_parse_dls(parse_threads, mrt_files, bgpscanner)
         self._filter_and_clean_up_db(IPV4, IPV6)
-        self._add_announcement_metadata()
 
 ########################
 ### Helper Functions ###
@@ -111,7 +110,7 @@ class MRT_Parser(Parser):
                                               sources,
                                               PARAMS_modification)
         # Give Isolario URLs if parameter is not changed
-        return caida_urls + self._get_iso_mrt_urls(start, sources)
+        return caida_urls + self._get_iso_mrt_urls(start, sources) 
         # If you ever want RIPE without the caida api, look at the commit
         # Where the relationship_parser_tests where merged in
 
@@ -170,7 +169,7 @@ class MRT_Parser(Parser):
 
         # Get the folder name according to the start parameter
         _folder = _start.strftime("%Y_%m/")
-        # Isolario files are added every 2 hrs, so if start time is odd,
+        # Isolario files are added every 2 hrs, so if start time is odd numbered,
         # then make it an even number and add an hour
         # https://stackoverflow.com/q/12400256/8903959
         if _start.hour % 2 != 0:
@@ -195,7 +194,7 @@ class MRT_Parser(Parser):
         with utils.progress_bar("Downloading MRTs, ", len(mrt_files)):
             # Creates a dl pool with 4xCPUs since it is I/O based
             with utils.Pool(dl_threads, 4, "download") as dl_pool:
-
+                
                 # Download files in parallel
                 dl_pool.map(lambda f: utils.download_file(
                         f.url, f.path, f.num, len(urls),
@@ -212,16 +211,14 @@ class MRT_Parser(Parser):
         dl=download, p=parse.
         """
 
+
         with utils.progress_bar("Parsing MRT Files,", len(mrt_files)):
             with utils.Pool(p_threads, 1, "parsing") as p_pool:
                 # Runs the parsing of files in parallel, largest first
                 p_pool.map(lambda f: f.parse_file(bgpscanner),
                            sorted(mrt_files, reverse=True))
 
-    def _filter_and_clean_up_db(self,
-                                IPV4: bool,
-                                IPV6: bool,
-                                delete_duplicates=False):
+    def _filter_and_clean_up_db(self, IPV4: bool, IPV6: bool):
         """This function filters mrt data by IPV family and cleans up db
 
         First the database is connected. Then IPV4 and/or IPV6 data is
@@ -233,12 +230,11 @@ class MRT_Parser(Parser):
         with MRT_Announcements_Table() as _ann_table:
             # First we filter by IPV4 and IPV6:
             _ann_table.filter_by_IPV_family(IPV4, IPV6)
-            logging.info("vaccuming and checkpoint")
-            # A checkpoint is run here so that RAM isn't lost
-            _ann_table.cursor.execute("CHECKPOINT;")
             # VACUUM ANALYZE to clean up data and create statistics on table
             # This is needed for better index creation and queries later on
             _ann_table.cursor.execute("VACUUM ANALYZE;")
+            # A checkpoint is run here so that RAM isn't lost
+            _ann_table.cursor.execute("CHECKPOINT;")
 
     def parse_files(self, **kwargs):
         warnings.warn(("MRT_Parser.parse_files is depreciated. "

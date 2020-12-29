@@ -17,7 +17,7 @@ from unittest.mock import patch
 from bs4 import BeautifulSoup as Soup
 from ..data_classes import Data, Hijack, Leak, Outage
 from ..tables import Hijacks_Table, Leaks_Table, Outages_Table
-from ..event_types import Event_Types
+from ..event_types import BGPStream_Website_Event_Types
 from itertools import combinations
 from .create_HTML import HTML_Creator
 from .test_tables import Test_Hijacks_Table, Test_Leaks_Table, Test_Outages_Table
@@ -32,29 +32,29 @@ class Test_Data:
     @staticmethod
     def init(event):
         type_ = event['event_type']
-        if type_ == Event_Types.HIJACK.value:
+        if type_ == BGPStream_Website_Event_Types.HIJACK.value:
             return Hijack('/tmp/')
-        if type_ == Event_Types.LEAK.value:
+        if type_ == BGPStream_Website_Event_Types.LEAK.value:
             return Leak('/tmp/')
-        if type_ == Event_Types.OUTAGE.value:
+        if type_ == BGPStream_Website_Event_Types.OUTAGE.value:
             return Outage('/tmp/')
 
     @staticmethod
     def uncommon_info(event):
         type_ = event['event_type']
-        if type_ == Event_Types.HIJACK.value:
+        if type_ == BGPStream_Website_Event_Types.HIJACK.value:
             return ['expected_origin_name', 'expected_origin_number',
                     'detected_origin_name', 'detected_origin_number',
                     'expected_prefix', 'more_specific_prefix',
                     'detected_as_path', 'detected_by_bgpmon_peers']
 
-        if type_ == Event_Types.LEAK.value:
+        if type_ == BGPStream_Website_Event_Types.LEAK.value:
             return ['origin_as_name', 'origin_as_number',
                     'leaker_as_name', 'leaker_as_number',
                     'leaked_prefix', 'leaked_to_number', 'leaked_to_name',
                     'example_as_path', 'detected_by_bgpmon_peers']
 
-        if type_ == Event_Types.OUTAGE.value:
+        if type_ == BGPStream_Website_Event_Types.OUTAGE.value:
             return ['as_name', 'as_number',
                     'number_prefixes_affected', 'percent_prefixes_affected']
 
@@ -94,11 +94,11 @@ class Test_Data:
                 data.append(event['row']) 
 
             type_ = event['event_type']
-            if type_ == Event_Types.HIJACK.value:
+            if type_ == BGPStream_Website_Event_Types.HIJACK.value:
                  test_table = Test_Hijacks_Table()
-            if type_ == Event_Types.LEAK.value:
+            if type_ == BGPStream_Website_Event_Types.LEAK.value:
                 test_table = Test_Leaks_Table()
-            if type_ == Event_Types.OUTAGE.value:
+            if type_ == BGPStream_Website_Event_Types.OUTAGE.value:
                 test_table = Test_Outages_Table()
 
             for IPV4, IPV6 in combinations([True, False], 2):
@@ -111,7 +111,7 @@ class Test_Data:
                 # checks that IPV filtering was successful
                 for IPV, num in zip([IPV4, IPV6], [4, 6]):
                     with data.table() as t:
-                        if not IPV and type_ != Event_Types.OUTAGE.value:
+                        if not IPV and type_ != BGPStream_Website_Event_Types.OUTAGE.value:
                             sql = f"""SELECT COUNT({t.prefix_column}) FROM {t.name}
                                       WHERE family({t.prefix_column}) = {num}"""
                             assert t.get_count(sql) == 0

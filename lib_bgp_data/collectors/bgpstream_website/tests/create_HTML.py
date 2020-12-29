@@ -17,8 +17,8 @@ Usage of this module is in conftest.py
 
 from bs4 import BeautifulSoup as Soup, NavigableString
 import requests
-from ..event_types import Event_Types
-from ...utils import utils
+from ..event_types import BGPStream_Website_Event_Types
+from ....utils import utils
 import re
 from random import getrandbits, choices, randrange
 from ipaddress import IPv4Address, IPv6Address
@@ -79,7 +79,7 @@ class HTML_Creator:
         response = requests.get(self.bgpstream_url)
         response.raise_for_status()
         # 'BGP Leak ' and 'Outage ' both have an extra space
-        if event == Event_Types.LEAK.value or event == Event_Types.OUTAGE.value:
+        if event == BGPStream_Website_Event_Types.LEAK.value or event == BGPStream_Website_Event_Types.OUTAGE.value:
             event += ' '
         tag = Soup(response.text, 'html.parser').find(string=event).parent.parent
         response.close()
@@ -101,20 +101,20 @@ class HTML_Creator:
 
         asn = tag.find(class_='asn')
 
-        if event_type == Event_Types.HIJACK.value:
+        if event_type == BGPStream_Website_Event_Types.HIJACK.value:
             # Pieces of AS info that Hijacks have
             keys = ['expected_origin_name', 'expected_origin_number',
                     'detected_origin_name', 'detected_origin_number']
             save_dict['country'] = ''
             save_dict['end_time'] = ''
 
-        if event_type == Event_Types.LEAK.value:
+        if event_type == BGPStream_Website_Event_Types.LEAK.value:
             keys = ['origin_as_name', 'origin_as_number',
                     'leaker_as_name', 'leaker_as_number']
             save_dict['country'] = ''
             save_dict['end_time'] = ''
 
-        if event_type == Event_Types.OUTAGE.value:
+        if event_type == BGPStream_Website_Event_Types.OUTAGE.value:
             keys = ['as_name', 'as_number']
 
         # these will serve as the new AS names and AS numbers
@@ -202,7 +202,7 @@ class HTML_Creator:
 
         for i in [4, 6]:
             tag, hijack_page, new_url = self.change_common_info(
-                   Event_Types.HIJACK.value, hijack_info, False)
+                   BGPStream_Website_Event_Types.HIJACK.value, hijack_info, False)
 
             # generate new info
             ip = random_IP(i)
@@ -234,7 +234,7 @@ class HTML_Creator:
         leak_info = {}
 
         tag, leak_page, new_url = self.change_common_info(
-                                  Event_Types.LEAK.value, leak_info, False)
+                                  BGPStream_Website_Event_Types.LEAK.value, leak_info, False)
         tds =  leak_page('td')
         leaked_to_list = tds[-3]('li')
 
@@ -281,7 +281,7 @@ class HTML_Creator:
             outage_info = {}
 
             tag, outage_page, new_url = self.change_common_info(
-                                 Event_Types.OUTAGE.value, outage_info, no_as)
+                                 BGPStream_Website_Event_Types.OUTAGE.value, outage_info, no_as)
 
             if end:
                 f_name += '_end'

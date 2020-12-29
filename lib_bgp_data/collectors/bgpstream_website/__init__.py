@@ -53,9 +53,8 @@ Possible Future Extensions:
         -If we only parse new info this is the common case
 """
 
-from .bgpstream_runner import BGPStream_Website_Runner
 from .bgpstream_website_parser import BGPStream_Website_Parser
-from .event_types import Event_Types
+from .event_types import BGPStream_Website_Event_Types
 
 __author__ = "Justin Furuness, Tony Zheng"
 __credits__ = ["Justin Furuness, Tony Zheng"]

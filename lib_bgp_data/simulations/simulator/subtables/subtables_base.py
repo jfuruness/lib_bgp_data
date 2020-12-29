@@ -21,6 +21,7 @@ from .output_subtables import Output_Subtables, Output_Subtable
 
 from ....utils.database import Database
 
+
 # This is probably not the best way to do this inheritance,
 # But they are all kind of messy anyways so whatever
 class Subtables(Input_Subtables, Output_Subtables):
@@ -67,6 +68,7 @@ class Subtables(Input_Subtables, Output_Subtables):
         """Returns the names of the tables"""
 
         return [x.table.name for x in self.tables]
+
 
 class Subtable(Input_Subtable, Output_Subtable):
     """Subtable that we divide results into"""

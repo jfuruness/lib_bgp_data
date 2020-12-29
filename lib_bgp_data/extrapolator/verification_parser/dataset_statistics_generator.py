@@ -27,12 +27,13 @@ from shutil import rmtree
 
 from .tables import Monitors_Table, Control_Monitors_Table
 
-from ..asrank_website_parser import ASRankWebsiteParser
-from ..base_classes import Parser
-from ..database import Database
-from ..mrt_parser import MRT_Parser, MRT_Metadata_Parser, MRT_Sources
-from ..mrt_parser.tables import MRT_W_Metadata_Table
-from ..relationships_parser.tables import Peers_Table, Provider_Customers_Table
+from ...collectors import AS_Rank_Website_Parser
+from ...collectors.mrt import MRT_Parser, MRT_Metadata_Parser, MRT_Sources
+from ...collectors.mrt.mrt_metadata.tables import MRT_W_Metadata_Table
+from ...collectors.relationships.tables import Peers_Table
+from ...collectors.relationships.tables import Provider_Customers_Table
+from ...utils.base_classes import Parser
+from ...utils.database import Database
 
 class Dataset_Statistics_Generator(Parser):
     """This class generates statistics for the dataset
@@ -254,20 +255,33 @@ class Dataset_Statistics_Generator(Parser):
                         SELECT customer_as, COUNT(*) AS total FROM (
                             SELECT ogpc.customer_as FROM {Provider_Customers_Table.name} ogpc
                             --for some reason if i do it this way it doesn't use nested left join
-                            LEFT JOIN (
-                                SELECT peer_as_1 AS asn FROM {Peers_Table.name}
-                                UNION ALL
-                                SELECT peer_as_2 AS asn FROM {Peers_Table.name}
-                            ) peers
-                                ON peers.asn = ogpc.customer_as
                             LEFT JOIN {Provider_Customers_Table.name} pc
                                 ON pc.provider_as = ogpc.customer_as
-                            WHERE pc.provider_as IS NULL
-                                AND peers.asn IS NULL) a
+                            WHERE pc.provider_as IS NULL) a
                         GROUP BY customer_as)
                 SELECT COUNT(*) FROM totals WHERE total > 1;"""
             multihomed: int = db.get_count(sql)
             logging.debug(multihomed)
+
+            logging.debug("Getting IXPs")
+            # Number of IXPs
+            sql = f"""WITH totals AS (
+                        SELECT peers.asn, COUNT(peers.asn) AS total FROM (
+                            SELECT peer_as_1 AS asn FROM {Peers_Table.name}
+                            UNION ALL
+                            SELECT peer_as_2 AS asn FROM {Peers_Table.name}) peers
+                        LEFT JOIN provider_customers pc
+                            ON pc.provider_as = peers.asn OR pc.customer_as = peers.asn
+                                WHERE pc.provider_as IS NULL
+                        GROUP BY peers.asn
+                        )
+                SELECT COUNT(*) FROM totals WHERE total > 1;"""
+
+            db.execute(f"ANALYZE {Peers_Table.name}")
+            db.execute(f"ANALYZE provider_customers")
+            assert False, "Check test.sql change query to be fast"
+            ixps: int = db.get_count(sql)
+ 
 
             db.execute("ALTER SYSTEM SET enable_nestloop TO 'on';")
             db.execute("SELECT pg_reload_conf();")
@@ -291,7 +305,8 @@ class Dataset_Statistics_Generator(Parser):
                        "Multihomed": multihomed,
                        "Transit": transit,
                        "Peer_Links": peers,
-                       "Provider_Customer_Links": provider_customers}
+                       "Provider_Customer_Links": provider_customers,
+                       "IXPs": ixps}
 
         logging.debug("Generating graph")
         x = np.arange(len(data_points))

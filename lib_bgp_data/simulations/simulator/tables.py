@@ -166,7 +166,7 @@ class Simulation_Results_Table(Generic_Table):
             cp_adopting[CP_Conds.RECV_BHOLE.value],
             cp_adopting[CP_Conds.NO_RIB.value]]
 
-        v_hjack_info = [visible_hijack_data[x] for x in 
+        v_hjack_info = [visible_hijack_data[x] for x in
                         [AS_Types.ADOPTING, AS_Types.COLLATERAL]]
 
         self.execute(sql, test_info + trace_info + cplane_info + v_hjack_info)

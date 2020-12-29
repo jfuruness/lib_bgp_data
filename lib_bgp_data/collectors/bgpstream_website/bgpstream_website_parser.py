@@ -21,7 +21,7 @@ import bs4
 from tqdm import tqdm
 
 from .data_classes import Leak, Hijack, Outage
-from .event_types import Event_Types
+from .event_types import BGPStream_Website_Event_Types
 from .tables import Hijacks_Table, Leaks_Table, Outages_Table
 from ...utils.base_classes import Parser
 from ...utils import utils
@@ -39,13 +39,13 @@ class BGPStream_Website_Parser(Parser):
              row_limit: int = None,
              IPV4=True,
              IPV6=False,
-             data_types: list = Event_Types.list_values(),
+             data_types: list = BGPStream_Website_Event_Types.list_values(),
              refresh=False):
         """Parses rows in the bgpstream website.
 
         row_limit is for testing purposes only, to run a small subset.
         IPV4 and IPV6 are the prefixes that should be included if true.
-        The possible values for data_types are anything in Event_Types,
+        The possible values for data_types are anything in BGPStream_Website_Event_Types,
         these are the values that will be parsed, everything else will
         be ignored. By default refresh is false, meaning only new rows
         are parsed. If refresh is set to True then all rows with a type
@@ -55,9 +55,9 @@ class BGPStream_Website_Parser(Parser):
         """
 
         # These classes are used for parsing rows
-        _data = {Event_Types.HIJACK.value: Hijack(self.csv_dir),
-                 Event_Types.LEAK.value: Leak(self.csv_dir),
-                 Event_Types.OUTAGE.value: Outage(self.csv_dir)}
+        _data = {BGPStream_Website_Event_Types.HIJACK.value: Hijack(self.csv_dir),
+                 BGPStream_Website_Event_Types.LEAK.value: Leak(self.csv_dir),
+                 BGPStream_Website_Event_Types.OUTAGE.value: Outage(self.csv_dir)}
         self._data = {k: v for k, v in _data.items()
                       if k in data_types}
 

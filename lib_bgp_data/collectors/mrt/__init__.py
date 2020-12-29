@@ -14,6 +14,5 @@ __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Production"
 
-from .mrt_metadata_parser import MRT_Metadata_Parser
-from .mrt_parser import MRT_Parser
-from .mrt_sources import MRT_Sources
+from .mrt_metadata import MRT_Metadata_Parser
+from .mrt_base import MRT_Parser, MRT_Sources
