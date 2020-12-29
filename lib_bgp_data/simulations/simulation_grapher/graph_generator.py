@@ -52,7 +52,7 @@ class Graph_Generator(Parser):
             graph.get_data()
         return graphs
 
-    def get_possible_graph_attrs(self, percents_to_graph):
+    def get_graph_attrs(self, percents_to_graph):
         """Returns all possible graph variations that we can graph
 
         all possible policies, subtables, attack types, percents
@@ -61,11 +61,11 @@ class Graph_Generator(Parser):
         percents = self.get_percents(percents_to_graph)
 
         with Simulation_Results_Table() as db:
-            def get_data(self, attr):
+            def get_data(attr):
                 sql = f"SELECT DISTINCT {attr} FROM {db.name}"
                 return [x[attr] for x in db.execute(sql)]
             attrs = ["adopt_pol", "subtable_name", "attack_type"]
-            return [get_data[x] for x in attrs] + [percents]
+            return [get_data(x) for x in attrs] + [percents]
 
     def get_percents(self, percents_to_graph):
         """Validate percents vs percent iters

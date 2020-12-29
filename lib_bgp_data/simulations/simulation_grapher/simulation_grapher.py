@@ -39,7 +39,7 @@ class Simulation_Grapher(Parser):
         # Deletes and creates graph path
         utils.clean_paths(self.graph_path)
         # Extracts data and gets graphs ready to plot
-        graphs = Graph_Generator._run(percents_to_graph)
+        graphs = Graph_Generator(**self.kwargs)._run(percents_to_graph)
 
         total = len(policy_combos_to_graph) * len(graphs) * len(Graph_Formats)
 

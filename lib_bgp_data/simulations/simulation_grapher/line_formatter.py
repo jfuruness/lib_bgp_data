@@ -28,9 +28,11 @@ class Line_Formatter:
         # Since we want them to both change as much as possible
         # so instead we zip together markers and styles
         # with every possible ordering of each
-        marker_perms = itertools.permutations(self.markers, len(self.markers))
+        marker_perms = list(itertools.permutations(self.markers,
+                                                   len(self.markers)))
         style_perms = [self.styles] * len(marker_perms)
-        color_perms = itertools.permutations(self.colors, len(self.colors))
+        color_perms = list(itertools.permutations(self.colors,
+                                                  len(self.colors)))
         markers = self.flatten_list(marker_perms)
         styles = self.flatten_list(style_perms)
         colors = self.flatten_list(list(color_perms)[::-1])

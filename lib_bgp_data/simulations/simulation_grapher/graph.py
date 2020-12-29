@@ -28,7 +28,7 @@ class Graph:
     def __init__(self, graph_type, subtable, attack_type, policies, percents):
         self.graph_type = graph_type
         self.subtable = subtable
-        self.attack_type = attack_type,
+        self.attack_type = attack_type
         self.percents = percents
         self.lines = [Line(policy) for policy in policies]
 
