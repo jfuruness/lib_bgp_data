@@ -70,7 +70,7 @@ class Blacklist_Source_IP(Blacklist_Source):
         super().__init__(csv_dir)
 
     def parse_file(self, f):
-        return set(re.findall(r'(\d+).(\d+).(\d+).(\d+)/(\d+)', f.read()))
+        return set(re.findall(r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}', f.read()))
 
     def get_rows(self, prefix):
         """Returns prefixes for db insertion"""

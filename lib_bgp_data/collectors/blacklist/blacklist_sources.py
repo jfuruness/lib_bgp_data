@@ -14,6 +14,7 @@ __email__ = "nicholas.shpetner@uconn.edu"
 __status__ = "Development"
 
 import csv
+import re
 
 from .blacklist_source import Blacklist_Source, Blacklist_Source_IP
 from ...utils import utils
@@ -37,7 +38,7 @@ class UCE_Blacklist_IP(Blacklist_Source_IP):
         utils.unzip_gz(temp_path)
      
     def parse_file(self, f):
-        return set(re.findall(r'(\d+).(\d+).(\d+).(\d+)', f.read()))
+        return set(re.findall(r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}', f.read()))
 
 class UCE1(UCE_Blacklist_IP):
     url = 'http://41.208.71.58/rbldnsd-all/dnsbl-1.uceprotect.net.gz'
