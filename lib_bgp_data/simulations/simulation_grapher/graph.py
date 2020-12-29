@@ -14,7 +14,7 @@ from .enums import Measurement_Types, Graph_Formats
 from .line import Line
 from .line_formatter import Line_Formatter
 
-from ..enums import AS_Types
+from ..enums import AS_Types, Policies
 
 __authors__ = ["Justin Furuness", "Samarth Kasbawala"]
 __credits__ = ["Justin Furuness", "Samarth Kasbawala"]
@@ -58,6 +58,7 @@ class Graph:
         fig, ax = plt.subplots()
         legend_handles = []
         # Remove policies that are not graphed
+        policies = [Policies(x.value).name for x in policies]
         for line in [x for x in self.lines if x.policy in policies]:
             legend_handles.append(ax.errorbar(line.x,
                                               line.y,

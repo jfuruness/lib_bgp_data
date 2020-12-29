@@ -20,7 +20,7 @@ class Line_Formatter:
         self.policy_format_dict = {}
         fmt_perms = self.markers_styles_colors
         for i, policy in enumerate(policies):
-            self.policy_format_dict[policy] = Line_Format(*fmt_perms[i])
+            self.policy_format_dict[policy.name] = Line_Format(*fmt_perms[i])
 
     @property
     def markers_styles_colors(self):
