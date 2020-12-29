@@ -18,9 +18,9 @@ from .line_format import Line_Format
 class Line_Formatter:
     def __init__(self, policies):
         self.policy_format_dict = {}
-        marks_styles_colors = self.markers_styles_colors
+        fmt_perms = self.markers_styles_colors
         for i, policy in enumerate(policies):
-            self.policy_format_dict[policy] = Line_Format(*marks_styles_colors)
+            self.policy_format_dict[policy] = Line_Format(*fmt_perms[i])
 
     @property
     def markers_styles_colors(self):

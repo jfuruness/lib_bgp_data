@@ -59,10 +59,10 @@ class Simulation_Grapher(Parser):
         _dir = os.path.join(self.graph_path,
                             graph.attack_type,
                             graph.subtable,
-                            self.graph_type)
+                            graph.graph_type)
         if not os.path.exists(_dir):
             os.makedirs(_dir)
-        title = "_".join(x.policy for x in self.lines) + fmt.value
+        title = "_".join(x.policy for x in graph.lines) + fmt.value
         return os.path.join(_dir, title)
 
     def tar_graphs(self):
