@@ -20,12 +20,12 @@ class Simulation_Results_Agg_Table(Generic_Table):
     name = "simulation_results_agg"
 
     def fill_table(self):
-        sql = f""" 
+        sql = f"""
         CREATE UNLOGGED TABLE {self.name} AS (
             SELECT
-        
+
                 attack_type, subtable_name, adopt_pol, percent,
-        
+
                 --adopting traceback
                 trace_hijacked_adopting::decimal / trace_total_adopting::decimal AS trace_hijacked_adopting,
                 (trace_blackholed_adopting::decimal + no_rib_adopting::decimal)::decimal / trace_total_adopting::decimal AS trace_disconnected_adopting,
