@@ -32,14 +32,14 @@ class Simulator(Parser):
     """
 
     def _run(self,
-             percents=[1],
-             num_trials=2,
+             percents=[1, 50, 100],
+             num_trials=4,
              exr_bash=None,  # For development only
              exr_branch=None,  # For development only
              seeded_trial=None,
              deterministic=False,
-             attack_types=Attack.runnable_attacks[:1],
-             adopt_policies=list(Non_Default_Policies.__members__.values())[:1],
+             attack_types=Attack.runnable_attacks,
+             adopt_policies=list(Non_Default_Policies.__members__.values()),
              redownload_base_data=True):
         """Runs Attack/Defend simulation.
         In depth explanation at top of module.

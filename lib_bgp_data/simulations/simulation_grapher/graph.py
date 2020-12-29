@@ -5,6 +5,7 @@
 
 import os
 import sys
+import warnings
 
 import matplotlib
 import matplotlib.pyplot as plt
@@ -56,21 +57,19 @@ class Graph:
                     title=True):
         self._print_completion_rate(save_path, total)
         fig, ax = plt.subplots()
-        legend_handles = []
         # Remove policies that are not graphed
         policies = [Policies(x.value).name for x in policies]
         for line in [x for x in self.lines if x.policy in policies]:
-            legend_handles.append(ax.errorbar(line.x,
-                                              line.y,
-                                              yerr=line.yerr,
-                                              **line.fmt(formatter)))
+            ax.errorbar(line.x, line.y, yerr=line.yerr, **line.fmt(formatter))
 
         y_label = self._get_y_label(self.graph_type)
         ax.set_ylabel(y_label)
         ax.set_xlabel("Percent Adoption")
         if title:
             ax.set_title(f"{self.subtable} | {self.attack_type} | {y_label}")
-        ax.legend(legend_handles)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            ax.legend()
         plt.tight_layout()
         plt.rcParams.update({"font.size": 14, "lines.markersize": 10})
         self._save_graph(save_path, plt, fig, _format)
