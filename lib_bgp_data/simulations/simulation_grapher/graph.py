@@ -77,9 +77,9 @@ class Graph:
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             ax.legend()
-            plt.tight_layout()
-            plt.rcParams.update({"font.size": 14, "lines.markersize": 10})
-            self._save_graph(save_path, plt, fig, _format)
+        plt.tight_layout()
+        plt.rcParams.update({"font.size": 14, "lines.markersize": 10})
+        self._save_graph(save_path, plt, fig, _format)
 
     def _get_y_label(self, graph_type):
         if "trace_hijacked" in graph_type:

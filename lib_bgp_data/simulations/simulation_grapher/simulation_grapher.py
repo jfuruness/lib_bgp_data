@@ -85,6 +85,7 @@ class Simulation_Grapher(Parser):
  
     def get_save_path(self, policies, graph, fmt):
         _dir = os.path.join(self.graph_path,
+                            fmt.value.replace(".", ""),
                             graph.attack_type,
                             graph.subtable,
                             graph.graph_type)
