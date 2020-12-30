@@ -25,7 +25,6 @@ from ..config import set_global_section_header
 class Test_Config:
     """Tests all local functions within the Config class."""
 
-    @pytest.mark.create
     def test_create_config(self):
         """Tests create config function.
 
@@ -41,7 +40,6 @@ class Test_Config:
         for tag in tags:
             assert conf._read_config('test', tag[0]) == tag[1]
 
-    @pytest.mark.rm
     def test_remove_old_config_section(self):
         """Tests removal of old config section.
 
@@ -55,7 +53,6 @@ class Test_Config:
         conf.create_config(pswd)
         self.test_create_config()
 
-    @pytest.mark.read
     def test_read_config(self):
         """Tests the reading of the config file.
 
@@ -68,7 +65,6 @@ class Test_Config:
             read = conf._read_config('test', tag[0])
             assert type(read) == tag[1]
 
-    @pytest.mark.creds
     def test_get_db_creds(self):
         """tests get_db_creds
 
@@ -89,7 +85,6 @@ class Test_Config:
         conn.close()
         conf._remove_old_config_section('new_test')
 
-    @pytest.mark.install
     def test_install(self):
         """Tests install function
 
@@ -107,7 +102,6 @@ class Test_Config:
         conn.close()
         conf._remove_old_config_section('new_test')
 
-    @pytest.mark.ram
     def test_ram(self):
         """Make sure ram returns properly"""
         conf = Config('test')
