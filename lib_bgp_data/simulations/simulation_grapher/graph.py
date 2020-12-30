@@ -39,6 +39,7 @@ class Graph:
                           self.attack_type,
                           self.percents,
                           self.graph_type)
+        return self
 
     @staticmethod
     def get_possible_graph_types():
@@ -55,11 +56,15 @@ class Graph:
                     _format,
                     total,
                     title=True):
-        self._print_completion_rate(save_path, total)
-        fig, ax = plt.subplots()
         # Remove policies that are not graphed
         policies = [Policies(x.value).name for x in policies]
-        for line in [x for x in self.lines if x.policy in policies]:
+        filtered_lines = [x for x in self.lines if x.policy in policies]
+        # If the policies in this combo aren't in sim results, don't graph
+        if len(filtered_lines) == 0:
+            return
+
+        fig, ax = plt.subplots()
+        for line in filtered_lines:
             ax.errorbar(line.x, line.y, yerr=line.yerr, **line.fmt(formatter))
 
         y_label = self._get_y_label(self.graph_type)
@@ -67,20 +72,14 @@ class Graph:
         ax.set_xlabel("Percent Adoption")
         if title:
             ax.set_title(f"{self.subtable} | {self.attack_type} | {y_label}")
+        # Here due to: WARNING: No handles with labels found to put in legend.
+        # This is a bug in matplotlib, handles are auto added
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             ax.legend()
-        plt.tight_layout()
-        plt.rcParams.update({"font.size": 14, "lines.markersize": 10})
-        self._save_graph(save_path, plt, fig, _format)
-
-    def _print_completion_rate(self, save_path, total):
-        graph_path = "/".join(save_path.split("/")[:3])
-        # https://stackoverflow.com/a/47930319/8903959
-        file_count = sum(len(files) for _, _, files in os.walk(graph_path))
-        # https://stackoverflow.com/a/5419488/8903959
-        print(f"Writing {file_count}/{total}\r", end="")
-        sys.stdout.flush()
+            plt.tight_layout()
+            plt.rcParams.update({"font.size": 14, "lines.markersize": 10})
+            self._save_graph(save_path, plt, fig, _format)
 
     def _get_y_label(self, graph_type):
         if "trace_hijacked" in graph_type:

@@ -10,6 +10,8 @@ __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
+from concurrent.futures import ProcessPoolExecutor
+
 from tqdm import tqdm
 
 from .graph import Graph
@@ -47,10 +49,13 @@ class Graph_Generator(Parser):
         all_graph_attrs = self.get_graph_attrs(percents_to_graph)
         # Gets all the graphs that need to be written
         graphs = self.get_graphs(*all_graph_attrs)
+        counter = 0
         # pulls data out from the db for these graphs
-        for graph in tqdm(graphs, total=len(graphs), desc="Getting data"):
-            graph.get_data()
-        return graphs
+        with ProcessPoolExecutor() as executor:
+            # https://stackoverflow.com/a/52242947/8903959
+            # Tested w/both accepted and alternate answer. They are the same
+            kwargs = {"total": len(graphs), "desc": "Loading db data"}
+            return list(tqdm(executor.map(Graph.get_data, graphs), **kwargs))
 
     def get_graph_attrs(self, percents_to_graph):
         """Returns all possible graph variations that we can graph
