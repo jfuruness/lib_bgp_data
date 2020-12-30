@@ -35,7 +35,7 @@ class Simulation_Grapher(Parser):
 
     def _run(self,
              percents_to_graph=None,
-             policy_combos=Policy_Combos.list_values(),
+             policy_combos=[list(Policies.__members__.values())],  #Policy_Combos.list_values(),
              titles=True,
              fmts=Graph_Formats.__members__.values()):
 
