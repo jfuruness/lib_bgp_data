@@ -20,9 +20,16 @@ from ....utils.database import Generic_Table
 class Simulation_Extrapolator_Results_Table(Generic_Table):
     """Contains output for extrapolator results"""
 
-    __slots__ = []
+    __slots__ = ["round_num"]
 
-    name = "rovpp_extrapolation_results"
+    def __init__(self, *args, **kwargs):
+        self.round_num = kwargs.get("round_num")
+        super(Simulation_Extrapolator_Results_Table,
+              self).__init__(*args, **kwargs)
+
+    @property
+    def name(self):
+        return "simulation_extrapolation_results_raw_round_{}".format(self.round_num)
 
 
 class Simulation_Extrapolator_Forwarding_Table(Generic_Table):
@@ -30,9 +37,16 @@ class Simulation_Extrapolator_Forwarding_Table(Generic_Table):
 
     In depth explanation at the top of the file."""
 
-    __slots__ = []
+    __slots__ = ["round_num"]
 
-    name = "simulation_extrapolator_forwarding"
+    def __init__(self, *args, **kwargs):
+        self.round_num = kwargs.get("round_num")
+        super(Simulation_Extrapolator_Forwarding_Table,
+              self).__init__(*args, **kwargs)
+
+    @property
+    def name(self):
+        return "simulation_extrapolator_forwarding_round_{}".format(self.round_num)
 
     def fill_table(self, attack_type):
         """Creates tables if they do not exist.
@@ -42,10 +56,11 @@ class Simulation_Extrapolator_Forwarding_Table(Generic_Table):
 
         logging.debug("Creating rovpp ribs out table")
 
-        sql = f"""CREATE UNLOGGED TABLE {self.name} AS (
-               SELECT exr1.*
-                FROM {Simulation_Extrapolator_Results_Table.name} exr1
-                LEFT JOIN {Simulation_Extrapolator_Results_Table.name} exr2
-                    ON exr1.asn = exr2.asn AND exr1.prefix >> exr2.prefix
-                WHERE exr2.asn IS NULL);"""
-        self.execute(sql)
+        with Simulation_Extrapolator_Results_Table(round_num=self.round_num) as db:
+            sql = f"""CREATE UNLOGGED TABLE {self.name} AS (
+                   SELECT exr1.*
+                    FROM {db.name} exr1
+                    LEFT JOIN {db.name} exr2
+                        ON exr1.asn = exr2.asn AND exr1.prefix >> exr2.prefix
+                    WHERE exr2.asn IS NULL);"""
+            self.execute(sql)

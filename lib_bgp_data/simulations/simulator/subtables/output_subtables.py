@@ -25,11 +25,22 @@ from ....extrapolator import Simulation_Extrapolator_Forwarding_Table
 class Output_Subtables:
     """Subtables that deal with the output functions from the extrapolator"""
 
-    def store(self, attack, number_of_attackers, adopt_policy, percent, percent_iter, extra_bash):
+    def store(self,
+              attack,
+              number_of_attackers,
+              adopt_policy,
+              percent,
+              percent_iter,
+              round_num,
+              extra_bash_arg_1,
+              extra_bash_arg_2,
+              extra_bash_arg_3,
+              extra_bash_arg_4,
+              extra_bash_arg_5):
         """Stores data"""
 
         # Gets all the asn data
-        with Simulation_Extrapolator_Forwarding_Table() as _db:
+        with Simulation_Extrapolator_Forwarding_Table(round_num=round_num) as _db:
             ases = {x["asn"]: x for x in _db.get_all()}
 
         # Stores the data for the specific subtables
@@ -42,7 +53,12 @@ class Output_Subtables:
                                adopt_policy,
                                percent,
                                percent_iter,
-                               extra_bash,
+                               round_num,
+                               extra_bash_arg_1,
+                               extra_bash_arg_2,
+                               extra_bash_arg_3,
+                               extra_bash_arg_4,
+                               extra_bash_arg_5,
                                [x.Forwarding_Table.name for x in self.tables])
 
 
@@ -56,7 +72,12 @@ class Output_Subtable:
                      adopt_policy,
                      percent,
                      percent_iter,
-                     extra_bash_str,
+                     round_num,
+                     extra_bash_arg_1,
+                     extra_bash_arg_2,
+                     extra_bash_arg_3,
+                     extra_bash_arg_4,
+                     extra_bash_arg_5,
                      table_names):
         """Stores output in the simulation results table"""
 
@@ -75,7 +96,12 @@ class Output_Subtable:
                       adopt_policy,
                       percent,
                       percent_iter,
-                      extra_bash_str,
+                      round_num,
+                      extra_bash_arg_1,
+                      extra_bash_arg_2,
+                      extra_bash_arg_3,
+                      extra_bash_arg_4,
+                      extra_bash_arg_5,
                       self._get_traceback_data(subtable_ases,
                                                all_ases,
                                                attack),

@@ -52,7 +52,12 @@ class Simulation_Results_Table(Generic_Table):
                  adopt_pol text,
                  percent bigint,
                  percent_iter bigint,
-                 extra_bash text,
+                 round_num bigint,
+                 extra_bash_arg_1 bigint,
+                 extra_bash_arg_2 bigint,
+                 extra_bash_arg_3 bigint,
+                 extra_bash_arg_4 bigint,
+                 extra_bash_arg_5 bigint,
                  trace_hijacked_collateral bigint,
                  trace_nothijacked_collateral bigint,
                  trace_blackholed_collateral bigint,
@@ -81,7 +86,12 @@ class Simulation_Results_Table(Generic_Table):
                adopt_pol_name,
                percent,
                percent_iter,
-               extra_bash,
+               round_num,
+               extra_bash_arg_1,
+               extra_bash_arg_2,
+               extra_bash_arg_3,
+               extra_bash_arg_4,
+               extra_bash_arg_5,
                traceback_data,
                c_plane_data,
                visible_hijack_data):
@@ -97,7 +107,12 @@ class Simulation_Results_Table(Generic_Table):
                  adopt_pol,
                  percent,
                  percent_iter,
-                 extra_bash,
+                 round_num,
+                 extra_bash_arg_1,
+                 extra_bash_arg_2,
+                 extra_bash_arg_3,
+                 extra_bash_arg_4,
+                 extra_bash_arg_5,
                  trace_hijacked_collateral,
                  trace_nothijacked_collateral,
                  trace_blackholed_collateral,
@@ -118,7 +133,8 @@ class Simulation_Results_Table(Generic_Table):
                  visible_hijacks_collateral)
               VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
                       %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
-                      %s, %s, %s, %s, %s, %s, %s, %s, %s);"""
+                      %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
+                      %s, %s, %s, %s);"""
 
         # Also write out cp = control plane dp = dataplane everywhere
         # Had to do it, things where so insanely long unreadable
@@ -149,7 +165,12 @@ class Simulation_Results_Table(Generic_Table):
                      Non_Default_Policies(adopt_pol_name).name,
                      percent,
                      percent_iter,
-                     extra_bash]
+                     round_num,
+                     extra_bash_arg_1,
+                     extra_bash_arg_2,
+                     extra_bash_arg_3,
+                     extra_bash_arg_4,
+                     extra_bash_arg_5]
 
         trace_info = [
             traceback_non_adopting[DP_Conds.HIJACKED.value],

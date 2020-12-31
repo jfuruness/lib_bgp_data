@@ -38,7 +38,16 @@ class Simulation_Extrapolator_Wrapper(Extrapolator_Wrapper):
 
     default_branch = "v2s"#"rovpp_tbl_chg"
 
-    def _run(self, table_names, exr_bash=None, attack=None, extra_bash=None):
+    def _run(self,
+             table_names,
+             rounds,
+             extra_bash_arg_1,
+             extra_bash_arg_2,
+             extra_bash_arg_3,
+             extra_bash_arg_4,
+             extra_bash_arg_5,
+             exr_bash=None,
+             attack=None):
         """Runs the bgp-extrapolator and verifies input.
 
         Installs if necessary. See README for in depth instructions.
@@ -50,23 +59,36 @@ class Simulation_Extrapolator_Wrapper(Extrapolator_Wrapper):
             extra_bash = ""
 
         # Default bash args
-        default_bash_args = f"{self.install_location} -v 1 "
+        default_bash_args = f"{self.install_location} -v 1 -r {rounds}"
         default_bash_args += "".join(f" -t {x}" for x in table_names) + " "
-        default_bash_args += extra_bash
+
+        default_bash_args = self.append_extra_bash_args(default_bash_args,
+                                                        extra_bash_args_1,
+                                                        extra_bash_args_2,
+                                                        extra_bash_args_3,
+                                                        extra_bash_args_4,
+                                                        extra_bash_args_5)
         logging.debug(default_bash_args)
 
-        # Clear db before run so it errors properly
-        with Simulation_Extrapolator_Results_Table(clear=True) as _:
-            pass
+        for _round in range(1, rounds):
+            # Clear db before run so it errors properly
+            with Simulation_Extrapolator_Results_Table(clear=True,
+                                                       round_num=_round) as _:
+                pass
 
         # Exr bash here for dev only. If set override default args
-        utils.run_cmds(exr_bash + extra_bash if exr_bash else default_bash_args)
+        utils.run_cmds(exr_bash if exr_bash else default_bash_args)
 
-        with Simulation_Extrapolator_Results_Table() as db:
-            assert db.get_count() > 0, "Extrapolator didn't populate results"
+        for _round in range(1, rounds):
+            with Simulation_Extrapolator_Results_Table(round_num=_round) as db:
+                assert db.get_count() > 0, "Extrapolator didn't populate"
 
-        # Gets forwarding tables. Basically returns only more specific prefixes
-        with Simulation_Extrapolator_Forwarding_Table(clear=True) as _db:
-            logging.debug("Extrapolation complete, writing ribs out tables")
-            _db.fill_table(attack)
-            _db.execute(f"ANALYZE {_db.name}")
+            # Gets forwarding tables. Basically returns only more specific prefixes
+            with Simulation_Extrapolator_Forwarding_Table(clear=True,
+                                                          round_num=_round) as _db:
+                logging.debug("Extrapolation complete, writing ribs out tables")
+                _db.fill_table(attack)
+                _db.execute(f"ANALYZE {_db.name}")
+
+    def append_extra_bash_args(self, bash, arg_1, arg_2, arg_3, arg_4, arg_5):
+        return bash

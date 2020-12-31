@@ -35,13 +35,18 @@ class Simulator(Parser):
              percents=[1],
              num_trials=2,
              exr_bash=None,  # For development only
-             exr_branch=None,  # For development only
+             exr_cls=Sim_Exr,  # For development only
              seeded_trial=None,
              deterministic=False,
              attack_types=Attack.runnable_attacks[:1],
              adopt_policies=list(Non_Default_Policies.__members__.values())[:1],
              number_of_attackers=[1],
-             extra_bash_args=[None],
+             rounds=1,
+             extra_bash_args_1=[None],
+             extra_bash_args_2=[None],
+             extra_bash_args_3=[None],
+             extra_bash_args_4=[None],
+             extra_bash_args_5=[None],
              redownload_base_data=False):
         """Runs Attack/Defend simulation.
         In depth explanation at top of module.
@@ -52,7 +57,7 @@ class Simulator(Parser):
         if redownload_base_data:
             # Download as rank, relationships, extrapolator
             # Separate function for development ease
-            self._redownload_base_data(exr_branch)
+            self._redownload_base_data(exr_cls)
 
         # Clear the table that stores all trial info
         with Simulation_Results_Table(clear=True) as _:
@@ -72,7 +77,11 @@ class Simulator(Parser):
                             number_of_attackers,
                             adopt_policies,
                             num_trials,
-                            extra_bash_args)
+                            extra_bash_args_1,
+                            extra_bash_args_2,
+                            extra_bash_args_3,
+                            extra_bash_args_4,
+                            extra_bash_args_5)
 
         with Multiline_TQDM(total) as pbars:
             for trial in range(num_trials):
@@ -84,11 +93,17 @@ class Simulator(Parser):
                                      trial,
                                      seeded_trial=seeded_trial,
                                      exr_bash=exr_bash,
-                                     exr_kwargs=self._exr_kwargs(exr_branch),
-                                     extra_bash_args=extra_bash_args)
+                                     exr_kwargs=self.kwargs,
+                                     exr_cls=exr_cls,
+                                     rounds=rounds,
+                                     extra_bash_args_1=extra_bash_args_1,
+                                     extra_bash_args_2=extra_bash_args_2,
+                                     extra_bash_args_3=extra_bash_args_3,
+                                     extra_bash_args_4=extra_bash_args_4,
+                                     extra_bash_args_5=extra_bash_args_5)
         tables.close()
 
-    def _redownload_base_data(self, exr_branch):
+    def _redownload_base_data(self, Exr_Cls):
         """Downloads/creates data, tools, and indexes for simulator
 
         Tools: Extrapolator with speficied branch
@@ -97,7 +112,7 @@ class Simulator(Parser):
         """
 
         # forces new install of extrapolator
-        Sim_Exr(**self._exr_kwargs(exr_branch)).install(force=True)
+        Exr_Cls(**self.kwargs).install(force=True)
         # Gets relationships table
         Relationships_Parser(**self.kwargs)._run()
         # Get as rank data
@@ -111,7 +126,17 @@ class Simulator(Parser):
             for attr in ["asn", "as_rank", "asn, as_rank"]:
                 db.execute(f"CREATE INDEX ON {db.name}({attr});")
 
-    def _total(self, data_pts, attack_types, number_of_attackers, adopt_pols, trials, extra_args):
+    def _total(self,
+               data_pts,
+               attack_types,
+               number_of_attackers,
+               adopt_pols,
+               trials,
+               extra_bash_args_1,
+               extra_bash_args_2,
+               extra_bash_args_3,
+               extra_bash_args_4,
+               extra_bash_args_5):
         """tqdm runs off every possible attack/defend scenario
         This includes: attack type, adopt policy, percent, trial
         This way we can jump to any attack/defend scenario quickly
@@ -126,15 +151,11 @@ class Simulator(Parser):
                                                    number_of_attackers,
                                                    adopt_pols,
                                                    0,  # trial
-                                                   extra_args,
+                                                   extra_bash_args_1,
+                                                   extra_bash_args_2,
+                                                   extra_bash_args_3,
+                                                   extra_bash_args_4,
+                                                   extra_bash_args_5,
                                                    set_up=False):
                 total += trials
         return total
-
-    def _exr_kwargs(self, exr_branch):
-        """Gets arguments for the extrapolator"""
-
-        exr_kwargs = self.kwargs
-        if exr_branch is not None:
-            exr_kwargs["exr_branch"] = exr_branch
-        return exr_kwargs

@@ -52,7 +52,13 @@ class Data_Point(Parser):
                  seeded_trial=None,
                  exr_bash=None,
                  exr_kwargs=None,
-                 extra_bash_args=None):
+                 exr_cls=None,
+                 rounds=1,
+                 extra_bash_args_1=[None],
+                 extra_bash_args_2=[None],
+                 extra_bash_args_3=[None],
+                 extra_bash_args_4=[None],
+                 extra_bash_args_5=[None]):
         """Runs test and stores data in the database"""
 
         # Get all possible tests and set them up
@@ -60,7 +66,11 @@ class Data_Point(Parser):
                                             number_of_attackers,
                                             pols,
                                             trial,
-                                            extra_bash_args):
+                                            extra_bash_args_1,
+                                            extra_bash_args_2,
+                                            extra_bash_args_3,
+                                            extra_bash_args_4,
+                                            extra_bash_args_5):
             # Yes, this isn't the fastest way to do it
             # But it's only for development, so whatever
             # Skips trials if we have seeded the trial
@@ -71,35 +81,56 @@ class Data_Point(Parser):
             else:
                 # Run the test and insert into the database
                 test.run(pbars,
+                         rounds,
                          exr_bash=exr_bash,
-                         exr_kwargs=exr_kwargs)
+                         exr_kwargs=exr_kwargs,
+                         exr_cls=exr_cls)
 
     def get_possible_tests(self,
                            attack_classes,
                            number_of_attackers_list,
                            policies,
                            trial,
-                           extra_bash_args,
+                           extra_bash_args_1,
+                           extra_bash_args_2,
+                           extra_bash_args_3,
+                           extra_bash_args_4,
+                           extra_bash_args_5,
                            set_up=True):
         """Gets all possible tests. Sets them up and returns them"""
 
         for number_of_attackers in number_of_attackers_list:
-            for extra_bash_str in extra_bash_args:
-                # For each type of hijack
-                for attack_cls in attack_classes:
-                    # Sets adopting ases, returns hijack
-                    # We set up here so that we can compare one attack set up across
-                    # all the different policies
-                    atk = self.set_up_test(attack_cls, number_of_attackers, trial) if set_up else None
-                    # For each type of policy, attempt to defend against that attack
-                    for pol in policies:
-                        yield Test(atk,
-                                   number_of_attackers,
-                                   pol,
-                                   self.tables,
-                                   self.percent,
-                                   self.p_iter,
-                                   extra_bash_str)
+            for extra_bash_arg_1 in extra_bash_args_1:
+                for extra_bash_arg_2 in extra_bash_args_2:
+                    for extra_bash_arg_3 in extra_bash_args_3:
+                        for extra_bash_arg_4 in extra_bash_args_4:
+                            for extra_bash_arg_5 in extra_bash_args_5:
+                                # For each type of hijack
+                                for attack_cls in attack_classes:
+                                    # Sets adopting ases, returns hijack
+                                    # We set up here so that we can compare
+                                    # one attack set up across
+                                    # all the different policies
+                                    if set_up
+                                        atk = self.set_up_test(attack_cls,
+                                                               number_of_attackers,
+                                                               trial)
+                                    else:
+                                        atk = None
+                                    # For each type of policy,
+                                    # attempt to defend against that attack
+                                    for pol in policies:
+                                        yield Test(atk,
+                                                   number_of_attackers,
+                                                   pol,
+                                                   self.tables,
+                                                   self.percent,
+                                                   self.p_iter,
+                                                   extra_bash_arg_1,
+                                                   extra_bash_arg_2,
+                                                   extra_bash_arg_3,
+                                                   extra_bash_arg_4,
+                                                   extra_bash_arg_5)
 
     def set_up_test(self, attack_cls, number_of_attackers, trial_num):
         """Sets up the tests by filling attackers and setting adopters"""
