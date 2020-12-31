@@ -89,14 +89,15 @@ class ASes_Subtable(Generic_Table):
 class Subtable_Forwarding_Table(Generic_Table):
     """The forwarding table for whatever subtable."""
 
-    def fill_forwarding_table(self):
-        sql = f"""CREATE UNLOGGED TABLE IF NOT EXISTS {self.name} AS (
-              SELECT a.asn, a.prefix, a.origin, a.received_from_asn,
-                b.as_type, b.impliment
-                FROM {Simulation_Extrapolator_Forwarding_Table.name} a
-              INNER JOIN {self.input_name} b
-                ON a.asn = b.asn);"""
-        self.execute(sql)
+    def fill_forwarding_table(self, round_num):
+        with Simulation_Extrapolator_Forwarding_Table(round_num=round_num) as _db:
+            sql = f"""CREATE UNLOGGED TABLE IF NOT EXISTS {self.name} AS (
+                  SELECT a.asn, a.prefix, a.origin, a.received_from_asn,
+                    b.as_type, b.impliment
+                    FROM {_db.name} a
+                  INNER JOIN {self.input_name} b
+                    ON a.asn = b.asn);"""
+            self.execute(sql)
 
 
 class Top_100_ASes_Table(ASes_Subtable):
