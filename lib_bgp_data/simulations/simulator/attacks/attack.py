@@ -117,7 +117,8 @@ class Attack:
                 "time": _time,
                 "block_id": 0,
                 "monitor_asn": 0,
-                "roa_validity": self.rpki.check_ann(asn_dict["prefix"], as_path[-1])}
+                "roa_validity": self.rpki.check_ann(asn_dict["prefix"], as_path[-1]),
+                "origin_hijack_asn": None if as_path[-1] == true_asn else true_attacker}
         asn_dict.update(meta)
 
     def _get_as_path(self, true_asn, true_victim, true_attacker):

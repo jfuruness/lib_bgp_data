@@ -23,5 +23,13 @@ from .simulator import Prefix_Superprefix_Hijack
 from .simulator import Unannounced_Prefix_Hijack
 from .simulator import Unannounced_Subprefix_Hijack
 from .simulator import Unannounced_Prefix_Superprefix_Hijack
+
+from .simulator import Naive_Origin_Hijack
+from .simulator import Intermediate_AS_Hijack_1
+from .simulator import Intermediate_AS_Hijack_2
+from .simulator import Intermediate_AS_Hijack_3
+from .simulator import Intermediate_AS_Hijack_4
+from .simulator import Intermediate_AS_Hijack_5
+
 # Actual simulator
 from .simulator import Simulator

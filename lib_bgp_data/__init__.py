@@ -39,6 +39,14 @@ from .simulations import Prefix_Superprefix_Hijack
 from .simulations import Unannounced_Prefix_Hijack
 from .simulations import Unannounced_Subprefix_Hijack
 from .simulations import Unannounced_Prefix_Superprefix_Hijack
+
+from .simulations import Naive_Origin_Hijack
+from .simulations import Intermediate_AS_Hijack_1
+from .simulations import Intermediate_AS_Hijack_2
+from .simulations import Intermediate_AS_Hijack_3
+from .simulations import Intermediate_AS_Hijack_4
+from .simulations import Intermediate_AS_Hijack_5
+
 # Actual simulations
 from .simulations import Simulator
 
