@@ -60,10 +60,6 @@ class Attack:
         self._fill_attacker_victim_rows()
         # Adds data for MRT_Metdata table like ids and such
         self._add_mrt_data()
-        # Path manipulation attacks are disabled
-        # If you ever change this, make sure to check out get_visible_hijacks
-        for asn_dict in self.attacker_rows:
-            assert asn_dict["origin"] == attacker
 
     def _get_rpki(self, victim):
         """Returns instance of RPKI"""
@@ -73,15 +69,24 @@ class Attack:
     def _fill_attacker_victim_rows(self):
         """Gets victim and attacker rows for announcements for db"""
 
+
         self.victim_rows = []
-        for prefix in self.victim_prefixes:
-            # Rows for db are filled with dictionaries of announcements
-            self.victim_rows.append({"prefix": prefix})
+        for i, (victim, attacker) in enumerate(zip([self.victim], [self.attacker])):
+            for prefix in self.victim_prefixes:
+                # Rows for db are filled with dictionaries of announcements
+                self.victim_rows.append({"prefix": prefix.format(i),
+                                         "true_victim": victim,
+                                         "true_attacker": attacker,
+                                         "true_asn": victim})
 
         self.attacker_rows = []
-        for prefix in self.attacker_prefixes:
-            # Rows for db are filled with dict of announcements
-            self.attacker_rows.append({"prefix": prefix})
+        for i, (victim, attacker) in enumerate(zip([self.victim], [self.attacker])):
+            for prefix in self.attacker_prefixes:
+                # Rows for db are filled with dict of announcements
+                self.attacker_rows.append({"prefix": prefix.format(i),
+                                           "true_victim": victim,
+                                           "true_attacker": attacker,
+                                           "true_asn": attacker})
 
     def _add_mrt_data(self):
         """Adds default data to MRT announcements
@@ -91,29 +96,34 @@ class Attack:
         """
 
         row_lists = [self.victim_rows, self.attacker_rows]
-        asns = [self.victim, self.attacker]
-        for i, (asn, rows) in enumerate(zip(asns, row_lists)):
+        for i, rows in enumerate(row_lists):
             # for each announcement object
             for asn_dict in rows:
-                self._add_default_metadata(asn_dict, asn, i)
+                self._add_default_metadata(asn_dict, i)
         self._add_ids()
 
-    def _add_default_metadata(self, asn_dict, asn, _time):
+    def _add_default_metadata(self, asn_dict, _time):
         """Adds as path, origin, time, roa_validity, other defaults"""
 
-        meta = {"as_path": self._get_as_path(asn, _time),
-                "origin": asn,
+        true_asn = asn_dict["true_asn"]
+        true_victim = asn_dict["true_victim"]
+        true_attacker = asn_dict["true_attacker"]
+
+        as_path = self._get_as_path(true_asn, true_victim, true_attacker)
+
+        meta = {"as_path": self._get_as_path(true_asn, true_victim, true_attacker),
+                "origin": as_path[-1],
                 # 1 if attacker, 0 if victim
                 "time": _time,
                 "block_id": 0,
                 "monitor_asn": 0,
-                "roa_validity": self.rpki.check_ann(asn_dict["prefix"], asn)}
+                "roa_validity": self.rpki.check_ann(asn_dict["prefix"], as_path[-1])}
         asn_dict.update(meta)
 
-    def _get_as_path(self, asn, _time):
+    def _get_as_path(self, true_asn, true_victim, true_attacker):
         """_time is 1 if attacker, 0 if victim"""
 
-        return [asn]
+        return [true_asn]
 
     def _add_ids(self):
         """Adds prefix ID, origin ID, prefix origin ID

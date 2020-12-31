@@ -43,6 +43,7 @@ class Simulation_Results_Table(Generic_Table):
         sql = f"""CREATE UNLOGGED TABLE IF NOT EXISTS
                  {self.name} (
                  attack_type text,
+                 number_of_attackers bigint,
                  subtable_name text,
                  attacker_asn bigint,
                  attacker_prefixes CIDR[],
@@ -51,6 +52,7 @@ class Simulation_Results_Table(Generic_Table):
                  adopt_pol text,
                  percent bigint,
                  percent_iter bigint,
+                 extra_bash text,
                  trace_hijacked_collateral bigint,
                  trace_nothijacked_collateral bigint,
                  trace_blackholed_collateral bigint,
@@ -75,15 +77,18 @@ class Simulation_Results_Table(Generic_Table):
     def insert(self,
                subtable_name,
                hijack,
+               number_of_attackers,
                adopt_pol_name,
                percent,
                percent_iter,
+               extra_bash,
                traceback_data,
                c_plane_data,
                visible_hijack_data):
 
         sql = f"""INSERT INTO {self.name}(
                  attack_type,
+                 number_of_attackers,
                  subtable_name,
                  attacker_asn,
                  attacker_prefixes,
@@ -92,6 +97,7 @@ class Simulation_Results_Table(Generic_Table):
                  adopt_pol,
                  percent,
                  percent_iter,
+                 extra_bash,
                  trace_hijacked_collateral,
                  trace_nothijacked_collateral,
                  trace_blackholed_collateral,
@@ -112,7 +118,7 @@ class Simulation_Results_Table(Generic_Table):
                  visible_hijacks_collateral)
               VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
                       %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
-                      %s, %s, %s, %s, %s, %s, %s);"""
+                      %s, %s, %s, %s, %s, %s, %s, %s, %s);"""
 
         # Also write out cp = control plane dp = dataplane everywhere
         # Had to do it, things where so insanely long unreadable
@@ -133,8 +139,8 @@ class Simulation_Results_Table(Generic_Table):
 
         total_traceback_adopting = sum(traceback_adopting.values())
         total_traceback_adopting += cp_adopting[CP_Conds.NO_RIB.value]
-
         test_info = [hijack.__class__.__name__,
+                     number_of_attackers,
                      subtable_name,
                      hijack.attacker,
                      "{" + ",".join(hijack.attacker_prefixes) + "}",
@@ -142,7 +148,8 @@ class Simulation_Results_Table(Generic_Table):
                      "{" + ",".join(hijack.victim_prefixes) + "}",
                      Non_Default_Policies(adopt_pol_name).name,
                      percent,
-                     percent_iter]
+                     percent_iter,
+                     extra_bash]
 
         trace_info = [
             traceback_non_adopting[DP_Conds.HIJACKED.value],

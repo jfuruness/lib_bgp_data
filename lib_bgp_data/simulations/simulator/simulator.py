@@ -32,18 +32,22 @@ class Simulator(Parser):
     """
 
     def _run(self,
-             percents=[1, 50, 100],
-             num_trials=4,
+             percents=[1],
+             num_trials=2,
              exr_bash=None,  # For development only
              exr_branch=None,  # For development only
              seeded_trial=None,
              deterministic=False,
-             attack_types=Attack.runnable_attacks,
-             adopt_policies=list(Non_Default_Policies.__members__.values()),
-             redownload_base_data=True):
+             attack_types=Attack.runnable_attacks[:1],
+             adopt_policies=list(Non_Default_Policies.__members__.values())[:1],
+             number_of_attackers=[1],
+             extra_bash_args=[None],
+             redownload_base_data=False):
         """Runs Attack/Defend simulation.
         In depth explanation at top of module.
         """
+
+        assert number_of_attackers == [1], "No. Just no."
 
         if redownload_base_data:
             # Download as rank, relationships, extrapolator
@@ -63,18 +67,25 @@ class Simulator(Parser):
                     for i, percent in enumerate(percents)]
 
         # Total number of attack/defend scenarios for tqdm
-        total = self._total(data_pts, attack_types, adopt_policies, num_trials)
+        total = self._total(data_pts,
+                            attack_types,
+                            number_of_attackers,
+                            adopt_policies,
+                            num_trials,
+                            extra_bash_args)
 
         with Multiline_TQDM(total) as pbars:
             for trial in range(num_trials):
                 for data_pt in data_pts:
                     data_pt.get_data(pbars,
                                      attack_types,
+                                     number_of_attackers,
                                      adopt_policies,
                                      trial,
                                      seeded_trial=seeded_trial,
                                      exr_bash=exr_bash,
-                                     exr_kwargs=self._exr_kwargs(exr_branch))
+                                     exr_kwargs=self._exr_kwargs(exr_branch),
+                                     extra_bash_args=extra_bash_args)
         tables.close()
 
     def _redownload_base_data(self, exr_branch):
@@ -100,7 +111,7 @@ class Simulator(Parser):
             for attr in ["asn", "as_rank", "asn, as_rank"]:
                 db.execute(f"CREATE INDEX ON {db.name}({attr});")
 
-    def _total(self, data_pts, attack_types, adopt_pols, trials):
+    def _total(self, data_pts, attack_types, number_of_attackers, adopt_pols, trials, extra_args):
         """tqdm runs off every possible attack/defend scenario
         This includes: attack type, adopt policy, percent, trial
         This way we can jump to any attack/defend scenario quickly
@@ -112,8 +123,10 @@ class Simulator(Parser):
         total = 0
         for data_pt in data_pts:
             for test in data_pt.get_possible_tests(attack_types,
+                                                   number_of_attackers,
                                                    adopt_pols,
                                                    0,  # trial
+                                                   extra_args,
                                                    set_up=False):
                 total += trials
         return total

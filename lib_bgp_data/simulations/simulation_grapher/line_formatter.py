@@ -49,13 +49,13 @@ class Line_Formatter:
 
     @property
     def markers(self):
-        return [".", "1", "*", "x", "d", "2", "3", "4"]
+        return [".", "1", "*", "x", "d", "2", "3"]
 
     @property
     def styles(self):
-        return ["-", "--", "-.", ":", "solid", "dotted", "dashdot", "dashed"]
+        return ["-", "--", "-.", ":", "solid", "dotted", "dashdot"]
 
     @property
     def colors(self):
         # https://matplotlib.org/2.0.2/api/colors_api.html
-        return ["b", "g", "r", "c", "m", "y", "k", "w"]
+        return ["b", "g", "r", "c", "m", "y", "k"]

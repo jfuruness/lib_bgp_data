@@ -362,7 +362,7 @@ class MRT_W_Metadata_Table(Generic_Table):
 
     columns = ["prefix", "as_path", "origin", "time", "monitor_asn",
                "prefix_id", "origin_id", "prefix_origin_id", "block_id",
-               "roa_validity", "block_prefix_id"]
+               "roa_validity", "block_prefix_id", "origin_hijack_asn"]
 
     def _create_tables(self):
         sql = f"""CREATE UNLOGGED TABLE IF NOT EXISTS {self.name}(
@@ -376,7 +376,8 @@ class MRT_W_Metadata_Table(Generic_Table):
                 prefix_origin_id BIGINT,
                 block_id INTEGER,
                 roa_validity SMALLINT,
-                block_prefix_id INTEGER
+                block_prefix_id INTEGER,
+                origin_hijack_asn BIGINT
                );"""
         self.execute(sql)
 
@@ -393,7 +394,8 @@ class MRT_W_Metadata_Table(Generic_Table):
                        --pom.prefix_group_id,
                        pom.block_id,
                        pom.roa_validity,
-                       pom.block_prefix_id--,
+                       pom.block_prefix_id,
+                       NULL AS origin_hijack_asn,--,
                        --pom.block_origin_id,
                        --pom.block_prefix_group_id,
                        --pom.block_prefix_origin_id

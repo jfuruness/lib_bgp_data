@@ -35,8 +35,8 @@ class Simulation_Grapher(Parser):
 
     def _run(self,
              percents_to_graph=None,
-             policy_combos=[list(Policies.__members__.values())],  #Policy_Combos.list_values(),
-             titles=True,
+             policy_combos=Policy_Combos.__members__.values(),
+             titles=False,
              fmts=Graph_Formats.__members__.values()):
 
         # Deletes and creates graph path
@@ -65,13 +65,13 @@ class Simulation_Grapher(Parser):
         mp_totals = []
         mp_titles = []
         for policies in policy_combos_to_graph:
-            line_formatter = Line_Formatter(policies)
+            line_formatter = Line_Formatter(policies.value)
             for graph in graphs:
                 for fmt in fmts:
                     mp_graphs.append(graph)
-                    mp_policies.append(policies)
+                    mp_policies.append(policies.value)
                     mp_line_formatters.append(line_formatter)
-                    mp_paths.append(self.get_save_path(policies, graph, fmt))
+                    mp_paths.append(self.get_save_path(policies.name, graph, fmt))
                     mp_fmts.append(fmt)
                     mp_totals.append(total)
                     mp_titles.append(titles)
@@ -83,7 +83,7 @@ class Simulation_Grapher(Parser):
                 mp_totals,
                 mp_titles]
  
-    def get_save_path(self, policies, graph, fmt):
+    def get_save_path(self, graph_name, graph, fmt):
         _dir = os.path.join(self.graph_path,
                             fmt.value.replace(".", ""),
                             graph.attack_type,
@@ -91,8 +91,7 @@ class Simulation_Grapher(Parser):
                             graph.graph_type)
         if not os.path.exists(_dir):
             os.makedirs(_dir)
-        title = "_".join(x.policy for x in graph.lines) + fmt.value
-        return os.path.join(_dir, title)
+        return os.path.join(_dir, graph_name + fmt.value)
 
     def tar_graphs(self):
         with tarfile.open(self.graph_path + ".tar.gz", "w:gz") as tar:

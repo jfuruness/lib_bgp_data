@@ -38,7 +38,7 @@ class Simulation_Extrapolator_Wrapper(Extrapolator_Wrapper):
 
     default_branch = "v2s"#"rovpp_tbl_chg"
 
-    def _run(self, table_names, exr_bash=None, attack=None):
+    def _run(self, table_names, exr_bash=None, attack=None, extra_bash=None):
         """Runs the bgp-extrapolator and verifies input.
 
         Installs if necessary. See README for in depth instructions.
@@ -46,9 +46,13 @@ class Simulation_Extrapolator_Wrapper(Extrapolator_Wrapper):
 
         logging.debug("About to run the simulation extrapolator")
 
+        if extra_bash is None:
+            extra_bash = ""
+
         # Default bash args
         default_bash_args = f"{self.install_location} -v 1 "
-        default_bash_args += "".join(f" -t {x}" for x in table_names)
+        default_bash_args += "".join(f" -t {x}" for x in table_names) + " "
+        default_bash_args += extra_bash
         logging.debug(default_bash_args)
 
         # Clear db before run so it errors properly
@@ -56,7 +60,7 @@ class Simulation_Extrapolator_Wrapper(Extrapolator_Wrapper):
             pass
 
         # Exr bash here for dev only. If set override default args
-        utils.run_cmds(exr_bash if exr_bash else default_bash_args)
+        utils.run_cmds(exr_bash + extra_bash if exr_bash else default_bash_args)
 
         with Simulation_Extrapolator_Results_Table() as db:
             assert db.get_count() > 0, "Extrapolator didn't populate results"

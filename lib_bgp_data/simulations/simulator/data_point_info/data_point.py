@@ -46,15 +46,21 @@ class Data_Point(Parser):
     def get_data(self,
                  pbars,
                  atk_classes,
+                 number_of_attackers,
                  pols,
                  trial,
                  seeded_trial=None,
                  exr_bash=None,
-                 exr_kwargs=None):
+                 exr_kwargs=None,
+                 extra_bash_args=None):
         """Runs test and stores data in the database"""
 
         # Get all possible tests and set them up
-        for test in self.get_possible_tests(atk_classes, pols, trial):
+        for test in self.get_possible_tests(atk_classes,
+                                            number_of_attackers,
+                                            pols,
+                                            trial,
+                                            extra_bash_args):
             # Yes, this isn't the fastest way to do it
             # But it's only for development, so whatever
             # Skips trials if we have seeded the trial
@@ -64,28 +70,45 @@ class Data_Point(Parser):
                 pbars.update()
             else:
                 # Run the test and insert into the database
-                test.run(pbars, exr_bash=exr_bash, exr_kwargs=exr_kwargs)
+                test.run(pbars,
+                         exr_bash=exr_bash,
+                         exr_kwargs=exr_kwargs)
 
-    def get_possible_tests(self, attack_classes, policies, trial, set_up=True):
+    def get_possible_tests(self,
+                           attack_classes,
+                           number_of_attackers_list,
+                           policies,
+                           trial,
+                           extra_bash_args,
+                           set_up=True):
         """Gets all possible tests. Sets them up and returns them"""
 
-        # For each type of hijack
-        for attack_cls in attack_classes:
-            # Sets adopting ases, returns hijack
-            # We set up here so that we can compare one attack set up across
-            # all the different policies
-            atk = self.set_up_test(attack_cls, trial) if set_up else None
-            # For each type of policy, attempt to defend against that attack
-            for pol in policies:
-                yield Test(atk, pol, self.tables, self.percent, self.p_iter)
+        for number_of_attackers in number_of_attackers_list:
+            for extra_bash_str in extra_bash_args:
+                # For each type of hijack
+                for attack_cls in attack_classes:
+                    # Sets adopting ases, returns hijack
+                    # We set up here so that we can compare one attack set up across
+                    # all the different policies
+                    atk = self.set_up_test(attack_cls, number_of_attackers, trial) if set_up else None
+                    # For each type of policy, attempt to defend against that attack
+                    for pol in policies:
+                        yield Test(atk,
+                                   number_of_attackers,
+                                   pol,
+                                   self.tables,
+                                   self.percent,
+                                   self.p_iter,
+                                   extra_bash_str)
 
-    def set_up_test(self, attack_cls, trial_num):
+    def set_up_test(self, attack_cls, number_of_attackers, trial_num):
         """Sets up the tests by filling attackers and setting adopters"""
 
         random_seed = self.get_set_random_seed(attack_cls, trial_num)
         # Fills the hijack table
         atk = self.fill_attacks(self.tables.possible_attackers,
                                 attack_cls,
+                                number_of_attackers,
                                 trial_num)
         # Sets the adopting ases
         self.tables.set_adopting_ases(self.percent_iter, atk, random_seed)
@@ -97,7 +120,7 @@ class Data_Point(Parser):
             random.seed(f"{attack_cls}{self.percent_iter}{trial_num}")
             return random.random()
 
-    def fill_attacks(self, ases, Attack_Cls, trial_num):
+    def fill_attacks(self, ases, Attack_Cls, number_of_attackers, trial_num):
         """Sets up the attack, inserts into the db"""
 
         if self.deterministic:

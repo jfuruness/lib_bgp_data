@@ -25,7 +25,7 @@ from ....extrapolator import Simulation_Extrapolator_Forwarding_Table
 class Output_Subtables:
     """Subtables that deal with the output functions from the extrapolator"""
 
-    def store(self, attack, adopt_policy, percent, percent_iter):
+    def store(self, attack, number_of_attackers, adopt_policy, percent, percent_iter, extra_bash):
         """Stores data"""
 
         # Gets all the asn data
@@ -38,9 +38,11 @@ class Output_Subtables:
             table.Forwarding_Table.fill_forwarding_table()
             table.store_output(ases,
                                attack,
+                               number_of_attackers,
                                adopt_policy,
                                percent,
                                percent_iter,
+                               extra_bash,
                                [x.Forwarding_Table.name for x in self.tables])
 
 
@@ -50,9 +52,11 @@ class Output_Subtable:
     def store_output(self,
                      all_ases,
                      attack,
+                     number_of_attackers,
                      adopt_policy,
                      percent,
                      percent_iter,
+                     extra_bash_str,
                      table_names):
         """Stores output in the simulation results table"""
 
@@ -67,9 +71,11 @@ class Output_Subtable:
         with Simulation_Results_Table() as db:
             db.insert(self.table.name,
                       attack,
+                      number_of_attackers,
                       adopt_policy,
                       percent,
                       percent_iter,
+                      extra_bash_str,
                       self._get_traceback_data(subtable_ases,
                                                all_ases,
                                                attack),
