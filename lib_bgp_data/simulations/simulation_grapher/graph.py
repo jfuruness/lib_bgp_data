@@ -26,18 +26,23 @@ __status__ = "Development"
 
 
 class Graph:
-    def __init__(self, graph_type, subtable, attack_type, policies, percents):
+    def __init__(self,
+                 graph_type,
+                 attr_combo_dict,
+                 x_attrs_list,
+                 x_axis_col,
+                 policies_list):
         self.graph_type = graph_type
-        self.subtable = subtable
-        self.attack_type = attack_type
-        self.percents = percents
-        self.lines = [Line(policy) for policy in policies]
+        self.attr_combo_dict = attr_combo_dict
+        self.x_attrs_list = x_attrs_list
+        self.x_axis_col = x_axis_col
+        self.lines = [Line(x) for x in policies_list]
 
     def get_data(self):
         for line in self.lines:
-            line.add_data(self.subtable,
-                          self.attack_type,
-                          self.percents,
+            line.add_data(self.attr_combo_dict,
+                          self.x_attrs_list,
+                          self.x_axis_col,
                           self.graph_type)
         return self
 
@@ -64,14 +69,20 @@ class Graph:
             return
 
         fig, ax = plt.subplots()
+        plt.xlim(0, max(self.x_attrs_list))
+        plt.ylim(0, 100)
         for line in filtered_lines:
             ax.errorbar(line.x, line.y, yerr=line.yerr, **line.fmt(formatter))
 
         y_label = self._get_y_label(self.graph_type)
         ax.set_ylabel(y_label)
-        ax.set_xlabel("Percent Adoption")
+        if self.x_axis_col == "percent":
+            x_label = "Percent Adoption"
+        else:
+            x_label = self.x_axis_col
+        ax.set_xlabel(x_label)
         if title:
-            ax.set_title(f"{self.subtable} | {self.attack_type} | {y_label}")
+            ax.set_title(str(self.attr_combo_dict) + f"|{y_label}")
         # Here due to: WARNING: No handles with labels found to put in legend.
         # This is a bug in matplotlib, handles are auto added
         with warnings.catch_warnings():

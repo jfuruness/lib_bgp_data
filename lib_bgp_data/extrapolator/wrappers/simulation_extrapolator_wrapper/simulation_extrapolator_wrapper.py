@@ -18,6 +18,8 @@ __status__ = "Development"
 
 import logging
 
+import psycopg2
+
 from .tables import Simulation_Extrapolator_Results_Table
 from .tables import Simulation_Extrapolator_Forwarding_Table
 
@@ -36,7 +38,7 @@ class Simulation_Extrapolator_Wrapper(Extrapolator_Wrapper):
 
     __slots__ = []
 
-    default_branch = "v2s"#"rovpp_tbl_chg"
+    branch = "rovpp_compat_modifications"
 
     def _run(self,
              table_names,
@@ -56,18 +58,19 @@ class Simulation_Extrapolator_Wrapper(Extrapolator_Wrapper):
         logging.debug("About to run the simulation extrapolator")
 
         # Default bash args
-        default_bash_args = f"{self.install_location} -v 1 -r {rounds}"
-        default_bash_args += "".join(f" -t {x}" for x in table_names) + " "
+        default_bash_args = f"{self.install_location} -v 1 "
+        default_bash_args += "".join(f" -t {x}" for x in table_names)
+        default_bash_args += f" --rounds {rounds} "
 
         default_bash_args = self.append_extra_bash_args(default_bash_args,
-                                                        extra_bash_args_1,
-                                                        extra_bash_args_2,
-                                                        extra_bash_args_3,
-                                                        extra_bash_args_4,
-                                                        extra_bash_args_5)
+                                                        extra_bash_arg_1,
+                                                        extra_bash_arg_2,
+                                                        extra_bash_arg_3,
+                                                        extra_bash_arg_4,
+                                                        extra_bash_arg_5)
         logging.debug(default_bash_args)
 
-        for _round in range(1, rounds):
+        for _round in range(1, rounds + 1):
             # Clear db before run so it errors properly
             with Simulation_Extrapolator_Results_Table(clear=True,
                                                        round_num=_round) as _:
@@ -76,9 +79,12 @@ class Simulation_Extrapolator_Wrapper(Extrapolator_Wrapper):
         # Exr bash here for dev only. If set override default args
         utils.run_cmds(exr_bash if exr_bash else default_bash_args)
 
-        for _round in range(1, rounds):
+        for _round in range(1, rounds + 1):
             with Simulation_Extrapolator_Results_Table(round_num=_round) as db:
-                assert db.get_count() > 0, "Extrapolator didn't populate"
+                try:
+                    assert db.get_count() > 0
+                except (AssertionError, psycopg2.errors.UndefinedTable):
+                    raise Exception("Extrapolator didn't populate")
 
             # Gets forwarding tables. Basically returns only more specific prefixes
             with Simulation_Extrapolator_Forwarding_Table(clear=True,

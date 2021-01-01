@@ -11,6 +11,7 @@ __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
 from concurrent.futures import ProcessPoolExecutor
+import itertools
 
 from tqdm import tqdm
 
@@ -29,11 +30,11 @@ class Graph_Generator(Parser):
     For an in depth explanation, see README
     """
 
-    def _run(self, percents_to_graph=None):
+    def _run(self, x_axis_pts, x_axis_col):
 
         # Gets data to graph
         self.generate_agg_tables()
-        return self.get_graph_data(percents_to_graph)
+        return self.get_graph_data(x_axis_pts, x_axis_col)
 
     def generate_agg_tables(self):
         for Table in [Simulation_Results_Agg_Table,
@@ -41,44 +42,62 @@ class Graph_Generator(Parser):
             with Table(clear=True) as db:
                 db.fill_table()
 
-    def get_graph_data(self, percents_to_graph):
+    def get_graph_data(self, x_axis_pts, x_axis_col):
         """Generates all the possible lines on all graphs and fills data"""
 
         # Gets all possible policies, percents, subtables attacks
         # Gets this information from the database
-        all_graph_attrs = self.get_graph_attrs(percents_to_graph)
+        graph_attrs, x_axis_attrs, policies = self.get_graph_attrs(x_axis_pts,
+                                                                   x_axis_col)
         # Gets all the graphs that need to be written
-        graphs = self.get_graphs(*all_graph_attrs)
+        graphs = self.get_graphs(graph_attrs,
+                                 x_axis_attrs,
+                                 x_axis_col,
+                                 policies)
         counter = 0
         # pulls data out from the db for these graphs
         with ProcessPoolExecutor() as executor:
             # https://stackoverflow.com/a/52242947/8903959
             # Tested w/both accepted and alternate answer. They are the same
             kwargs = {"total": len(graphs), "desc": "Loading db data"}
-            return list(tqdm(executor.map(Graph.get_data, graphs), **kwargs))
+            return graph_attrs, list(tqdm(executor.map(Graph.get_data, graphs),
+                                          **kwargs))
 
-    def get_graph_attrs(self, percents_to_graph):
+    def get_graph_attrs(self, x_axis_pts, x_axis_col):
         """Returns all possible graph variations that we can graph
 
         all possible policies, subtables, attack types, percents
         """
 
-        percents = self.get_percents(percents_to_graph)
+        self.validate_percents()
 
         with Simulation_Results_Table() as db:
             def get_data(attr):
                 sql = f"SELECT DISTINCT {attr} FROM {db.name}"
                 return [x[attr] for x in db.execute(sql)]
-            attrs = ["adopt_pol", "subtable_name", "attack_type"]
-            return [get_data(x) for x in attrs] + [percents]
+            attrs = ["attack_type",
+                     "subtable_name",
+                     "number_of_attackers",
+                     "percent",
+                     "round_num",
+                     "extra_bash_arg_1",
+                     "extra_bash_arg_2",
+                     "extra_bash_arg_3",
+                     "extra_bash_arg_4",
+                     "extra_bash_arg_5"]
+            attrs = [x for x in attrs if x != x_axis_col]
+            attr_results = {x: get_data(x) for x in attrs}
+            x_axis_results = get_data(x_axis_col)
+            if x_axis_pts is not None:
+                x_axis_results = [x for x in x_axis_results
+                                  if x in x_axis_pts]
+            return attr_results, x_axis_results, get_data("adopt_pol")
 
-    def get_percents(self, percents_to_graph):
+    def validate_percents(self):
         """Validate percents vs percent iters
 
         We used to have functionality to have different subtables adopt
         at different percentages. We removed this to make graphing easier
-
-        Also returns the percents that are graphable
         """
 
         with Simulation_Results_Table() as db:
@@ -88,13 +107,7 @@ class Graph_Generator(Parser):
                        " at different levels due to the deadline")
             assert len(set(percents)) == len(percents), err_msg
 
-        # Get only the percents specified (default get all)
-        if percents_to_graph is not None:
-            percents = [x for x in percents if x in percents_to_graph]
-
-        return percents
-
-    def get_graphs(self, policies, subtables, attack_types, percents):
+    def get_graphs(self, attrs_dict, x_attrs, x_attrs_col, policies_list):
         """Returns every possible graph
 
         Returns every possible graph
@@ -104,12 +117,17 @@ class Graph_Generator(Parser):
 
         graphs = []
 
-        for subtable in subtables:
-            for attack_type in attack_types:
-                for graph_type in Graph.get_possible_graph_types():
-                    graphs.append(Graph(graph_type,
-                                        subtable,
-                                        attack_type,
-                                        policies,
-                                        percents))
+        # https://stackoverflow.com/a/798893/8903959
+        attrs_list_of_lists = list(attrs_dict.values())
+        # all possible attribute combos
+        attrs_combos = list(itertools.product(*attrs_list_of_lists))
+        for attr_combo in attrs_combos:
+            attr_combo_dict = {x: y for x, y in zip(list(attrs_dict.keys()),
+                                                    attr_combo)}
+            for graph_type in Graph.get_possible_graph_types():
+                graphs.append(Graph(graph_type,
+                                    attr_combo_dict,
+                                    x_attrs,
+                                    x_attrs_col,
+                                    policies_list))
         return graphs

@@ -13,6 +13,17 @@ __status__ = "Development"
 from ..simulator.tables import Simulation_Results_Table
 from ...utils.database import Generic_Table
 
+test_info = ["adopt_pol",
+             "attack_type",
+             "number_of_attackers",
+             "subtable_name",
+             "percent",
+             "round_num",
+             "extra_bash_arg_1",
+             "extra_bash_arg_2",
+             "extra_bash_arg_3",
+             "extra_bash_arg_4",
+             "extra_bash_arg_5"]
 
 class Simulation_Results_Agg_Table(Generic_Table):
     """Table used to aggregate the results for graphing"""
@@ -20,11 +31,12 @@ class Simulation_Results_Agg_Table(Generic_Table):
     name = "simulation_results_agg"
 
     def fill_table(self):
+        global test_info
         sql = f"""
         CREATE UNLOGGED TABLE {self.name} AS (
             SELECT
 
-                attack_type, subtable_name, adopt_pol, percent,
+                {", ".join(test_info)},
 
                 --adopting traceback
                 trace_hijacked_adopting::decimal / trace_total_adopting::decimal AS trace_hijacked_adopting,
@@ -65,10 +77,11 @@ class Simulation_Results_Avg_Table(Generic_Table):
     name = "simulation_results_avg"
 
     def fill_table(self):
+        global test_info
         sql = f"""
         CREATE UNLOGGED TABLE {self.name} AS (
             SELECT
-                attack_type, subtable_name, adopt_pol, percent,
+                {", ".join(test_info)},
         
                 --adopting traceback
                 AVG(trace_hijacked_adopting) AS trace_hijacked_adopting,
@@ -110,9 +123,6 @@ class Simulation_Results_Avg_Table(Generic_Table):
                 (1.96 * STDDEV(hidden_hijacks_collateral))::decimal / SQRT(COUNT(*))::decimal AS hidden_hijacks_collateral_confidence
             FROM {Simulation_Results_Agg_Table.name}
         GROUP BY
-            attack_type,
-            subtable_name,
-            adopt_pol,
-            percent
+            {", ".join(test_info)}
         );"""
         self.execute(sql) 

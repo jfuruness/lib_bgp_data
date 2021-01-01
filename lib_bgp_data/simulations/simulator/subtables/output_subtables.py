@@ -152,6 +152,7 @@ class Output_Subtable:
         attacker_ann = []
         # NOTE: This won't work for path manipulation attacks
         # I set an assert statement in attack class for this
+        # Ya ik its not there anymore. Whatever.
         for prefix in attack.attacker_prefixes:
             sql = "(all_ases.prefix = '{}' AND all_ases.origin = {})".format(
                 prefix, attack.attacker)
@@ -168,7 +169,7 @@ class Output_Subtable:
                                 ON og.received_from_asn = all_ases.asn
                         WHERE og.as_type = {adopt_val.value} AND ({attacker_sql})
                         """
-            conds[adopt_val] = self.Forwarding_Table.get_count(sql)
+                conds[adopt_val] = self.Forwarding_Table.get_count(sql)
         return conds
 
     def _print_loop_debug_data(self, all_ases, og_asn, og_as_data, attack):

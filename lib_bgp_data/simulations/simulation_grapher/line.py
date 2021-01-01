@@ -20,22 +20,35 @@ class Line:
         self.y = []
         self.yerr = []
 
-    def add_data(self, subtable, attack_type, percents, graph_type):
+    def add_data(self, attr_combo_dict, x_attrs, x_axis_col, graph_type):
         """results consists of lits of RealDictRows from db
 
         This adds db data to the line to be graphed
         """
 
+        results = None
         with Simulation_Results_Avg_Table() as db:
             sql = f"""SELECT * FROM {db.name}
-                  WHERE subtable_name = '{subtable}'
-                    AND adopt_pol = '{self.policy}'
-                    AND attack_type = '{attack_type}'
-                  ORDER BY percent"""
-            results = [x for x in db.execute(sql) if x["percent"] in percents]
-
+                  WHERE """
+            for col_name, col_val in attr_combo_dict.items():
+                if isinstance(col_val, int):
+                    sql += f"{col_name} = {col_val}"
+                elif isinstance(col_val, str):
+                    sql += f"{col_name} = '{col_val}'"
+                elif col_val is None:
+                    sql += f"{col_name} IS NULL"
+                else:
+                    print(col_name, col_val)
+                    assert False, "improper column value"
+                sql += " AND "
+            sql += f"adopt_pol = '{self.policy}'"
+            # Gets the name
+            sql += f" ORDER BY {x_axis_col}"
+            # Gets the list of potential x values
+            results = [x for x in db.execute(sql)
+                       if x[x_axis_col] in x_attrs]
         for result in results:
-            self.x.append(int(result["percent"]))
+            self.x.append(int(result[x_axis_col]))
             self.y.append(float(result[graph_type]) * 100)
             self.yerr.append(float(result[graph_type + "_confidence"]) * 100)
 

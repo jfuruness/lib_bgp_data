@@ -67,8 +67,9 @@ class Policies(Enum):
 
     ### EZ_BGP_SEC policies ###
     EZ_BGP_SEC_DIRECTORY_ONLY = 64
-    EZ_BGP_SEC_COMMUNITY_DETECTION_GLOBAL = 65
-    EZ_BGP_SEC_COMMUNITY_DETECTION_GLOBAL_LOCAL = 66
+    EZ_BGP_SEC_COMMUNITY_DETECTION_LOCAL = 65
+    EZ_BGP_SEC_COMMUNITY_DETECTION_GLOBAL = 66
+    EZ_BGP_SEC_COMMUNITY_DETECTION_GLOBAL_LOCAL = 67
 
 # This creates an enum that is for non bgp policies
 _non_default_policies_dict = {x[0]: x[1].value

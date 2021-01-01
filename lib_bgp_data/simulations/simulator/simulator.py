@@ -52,7 +52,13 @@ class Simulator(Parser):
         In depth explanation at top of module.
         """
 
-        assert number_of_attackers == [1], "No. Just no."
+        self._validate_input(number_of_attackers,
+                             extra_bash_args_1,
+                             extra_bash_args_2,
+                             extra_bash_args_3,
+                             extra_bash_args_4,
+                             extra_bash_args_5)
+
 
         if redownload_base_data:
             # Download as rank, relationships, extrapolator
@@ -102,6 +108,28 @@ class Simulator(Parser):
                                      extra_bash_args_4=extra_bash_args_4,
                                      extra_bash_args_5=extra_bash_args_5)
         tables.close()
+
+    def _validate_input(self, 
+                        number_of_attackers,
+                        extra_bash_args_1,
+                        extra_bash_args_2,
+                        extra_bash_args_3,
+                        extra_bash_args_4,
+                        extra_bash_args_5):
+
+        assert number_of_attackers == [1], "No. Just no."
+
+        for extra_bash_args in [extra_bash_args_1,
+                                extra_bash_args_2,
+                                extra_bash_args_3,
+                                extra_bash_args_4,
+                                extra_bash_args_5]:
+
+            assert isinstance(extra_bash_args, list)
+
+            if extra_bash_args != [None]:
+                for x in extra_bash_args:
+                    assert isinstance(x, int)
 
     def _redownload_base_data(self, Exr_Cls):
         """Downloads/creates data, tools, and indexes for simulator

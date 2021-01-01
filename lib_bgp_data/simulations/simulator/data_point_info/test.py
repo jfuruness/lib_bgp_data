@@ -75,7 +75,7 @@ class Test:
 
         pbars.update_extrapolator()
 
-        for round_num in range(1, rounds):
+        for round_num in range(1, rounds + 1):
             # Stores the run's data
             self.tables.store(self.attack,
                               self.number_of_attackers,
@@ -87,7 +87,5 @@ class Test:
                               self.extra_bash_arg_2,
                               self.extra_bash_arg_3,
                               self.extra_bash_arg_4,
-                              self.extra_bash_arg_5,
-                              exr_bash=exr_bash,
-                              attack=self.attack)
+                              self.extra_bash_arg_5)
         pbars.update()

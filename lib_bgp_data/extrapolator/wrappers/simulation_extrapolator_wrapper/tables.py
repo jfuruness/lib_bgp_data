@@ -25,7 +25,8 @@ class Simulation_Extrapolator_Results_Table(Generic_Table):
     def __init__(self, *args, **kwargs):
         self.round_num = kwargs.get("round_num")
         super(Simulation_Extrapolator_Results_Table,
-              self).__init__(*args, **kwargs)
+              self).__init__(*args, **{x: y for x, y in kwargs.items()
+                                       if x != "round_num"})
 
     @property
     def name(self):
@@ -42,7 +43,9 @@ class Simulation_Extrapolator_Forwarding_Table(Generic_Table):
     def __init__(self, *args, **kwargs):
         self.round_num = kwargs.get("round_num")
         super(Simulation_Extrapolator_Forwarding_Table,
-              self).__init__(*args, **kwargs)
+              self).__init__(*args, **{x: y for x, y in kwargs.items()
+                                       if x != "round_num"})
+
 
     @property
     def name(self):
