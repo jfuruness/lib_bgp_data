@@ -111,7 +111,7 @@ class Data_Point(Parser):
                                     # We set up here so that we can compare
                                     # one attack set up across
                                     # all the different policies
-                                    if set_up
+                                    if set_up:
                                         atk = self.set_up_test(attack_cls,
                                                                number_of_attackers,
                                                                trial)

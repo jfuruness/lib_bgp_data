@@ -55,9 +55,6 @@ class Simulation_Extrapolator_Wrapper(Extrapolator_Wrapper):
 
         logging.debug("About to run the simulation extrapolator")
 
-        if extra_bash is None:
-            extra_bash = ""
-
         # Default bash args
         default_bash_args = f"{self.install_location} -v 1 -r {rounds}"
         default_bash_args += "".join(f" -t {x}" for x in table_names) + " "
