@@ -29,6 +29,7 @@ from .collectors import ROAs_Parser
 from .collectors import RPKI_Validator_Parser, RPKI_Validator_Wrapper
 # Extrapolator
 from .extrapolator import Verification_Parser
+from .extrapolator import EZ_BGP_Extrapolator_Wrapper
 # enum for adopt policies
 from .simulations import Non_Default_Policies
 # Simulator attacks
@@ -48,7 +49,7 @@ from .simulations import Intermediate_AS_Hijack_4
 from .simulations import Intermediate_AS_Hijack_5
 
 # Actual simulations
-from .simulations import Simulator
+from .simulations import Simulator, Simulation_Grapher
 
 from .utils.database import Database, Postgres, Generic_Table
 """

@@ -25,6 +25,7 @@ from .tables import Simulation_Extrapolator_Forwarding_Table
 
 from ..extrapolator_wrapper import Extrapolator_Wrapper
 
+from ....collectors.mrt.mrt_metadata.tables import MRT_W_Metadata_Table
 from ....utils.base_classes import Parser
 from ....utils.database import Database
 from ....utils import utils
@@ -57,8 +58,11 @@ class Simulation_Extrapolator_Wrapper(Extrapolator_Wrapper):
 
         logging.debug("About to run the simulation extrapolator")
 
+        v = "" if "ez_bgp" in self.__class__.__name__.lower() else "-v 1"
         # Default bash args
-        default_bash_args = f"{self.install_location} -v 1 "
+        default_bash_args = f"{self.install_location} {v} "
+        # Added for ezbgpsec but should work for all
+        default_bash_args += f"-i 0 -b 0 -a {MRT_W_Metadata_Table.name} "
         default_bash_args += "".join(f" -t {x}" for x in table_names)
         default_bash_args += f" --rounds {rounds} "
 
