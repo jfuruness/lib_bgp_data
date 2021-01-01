@@ -72,6 +72,7 @@ class Simulation_Extrapolator_Wrapper(Extrapolator_Wrapper):
                                                         extra_bash_arg_3,
                                                         extra_bash_arg_4,
                                                         extra_bash_arg_5)
+        # input("\n" * 10 + default_bash_args + "\n" * 10)
         logging.debug(default_bash_args)
 
         for _round in range(1, rounds + 1):
