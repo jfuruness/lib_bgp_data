@@ -47,6 +47,9 @@ class Simulator(Parser):
              extra_bash_args_3=[None],
              extra_bash_args_4=[None],
              extra_bash_args_5=[None],
+             edge_hijack=True,
+             etc_hijack=False,
+             top_100_hijack=False,
              redownload_base_data=False):
         """Runs Attack/Defend simulation.
         In depth explanation at top of module.
@@ -70,7 +73,7 @@ class Simulator(Parser):
             pass
 
         # Gets the subdivisions of the internet to track
-        tables = Subtables(percents)
+        tables = Subtables(percents, edge_hijack, etc_hijack, top_100_hijack)
         tables.fill_tables()
 
         # All data points that we want to graph

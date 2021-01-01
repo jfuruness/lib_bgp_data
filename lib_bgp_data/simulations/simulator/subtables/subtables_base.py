@@ -26,7 +26,7 @@ from ....utils.database import Database
 # But they are all kind of messy anyways so whatever
 class Subtables(Input_Subtables, Output_Subtables):
 
-    def __init__(self, percents, connect=True):
+    def __init__(self, percents, edge_atk, etc_atk, top_atk, connect=True):
 
         # Note that if you want to change adoption percentage:
         # Simply change percents to a list of your choosing here
@@ -34,12 +34,14 @@ class Subtables(Input_Subtables, Output_Subtables):
         # Add any extra tables to this initial list
         self.tables = [Subtable(Top_100_ASes_Table,
                                 percents,
-                                possible_attacker=False),
-                       Subtable(Edge_ASes_Table, percents)]
+                                possible_attacker=top_atk),
+                       Subtable(Edge_ASes_Table,
+                                percents,
+                                possible_attacker=edge_atk)]
         # Etc table must go at the end. It is all leftover ases
         self.tables.append(Subtable(Etc_ASes_Table,
                                     percents,
-                                    possible_attacker=False))
+                                    possible_attacker=etc_atk))
 
         if connect:
             for table in self.tables:
