@@ -100,7 +100,7 @@ class Simulation_Grapher(Parser):
                 attr_names_that_matter.append(attr_name)
         _dir = os.path.join(self.graph_path, fmt.value.replace(".", ""))
         for attr in attr_names_that_matter:
-            _dir = os.path.join(_dir, str(graph.attr_combo_dict[attr]))
+            _dir = os.path.join(_dir, f"{attr}_{graph.attr_combo_dict[attr]}")
                             
         _dir = os.path.join(_dir, graph.graph_type)
 

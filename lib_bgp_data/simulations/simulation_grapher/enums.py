@@ -54,7 +54,8 @@ class Policy_Combos(Enumerable_Enum):
                              Policies.ROVPP_V2_LITE,
                              Policies.ROVPP_V3,
                              Policies.ROVPP_V3_LITE]
-    EZ_BGP_SEC = [Policies.EZ_BGP_SEC_DIRECTORY_ONLY,
+    EZ_BGP_SEC = [Policies.BGP,
+                  Policies.EZ_BGP_SEC_DIRECTORY_ONLY,
                   Policies.EZ_BGP_SEC_COMMUNITY_DETECTION_LOCAL,
                   Policies.EZ_BGP_SEC_COMMUNITY_DETECTION_GLOBAL,
                   Policies.EZ_BGP_SEC_COMMUNITY_DETECTION_GLOBAL_LOCAL]
