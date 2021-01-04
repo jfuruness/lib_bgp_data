@@ -194,5 +194,4 @@ class Test_Postgres:
             expected_result = str(sql[1])
             cur.execute(sql[0])
             result = cur.fetchone()[0]
-            print(sql[0] + '  |  ' + expected_result + ' | ' + result)
             assert result == expected_result
