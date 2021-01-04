@@ -72,7 +72,7 @@ class Simulation_Extrapolator_Wrapper(Extrapolator_Wrapper):
                                                         extra_bash_arg_3,
                                                         extra_bash_arg_4,
                                                         extra_bash_arg_5)
-        # input("\n" * 10 + default_bash_args + "\n" * 10)
+        #input("\n" * 10 + default_bash_args + "\n" * 10)
         logging.debug(default_bash_args)
 
         for _round in range(1, rounds + 1):
@@ -82,7 +82,8 @@ class Simulation_Extrapolator_Wrapper(Extrapolator_Wrapper):
                 pass
 
         # Exr bash here for dev only. If set override default args
-        utils.run_cmds(exr_bash if exr_bash else default_bash_args)
+        # Timeout set to 10 minutes. Normally it runs in a few seconds
+        utils.run_cmds(exr_bash if exr_bash else default_bash_args, timeout=60 * 10)
 
         for _round in range(1, rounds + 1):
             with Simulation_Extrapolator_Results_Table(round_num=_round) as db:
