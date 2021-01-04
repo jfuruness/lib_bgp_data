@@ -93,7 +93,7 @@ class Test_Multiline_TQDM:
         with Multiline_TQDM(total_trials=1) as ml_tqdm:
 
             # Assert that the extraploator-running desccription is True
-            ml_tqdm.pbars[-1].desc == "Extrapolator Running: True"
+            assert ml_tqdm.pbars[-1].desc[:-2].strip() == "Extrapolator Running: True"
 
             # Call the set_desc() method, this is necessary for us to be able
             # to call the update_extrapolator() method. We'll pass in 'None'
@@ -108,7 +108,7 @@ class Test_Multiline_TQDM:
             # Call the update_extrapolator method and make sure that
             # extrapolator running is changed to False
             ml_tqdm.update_extrapolator()
-            ml_tqdm.pbars[-1].desc == "Extrapolator Running: False"
+            assert ml_tqdm.pbars[-1].desc[:-2].strip() == "Extrapolator Running: False"
             
 
     def test_set_desc(self):
