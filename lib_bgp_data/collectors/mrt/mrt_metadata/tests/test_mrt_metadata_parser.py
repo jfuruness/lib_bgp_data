@@ -8,9 +8,11 @@ __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Production"
 
+import pytest
 from ..mrt_metadata_parser import MRT_Metadata_Parser
-from ..tables import MRT_Announcements_Table, ROAs_Table, Blocks_Table,
-    MRT_W_Metadata_Table
+from ..tables import Blocks_Table, MRT_W_Metadata_Table
+from ...mrt_base.tables import MRT_Announcements_Table 
+from ....roas.tables  import ROAs_Table
 
 
 @pytest.fixture
