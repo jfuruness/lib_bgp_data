@@ -43,6 +43,7 @@ class Simulation_Results_Table(Generic_Table):
         sql = f"""CREATE UNLOGGED TABLE IF NOT EXISTS
                  {self.name} (
                  attack_type text,
+                 number_of_attackers bigint,
                  subtable_name text,
                  attacker_asn bigint,
                  attacker_prefixes CIDR[],
@@ -51,6 +52,12 @@ class Simulation_Results_Table(Generic_Table):
                  adopt_pol text,
                  percent bigint,
                  percent_iter bigint,
+                 round_num bigint,
+                 extra_bash_arg_1 bigint,
+                 extra_bash_arg_2 bigint,
+                 extra_bash_arg_3 bigint,
+                 extra_bash_arg_4 bigint,
+                 extra_bash_arg_5 bigint,
                  trace_hijacked_collateral bigint,
                  trace_nothijacked_collateral bigint,
                  trace_blackholed_collateral bigint,
@@ -75,15 +82,23 @@ class Simulation_Results_Table(Generic_Table):
     def insert(self,
                subtable_name,
                hijack,
+               number_of_attackers,
                adopt_pol_name,
                percent,
                percent_iter,
+               round_num,
+               extra_bash_arg_1,
+               extra_bash_arg_2,
+               extra_bash_arg_3,
+               extra_bash_arg_4,
+               extra_bash_arg_5,
                traceback_data,
                c_plane_data,
                visible_hijack_data):
 
         sql = f"""INSERT INTO {self.name}(
                  attack_type,
+                 number_of_attackers,
                  subtable_name,
                  attacker_asn,
                  attacker_prefixes,
@@ -92,6 +107,12 @@ class Simulation_Results_Table(Generic_Table):
                  adopt_pol,
                  percent,
                  percent_iter,
+                 round_num,
+                 extra_bash_arg_1,
+                 extra_bash_arg_2,
+                 extra_bash_arg_3,
+                 extra_bash_arg_4,
+                 extra_bash_arg_5,
                  trace_hijacked_collateral,
                  trace_nothijacked_collateral,
                  trace_blackholed_collateral,
@@ -112,7 +133,8 @@ class Simulation_Results_Table(Generic_Table):
                  visible_hijacks_collateral)
               VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
                       %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
-                      %s, %s, %s, %s, %s, %s, %s);"""
+                      %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
+                      %s, %s, %s, %s);"""
 
         # Also write out cp = control plane dp = dataplane everywhere
         # Had to do it, things where so insanely long unreadable
@@ -133,8 +155,8 @@ class Simulation_Results_Table(Generic_Table):
 
         total_traceback_adopting = sum(traceback_adopting.values())
         total_traceback_adopting += cp_adopting[CP_Conds.NO_RIB.value]
-
         test_info = [hijack.__class__.__name__,
+                     number_of_attackers,
                      subtable_name,
                      hijack.attacker,
                      "{" + ",".join(hijack.attacker_prefixes) + "}",
@@ -142,7 +164,13 @@ class Simulation_Results_Table(Generic_Table):
                      "{" + ",".join(hijack.victim_prefixes) + "}",
                      Non_Default_Policies(adopt_pol_name).name,
                      percent,
-                     percent_iter]
+                     percent_iter,
+                     round_num,
+                     extra_bash_arg_1,
+                     extra_bash_arg_2,
+                     extra_bash_arg_3,
+                     extra_bash_arg_4,
+                     extra_bash_arg_5]
 
         trace_info = [
             traceback_non_adopting[DP_Conds.HIJACKED.value],
@@ -166,7 +194,7 @@ class Simulation_Results_Table(Generic_Table):
             cp_adopting[CP_Conds.RECV_BHOLE.value],
             cp_adopting[CP_Conds.NO_RIB.value]]
 
-        v_hjack_info = [visible_hijack_data[x] for x in 
+        v_hjack_info = [visible_hijack_data[x] for x in
                         [AS_Types.ADOPTING, AS_Types.COLLATERAL]]
 
         self.execute(sql, test_info + trace_info + cplane_info + v_hjack_info)

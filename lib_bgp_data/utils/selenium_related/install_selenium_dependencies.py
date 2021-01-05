@@ -12,12 +12,11 @@ __maintainer__ = "Abhinna Adhikari"
 __email__ = "abhinna.adhikari@uconn.edu"
 __status__ = "Development"
 
-import logging
 import requests
 import subprocess
 import os
 
-from ....utils import utils
+from .. import utils
 
 
 def install_selenium_driver():
@@ -25,14 +24,17 @@ def install_selenium_driver():
     as the newest version of chrome and chromedriver.
     """
 
-    logging.warning("Selenium driver dependencies are not installed. Installing now.")
+    print("Selenium driver dependencies are not installed. Installing now.")
 
     installing_chrome_cmds = ['sudo apt-get update',
-                              'sudo apt-get install -y unzip xvfb libxi6 libgconf-2-4',
+                              ('sudo apt-get install -y unzip'
+                               ' xvfb libxi6 libgconf-2-4'),
                               'yes | sudo apt-get remove google-chrome-stable',
                               'sudo apt-get -y update',
                               'sudo apt-get -y install google-chrome-stable',
-                              'wget -O /tmp/LATEST_RELEASE "https://chromedriver.storage.googleapis.com/LATEST_RELEASE"']
+                              ('wget -O /tmp/LATEST_RELEASE '
+                               '"https://chromedriver.storage.googleapis.com/'
+                               'LATEST_RELEASE"')]
 
     if os.path.exists("/etc/apt/sources.list.d/google-chrome.list"):
         with open("/etc/apt/sources.list.d/google-chrome.list", "r") as f:
@@ -61,4 +63,3 @@ def install_selenium_driver():
                                     'sudo mv chromedriver /usr/bin',
                                     'rm -r chromedriver_linux64.zip']
     utils.run_cmds(installing_chromedriver_cmds)
-

@@ -12,4 +12,4 @@ __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
-from .grapher import Simulation_Grapher
+from .simulation_grapher import Simulation_Grapher

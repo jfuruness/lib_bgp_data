@@ -18,7 +18,7 @@ Usage of this module is in conftest.py
 from bs4 import BeautifulSoup as Soup, NavigableString
 import requests
 from ..event_types import BGPStream_Website_Event_Types
-from ...utils import utils
+from ....utils import utils
 import re
 from random import getrandbits, choices, randrange
 from ipaddress import IPv4Address, IPv6Address

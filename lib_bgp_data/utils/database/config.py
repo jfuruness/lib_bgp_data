@@ -25,37 +25,38 @@ from psutil import virtual_memory
 
 def set_global_section_header(section=None):
     global global_section_header
-    if hasattr(pytest, 'global_running_test') and pytest.global_running_test:
-        global_section_header = "test"
+    if section is not None:
+        global_section_header = section
+    # More readable to write it this way imo
+    elif "global_section_header" in locals() and global_section_header is not None:
+        pass
     else:
-        global_section_header = section if section is not None else "bgp"
+        global_section_header = "bgp"
     return global_section_header
 
 class Config:
     """Interact with config file"""
 
-    __slots__ = ["section"]
+    __slots__ = []
 
     path = "/etc/bgp/bgp.conf"
     
-    def __init__(self, section: str):
+    def __init__(self, section: str = None):
         """Initializes path for config file."""
 
-        self.section = section
         # Declare the section header to be global so Database can refer to it
         set_global_section_header(section)
+
+    @property
+    def section(self):
+        global global_section_header
+        return global_section_header
 
     def create_config(self, _password: str):
         """Creates the default config file."""
 
         # Do this here so that ram is set correctly
-        if hasattr(pytest, 'global_running_install_test') \
-           and pytest.global_running_install_test:
-                # Can't take input during tests
-                restart = "sudo systemctl restart postgresql@12-main.service"
-        else:
-                # Do this here so that ram is set correctly
-                restart = self.restart_postgres_cmd
+        restart = self.restart_postgres_cmd
 
         # Creates the /etc/bgp directory
         self._create_config_dir()
@@ -143,7 +144,7 @@ class Config:
             # Database section is not installed, install it
             # Needed here due to circular imports
             from .postgres import Postgres
-            Postgres().install(self.section)
+            Postgres(section=self.section).install(self.section)
             self.__init__(self.section)
             return self.get_db_creds()
 
@@ -168,9 +169,10 @@ class Config:
             prompt = ("Enter the command to restart postgres\n"
                       f"Enter: {typical_cmd}\n"
                       "Custom: Enter cmd for your machine\n")
-            if hasattr(pytest, "global_running_test") and\
-                 pytest.global_running_test:
+            # https://stackoverflow.com/a/58866220
+            if "PYTEST_CURRENT_TEST" in os.environ:
                  return typical_cmd
+            print(os.environ)
             cmd = input(prompt)
             if cmd == "":
                 cmd = typical_cmd

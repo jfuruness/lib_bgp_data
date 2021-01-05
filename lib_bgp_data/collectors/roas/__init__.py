@@ -15,4 +15,3 @@ __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
 from .roas_parser import ROAs_Parser, ROAs_Collector
-from .roas_automator import ROAs_Automator

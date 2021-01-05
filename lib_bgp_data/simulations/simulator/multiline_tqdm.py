@@ -31,6 +31,7 @@ class Multiline_TQDM:
 
     def __enter__(self):
         """Context manager to do upon entering"""
+
         return self
 
     def __exit__(self, type, value, traceback):
@@ -51,12 +52,22 @@ class Multiline_TQDM:
         self.set_desc(self.adopt_pol,
                       self.percent,
                       self.attack,
+                      self.extra_bash_arg_1,
+                      self.extra_bash_arg_2,
+                      self.extra_bash_arg_3,
+                      self.extra_bash_arg_4,
+                      self.extra_bash_arg_5,
                       exr_running=False)
 
     def set_desc(self,
                  adopt_pol,
                  percent,
                  attack,
+                 extra_bash_arg_1,
+                 extra_bash_arg_2,
+                 extra_bash_arg_3,
+                 extra_bash_arg_4,
+                 extra_bash_arg_5,
                  exr_running=True):
         """Sets all descriptions"""
 
@@ -64,9 +75,20 @@ class Multiline_TQDM:
         self.percent = percent
         self.attack = attack
 
+        self.extra_bash_arg_1 = extra_bash_arg_1
+        self.extra_bash_arg_2 = extra_bash_arg_2
+        self.extra_bash_arg_3 = extra_bash_arg_3
+        self.extra_bash_arg_4 = extra_bash_arg_4
+        self.extra_bash_arg_5 = extra_bash_arg_5
+
         descs = self._get_desc(adopt_pol,
                                percent,
                                attack,
+                               extra_bash_arg_1,
+                               extra_bash_arg_2,
+                               extra_bash_arg_3,
+                               extra_bash_arg_4,
+                               extra_bash_arg_5,
                                exr_running)
 
         for pbar, desc in zip(self.pbars, descs):
@@ -80,11 +102,16 @@ class Multiline_TQDM:
                   policy=None,
                   percent=None,
                   attack=None,
+                  extra_bash_arg_1=None,
+                  extra_bash_arg_2=None,
+                  extra_bash_arg_3=None,
+                  extra_bash_arg_4=None,
+                  extra_bash_arg_5=None,
                   exr_running=True):
         """Gets descriptions to use in the progress bars"""
 
-
-        default = lambda x: x if x is not None else ""
+        def default(x):
+            return str(x) if x is not None else ""
 
         policy_name = "" if policy is None else Policies(policy.value).name
         # Descriptions
@@ -93,9 +120,14 @@ class Multiline_TQDM:
                  f"Adoption Percentage: {default(percent)}",
                  f"Attacker: {'' if not attack else default(attack.attacker)}",
                  f"Victim: {'' if not attack else default(attack.victim)}",
+                 f"Extra_bash_arg_1: {default(extra_bash_arg_1)}",
+                 f"Extra_bash_arg_2: {default(extra_bash_arg_2)}",
+                 f"Extra_bash_arg_3: {default(extra_bash_arg_3)}",
+                 f"Extra_bash_arg_4: {default(extra_bash_arg_4)}",
+                 f"Extra_bash_arg_5: {default(extra_bash_arg_5)}",
                  f"Extrapolator Running: {exr_running}"]
         # Pads descriptions out to 35 spaces
-        return [f"{desc:<42}" for desc in descs]
+        return [f"{desc:<50}" for desc in descs]
 
     def close(self):
         """Closes all progress bars"""

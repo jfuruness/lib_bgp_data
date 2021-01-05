@@ -194,9 +194,8 @@ class ROA_Known_Validity_Table(Generic_Table):
     def fill_table(self):
         """Fills table with data"""
 
-        sql = f"""CREATE UNLOGGED TABLE IF NOT EXISTS {self.name} AS (
-                    SELECT DISTINCT ON (dpo.prefix, dpo.origin)
-                           dpo.prefix,
+        sql = f"""CREATE UNLOGGED TABLE {self.name} AS (
+                    SELECT dpo.prefix,
                            dpo.origin,
                            --NOTE: don't change the numbering. It's dependent elsewhere as well
                            CASE WHEN r.asn != dpo.origin AND MASKLEN(dpo.prefix) > r.max_length
@@ -218,6 +217,28 @@ class ROA_Known_Validity_Table(Generic_Table):
                                                 FROM roas) = created_at) r
                         ON dpo.prefix <<= r.prefix
                 );"""
+        self.execute(sql)
+
+        # If there are overlapping ROAs, keep the most valid one
+        # https://stackoverflow.com/a/6584134
+        sql = f"""DELETE FROM {self.name} a USING (
+                SELECT MIN(roa_validity) AS roa_validity, prefix, origin
+                    FROM {self.name}
+                    GROUP BY prefix, origin HAVING COUNT(*) > 1
+                ) b
+                WHERE a.prefix = b.prefix
+                    AND a.origin = b.origin
+                    AND a.roa_validity != b.roa_validity"""
+        self.execute(sql)
+
+        # https://stackoverflow.com/a/6584134
+        # In case there are any other duplicates, remove them
+        sql = f"""DELETE FROM {self.name} a USING (
+                SELECT MIN(ctid) as ctid, prefix, origin, roa_validity FROM {self.name}
+                GROUP BY prefix, origin, roa_validity HAVING COUNT(*) > 1
+                ) b
+                WHERE a.prefix = b.prefix AND a.origin = b.origin AND
+                    a.roa_validity = b.roa_validity AND a.ctid <> b.ctid;"""
         self.execute(sql)
 
 class ROA_Validity_Table(Generic_Table):
@@ -341,7 +362,7 @@ class MRT_W_Metadata_Table(Generic_Table):
 
     columns = ["prefix", "as_path", "origin", "time", "monitor_asn",
                "prefix_id", "origin_id", "prefix_origin_id", "block_id",
-               "roa_validity", "block_prefix_id"]
+               "roa_validity", "block_prefix_id", "origin_hijack_asn"]
 
     def _create_tables(self):
         sql = f"""CREATE UNLOGGED TABLE IF NOT EXISTS {self.name}(
@@ -355,7 +376,8 @@ class MRT_W_Metadata_Table(Generic_Table):
                 prefix_origin_id BIGINT,
                 block_id INTEGER,
                 roa_validity SMALLINT,
-                block_prefix_id INTEGER
+                block_prefix_id INTEGER,
+                origin_hijack_asn BIGINT
                );"""
         self.execute(sql)
 
@@ -372,7 +394,8 @@ class MRT_W_Metadata_Table(Generic_Table):
                        --pom.prefix_group_id,
                        pom.block_id,
                        pom.roa_validity,
-                       pom.block_prefix_id--,
+                       pom.block_prefix_id,
+                       NULL AS origin_hijack_asn,--,
                        --pom.block_origin_id,
                        --pom.block_prefix_group_id,
                        --pom.block_prefix_origin_id

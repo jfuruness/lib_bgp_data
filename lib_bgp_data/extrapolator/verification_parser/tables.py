@@ -21,7 +21,7 @@ __status__ = "Development"
 
 import logging
 
-from ...collectors.asrank_website.tables import ASRankTable
+from ...collectors.as_rank_website.tables import AS_Rank_Table
 from ...collectors.mrt.mrt_metadata.tables import MRT_W_Metadata_Table
 from ...utils.database import Generic_Table
 
