@@ -228,8 +228,7 @@ class Postgres:
         self.restart_postgres()
         logging.debug("rehinged db")
 
-    @staticmethod
-    def restart_postgres():
+    def restart_postgres(self):
         """Restarts postgres and all connections."""
 
         logging.debug("About to restart postgres")
