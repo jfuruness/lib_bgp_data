@@ -17,7 +17,10 @@ __status__ = "Development"
 import logging
 
 from .rpki_validator_wrapper import RPKI_Validator_Wrapper
-from .tables import ROV_Validity_Table
+from .tables import ROV_Validity_Table, Unique_Prefix_Origins_Table
+
+from ..mrt.mrt_base.tables import MRT_Announcements_Table
+
 from ...utils.base_classes import Parser
 from ...utils import utils
 
@@ -30,7 +33,7 @@ class RPKI_Validator_Parser(Parser):
     wrapper. It's possible that later someone else will want to use it.
     """
 
-    def _run(self, table: str):
+    def _run(self, table: str = MRT_Announcements_Table.name):
         """Downloads and stores roas from a json"""
 
         with RPKI_Validator_Wrapper(table_input=table) as _rpki_validator:

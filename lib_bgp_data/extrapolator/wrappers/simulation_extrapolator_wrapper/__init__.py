@@ -13,4 +13,5 @@ __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
 from .simulation_extrapolator_wrapper import Simulation_Extrapolator_Wrapper
+from .ez_bgp_extrapolator_wrapper import EZ_BGP_Extrapolator_Wrapper
 from .tables import Simulation_Extrapolator_Forwarding_Table

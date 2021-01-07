@@ -18,4 +18,11 @@ from .attacks import Unannounced_Prefix_Hijack
 from .attacks import Unannounced_Subprefix_Hijack
 from .attacks import Unannounced_Prefix_Superprefix_Hijack
 
+from .attacks import Naive_Origin_Hijack
+from .attacks import Intermediate_AS_Hijack_1
+from .attacks import Intermediate_AS_Hijack_2
+from .attacks import Intermediate_AS_Hijack_3
+from .attacks import Intermediate_AS_Hijack_4
+from .attacks import Intermediate_AS_Hijack_5
+
 from .simulator import Simulator

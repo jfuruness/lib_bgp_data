@@ -40,7 +40,7 @@ setup(
         'binpacking',
         'validators>=0.14.1',
         'tqdm>=4.40.2',
-        'pytest==4.6.6',
+        'pytest>=4.6.6',
         'psutil==5.6.7',
         'Flask>=1.1.1',
         'requests>=2.22.0',

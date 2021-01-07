@@ -111,7 +111,8 @@ class Extrapolator_Wrapper(Parser):
     def _install_extrapolator(self):
         """Installs extrapolator and moves it to /usr/bin"""
 
-        cmds = ["git clone https://github.com/c-morris/BGPExtrapolator.git",
+        cmds = [f"cd {self.path} ",
+                "git clone https://github.com/c-morris/BGPExtrapolator.git",
                 "cd BGPExtrapolator"]
         # Sometimes dev team moves stuff to other branches
         if self.branch:
