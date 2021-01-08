@@ -18,7 +18,8 @@ import random
 import re
 import time
 
-from tqdm import trange
+from pathos.multiprocessing import ProcessPool
+from tqdm import trange, tqdm
 
 from .tables import AS_Rank_Table
 
@@ -56,6 +57,11 @@ class AS_Rank_Website_Parser(Parser):
         # Start from 1 because page 0 and page 1 are the same
         for page in trange(1, self._total_pages, desc="Parsing AS Rank"):
             self._parse_page(page)
+
+        with ProcessPool() as pool:
+            r = list(tqdm(pool.imap(self._parse_page,
+                                    [page for page in range(1, self._total_pages)]),
+                            total=self._total_pages))
 
     def _parse_page(self, page_num):
         """Parses a page, gets AS rank, ASN, org, country, cone size"""

@@ -15,14 +15,14 @@ __status__ = "Development"
 from unittest.mock import patch
 import pytest
 
-from ..asrank_website_parser import ASRankWebsiteParser
-from ..tables import ASRankTable
+from ..as_rank_website_parser import AS_Rank_Website_Parser
+from ..tables import AS_Rank_Table
 from .open_custom_html import open_custom_html
 
 
 def produce_tds_lst():
     """Helper function that produces a tds_lst as input for
-    the _parse_row method in the ASRankWebsiteParser class."""
+    the _parse_row method in the AS_Rank_Website_Parser class."""
 
     soup = open_custom_html('')
     table = soup.findChildren('table')[0]
@@ -31,8 +31,8 @@ def produce_tds_lst():
 
 
 @pytest.mark.asrank_website_parser
-class TestASRankWebsiteParser:
-    """Tests all functions within the ASRankWebsiteParser class."""
+class Test_AS_Rank_Website_Parser:
+    """Tests all functions within the AS_Rank_Website_Parser class."""
 
     def test__init__(self):
         """Tests initialization of the Asrank website parser.
@@ -40,8 +40,8 @@ class TestASRankWebsiteParser:
         Verify that the asrank table has been cleared.
         """
 
-        ASRankWebsiteParser().__init__()
-        with ASRankTable() as asrank:
+        AS_Rank_Website_Parser().__init__()
+        with AS_Rank_Table() as asrank:
             assert asrank.get_count() == 0
 
     def test_produce_url(self):
@@ -49,7 +49,7 @@ class TestASRankWebsiteParser:
 
         page_num = 1
         table_rows = 1000
-        url = ASRankWebsiteParser()._produce_url(page_num, table_rows)
+        url = AS_Rank_Website_Parser()._produce_url(page_num, table_rows)
         correct_url = 'https://asrank.caida.org/?page_number=1&page_size=1000&sort=rank'
         assert url == correct_url
 
@@ -62,12 +62,12 @@ class TestASRankWebsiteParser:
         custom html.
         """
 
-        total_rows = ASRankWebsiteParser()._find_total_rows()
+        total_rows = AS_Rank_Website_Parser()._find_total_rows()
         assert total_rows > 0
 
         with patch('lib_bgp_data.asrank_website_parser.selenium_related.sel_driver.SeleniumDriver.get_page') as mock_get_page:
             mock_get_page.side_effect = open_custom_html
-            total_rows = ASRankWebsiteParser()._find_total_rows()
+            total_rows = AS_Rank_Website_Parser()._find_total_rows()
 
             # The custom html should have 67599 rows
             assert total_rows == 67599
@@ -79,7 +79,7 @@ class TestASRankWebsiteParser:
         """
 
         tds_lst = produce_tds_lst()
-        parsed_row = ASRankWebsiteParser()._parse_row(tds_lst)
+        parsed_row = AS_Rank_Website_Parser()._parse_row(tds_lst)
 
         # The row should only have 5 elements that represents the 5 columns#
         assert len(parsed_row) == 5
@@ -101,14 +101,14 @@ class TestASRankWebsiteParser:
         successfully added to the db.
 
         Parse page 1 of asrank.caida.org and then verify that
-        ASRankWebsiteParser().rows_per_page have been
+        AS_Rank_Website_Parser().rows_per_page have been
         successfully added to the database.
         """
 
-        parser = ASRankWebsiteParser()
+        parser = AS_Rank_Website_Parser()
         page_num = 1
         parser._parse_page(page_num)
-        with ASRankTable() as asrank:
+        with AS_Rank_Table() as asrank:
             assert parser.rows_per_page == len(asrank.get_all())
 
     @pytest.mark.slow(reason="Needs to query website many times")
@@ -116,11 +116,11 @@ class TestASRankWebsiteParser:
         """Tests the _run function
 
         Verify that the function adds the correct amount of rows to db.
-        The database should have ASRankWebsiteParser()._total_rows
+        The database should have AS_Rank_Website_Parser()._total_rows
         number of rows.
         """
 
-        parser = ASRankWebsiteParser()
+        parser = AS_Rank_Website_Parser()
         parser._run()
-        with ASRankTable() as asrank:
+        with AS_Rank_Table() as asrank:
             assert parser._total_rows == len(asrank.get_all())
