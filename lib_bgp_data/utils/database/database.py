@@ -20,6 +20,7 @@ import psycopg2
 from psycopg2.extras import RealDictCursor
 
 from .config import Config
+from . import config
 from .postgres import Postgres
 
 from ..logger import config_logging

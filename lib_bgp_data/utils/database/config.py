@@ -23,12 +23,14 @@ import pytest
 from configparser import NoSectionError, ConfigParser as SCP
 from psutil import virtual_memory
 
+
+
 def set_global_section_header(section=None):
     global global_section_header
     if section is not None:
         global_section_header = section
     # More readable to write it this way imo
-    elif "global_section_header" in locals() and global_section_header is not None:
+    elif "global_section_header" in globals() and global_section_header is not None:
         pass
     else:
         global_section_header = "bgp"

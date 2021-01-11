@@ -11,6 +11,7 @@ import warnings
 from .relationships_file import Rel_File
 from .tables import ASes_Table, AS_Connectivity_Table, Provider_Customers_Table
 from ...utils.base_classes import Parser
+from ...utils.database import config
 from ...utils import utils
 
 __authors__ = ["Justin Furuness", "Matt Jaccino"]
@@ -34,7 +35,8 @@ class Relationships_Parser(Parser):
         relationship data from x months ago into the same table
         """
 
-        Provider_Customers_Table()
+        with Provider_Customers_Table() as _:
+            pass
 
         url = url if url else self._get_urls()[0]
         Rel_File(self.path, self.csv_dir, url).parse_file()

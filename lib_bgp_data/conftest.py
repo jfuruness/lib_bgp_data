@@ -25,10 +25,11 @@ def pytest_runtest_setup():
     # and random page cost and ulimit in postgres.py
     # https://docs.pytest.org/en/6.0.1/example/simple.html#pytest-current-test-environment-variable
     os.environ["PYTEST_CURRENT_TEST"] = "why doesn't this work"
-
+    
     # Underscores are like the only character I can use here that SQL allows
     section = test_prepend() + datetime.now().strftime(test_db_fmt())
     config.Config(section).install()
+    config.global_section_header = section
  
 def pytest_runtest_teardown():
     drop_old_test_databases()
@@ -45,13 +46,17 @@ def drop_old_test_databases():
                  text=True)
 
     for db_name in result.stdout.split('\n')[2:]:
-        if test_prepend() in db_name:
-            db_date = datetime.strptime(db_name.replace(test_prepend(), "").strip(),
-                                        test_db_fmt())
-
-            if (datetime.now() - db_date).days >= 7:
-                check_call(Postgres.get_bash(f'DROP DATABASE {db_name};'),
-                           shell=True)
+        try:
+            if test_prepend() in db_name:
+                db_date = datetime.strptime(db_name.replace(test_prepend(), "").strip(),
+                                            test_db_fmt())
+    
+                if (datetime.now() - db_date).days >= 3:
+                    check_call(Postgres.get_bash(f'DROP DATABASE {db_name};'),
+                               shell=True)
+        #Incorrectly formatted db name
+        except ValueError:
+            pass
 
 def test_db_fmt():
     return '%Y_%m_%d_%H_%M_%S'
