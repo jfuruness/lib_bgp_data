@@ -33,7 +33,7 @@ class Test_Historical_ROAs_Parser:
         """Performs a run for specific date."""
         Historical_ROAs_Parsed_Table(clear=True)
         with Historical_ROAs_Table(clear=True) as t:
-            Historical_ROAs_Parser(year='2019', month='08', day='01')
+            Historical_ROAs_Parser.run('2019-08-01')
             sql = f"SELECT * FROM {t.name} WHERE date_added = '2019-08-01'"
             assert t.get_count(sql) > 2
 

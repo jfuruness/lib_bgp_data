@@ -17,6 +17,7 @@ import os
 from pathos.multiprocessing import ProcessPool
 import requests
 from bs4 import BeautifulSoup as Soup
+from datetime import datetime
 
 from ...utils.base_classes import Parser
 from ...utils import utils
@@ -25,37 +26,21 @@ from .tables import Historical_ROAs_Table, Historical_ROAs_Parsed_Table
 
 class Historical_ROAs_Parser(Parser):
 
-    def _run(self, year=None, month=None, day=None):
+    def _run(self, date=None): # ,  year=None, month=None, day=None):
         """Collect the paths to all the csvs to download. Multithread the
            downloading of all the csvs, insert into db if not seen before."""
-
-        # Not sure what's the best way to get date input
-        # For the time being, remember to pad with zeros is necessary
-        # i.e. for August use "08" not "8"
-        if day is not None:
-            assert month is not None, "Didn't specify month"
-            assert isinstance(day, str)
-        if month is not None:
-            assert year is not None, "Didn't specify year"
-            assert isinstance(month, str)
-        if year is not None:
-            assert isinstance(year, str)
 
         # maybe not functional?
         parsed = self._get_parsed_files()
 
         s = requests.Session()
-        #headers = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) '\
-        #                 'AppleWebKit/537.36 (KHTML, like Gecko) '\
-        #               'Chrome/75.0.3770.80 Safari/537.36'}
-        #s.headers.update(headers)
 
-        if year is None:
+        if date is None:
             paths = self._get_csvs(s)
         else:
-            paths = self._get_csvs_date(s, year=year, month=month, day=day)
+            y, m, d = self.validate_date(date)
+            paths = self._get_csvs_date(s, year=y, month=m, day=d)
 
-        
         paths = [p for p in paths if p not in parsed]
 
         # generate the list of all download_paths
@@ -80,6 +65,11 @@ class Historical_ROAs_Parser(Parser):
         self._add_parsed_files(paths)
 
         utils.delete_paths('./rpki')
+
+    def validate_date(self, date):
+        """Validates date and extracts year, month, and day (zero-padded)"""
+        d = datetime.strptime(date, '%Y-%m-%d').isoformat()
+        return d[:4], d[5:7], d[8:10]
 
     def _get_parsed_files(self):
         """Return the csvs that have already been parsed and inserted into db"""
@@ -146,7 +136,7 @@ class Historical_ROAs_Parser(Parser):
 
         return paths
 
-    def _get_csvs_date(self, s, root='https://ftp.ripe.net/rpki', paths=None,
+    def _get_csvs_date(self, s, root='https://ftp.ripe.net/rpki',
                        year=None, month=None, day=None):
         """Get all the paths to roas.csv for a specific date."""
 
