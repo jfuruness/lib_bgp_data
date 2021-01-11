@@ -46,10 +46,13 @@ def drop_old_test_databases():
 
     for db_name in result.stdout.split('\n')[2:]:
         if test_prepend() in db_name:
-            db_date = datetime.strptime(db_name.replace(test_prepend(), "").strip(),
-                                        test_db_fmt())
+            try:
+                db_date = datetime.strptime(db_name.replace(test_prepend(), "").strip(),
+                                            test_db_fmt())
+            except ValueError:
+                db_date = None
 
-            if (datetime.now() - db_date).days >= 7:
+            if db_date and (datetime.now() - db_date).days >= 7:
                 check_call(Postgres.get_bash(f'DROP DATABASE {db_name};'),
                            shell=True)
 

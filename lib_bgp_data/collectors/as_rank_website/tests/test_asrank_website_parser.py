@@ -6,7 +6,7 @@ For specifics on each test, see the docstrings under each function.
 """
 
 __authors__ = ["Abhinna Adhikari"]
-__credits__ = ["Abhinna Adhikari"]
+__credits__ = ["Abhinna Adhikari", "Tony Zheng"]
 __Lisence__ = "BSD"
 __maintainer__ = "Abhinna Adhikari"
 __email__ = "abhinna.adhikari@uconn.edu"
@@ -44,33 +44,13 @@ class Test_AS_Rank_Website_Parser:
         with AS_Rank_Table() as asrank:
             assert asrank.get_count() == 0
 
-    def test_produce_url(self):
+    def test_format_page_url(self):
         """Tests producing asrank.caida.org urls."""
 
-        page_num = 1
-        table_rows = 1000
-        url = AS_Rank_Website_Parser()._produce_url(page_num, table_rows)
-        correct_url = 'https://asrank.caida.org/?page_number=1&page_size=1000&sort=rank'
+        page_num = 2
+        url = AS_Rank_Website_Parser()._format_page_url(page_num)
+        correct_url = 'https://asrank.caida.org/?page_number=2&page_size=1000&sort=rank'
         assert url == correct_url
-
-    def test_find_total_rows(self):
-        """Tests getting the total number of rows of the asrank table.
-
-        First run _find_total_rows that uses sel_driver's get_page method
-        to use selenium driver to dynamically get the html. Also run
-        _find_total_rows that mocks sel_driver's get_page method to get the
-        custom html.
-        """
-
-        total_rows = AS_Rank_Website_Parser()._find_total_rows()
-        assert total_rows > 0
-
-        with patch('lib_bgp_data.asrank_website_parser.selenium_related.sel_driver.SeleniumDriver.get_page') as mock_get_page:
-            mock_get_page.side_effect = open_custom_html
-            total_rows = AS_Rank_Website_Parser()._find_total_rows()
-
-            # The custom html should have 67599 rows
-            assert total_rows == 67599
 
     def test_parse_row(self):
         """Tests that the row is correctly parsed.
@@ -123,4 +103,5 @@ class Test_AS_Rank_Website_Parser:
         parser = AS_Rank_Website_Parser()
         parser._run()
         with AS_Rank_Table() as asrank:
-            assert parser._total_rows == len(asrank.get_all())
+            assert asrank.get_count() >= (parser._total_pages-1) * 1000 
+            #assert parser._total_rows == len(asrank.get_all())
