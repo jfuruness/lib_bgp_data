@@ -34,7 +34,7 @@ def pytest_runtest_setup():
 def pytest_runtest_teardown():
     drop_old_test_databases()
     section = config.global_section_header
-    check_call(Postgres.get_bash(f'DROP DATABASE {section};'), shell=True)
+    Postgres.erase_db(section)
 
 def drop_old_test_databases():
     # Look for and drop any test dbs that are older than 1 week
@@ -46,17 +46,15 @@ def drop_old_test_databases():
                  text=True)
 
     for db_name in result.stdout.split('\n')[2:]:
-        try:
-            if test_prepend() in db_name:
+        if test_prepend() in db_name:
+            try:
                 db_date = datetime.strptime(db_name.replace(test_prepend(), "").strip(),
                                             test_db_fmt())
+            except ValueError:
+                db_date = None
     
-                if (datetime.now() - db_date).days >= 3:
-                    check_call(Postgres.get_bash(f'DROP DATABASE {db_name};'),
-                               shell=True)
-        #Incorrectly formatted db name
-        except ValueError:
-            pass
+            if db_date and (datetime.now() - db_date).days >= 3:
+                Postgres.erase_db(db_name)
 
 def test_db_fmt():
     return '%Y_%m_%d_%H_%M_%S'
