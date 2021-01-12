@@ -26,30 +26,24 @@ from .tables import Historical_ROAs_Table, Historical_ROAs_Parsed_Table
 
 class Historical_ROAs_Parser(Parser):
 
-    def _run(self, date=None): # ,  year=None, month=None, day=None):
+    session = requests.Session()
+    root = 'https://ftp.ripe.net/rpki'
+
+    def _run(self, date: datetime = None):
         """Collect the paths to all the csvs to download. Multithread the
            downloading of all the csvs, insert into db if not seen before."""
 
         # maybe not functional?
         parsed = self._get_parsed_files()
 
-        s = requests.Session()
-
         if date is None:
             paths = self._get_csvs(s)
         else:
-            y, m, d = self.validate_date(date)
-            paths = self._get_csvs_date(s, year=y, month=m, day=d)
+            paths = self._get_csvs_date(date)
 
         paths = [p for p in paths if p not in parsed]
 
-        # generate the list of all download_paths
-        # mkdir all the dirs starting with parent dir 'rpki'
-        download_paths = []
-        for path in paths:
-            download_path = path[path.index('rpki'):]
-            utils.run_cmds(f'mkdir -p {download_path[:-8]}')
-            download_paths.append(download_path)
+        download_paths = self._create_local_download_paths(paths)
 
         # Multiprocessingly download all csvs (nodes = 4 x # CPUS)
         pool = ProcessPool(nodes=48)
@@ -59,23 +53,18 @@ class Historical_ROAs_Parser(Parser):
         pool.close()
         pool.join()
 
-        with Historical_ROAS_Table() as t:
+        with Historical_ROAs_Table() as t:
             t.delete_duplicates()
 
         self._add_parsed_files(paths)
 
-        utils.delete_paths('./rpki')
-
-    def validate_date(self, date):
-        """Validates date and extracts year, month, and day (zero-padded)"""
-        d = datetime.strptime(date, '%Y-%m-%d').isoformat()
-        return d[:4], d[5:7], d[8:10]
+        utils.delete_paths(self.path)
 
     def _get_parsed_files(self):
         """Return the csvs that have already been parsed and inserted into db"""
 
         parsed = []
-        with Historical_ROAS_Parsed_Table() as t:
+        with Historical_ROAs_Parsed_Table() as t:
             for row in t.execute(f'SELECT * FROM {t.name}'):
                 parsed.append(row['file'])
         return parsed
@@ -86,7 +75,22 @@ class Historical_ROAs_Parser(Parser):
         with open(path, 'w+') as f:
             for line in files:
                 f.write(line + '\n')
-        utils.csv_to_db(Historical_ROAS_Parsed_Table, path)
+        utils.csv_to_db(Historical_ROAs_Parsed_Table, path)
+
+    def _create_local_download_paths(self, paths):
+        """Create the directories for downloading csvs.
+        Return paths."""
+
+        # mkdir all the dirs starting with parent dir 'rpki'
+        download_paths = []
+        for path in paths:
+            download_path = self.path + path[path.index('rpki'):]
+            # p flag creates necessary parent directories
+            # slicing off the 'roas.csv'
+            utils.run_cmds(f'mkdir -p {download_path[:-8]}')
+            download_paths.append(download_path)
+
+        return download_paths
 
     def _reformat_csv(self, csv):
         """Delete URI (1st) column using cut,
@@ -104,18 +108,20 @@ class Historical_ROAs_Parser(Parser):
         utils.run_cmds(cmds)
 
     def _db_insert(self, csv):
-        utils.csv_to_db(Historical_ROAS_Table, csv)
+        utils.csv_to_db(Historical_ROAs_Table, csv)
 
-    def _get_csvs(self, s, root='https://ftp.ripe.net/rpki', paths=None):
+    def _get_csvs(self, s, root=None, paths=None):
         """
         Returns the paths to all the csvs that exist under root.
         Pass a requests session s for speed.
         """
 
+        if root is None:
+            root = self.root
         if paths is None:
             paths = []
 
-        r = s.get(root)
+        r = self.session.get(root)
         r.raise_for_status()
         # lxml is faster than html.parser
         html = Soup(r.text, 'lxml')
@@ -136,48 +142,47 @@ class Historical_ROAs_Parser(Parser):
 
         return paths
 
-    def _get_csvs_date(self, s, root='https://ftp.ripe.net/rpki',
-                       year=None, month=None, day=None):
+    def _get_csvs_date(self, date):
         """Get all the paths to roas.csv for a specific date."""
 
-        r = s.get(root)
-        r.raise_for_status()
-        html = Soup(r.text, 'lxml')
-        r.close()
-
-        # first, get the links to each internet registry
-        registries = []
-        for link in html('a')[1:]:
+        # from the root page, get the links to each internet registry
+        paths = []
+        for link in self._soup(self.root)('a')[1:]:
             href = link['href']
-            registries.append(os.path.join(root, href))
+            registries.append(os.path.join(self.root, href))
 
-        # then narrowing it down the the year
-        years = []
-        for i in registries:
-            years.append(self._find_hrefs(s, i, year+'/'))
+        # look in each registry for a csv under date        
+        for url_part in date.strftime('%Y/ %m/ %d/').split() + ['roas.csv']:
+            # basically tacking on another part of the url each time
+            paths = self._get_extensions(paths, url_part)
+        
+        return paths
 
-        # narrow it down further to specific month
-        months = []
-        for y in years:
-            months.append(self._find_hrefs(s, y, month+'/'))
+    def _get_extensions(self, originals, extension):
+        """Returns a new list of urls to that are generated by finding the
+        extensions in each original url's page."""
 
-        days = []
-        for m in months:
-            days.append(self._find_hrefs(s, m, day+'/'))
+        next_urls = []
 
-        # finally can get the csvs
-        csvs = []
-        for d in days:
-            csvs.append(self._find_href(s, d, 'roas.csv'))
+        for i in originals:
+            next_urls.extend(self._find_href(i, extension))
+            
+        return next_urls      
 
-        return csvs
+    def _find_href(self, link, _href):
+        """A helper that looks for a specified href on a page""")
 
-    def _find_href(self, req_ses, link, _href):
-        """A helper that looks for a specified href on a page"""
-        r = req_ses.get(link)
+        new_link = self._soup(link).find(href=_href)
+        if new_link:
+            return [link + new_link['href']]
+        else:
+            return []
+
+    def _soup(self, url):
+        """Returns BeautifulSoup object of url
+        using lxml parser (faster than html.parser)."""
+        r = self.session.get(link)
         r.raise_for_status()
         html = Soup(r.text, 'lxml')
         r.close()
-
-        return html(href=_href)['href']
-        
+        return html

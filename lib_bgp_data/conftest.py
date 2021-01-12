@@ -25,10 +25,11 @@ def pytest_runtest_setup():
     # and random page cost and ulimit in postgres.py
     # https://docs.pytest.org/en/6.0.1/example/simple.html#pytest-current-test-environment-variable
     os.environ["PYTEST_CURRENT_TEST"] = "why doesn't this work"
-
+    
     # Underscores are like the only character I can use here that SQL allows
     section = test_prepend() + datetime.now().strftime(test_db_fmt())
     config.Config(section).install()
+    config.global_section_header = section
  
 def pytest_runtest_teardown():
     drop_old_test_databases()

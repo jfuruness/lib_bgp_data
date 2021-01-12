@@ -13,6 +13,7 @@ __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
 import pytest
+from datetime import datetime
 
 from ..historical_roas_parser import Historical_ROAs_Parser
 from ..tables import Historical_ROAs_Table, Historical_ROAs_Parsed_Table
@@ -32,10 +33,13 @@ class Test_Historical_ROAs_Parser:
     def test_run_date(self):
         """Performs a run for specific date."""
         Historical_ROAs_Parsed_Table(clear=True)
+
+        date = '2019-08-01'
+        
         with Historical_ROAs_Table(clear=True) as t:
-            Historical_ROAs_Parser.run('2019-08-01')
-            sql = f"SELECT * FROM {t.name} WHERE date_added = '2019-08-01'"
-            assert t.get_count(sql) > 2
+            Historical_ROAs_Parser()._run(date=datetime.strptime(date, '%Y-%m-%d'))
+            sql = f"SELECT * FROM {t.name} WHERE date_added = '{date}'"
+            assert len(t.execute(sql)) >= 200
 
     def test_no_duplicates(self):
         """Tests no duplicates rows exist in the table"""
