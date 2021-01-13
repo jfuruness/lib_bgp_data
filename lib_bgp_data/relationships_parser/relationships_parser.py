@@ -27,6 +27,8 @@ class Relationships_Parser(Parser):
     In depth explanation in README
     """
 
+    tables = [ASes_Table, AS_Connectivity_Table, Provider_Customers_Table]
+
     def _run(self, *args, url=None):
         """Downloads and parses file
 

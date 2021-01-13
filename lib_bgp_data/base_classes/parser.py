@@ -18,6 +18,7 @@ import sys
 import os
 
 import pytest
+import psycopg2
 
 from ..utils import utils, config_logging
 from ..database.config import set_global_section_header
@@ -148,7 +149,7 @@ class Parser:
             try:
                 self.backup(table)
             except Exception as e:
-                if not pytest.global_running_test:
+                if "PYTEST_CURRENT_TEST" not in os.environ:
                     subject = f"Failed to Backup {table} Table at {utils.now()}"
 
                     # Construct body of email
@@ -224,8 +225,9 @@ class Parser:
         """Run all the parsers that are intended to be automated
         and backed up"""
 
-        def inner_run():
+        def inner_run(*args, **kwargs):
             for p in cls.parsers_backup:
+                print(p)
                 p().backup_tables()
         return inner_run
 
