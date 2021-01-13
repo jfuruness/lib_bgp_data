@@ -28,6 +28,7 @@ class Test_Historical_ROAs_Parser:
         Historical_ROAs_Parsed_Table(clear=True)
         with Historical_ROAs_Table(clear=True) as t:
             Historical_ROAs_Parser().run()
+            print(t.get_count())
             assert t.get_count() > 1000000
 
     def test_run_date(self):
@@ -37,9 +38,11 @@ class Test_Historical_ROAs_Parser:
         date = '2019-08-01'
         
         with Historical_ROAs_Table(clear=True) as t:
-            Historical_ROAs_Parser()._run(date=datetime.strptime(date, '%Y-%m-%d'))
+            Historical_ROAs_Parser().run(datetime.strptime(date, '%Y-%m-%d'))
             sql = f"SELECT * FROM {t.name} WHERE date_added = '{date}'"
-            assert len(t.execute(sql)) >= 200
+            
+            # unless ROAs are retroactively added, this should be correct #
+            assert len(t.execute(sql)) == 95743
 
     def test_no_duplicates(self):
         """Tests no duplicates rows exist in the table"""

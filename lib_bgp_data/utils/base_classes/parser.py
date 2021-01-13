@@ -56,17 +56,17 @@ class Parser:
         # The class name. This because when parsers are done,
         # they aggressively clean up. We do not want parser to clean up in
         # the same directories and delete files that others are using
-        name = f"{kwargs['section']}_{self.__class__.__name__}"
+        self.name = f"{kwargs['section']}_{self.__class__.__name__}"
         config_logging(kwargs.get("stream_level", logging.INFO),
                        kwargs["section"])
 
         # Path to where all files willi go. It does not have to exist
-        self.path = kwargs.get("path", f"/tmp/{name}")
-        self.csv_dir = kwargs.get("csv_dir", f"/dev/shm/{name}")
+        self.path = kwargs.get("path", f"/tmp/{self.name}")
+        self.csv_dir = kwargs.get("csv_dir", f"/dev/shm/{self.name}")
         # Recreates empty directories
         utils.clean_paths([self.path, self.csv_dir])
         self.kwargs = kwargs
-        logging.debug(f"Initialized {name} at {utils.now()}")
+        logging.debug(f"Initialized {self.name} at {utils.now()}")
         assert hasattr(self, "_run"), ("Needs _run, see Parser.py's run func "
                                        "Note that this is also used by default"
                                        " for running argparse. The main method"
