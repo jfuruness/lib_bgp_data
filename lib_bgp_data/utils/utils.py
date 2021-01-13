@@ -348,17 +348,20 @@ def get_lines_in_file(filename: str) -> int:
     return count + 1
 
 
-def run_cmds(cmds):
+def run_cmds(cmds, timeout=None):
 
     cmd = " && ".join(cmds) if isinstance(cmds, list) else cmds
 
-    # If less than logging.info
-    if logging.root.level < 20:
-        logging.debug(f"Running: {cmd}")
-        check_call(cmd, shell=True)
-    else:
-        logging.debug(f"Running: {cmd}")
-        check_call(cmd, stdout=DEVNULL, stderr=DEVNULL, shell=True)
+    kwargs = {"shell": True}
+
+    # If logging is greater than or equal to info
+    if logging.root.level >= 20:
+        kwargs.update({"stdout": DEVNULL, "stderr": DEVNULL})
+    if timeout is not None:
+        kwargs["timeout"] = timeout
+
+    logging.debug(f"Running: {cmd}")
+    check_call(cmd, **kwargs)
 
 
 def replace_line(path, prepend, line_to_replace, replace_with):
@@ -400,11 +403,8 @@ def kill_port(port: int, wait: bool = True):
                 if wait:
                     time.sleep(120)
 
-
 def add_cronjob(name, time, executable, overwrite=False):
     """Creates a cronjob of name, that runs executable at (cron) time."""
     cronjob = f'/etc/cron.d/{name}'
     if not os.path.exists or overwrite:
         run_cmds(f'echo "{time} root {executable} > {cronjob}')
-
-

@@ -16,7 +16,6 @@ import os
 
 import multiprocessing_logging
 
-from ..database.config import set_global_section_header
 
 
 def config_logging(level=logging.INFO, section=None, reconfigure=False):
@@ -29,10 +28,8 @@ def config_logging(level=logging.INFO, section=None, reconfigure=False):
             for handler in logging.root.handlers[:]:
                 handler.close()
                 logging.root.removeHandler(handler)
-        try:
-            from ..database.config import global_section_header
-        except ImportError:
-            global_section_header = set_global_section_header(section)
+        from .database import config
+        global_section_header = config.set_global_section_header(section)
     
         # Makes log path and returns it
         path = _get_log_path(global_section_header)
