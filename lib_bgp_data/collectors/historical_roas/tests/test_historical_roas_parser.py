@@ -14,6 +14,7 @@ __status__ = "Development"
 
 import pytest
 from datetime import datetime
+import os
 
 from ..historical_roas_parser import Historical_ROAs_Parser
 from ..tables import Historical_ROAs_Table, Historical_ROAs_Parsed_Table
@@ -22,14 +23,12 @@ from ....utils import utils
 class Test_Historical_ROAs_Parser:
 
     @pytest.mark.slow()
-    #@pytest.mark.skip()
     def test_clean_run(self):
         """Performs a clean run by dropping the tables."""
         Historical_ROAs_Parsed_Table(clear=True)
         with Historical_ROAs_Table(clear=True) as t:
             Historical_ROAs_Parser().run()
-            print(t.get_count())
-            assert t.get_count() > 1000000
+            assert t.get_count() > 2000000
 
     def test_run_date(self):
         """Performs a run for specific date."""
@@ -39,10 +38,10 @@ class Test_Historical_ROAs_Parser:
         
         with Historical_ROAs_Table(clear=True) as t:
             Historical_ROAs_Parser().run(datetime.strptime(date, '%Y-%m-%d'))
-            sql = f"SELECT * FROM {t.name} WHERE date_added = '{date}'"
+            sql = f"SELECT COUNT(*) FROM {t.name} WHERE date_added = '{date}'"
             
-            # unless ROAs are retroactively added, this should be correct #
-            assert len(t.execute(sql)) == 95743
+            # unless ROAs are retroactively added, this should be constant
+            assert t.get_count(sql) == 95743
 
     def test_no_duplicates(self):
         """Tests no duplicates rows exist in the table"""
@@ -81,19 +80,29 @@ class Test_Historical_ROAs_Parser:
         Tests the reformatting. See the docstring for the method
         for what it does exactly.
         """
-        path = '/tmp/test_reformat.csv'
-        correct = '37674	41.191.212.0/22	24	'
-        correct += '2015-10-30 13:21:35	2016-10-30 13:21:35	.-test_ref\n'
 
-        with open(path, 'w+') as f:
+        parser = Historical_ROAs_Parser()
+
+        # create the necessary directories
+        test_dir = os.path.join(parser.path, 'test_reformat_csv/2019/08/01/')
+        utils.clean_paths(test_dir)
+        test_csv = os.path.join(test_dir, 'roas.csv')
+
+        correct = '37674	41.191.212.0/22	24	'
+        correct += '2015-10-30 13:21:35	2016-10-30 13:21:35	2019-08-01\n'
+
+        # clear the file in case it somehow has stuff in it already
+        open(test_csv, 'w').close()
+
+        with open(test_csv, 'w') as f:
             f.write('A ROW TO BE DELETED\n')
             s = 'willbedeleted,AS37674,41.191.212.0/22,24,'
             s += '2015-10-30 13:21:35,2016-10-30 13:21:35\n'
             f.write(s)
 
         try:
-            Historical_ROAS_Parser()._reformat_csv(path)
-            with open(path, 'r') as f:
+            parser._reformat_csv(test_csv)
+            with open(test_csv, 'r') as f:
                 assert f.read() == correct
         finally:
-            utils.delete_paths(path)
+            utils.delete_paths(os.path.join(parser.path, 'test_reformat_csv'))

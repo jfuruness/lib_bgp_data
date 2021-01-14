@@ -105,7 +105,8 @@ class Historical_ROAs_Parser(Parser):
            delete the first row (column names),
            delete 'AS', add the date, replace commas with tabs using sed"""
 
-        date = '-'.join(csv[-19:-9].split('/'))
+        # avoid using extra backslashes because sed uses them as delimiter
+        date = csv[-19:-9].replace('/', '-')
         cmds = [f'cut -d , -f 1 --complement <{csv} >{csv}.new',
                 f'mv {csv}.new {csv}',
                 f'sed -i "1d" {csv}',
@@ -123,12 +124,6 @@ class Historical_ROAs_Parser(Parser):
         Returns the paths to all the csvs that exist under root.
         """
 
-        #if root is None:
-        #    root = self.root
-        #if paths is None:
-        #    paths = []
-
-        # Iterative depth-first search
         stack = [self.root]
         urls = []
 
@@ -147,19 +142,6 @@ class Historical_ROAs_Parser(Parser):
                     urls.append(next_link)
                 elif href != '/' and href != 'repo.tar.gz':
                     stack.append(next_link)
-
-        # skip first link (parent directory)
-        #for link in self._soup(root)('a')[1:]:
-
-        #    href = link['href']
-        #    path = os.path.join(root, href)
-
-        #    if href == '/' or href == 'repo.tar.gz':
-                pass
-        #    elif 'csv' in href:
-        #        paths.append(path)
-        #    else:
-        #        self._get_csvs(s, path, paths, date)
 
         return urls
 
