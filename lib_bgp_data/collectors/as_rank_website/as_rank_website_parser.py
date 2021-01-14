@@ -58,7 +58,7 @@ class AS_Rank_Website_Parser(Parser):
         #for page in trange(1, self._total_pages, desc="Parsing AS Rank"):
         #    self._parse_page(page)
 
-        with utils.Pool(0, 1, 'ASRANk') as pool:
+        with utils.Pool(0, 1, self.name) as pool:
             r = list(tqdm(
                     pool.imap(self._parse_page,
                             [page for page in range(1, self._total_pages)]),
