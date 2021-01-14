@@ -119,7 +119,7 @@ class Historical_ROAs_Parser(Parser):
     def _db_insert(self, csv):
         utils.csv_to_db(Historical_ROAs_Table, csv)
 
-    def _get_csvs(self):#, root=None, paths=None):
+    def _get_csvs(self):
         """
         Returns the paths to all the csvs that exist under root.
         """
