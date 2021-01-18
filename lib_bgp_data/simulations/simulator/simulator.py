@@ -55,7 +55,9 @@ class Simulator(Parser):
         In depth explanation at top of module.
         """
 
-        self._validate_input(number_of_attackers,
+        self._validate_input(trials,
+                             rounds,
+                             number_of_attackers,
                              extra_bash_args_1,
                              extra_bash_args_2,
                              extra_bash_args_3,
@@ -112,13 +114,18 @@ class Simulator(Parser):
                                      extra_bash_args_5=extra_bash_args_5)
         tables.close()
 
-    def _validate_input(self, 
+    def _validate_input(self,
+                        trials,
+                        rounds, 
                         number_of_attackers,
                         extra_bash_args_1,
                         extra_bash_args_2,
                         extra_bash_args_3,
                         extra_bash_args_4,
                         extra_bash_args_5):
+
+        assert trials > 1, "Need at least 2 trials for conf intervals"
+        assert rounds >= 1, "Need at least 1 round"
 
         assert number_of_attackers == [1], "No. Just no."
 
