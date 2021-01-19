@@ -42,17 +42,25 @@ from ....extrapolator import Simulation_Extrapolator_Forwarding_Table
 class ASes_Subtable(Generic_Table):
     """Ases subtable (generic type of subtable)"""
 
-    def set_adopting_ases(self, percent, attacker, random_seed):
+    def set_adopting_ases(self, percent, attack, random_seed):
         """Sets ases to impliment"""
+
+        attacker = attack.attacker
+        victim = attack.victim
 
         ases = set([x["asn"] for x in self.get_all()])
         # The attacker cannot adopt
         if attacker in ases:
             ases.remove(attacker)
+        if victim in ases:
+            ases.remove(victim)
         # Number of adopting ases
         ases_to_set = len(ases) * percent // 100
 
         # I don't agree with this way of coding it, but this came from up above
+        # CHANGES FOR EZBGP: idk hwo you guys want to handle this
+        if percent in [0, 100]:
+            assert False, "Fix this because of the way we encode the victim for ezbgp"
         if percent == 0:
             if "edge" in self.name:
                 ases_to_set = 1
@@ -71,11 +79,14 @@ class ASes_Subtable(Generic_Table):
 
         sql = """UPDATE {0} SET impliment = TRUE
                 FROM (SELECT * FROM {0}
-                         WHERE {0}.asn != {1}
+                         WHERE {0}.asn != {1} AND {0}.asn != {3}
                          ORDER BY RANDOM() LIMIT {2}
                          ) b
                WHERE b.asn = {0}.asn
-               ;""".format(self.name, attacker, ases_to_set)
+               ;""".format(self.name, attacker, ases_to_set, victim)
+        self.execute(sql)
+        # CHANGES FOR EZBGP: Force the victim to adopt
+        sql = f"UPDATE {self.name} SET impliment = TRUE WHERE asn = {victim}"
         self.execute(sql)
 
     def change_routing_policies(self, policy):
