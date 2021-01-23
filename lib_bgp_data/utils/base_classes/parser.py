@@ -145,6 +145,15 @@ class Parser:
         for table in self.tables:
             try:
                 self.backup(table)
+                if "PYTEST_CURRENT_TEST" not in os.environ:
+                    subject = f"Successfully Backed-up {table} Table at {utils.now()}"
+
+                    # Construct body of email
+                    body = f"The {table} table was successfully backed-up."
+
+                    # TODO: Send email to maintainers once done testing
+                    utils.send_email(subject, body)
+
             except Exception as e:
                 if "PYTEST_CURRENT_TEST" not in os.environ:
                     subject = f"Failed to Backup {table} Table at {utils.now()}"
