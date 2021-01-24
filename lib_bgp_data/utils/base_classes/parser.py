@@ -53,7 +53,7 @@ class Parser:
         super().__init_subclass__(**kwargs)
         cls.parsers.append(cls)
 
-        if cls.backup:
+        if cls.backup is True:
             cls.parsers_backup.append(cls)
 
     def __init__(self, **kwargs):
@@ -79,7 +79,7 @@ class Parser:
         self.backup_dir = kwargs.get("backup_dir", f"/dev/shm/{name}_backups")
 
         # If parser can be backed up, make sure it has tables class attribute
-        if self.backup:
+        if self.backup is True:
             assert hasattr(self, "tables"), ("Please have a class attribute that "
                                              "lists the tables that should be "
                                              "backed up.")
