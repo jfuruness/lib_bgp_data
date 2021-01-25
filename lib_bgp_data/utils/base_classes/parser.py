@@ -137,8 +137,8 @@ class Parser:
 
         # Run the specific parser
         # NOTE: Is there a way to do this better?
-        if self.__class__.__name__ == "ROAs_Parser":
-            self.run(clear_table=False)
+        if self.__class__.__name__ in {"ROAs_Parser", "ROAs_Collector"} :
+            self.run(clear_table=True)
         else:
             self.run()
 
@@ -219,12 +219,14 @@ class Parser:
         # If there was a previous backup and count_tmp is not greater than
         # count_prev, then the new backup made does not reflect the new
         # changes that were added into the table.
-        if prev_existed and count_temp <= count_prev:
+        if prev_existed and count_tmp <= count_prev:
             error_msg = (f"When making the backup for the {table.name} table "
                          "after it was updated, the backup file generated was "
                          "not consistent with the live table. Therefore, the "
                          "previous backup file was not overwritten and does "
-                         "not reflect the most updated state of the table.")
+                         "not reflect the most updated state of the table.\n"
+                         f"Prev Count: {count_prev}\n"
+                         f"Current Count: {count_tmp}")
             raise Exception(error_msg)
 
     @classmethod
