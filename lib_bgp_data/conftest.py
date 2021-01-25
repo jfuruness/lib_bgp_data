@@ -4,10 +4,11 @@
 """This file sets a pytest variable so that the logger doesn't exit nicely"""
 
 import pytest
-from datetime import datetime
 from subprocess import run, check_call
+from datetime import datetime
+from .utils.database import config
+from .utils.database import Postgres
 from .utils import utils
-from .utils.database.config import set_global_section_header, Config
 
 __author__ = ["Justin Furuness", "Tony Zheng"]
 __credits__ = ["Justin Furuness", "Tony Zheng"]
@@ -16,45 +17,49 @@ __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
-#section = 'test_'
 
-def bash(query, section=None):
-    """A helper for writing SQL queries to be used with psql"""
-    if section:
-        return f"sudo -i -u postgres psql -d {section} -c '{query}'"
-    else:
-        return f"sudo -i -u postgres psql -c '{query}'" 
+import os
 
-@pytest.fixture(scope="session", autouse=True)
-def db_setup(request):
-    """This fixture creates a new test db for every test session"""
-
-    # I think this attribute is only really needed for the postgres restart
-    # command in config? But it's a property so it's hard to rewrite.
-    pytest.global_running_test = True
-
+def pytest_runtest_setup():
+    # used for postgres restart command in config.py
+    # and random page cost and ulimit in postgres.py
+    # https://docs.pytest.org/en/6.0.1/example/simple.html#pytest-current-test-environment-variable
+    os.environ["PYTEST_CURRENT_TEST"] = "why doesn't this work"
+    
     # Underscores are like the only character I can use here that SQL allows
-    section = 'test_' + utils.now().strftime('%Y_%m_%d_%H_%M_%S')
-    #set_global_section_header(section)
+    section = test_prepend() + datetime.now().strftime(test_db_fmt())
+    config.Config(section).install()
+    config.global_section_header = section
+ 
+def pytest_runtest_teardown():
+    drop_old_test_databases()
+    section = config.global_section_header
+    check_call(Postgres.get_bash(f'DROP DATABASE {section};'), shell=True)
 
-    Config(section).install()
-
+def drop_old_test_databases():
     # Look for and drop any test dbs that are older than 1 week
     # Done by parsing the SQL output of listing all dbs for their dates
-    b = bash('SELECT datname FROM pg_database;')
-    result = run(b, shell=True, check=True, capture_output=True, text=True)
+    result = run(Postgres.get_bash('SELECT datname FROM pg_database;'),
+                 shell=True,
+                 check=True,
+                 capture_output=True,
+                 text=True)
 
-    for db in result.stdout.split('\n')[2:-3]:
-        if 'test_2' in db:
-            d = db.split('_')
-            db_date = datetime(int(d[1]), int(d[2]), int(d[3]))
+    for db_name in result.stdout.split('\n')[2:]:
+        try:
+            if test_prepend() in db_name:
+                db_date = datetime.strptime(db_name.replace(test_prepend(), "").strip(),
+                                            test_db_fmt())
+    
+                if (datetime.now() - db_date).days >= 3:
+                    check_call(Postgres.get_bash(f'DROP DATABASE {db_name};'),
+                               shell=True)
+        #Incorrectly formatted db name
+        except ValueError:
+            pass
 
-            difference = datetime.now() - db_date
+def test_db_fmt():
+    return '%Y_%m_%d_%H_%M_%S'
 
-            if difference.days >= 7:
-                check_call(bash(f'DROP DATABASE {db};'), shell=True)
- 
-    # everything after yield serves as the teardown
-    yield
-    check_call(bash(f'DROP DATABASE {section};'), shell=True)
-
+def test_prepend():
+    return "test_"

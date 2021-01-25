@@ -18,28 +18,47 @@ import sys
 from ..tables import Simulation_Results_Table
 from ...enums import AS_Types
 from ...enums import Control_Plane_Conditions as C_Plane_Conds
-from ...enums import Data_Plane_Conditions 
+from ...enums import Data_Plane_Conditions
 from ....extrapolator import Simulation_Extrapolator_Forwarding_Table
+
 
 class Output_Subtables:
     """Subtables that deal with the output functions from the extrapolator"""
 
-    def store(self, attack, adopt_policy, percent, percent_iter):
+    def store(self,
+              attack,
+              number_of_attackers,
+              adopt_policy,
+              percent,
+              percent_iter,
+              round_num,
+              extra_bash_arg_1,
+              extra_bash_arg_2,
+              extra_bash_arg_3,
+              extra_bash_arg_4,
+              extra_bash_arg_5):
         """Stores data"""
 
         # Gets all the asn data
-        with Simulation_Extrapolator_Forwarding_Table() as _db:
+        with Simulation_Extrapolator_Forwarding_Table(round_num=round_num) as _db:
             ases = {x["asn"]: x for x in _db.get_all()}
 
         # Stores the data for the specific subtables
         for table in self.tables:
             table.Forwarding_Table.clear_table()
-            table.Forwarding_Table.fill_forwarding_table()
+            table.Forwarding_Table.fill_forwarding_table(round_num)
             table.store_output(ases,
                                attack,
+                               number_of_attackers,
                                adopt_policy,
                                percent,
                                percent_iter,
+                               round_num,
+                               extra_bash_arg_1,
+                               extra_bash_arg_2,
+                               extra_bash_arg_3,
+                               extra_bash_arg_4,
+                               extra_bash_arg_5,
                                [x.Forwarding_Table.name for x in self.tables])
 
 
@@ -49,9 +68,16 @@ class Output_Subtable:
     def store_output(self,
                      all_ases,
                      attack,
+                     number_of_attackers,
                      adopt_policy,
                      percent,
                      percent_iter,
+                     round_num,
+                     extra_bash_arg_1,
+                     extra_bash_arg_2,
+                     extra_bash_arg_3,
+                     extra_bash_arg_4,
+                     extra_bash_arg_5,
                      table_names):
         """Stores output in the simulation results table"""
 
@@ -66,14 +92,21 @@ class Output_Subtable:
         with Simulation_Results_Table() as db:
             db.insert(self.table.name,
                       attack,
+                      number_of_attackers,
                       adopt_policy,
                       percent,
                       percent_iter,
+                      round_num,
+                      extra_bash_arg_1,
+                      extra_bash_arg_2,
+                      extra_bash_arg_3,
+                      extra_bash_arg_4,
+                      extra_bash_arg_5,
                       self._get_traceback_data(subtable_ases,
                                                all_ases,
                                                attack),
                       self._get_control_plane_data(attack),
-                      self._get_visible_hijack_data(table_names, attack))
+                      self._get_visible_hijack_data(table_names, attack, round_num))
 
     def _get_traceback_data(self, subtable_ases, all_ases, attack):
         """Gets the data plane data through tracing back"""
@@ -105,7 +138,7 @@ class Output_Subtable:
                 self._print_loop_debug_data(*loop_data)
         return conds
 
-    def _get_visible_hijack_data(self, t_names, attack):
+    def _get_visible_hijack_data(self, t_names, attack, round_num):
         """Gets visible hijacks using sql for speed"""
 
         # NOTE: this will automatically remove attackers and victims
@@ -119,6 +152,7 @@ class Output_Subtable:
         attacker_ann = []
         # NOTE: This won't work for path manipulation attacks
         # I set an assert statement in attack class for this
+        # Ya ik its not there anymore. Whatever.
         for prefix in attack.attacker_prefixes:
             sql = "(all_ases.prefix = '{}' AND all_ases.origin = {})".format(
                 prefix, attack.attacker)
@@ -126,14 +160,16 @@ class Output_Subtable:
 
         attacker_sql = " OR ".join(attacker_ann)
 
-        for adopt_val in AS_Types.__members__.values():
-            sql = f"""SELECT COUNT(*) FROM
-                    {self.Forwarding_Table.name} og
-                    INNER JOIN {Simulation_Extrapolator_Forwarding_Table.name}
-                        all_ases
-                            ON og.received_from_asn = all_ases.asn
-                    WHERE og.as_type = {adopt_val.value} AND ({attacker_sql})"""
-            conds[adopt_val] = self.Forwarding_Table.get_count(sql)
+        with Simulation_Extrapolator_Forwarding_Table(round_num=round_num) as db:
+            for adopt_val in AS_Types.__members__.values():
+                sql = f"""SELECT COUNT(*) FROM
+                        {self.Forwarding_Table.name} og
+                        INNER JOIN {db.name}
+                            all_ases
+                                ON og.received_from_asn = all_ases.asn
+                        WHERE og.as_type = {adopt_val.value} AND ({attacker_sql})
+                        """
+                conds[adopt_val] = self.Forwarding_Table.get_count(sql)
         return conds
 
     def _print_loop_debug_data(self, all_ases, og_asn, og_as_data, attack):
@@ -170,17 +206,17 @@ class Output_Subtable:
                    f" AND asn != %s AND impliment = {bool(adopt_val)}")
             conds[C_Plane_Conds.RECV_ATK_PREF_ORIGIN.value][adopt_val] =\
                 self.Forwarding_Table.get_count(sql, [attack.attacker,
-                                                     attack.attacker,
-                                                     attack.victim])
+                                                      attack.attacker,
+                                                      attack.victim])
             conds[C_Plane_Conds.RECV_ONLY_VIC_PREF_ORIGIN.value][adopt_val] =\
                 self.Forwarding_Table.get_count(sql, [attack.victim,
                                                       attack.attacker,
                                                       attack.victim])
             conds[C_Plane_Conds.RECV_BHOLE.value][adopt_val] =\
-                self.Forwarding_Table.get_count(sql, 
-                    [Data_Plane_Conditions.BHOLED.value,
-                     attack.attacker,
-                     attack.victim])
+                self.Forwarding_Table.get_count(sql,
+                                         [Data_Plane_Conditions.BHOLED.value,
+                                          attack.attacker,
+                                          attack.victim])
 
             no_rib_sql = """SELECT COUNT(*) FROM {0}
                          LEFT JOIN {1} ON {0}.asn = {1}.asn

@@ -94,21 +94,19 @@ class Test_RPKI_Validator_Parser:
 
             initial_count = db.get_count()
 
-            for row in db.execute(f'SELECT prefix, origin FROM {input_table}'):
-                prefix, origin = row['prefix'], row['origin']
+            # Any prefix-origin pair that exists in the 
+            # set of all prefix-origin pairs from input table but not in the
+            # set of unique prefix-origin pairs in ROV_Validity table
+            # has to be one of the acknowledged prefix-origin pairs
+            # that the API missed.
 
-                sql = (f"SELECT COUNT(*) FROM {db.name} WHERE "
-                       f"prefix = '{prefix}' AND origin = {origin}")
+            def PO_pairs(table):
+                return {(row["prefix"], row["origin"])
+                        for row in
+                        db.execute(f"SELECT prefix, origin FROM {table}")}
 
-                count = db.get_count(sql)
-
-                api_miss = (count == 0
-                            and prefix == '0.0.0.0/0'
-                            and origin in missing_origins)
-
-                # There should be exactly one of this prefix-origin pair
-                # or it's data that's missing from the API.
-                assert count == 1 or api_miss
+            for prefix, origin in PO_pairs(input_table) - PO_pairs(db.name):
+                assert prefix == '0.0.0.0/0' and origin in missing_origins
 
             # There should be no new data straggling behind. 
             sleep(120)

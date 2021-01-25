@@ -34,7 +34,8 @@ from ....utils import utils
 class Test_RPKI_Validator_Wrapper:
     """Tests all local functions within the RPKI_Validator_Wrapper class."""
 
-    path = ('lib_bgp_data.rpki_validator.rpki_validator_wrapper.'          
+    # for mock patching
+    path = ('lib_bgp_data.collectors.rpki_validator.rpki_validator_wrapper.'          
             'RPKI_Validator_Wrapper.')
 
     @pytest.fixture

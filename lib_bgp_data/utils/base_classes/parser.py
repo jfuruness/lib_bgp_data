@@ -19,7 +19,7 @@ import sys
 import pytest
 
 from ...utils import utils, config_logging
-from ..database.config import set_global_section_header
+from ..database import config
 
 
 class Parser:
@@ -51,17 +51,16 @@ class Parser:
         Section is the arg for the config. You can run on entirely
         separate databases with different sections."""
 
-        from ..database.config import global_section_header
-        kwargs["section"] = kwargs.get("section", global_section_header)
+        section = config.set_global_section_header(kwargs.get("section"))
+        kwargs["section"] = kwargs.get("section", section)
         # The class name. This because when parsers are done,
         # they aggressively clean up. We do not want parser to clean up in
         # the same directories and delete files that others are using
         name = f"{kwargs['section']}_{self.__class__.__name__}"
-        # Set global section header variable in Config's init
         config_logging(kwargs.get("stream_level", logging.INFO),
                        kwargs["section"])
 
-        # Path to where all files will go. It does not have to exist
+        # Path to where all files willi go. It does not have to exist
         self.path = kwargs.get("path", f"/tmp/{name}")
         self.csv_dir = kwargs.get("csv_dir", f"/dev/shm/{name}")
         # Recreates empty directories

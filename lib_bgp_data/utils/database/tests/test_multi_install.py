@@ -14,7 +14,7 @@ from subprocess import check_output, check_call
 import pytest
 
 from ..config import Config
-#from ...relationships_parser import Relationships_Parser
+from ...relationships_parser import Relationships_Parser
 
 @pytest.mark.database
 @pytest.mark.xfail(reason="New hire fix, problem in conftest?")
