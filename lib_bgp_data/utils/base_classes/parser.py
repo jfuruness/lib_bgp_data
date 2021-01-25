@@ -19,6 +19,7 @@ import os
 
 import pytest
 import psycopg2
+from subprocess import check_call
 
 from ...utils import utils, config_logging
 from ..database import config
@@ -30,7 +31,7 @@ class Parser:
     See README for in depth explanation.
     """
 
-    __slots__ = ['path', 'csv_dir', 'kwargs']
+    __slots__ = ['path', 'csv_dir', 'kwargs', 'backup_dir']
     # This will add an error_catcher decorator to all methods
 
     parsers = []
@@ -144,7 +145,7 @@ class Parser:
         # Back up the tables
         for table in self.tables:
             try:
-                self.backup(table)
+                self.backup_table(table)
                 if "PYTEST_CURRENT_TEST" not in os.environ:
                     subject = f"Successfully Backed-up {table} Table at {utils.now()}"
 
@@ -170,7 +171,7 @@ class Parser:
                     # TODO: Send email to maintainers once done testing
                     utils.send_email(subject, body)
 
-    def backup(self, table):
+    def backup_table(self, table):
         """Makes a new backup if live table has more data than old backup."""
 
         prev_backup = os.path.join(self.backup_dir, f'{table.name}.sql.gz')
@@ -201,7 +202,7 @@ class Parser:
             count_prev = db.get_count()
             
             # restore temp
-            db.restore(gsh, tmp_backup)
+            db.restore_table(gsh, tmp_backup)
             count_tmp = db.get_count()
 
             # new backup is larger, save as the most up-to-date backup
