@@ -25,7 +25,7 @@ from ...utils.base_classes import Parser
 from ...utils.database import Database
 
 
-class Verification_Parser(Parser):
+class Extrapolator_Analyzer(Parser):
     """This class generates input to the extrapolator verification
 
     In depth explanation at the top of module. Jk needs docs
@@ -35,6 +35,6 @@ class Verification_Parser(Parser):
 
     def _run(self):
         for control_monitor_asn in []:
-            for multihomed_opt in []
-#                for 
+            for multihomed_opt in []:
+                pass
         Extrapolator_Wrapper(**self.kwargs)._run()
