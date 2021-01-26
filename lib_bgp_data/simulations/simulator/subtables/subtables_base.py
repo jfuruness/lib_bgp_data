@@ -50,7 +50,10 @@ class Subtables(Input_Subtables, Output_Subtables):
             logging.info("Analyzing before beginning for speed")
             # Without this the queries become messed up
             with Database() as db:
-                db.execute("ANALYZE")
+                for tname in ["as_rank", "peers", "provider_customers",
+                              "etc_ases", "top_100_ases", "edge_ases",
+                              "ases"]:
+                    db.execute(f"ANALYZE {tname}")
 
     def fill_tables(self):
         """Fill the tables with ASes"""
