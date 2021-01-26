@@ -35,6 +35,6 @@ class Verification_Parser(Parser):
 
     def _run(self):
         for control_monitor_asn in []:
-            for multihomed_opt in []
-#                for 
+            for multihomed_opt in []:
+                pass
         Extrapolator_Wrapper(**self.kwargs)._run()
