@@ -138,7 +138,7 @@ class Parser:
         # Run the specific parser
         # NOTE: Is there a way to do this better?
         if self.__class__.__name__ in {"ROAs_Parser", "ROAs_Collector"} :
-            self.run(clear_table=True)
+            self.run(clear_table=False)
         else:
             self.run()
 
