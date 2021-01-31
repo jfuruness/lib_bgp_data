@@ -127,8 +127,8 @@ class Parser:
             backup = os.path.join(self.backup_dir, f'{table.name}.sql.gz')
             with table() as t:
                 try:
-                    count = t.get_count()
-                # NOTE: Should also check if count is 0
+                    if t.get_count() == 0:
+                        raise psycopg2.errors.UndefinedTable()
                 except psycopg2.errors.UndefinedTable:
                     from ..database.config import global_section_header as gsh
                     assert gsh is not None
@@ -137,7 +137,7 @@ class Parser:
 
         # Run the specific parser
         # NOTE: Is there a way to do this better?
-        if self.__class__.__name__ in {"ROAs_Parser", "ROAs_Collector"} :
+        if self.__class__.__name__ == "ROAs_Parser":
             self.run(clear_table=False)
         else:
             self.run()
@@ -147,21 +147,22 @@ class Parser:
             try:
                 self.backup_table(table)
                 if "PYTEST_CURRENT_TEST" not in os.environ:
-                    subject = f"Successfully Backed-up {table} Table at {utils.now()}"
+                    subject = (f"Successfully Backed-up {table.name} table "
+                               f"at {utils.now()}")
 
                     # Construct body of email
-                    body = f"The {table} table was successfully backed-up."
+                    body = f"The {table.name} table was successfully backed-up."
 
                     # TODO: Send email to maintainers once done testing
                     utils.send_email(subject, body)
 
             except Exception as e:
                 if "PYTEST_CURRENT_TEST" not in os.environ:
-                    subject = f"Failed to Backup {table} Table at {utils.now()}"
+                    subject = f"Failed to Backup {table.name} table at {utils.now()}"
 
                     # Construct body of email
-                    body = (f"There was an error backing up the {table} table. "
-                            "Below are the outputs:\n")
+                    body = (f"There was an error backing up the {table.name} "
+                            "table. Below are the outputs:\n")
                     if hasattr(e, "stdout"):
                         body += f"STD_OUT Message: {e.stdout}\n"
                     if hasattr(e, "stderr"):
@@ -236,6 +237,9 @@ class Parser:
 
         def inner_run(*args, **kwargs):
             for p in cls.parsers_backup:
+                # NOTE: is there a better way?
+                if p().__class__.__name__ == "ROAs_Collector":
+                    continue
                 print(p)
                 p().backup_tables()
         return inner_run
