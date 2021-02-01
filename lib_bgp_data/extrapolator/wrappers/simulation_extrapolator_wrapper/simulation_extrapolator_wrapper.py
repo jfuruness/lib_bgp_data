@@ -83,7 +83,7 @@ class Simulation_Extrapolator_Wrapper(Extrapolator_Wrapper):
 
         # Exr bash here for dev only. If set override default args
         # Timeout set to 20 minutes. Normally it runs in a few seconds
-        utils.run_cmds(exr_bash if exr_bash else default_bash_args, timeout=1200)
+        utils.run_cmds(exr_bash if exr_bash else default_bash_args, timeout=1800)
 
         for _round in range(1, rounds + 1):
             with Simulation_Extrapolator_Results_Table(round_num=_round) as db:
