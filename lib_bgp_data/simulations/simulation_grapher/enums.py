@@ -59,4 +59,5 @@ class Policy_Combos(Enumerable_Enum):
                   Policies.EZ_BGP_SEC_COMMUNITY_DETECTION_LOCAL,
                   Policies.EZ_BGP_SEC_COMMUNITY_DETECTION_GLOBAL,
                   Policies.EZ_BGP_SEC_COMMUNITY_DETECTION_GLOBAL_LOCAL,
-                  Policies.BGPSEC]
+                  Policies.BGPSEC,
+                  Policies.BGPSEC_TRANSITIVE]
