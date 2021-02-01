@@ -59,8 +59,8 @@ class ASes_Subtable(Generic_Table):
 
         # I don't agree with this way of coding it, but this came from up above
         # CHANGES FOR EZBGP: idk hwo you guys want to handle this
-        if percent in [0, 100]:
-            assert False, "Fix this because of the way we encode the victim for ezbgp"
+        #if percent in [0, 100]:
+        #    assert False, "Fix this because of the way we encode the victim for ezbgp"
         if percent == 0:
             if "edge" in self.name:
                 ases_to_set = 1

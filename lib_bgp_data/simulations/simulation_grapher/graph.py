@@ -69,7 +69,7 @@ class Graph:
             return
 
         fig, ax = plt.subplots()
-        plt.xlim(0, max(self.x_attrs_list))
+        plt.xlim(min(self.x_attrs_list), max(self.x_attrs_list))
         plt.ylim(0, 100)
         for line in filtered_lines:
             ax.errorbar(line.x, line.y, yerr=line.yerr, **line.fmt(formatter))
