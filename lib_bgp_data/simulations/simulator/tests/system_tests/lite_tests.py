@@ -13,15 +13,15 @@ from ..tables import Hijack
 from ..enums import Hijack_Types, Conditions as Conds
 
 
-__author__ = "Cameron Morris"
-__credits__ = ["Cameron Morris"]
+__author__ = "Cameron Morris, Justin Furuness"
+__credits__ = ["Cameron Morris, Justin Furuness"]
 __Lisence__ = "BSD"
 __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
 
-class Test_Paper(Graph_Tester):
+class Test_V3_Loops(Graph_Tester):
     """Tests all example graphs within our paper."""
 
     def test_rovppbp_loops3(self):
@@ -88,5 +88,3 @@ class Test_Paper(Graph_Tester):
                   [2, "1.2.3.0/24", 7, 1, 1, 5, None]]
 
         self._graph_example(hijack, hijack_type, peers, customer_providers, as_list, output)
-
-

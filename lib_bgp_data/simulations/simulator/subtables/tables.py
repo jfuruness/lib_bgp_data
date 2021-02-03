@@ -42,9 +42,10 @@ from ....extrapolator import Simulation_Extrapolator_Forwarding_Table
 class ASes_Subtable(Generic_Table):
     """Ases subtable (generic type of subtable)"""
 
-    def set_adopting_ases(self, percent, attacker, random_seed):
+    def set_adopting_ases(self, percent, attack, random_seed):
         """Sets ases to impliment"""
 
+        attacker = attack.attacker
         ases = set([x["asn"] for x in self.get_all()])
         # The attacker cannot adopt
         if attacker in ases:

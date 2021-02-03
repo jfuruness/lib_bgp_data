@@ -6,16 +6,6 @@
 For speciifics on each test, see the docstrings under each function.
 """
 
-from ...relationships_parser import Relationships_Parser
-from ...relationships_parser.tables import ROVPP_Peers_Table, ROVPP_Customer_Providers_Table, ROVPP_ASes_Table
-from ..rovpp_simulator import ROVPP_Simulator
-from ..enums import Hijack_Types
-from ..tables import Hijack, ROVPP_MRT_Announcements_Table#, Subprefix_Hijack_Table
-from ...utils import Database, db_connection, utils
-from ...extrapolator.tables import ROVPP_Extrapolation_Results_Table
-from ...extrapolator import Extrapolator
-from ..enums import Conditions as Conds
-
 __author__ = "Justin Furuness"
 __credits__ = ["Justin Furuness"]
 __Lisence__ = "BSD"
@@ -23,51 +13,108 @@ __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
+from ...simulator import Simulator
+from ...subtables_base import Subtables
+from ...subtables.tables import ASes_Subtable, Subtable_Forwarding_Table
+
+from .....extrapolator import Simulation_Extrapolator_Wrapper as Sim_Exr
+from .....collectors.relationships.tables import Peers_Table, Provider_Customers_Table
 
 class Graph_Tester:
-    def _graph_example(self, hijack, hijack_type, peers, customer_providers, as_list, output):
-        """tests example graphs from paper
+    def _run_simulator(self,
+                       percents=[1],
+                       num_trials=2,
+                       exr_cls=Sim_Exr,  # For development only
+                       attack_types=[],
+                       adopt_policies=[],
+                       rounds=1,
+                       extra_bash_args_1=[None],
+                       extra_bash_args_2=[None],
+                       extra_bash_args_3=[None],
+                       extra_bash_args_4=[None],
+                       extra_bash_args_5=[None],
+                       ### Test specific args ###
+                       # Format of peer_asn_1, peer_asn_2
+                       peer_rows=[],
+                       # Format of provider, customer
+                       provider_customer_rows=[],
+                       # Format of asn, default, adopt_bool
+                       adopting_rows=[],
+                       attacker: int =None,
+                       victim: int =None):
 
-        Input:
-            hijack: hijack class, with ann info
-                contains attributes for 
-            peers: list of Peers, rows in peers table
-            customer_providers: list of [provider, customer] pairs, rows in customer_providers table
-            as_list: list of ases and what they are implimenting
-            output: list of rows in exr output (classes)
+        self.sim = Simulator()
 
-        Craetes attackers/victims, peers, customer_providers, and rovpp_test_ases. Runs exr. Verifies output."""
+        self.validate_input(percents,
+                            attack_types,
+                            adopt_policies,
+                            extra_bash_args_1,
+                            extra_bash_args_2,
+                            extra_bash_args_3,
+                            extra_bash_args_4,
+                            extra_bash_args_5)
+ 
+        # TODO: patch redownload base data
+        #       pass in relationships table, redownload exr
+        def _redownload_base_data_patch(*args, **kwargs):
+            # forces new install of extrapolator
+            exr_cls(**self.sim.kwargs).install(force=True)
+            path = os.path.join(self.sim.csv_dir, "rels.csv")
+            utils.rows_to_db(peer_rows, path, Peers_Table)
+            utils.rows_to_db(provider_customer_rows, path, Provider_Customers_Table)
 
-        # purely for inheritance
-        class ROVPP_Extrapolation_Results_Test_Table(ROVPP_Extrapolation_Results_Table):
-            pass
+        # TODO: patch subtables get_tables
+        #       should be subtables object with just one table
+        def subtables_get_tables_patch(subtable_self, percents, *args, **kwargs):
+            class Sim_Test_ASes_Table(ASes_Subtable):
+                input_name = name = "sim_test_ases"
+                adopting_rows = adopting_rows
+                def set_adopting_ases(self, *args, **kwargs):
+                    self.fill_table()
+                @property
+                def Forwarding_Table(self):
+                    return Sim_Test_ASes_Forwarding_Table
+                def fill_table(self, *args):
+                    path = f"/tmp/{datetime.now()}{str(args)}.csv"
+                    utils.csv_to_db(self.adopting_rows, path, self.__class__)
 
-        # This first section creates all these tables from lists of lists
-        # specifically, peers, customer providers, ases, and the extrapolator output
-        utils.set_common_init_args(self, {})
-        csvs = ["peers", "customer_providers", "ases", "exr_output"]
-        rows = [peers, customer_providers, as_list, output]
-        tables = [ROVPP_Peers_Table, ROVPP_Customer_Providers_Table, ROVPP_ASes_Table, ROVPP_Extrapolation_Results_Test_Table]
+            class Sim_Test_ASes_Forwarding_Table(Sim_Test_ASes_Table,
+                                                 Subtable_Forwarding_Table):
+                name = "sim_test_ases_forwarding"
 
-        csv_path = "/tmp/rovpp_tests/"
-        utils.clean_paths(self.logger, [csv_path])
-        for csv, rows, table in zip(csvs, rows, tables):
-            utils.rows_to_db(self.logger,
-                             rows,
-                             "{}{}.csv".format(csv_path, csv),
-                             table,
-                             clear_table=True)
-        # Then creates subprefix hijac table, which creates attackers and victims
-        with db_connection(ROVPP_MRT_Announcements_Table, self.logger) as db:
-            db.populate_mrt_announcements(hijack, hijack_type)
-        # Runs rov++ with our custom table names
-        Extrapolator().run_rovpp(hijack, table_names=["rovpp_ases"])
-        with db_connection() as db:
-            sql = """SELECT * FROM rovpp_extrapolation_results_test
-                  EXCEPT
-                  SELECT * FROM rovpp_extrapolation_results"""
-            assert len(db.execute(sql)) == 0
-            sql = """SELECT * FROM rovpp_extrapolation_results
-                  EXCEPT
-                  SELECT * FROM rovpp_extrapolation_results_test"""
-            assert len(db.execute(sql)) == 0
+
+            subtable_self.tables = [Subtable(Sim_Test_ASes_Table,
+                                             percents,
+                                             possible_attacker=True)]
+        # TODO: patch ASes subtables set_adopting_ases
+        #       should update the table to be what you pass in
+        #       NOTE: did this in the overriden subtable
+
+        # TODO: patch random.sample to select both vic and atk correctly
+        def random_sample_patch(*args):
+            return attacker, victim
+
+        with patch.object(Simulator,
+                          "_redownload_base_data",
+                          _redownload_base_data_patch):
+            with patch.object(Subtables,
+                              "get_tables",
+                              subtables_get_tables_patch):
+                with patch("random.sample", random_sample_patch):
+                    Simulator(percents,
+                              num_trials,
+                              exr_cls=exr_cls,
+                              attack_types=attack_types,
+                              adopt_policies=adopt_policies,
+                              rounds=rounds,
+                              extra_bash_args_1=extra_bash_args_1,
+                              extra_bash_args_2=extra_bash_args_2,
+                              extra_bash_args_3=extra_bash_args_3,
+                              extra_bash_args_4=extra_bash_args_4,
+                              extra_bash_args_5=extra_bash_args_5,
+                              redownload_base_data=True)
+
+
+    def validate_input(self, *args):
+        for arg in args:
+            assert len(arg) == 1, "Each arg must be of length one if a list"
