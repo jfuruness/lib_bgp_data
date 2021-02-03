@@ -141,7 +141,7 @@ class Simulator(Parser):
                 for x in extra_bash_args:
                     assert isinstance(x, int)
 
-    def _redownload_base_data(self, Exr_Cls):
+    def _redownload_base_data(self, Exr_Cls=Sim_Exr):
         """Downloads/creates data, tools, and indexes for simulator
 
         Tools: Extrapolator with speficied branch
