@@ -203,7 +203,7 @@ class Parser:
             count_tmp = db.get_count()
 
             # new backup is larger, save as the most up-to-date backup
-            if count_tmp > count_prev:
+            if count_tmp >= count_prev:
                 check_call(f'mv {tmp_backup} {prev_backup}', shell=True)
             # restore live table
             db.execute(f'DROP TABLE {table.name}')
@@ -216,7 +216,7 @@ class Parser:
         # If there was a previous backup and count_tmp is not greater than
         # count_prev, then the new backup made does not reflect the new
         # changes that were added into the table.
-        if prev_existed and count_tmp <= count_prev:
+        if prev_existed and count_tmp < count_prev:
             error_msg = (f"When making the backup for the {table.name} table "
                          "after it was updated, the backup file generated was "
                          "not consistent with the live table. Therefore, the "
