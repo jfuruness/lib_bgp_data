@@ -136,11 +136,7 @@ class Parser:
                         t.restore_table(gsh, backup)
 
         # Run the specific parser
-        # NOTE: Is there a way to do this better?
-        if self.__class__.__name__ == "ROAs_Parser":
-            self.run(clear_table=False)
-        else:
-            self.run()
+        self.run()
 
         # Back up the tables
         for table in self.tables:
@@ -237,9 +233,6 @@ class Parser:
 
         def inner_run(*args, **kwargs):
             for p in cls.parsers_backup:
-                # NOTE: is there a better way?
-                if p().__class__.__name__ == "ROAs_Collector":
-                    continue
                 print(p)
                 p().backup_tables()
         return inner_run

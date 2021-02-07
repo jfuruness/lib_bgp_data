@@ -29,9 +29,6 @@ class ROAs_Parser(Parser):
 
     __slots__ = []
 
-    backup = True
-    tables = [ROAs_Table]
-
     def _run(self, clear_table=True):
         """Downloads and stores roas from a json
 
