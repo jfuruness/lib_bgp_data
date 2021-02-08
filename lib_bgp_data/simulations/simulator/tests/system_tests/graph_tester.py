@@ -92,7 +92,7 @@ class Graph_Tester:
 
         # TODO: patch random.sample to select both vic and atk correctly
         def random_sample_patch(*args):
-            return attacker, victim
+            return victim, attacker
 
         with patch.object(Simulator,
                           "_redownload_base_data",

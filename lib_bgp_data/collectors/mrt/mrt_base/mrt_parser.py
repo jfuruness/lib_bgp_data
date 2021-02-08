@@ -50,7 +50,7 @@ class MRT_Parser(Parser):
             _ann_table._create_tables()
         if not os.path.exists("/usr/bin/bgpscanner"):
             logging.warning("Dependencies are not installed. Installing now.")
-            MRT_Installer.install_dependencies()
+            MRT_Installer().install_dependencies()
 
     def _run(self,
              *args,

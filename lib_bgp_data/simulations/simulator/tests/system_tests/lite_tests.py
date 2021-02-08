@@ -39,7 +39,13 @@ class Test_V3_Loops(Graph_Tester):
            /     |         \ \
            |     |           v
           11     12          99
-        """ 
+        """
+
+        attacker = 666
+        victim = 99
+        attack_types = []
+        adopt_policies = []
+         
         hijack = Hijack({"attacker": 666,
                          "more_specific_prefix": "1.2.3.0/24",
                          "victim": 99,
@@ -87,4 +93,5 @@ class Test_V3_Loops(Graph_Tester):
                   [2, "1.2.0.0/16", 7, 3, 1, 0, None],
                   [2, "1.2.3.0/24", 7, 1, 1, 5, None]]
 
+        # where is this function...run_simulator?
         self._graph_example(hijack, hijack_type, peers, customer_providers, as_list, output)

@@ -40,6 +40,7 @@ class Simulator(Parser):
              deterministic=False,
              attack_types=Attack.runnable_attacks[:1],
              adopt_policies=list(Non_Default_Policies.__members__.values())[:1],
+             # These args prob don't change for most cases
              number_of_attackers=[1],
              rounds=1,
              extra_bash_args_1=[None],
@@ -141,7 +142,7 @@ class Simulator(Parser):
                 for x in extra_bash_args:
                     assert isinstance(x, int)
 
-    def _redownload_base_data(self, Exr_Cls):
+    def _redownload_base_data(self, Exr_Cls=Sim_Exr):
         """Downloads/creates data, tools, and indexes for simulator
 
         Tools: Extrapolator with speficied branch
