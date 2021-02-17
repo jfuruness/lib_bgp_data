@@ -28,6 +28,7 @@ class Blacklist_Source:
         strictly enforce proper templating with this. And also, you can
         automatically add all of these things to things like argparse
         calls and such. Very powerful tool.
+        This assumes the sources uses ASNs.
         """
 
         super().__init_subclass__(**kwargs)
@@ -53,9 +54,24 @@ class Blacklist_Source:
             return self.parse_file(f)
 
     def parse_file(self, f):
+        "This parses for ASNs"
         return set(re.findall(r'AS(\d+)', f.read()))
 
     def get_rows(self, asns):
         """Returns rows for db insertion"""
 
-        return [[asn, self.__class__.__name__] for asn in asns]
+        return [[asn, None, self.__class__.__name__] for asn in asns]
+
+class Blacklist_Source_IP(Blacklist_Source):
+    """This subclass of Blacklist_Source is made to handle blacklists
+    that use IP instead of ASNs
+    """
+    def __init__(self, csv_dir):
+        super().__init__(csv_dir)
+
+    def parse_file(self, f):
+        return set(re.findall(r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}', f.read()))
+
+    def get_rows(self, prefix):
+        """Returns prefixes for db insertion"""
+        return [[None, pre, self.__class__.__name__] for pre in prefix]
