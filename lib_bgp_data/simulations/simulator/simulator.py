@@ -56,7 +56,7 @@ class Simulator(Parser):
         In depth explanation at top of module.
         """
 
-        self._validate_input(trials,
+        self._validate_input(num_trials,
                              rounds,
                              number_of_attackers,
                              extra_bash_args_1,

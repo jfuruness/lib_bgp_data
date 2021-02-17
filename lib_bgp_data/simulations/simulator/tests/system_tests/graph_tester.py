@@ -13,12 +13,17 @@ __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
+import os
+from unittest.mock import patch
+from datetime import datetime
+
 from ...simulator import Simulator
-from ...subtables_base import Subtables
+from ...subtables.subtables_base import Subtables, Subtable
 from ...subtables.tables import ASes_Subtable, Subtable_Forwarding_Table
 
 from .....extrapolator import Simulation_Extrapolator_Wrapper as Sim_Exr
 from .....collectors.relationships.tables import Peers_Table, Provider_Customers_Table
+from .....utils import utils
 
 class Graph_Tester:
     def _run_simulator(self,
@@ -66,9 +71,16 @@ class Graph_Tester:
         # TODO: patch subtables get_tables
         #       should be subtables object with just one table
         def subtables_get_tables_patch(subtable_self, percents, *args, **kwargs):
+            adptng_rows = adopting_rows # needs to be available in this scope
             class Sim_Test_ASes_Table(ASes_Subtable):
                 input_name = name = "sim_test_ases"
-                adopting_rows = adopting_rows
+                def _create_tables(self):
+                    sql = f"""CREATE UNLOGGED TABLE IF NOT EXISTS {self.name} (
+                            asn bigint,
+                            as_type integer,
+                            impliment boolean);
+                            """
+                    self.cursor.execute(sql)
                 def set_adopting_ases(self, *args, **kwargs):
                     self.fill_table()
                 @property
@@ -76,7 +88,7 @@ class Graph_Tester:
                     return Sim_Test_ASes_Forwarding_Table
                 def fill_table(self, *args):
                     path = f"/tmp/{datetime.now()}{str(args)}.csv"
-                    utils.csv_to_db(self.adopting_rows, path, self.__class__)
+                    utils.rows_to_db(adptng_rows, path, self.__class__)
 
             class Sim_Test_ASes_Forwarding_Table(Sim_Test_ASes_Table,
                                                  Subtable_Forwarding_Table):
@@ -84,14 +96,14 @@ class Graph_Tester:
 
 
             subtable_self.tables = [Subtable(Sim_Test_ASes_Table,
-                                             percents,
+                                             percents, #)] #edge_atk, etc_atk, top_atk,
                                              possible_attacker=True)]
         # TODO: patch ASes subtables set_adopting_ases
         #       should update the table to be what you pass in
         #       NOTE: did this in the overriden subtable
 
         # TODO: patch random.sample to select both vic and atk correctly
-        def random_sample_patch(*args):
+        def random_sample_patch(*args, **kwargs):
             return victim, attacker
 
         with patch.object(Simulator,
@@ -101,7 +113,8 @@ class Graph_Tester:
                               "get_tables",
                               subtables_get_tables_patch):
                 with patch("random.sample", random_sample_patch):
-                    Simulator(percents,
+                    print('Running test simulation')
+                    Simulator().run(percents,
                               num_trials,
                               exr_cls=exr_cls,
                               attack_types=attack_types,
