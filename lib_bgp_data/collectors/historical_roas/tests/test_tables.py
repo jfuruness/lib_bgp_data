@@ -9,14 +9,14 @@ __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
 import pytest
-from ..tables import Historical_ROAS_Table
+from ..tables import Historical_ROAs_Table
 from ....utils.database import Generic_Table_Test
 
 
-class Test_Historical_ROAS_Table(Generic_Table_Test):
+class Test_Historical_ROAs_Table(Generic_Table_Test):
 
     def test_delete_duplicates(self):
-        with Historical_ROAS_Table() as t:
+        with Historical_ROAs_Table() as t:
             # two identical events are inserted into the table
             sql = f"""INSERT INTO {t.name} ({','.join(t.columns)})
                       VALUES(13335, '192.168.0.0', 24,
