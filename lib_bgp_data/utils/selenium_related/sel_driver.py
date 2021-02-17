@@ -26,6 +26,7 @@ __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
 import os
+import subprocess
 
 from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.support import expected_conditions as EC
@@ -51,7 +52,7 @@ class Selenium_Driver:
     driver_path = '/usr/bin/chromedriver'
 
     def __init__(self):
-        if not os.path.exists(self.driver_path):
+        if not self._check_install():
             install_selenium_driver()
 
         options = webdriver.ChromeOptions()
@@ -60,6 +61,30 @@ class Selenium_Driver:
         # Bypass OS Security
         options.add_argument("--no-sandbox")
         self._driver = webdriver.Chrome(self.driver_path, options=options)
+
+    def _check_install(self):
+        """Checks if the compatible google chrome and chrome driver versions are installed.
+
+        Returns True for correct installation, returns False otherwise
+        """
+
+        try:
+            # Get chrome version
+            chrome_version = subprocess.run("google-chrome --version", shell=True, capture_output=True, text=True, check=True).stdout
+            chrome_version_number = chrome_version.split(' ')[2]
+            chrome_version_number = '.'.join(chrome_version_number.split('.')[0:3])
+
+            # Get driver version
+            driver_version = subprocess.run("chromedriver --version", shell=True, capture_output=True, text=True, check=True).stdout
+            driver_version_number = driver_version.split(' ')[1]
+            driver_version_number = '.'.join(driver_version_number.split('.')[0:3])
+
+            # https://chromedriver.chromium.org/downloads/version-selection
+            return True if chrome_version_number == driver_version_number else False
+
+        # If there is an exception, that means the install is missing
+        except subprocess.CalledProcessEerror:
+            return False
 
     def __enter__(self):
         """Allows this to be instantiated with a context manager

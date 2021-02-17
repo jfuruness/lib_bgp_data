@@ -56,23 +56,24 @@ class Postgres:
         if _ans.lower() != "yes":
             print("Did not drop databases")
             return
-        # Use default path (get from Config?)
+
+        # Use default path
         path = Config.path
-        # First delete the databases
         _conf = SCP()
         _conf.read(path)
+
         # Database names correspond to section headers
         # Exclude first since ConfigParser reserves for 'DEFAULT'
         _db_names = [x for x in _conf][1:]
-        cmds = [f'sudo -u postgres psql -c "DROP DATABASE {db}"'
-                for db in _db_names]
-        utils.run_cmds(cmds)
-        # Now remove the section from the config file
-        # Fastest way to do this is create a new object
-        # and write to the same location
-        new_conf = SCP()
-        with open(path, 'w+') as configfile:
-            new_conf.write(configfile)
+        for _db in _db_names:
+            self.erase_db(_db)
+
+    @staticmethod
+    def erase_db(name: str):
+        """Drop a db section in Postgres and delete its configuration"""
+        
+        utils.run_cmds(Postgres.get_bash(f"DROP DATABASE {name}"))
+        Config._remove_old_config_section(name)
 
 ##############################
 ### Installation Functions ###

@@ -155,15 +155,16 @@ class Simulator(Parser):
         # Gets relationships table
         Relationships_Parser(**self.kwargs)._run()
         # Get as rank data
-        AS_Rank_Website_Parser().run(random_delay=True)
-        # I don't know which of these are used,
-        # But they only take a second to make so for now it will be left
-        # They are intended for the join for the top 100 ases
-        with ASes_Table() as db:
-            db.execute(f"CREATE INDEX ON {db.name}(asn);")
+        AS_Rank_Website_Parser().run(random_delay=True
+)
+        # Index to speed up Top_100_ASes_Table.fill_table
+        # The following indexes were considered:
+        # ases(asn), as_rank(asn), as_rank(as_rank), as_rank(asn, as_rank)
+        # Analysis concluded any one of the above would be sufficient.
+        # Could change in the future if they become useful elsewhere.
+
         with AS_Rank_Table() as db:
-            for attr in ["asn", "as_rank", "asn, as_rank"]:
-                db.execute(f"CREATE INDEX ON {db.name}({attr});")
+            db.execute(f"CREATE INDEX ON {db.name}(as_rank);")
 
     def _total(self,
                data_pts,
