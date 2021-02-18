@@ -9,19 +9,20 @@ For speciifics on each test, see the docstrings under each function.
 import pytest
 
 from .graph_tester import Graph_Tester
-from ..tables import Hijack
-from ..enums import Hijack_Types, Conditions as Conds
+#from ..tables import Hijack
+from ....enums import Non_Default_Policies, Data_Plane_Conditions as Conds
+from ...attacks.attack_classes import Subprefix_Hijack
 
 
-__author__ = "Cameron Morris"
-__credits__ = ["Cameron Morris"]
+__author__ = "Cameron Morris, Justin Furuness"
+__credits__ = ["Cameron Morris, Justin Furuness"]
 __Lisence__ = "BSD"
 __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
 
-class Test_Paper(Graph_Tester):
+class Test_V3_Loops(Graph_Tester):
     """Tests all example graphs within our paper."""
 
     def test_rovppbp_loops3(self):
@@ -39,13 +40,19 @@ class Test_Paper(Graph_Tester):
            /     |         \ \
            |     |           v
           11     12          99
-        """ 
-        hijack = Hijack({"attacker": 666,
-                         "more_specific_prefix": "1.2.3.0/24",
-                         "victim": 99,
-                         "expected_prefix": "1.2.0.0/16"})
+        """
 
-        hijack_type = Hijack_Types.SUBPREFIX_HIJACK.value
+        attacker = 666
+        victim = 99
+        attack_types = []
+        adopt_policies = [1] # BGP (?)
+         
+        #hijack = Hijack({"attacker": 666,
+        #                 "more_specific_prefix": "1.2.3.0/24",
+        #                 "victim": 99,
+        #                 "expected_prefix": "1.2.0.0/16"})
+
+        # hijack_type = Hijack_Types.SUBPREFIX_HIJACK.value
         peers = []
         #peers = [[1,666]]
         # NOTE PROVIDERS IS FIRST!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -87,6 +94,9 @@ class Test_Paper(Graph_Tester):
                   [2, "1.2.0.0/16", 7, 3, 1, 0, None],
                   [2, "1.2.3.0/24", 7, 1, 1, 5, None]]
 
-        self._graph_example(hijack, hijack_type, peers, customer_providers, as_list, output)
+        # where is this function...run_simulator?
+        # self._graph_example(hijack, hijack_type, peers, customer_providers, as_list, output)
+        self._run_simulator(attack_types=[Subprefix_Hijack], adopt_policies=list(Non_Default_Policies.__members__.values())[:1], attacker=attacker, victim=victim, provider_customer_rows=customer_providers)
 
-
+if __name__ == "__main__":
+   Test_V3_Loops().test_rovppbp_loops3()
