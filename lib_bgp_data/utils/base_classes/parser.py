@@ -28,7 +28,7 @@ class Parser:
     See README for in depth explanation.
     """
 
-    __slots__ = ['path', 'csv_dir', 'kwargs']
+    __slots__ = ['path', 'csv_dir', 'kwargs', 'name']
     # This will add an error_catcher decorator to all methods
 
     parsers = []

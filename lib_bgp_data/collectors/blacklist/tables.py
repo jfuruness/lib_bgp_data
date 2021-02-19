@@ -31,8 +31,8 @@ class Blacklist_Table(Generic_Table):
     def _create_tables(self):
         """ Creates the table if it does not exist"""
         sql = """CREATE UNLOGGED TABLE IF NOT EXISTS blacklist(
-                asn INTEGER,
-                prefix cidr,
+                asn BIGINT,
+                prefix CIDR,
                 source TEXT) ;"""
         self.execute(sql)
 

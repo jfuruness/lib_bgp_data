@@ -70,8 +70,6 @@ class MRT_Metadata_Parser(Parser):
         """
 
         self._validate()
-
-        print("omitingg mrt ann prefix origin table for speed rn")
         self._add_prefix_origin_index()
         logging.info(f"Creating {Distinct_Prefix_Origins_Table.name}")
         self._get_p_o_table_w_indexes(Distinct_Prefix_Origins_Table)
