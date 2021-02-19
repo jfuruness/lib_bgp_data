@@ -6,9 +6,13 @@
 For speciifics on each test, see the docstrings under each function.
 """
 
+import pytest
+
 from .graph_tester import Graph_Tester
-from ..tables import Hijack
-from ..enums import Hijack_Types, Conditions as Conds
+#from ..tables import Hijack
+from ....enums import Non_Default_Policies, Policies, Data_Plane_Conditions as Conds
+from ...attacks.attack_classes import Subprefix_Hijack, Prefix_Hijack
+from ...attacks.attack import Attack
 
 
 __author__ = "Cameron Morris"
@@ -31,10 +35,15 @@ class Test_Withdraw(Graph_Tester):
                    |  \
                    6   7
         """ 
-        hijack = Hijack({"attacker": 3,
-                         "more_specific_prefix": "1.2.0.0/16",
-                         "victim": 7,
-                         "expected_prefix": "1.2.0.0/16"})
+
+        attack_types = [Prefix_Hijack]
+        adopt_policies = [Non_Default_Policies.ROVPP]
+        peer_rows = [[1,2]]
+        provider_customer_rows = [[1, 3],
+                                  [1, 4],
+                                  [1, 5],
+                                  [4, 6],
+                                  [5, 7]] 
 
         # One problem with double-propagation is  that since the victim
         # propagates first, the victim's announcement will get withdrawn. In
@@ -42,34 +51,45 @@ class Test_Withdraw(Graph_Tester):
         # if 4 adopts, then 6 will not get the overwritten announcement.
         # Withdrawals solve this.
 
-        hijack_type = Hijack_Types.PREFIX_HIJACK.value
-        peers = [[1, 2]]
-        # NOTE PROVIDERS IS FIRST!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        # [PROVIDER | CUSTOMER
-        customer_providers = [[1, 3],
-                              [1, 4],
-                              [1, 5],
-                              [4, 6],
-                              [5, 7]]
-        # populates rovpp ases
-        # ASN | policy_num | impliment (impliment is true if policy_num != 0, but doesn't matter here
-        as_list = [[1, 0, 0],
-                   [2, 0, 0],
-                   [3, 0, 0],
-                   [4, 1, 1],
-                   [5, 0, 0],
-                   [6, 0, 0],
-                   [7, 0, 0]]
-       
-        #  [ asn   |   prefix   | origin | received_from_asn | time | alternate_as | opt_flag ]
-        output = [[1, "1.2.0.0/16", 3, 3, 1, 0, None],
-                  [2, "1.2.0.0/16", 3, 1, 1, 0, None],
-                  [3, "1.2.0.0/16", 3, Conds.HIJACKED.value, 1, 0, None],
-                  [5, "1.2.0.0/16", 7, 7, 1, 0, None],
-                  [7, "1.2.0.0/16", 7, Conds.NOTHIJACKED.value, 1, 0, None]]
+        bgp_ases = [1, 2, 3, 5, 6, 7]
+        adopting_ases = [4]
+        adopting_rows = []
+        for bgp_as in bgp_ases:
+            adopting_rows.append([bgp_as, Policies.DEFAULT.value, 0])
+        for adopting_as in adopting_ases:
+            adopting_rows.append([adopting_as, Policies.ROVPP.value, 1])
 
-        # How is this called test called?
-        self._graph_example(hijack, hijack_type, peers, customer_providers, as_list, output)
+        attacker = 3
+        victim = 7
+
+
+        # NOTE: this might be correct
+        #  [ asn   |   prefix   | origin | received_from_asn | time | alternate_as | opt_flag ]
+        #output = [[1, "1.2.0.0/16", 3, 3, 1, 0, None],
+        #          [2, "1.2.0.0/16", 3, 1, 1, 0, None],
+        #          [3, "1.2.0.0/16", 3, Conds.HIJACKED.value, 1, 0, None],
+        #          [5, "1.2.0.0/16", 7, 7, 1, 0, None],
+        #          [7, "1.2.0.0/16", 7, Conds.NOTHIJACKED.value, 1, 0, None]]
+        
+        #exr_output = [{"asn": 7,
+        #               "prefix": Attack.default_prefix,
+        #               "origin": 7,
+        #               "received_from_asn": Conds.NOTHIJACKED.value},
+        #              {"asn": 3,
+        #               "prefix": Attack.default_prefix,
+        #               "origin": 7,
+        #               "received_from_asn": 6},
+
+        self._test_graph(attack_types=attack_types,
+                         adopt_policies=adopt_policies,
+                         peer_rows=peer_rows,
+                         provider_customer_rows=provider_customer_rows,
+                         adopting_rows=adopting_rows,
+                         attacker=attacker,
+                         victim=victim,
+                         exr_output=exr_output)
+
+
 
     def test_rovpp_withdraw(self):
         """Simple 0.1 test case for withdrawals.

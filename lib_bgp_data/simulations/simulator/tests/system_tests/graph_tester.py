@@ -26,27 +26,28 @@ from .....collectors.relationships.tables import Peers_Table, Provider_Customers
 from .....utils import utils
 
 class Graph_Tester:
-    def _run_simulator(self,
-                       percents=[1],
-                       num_trials=2,
-                       exr_cls=Sim_Exr,  # For development only
-                       attack_types=[],
-                       adopt_policies=[],
-                       rounds=1,
-                       extra_bash_args_1=[None],
-                       extra_bash_args_2=[None],
-                       extra_bash_args_3=[None],
-                       extra_bash_args_4=[None],
-                       extra_bash_args_5=[None],
-                       ### Test specific args ###
-                       # Format of peer_asn_1, peer_asn_2
-                       peer_rows=[],
-                       # Format of provider, customer
-                       provider_customer_rows=[],
-                       # Format of asn, default, adopt_bool
-                       adopting_rows=[],
-                       attacker: int =None,
-                       victim: int =None):
+    def _test_graph(self,
+                    percents=[1],
+                    num_trials=2,
+                    exr_cls=Sim_Exr,  # For development only
+                    attack_types=[],
+                    adopt_policies=[],
+                    rounds=1,
+                    extra_bash_args_1=[None],
+                    extra_bash_args_2=[None],
+                    extra_bash_args_3=[None],
+                    extra_bash_args_4=[None],
+                    extra_bash_args_5=[None],
+                    ### Test specific args ###
+                    # Format of peer_asn_1, peer_asn_2
+                    peer_rows=[],
+                    # Format of provider, customer
+                    provider_customer_rows=[],
+                    # Format of asn, default, adopt_bool
+                    adopting_rows=[],
+                    attacker: int = None,
+                    victim: int = None,
+                    exr_output=[]):
 
         self.sim = Simulator()
 
@@ -63,7 +64,8 @@ class Graph_Tester:
         #       pass in relationships table, redownload exr
         def _redownload_base_data_patch(*args, **kwargs):
             # forces new install of extrapolator
-            exr_cls(**self.sim.kwargs).install(force=True)
+            print("Later should install exr every time!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+            #exr_cls(**self.sim.kwargs).install(force=True)
             path = os.path.join(self.sim.csv_dir, "rels.csv")
             utils.rows_to_db(peer_rows, path, Peers_Table)
             utils.rows_to_db(provider_customer_rows, path, Provider_Customers_Table)
@@ -106,6 +108,30 @@ class Graph_Tester:
         def random_sample_patch(*args, **kwargs):
             return victim, attacker
 
+        # Checks the output
+        def _run_test(self, exr_table):
+            table_rows = exr_table.get_all()
+            
+            # Format rows to get rid of defaultdict
+            formatted_table_rows = []
+            for table_row in table_rows:
+                formatted_table_rows.append(
+                    {"asn": table_row.get("asn"),
+                     "prefix": table_row.get("prefix"),
+                     "origin": table_row.get("origin"),
+                     "received_from_asn": table_row.get("received_from_asn")})
+            # Make sure all test data is in raw data
+            for test_row in exr_output:
+                from pprint import pprint
+                print("\n" * 10)
+                print(test_row)
+                pprint(formatted_table_rows)
+                print("\n" * 10)
+                assert test_row in formatted_table_rows
+            # Make sure all raw data is in test data
+            for raw_row in formatted_table:
+                assert raw_row in exr_output
+
         with patch.object(Simulator,
                           "_redownload_base_data",
                           _redownload_base_data_patch):
@@ -113,19 +139,20 @@ class Graph_Tester:
                               "get_tables",
                               subtables_get_tables_patch):
                 with patch("random.sample", random_sample_patch):
-                    print('Running test simulation')
-                    Simulator().run(percents,
-                              num_trials,
-                              exr_cls=exr_cls,
-                              attack_types=attack_types,
-                              adopt_policies=adopt_policies,
-                              rounds=rounds,
-                              extra_bash_args_1=extra_bash_args_1,
-                              extra_bash_args_2=extra_bash_args_2,
-                              extra_bash_args_3=extra_bash_args_3,
-                              extra_bash_args_4=extra_bash_args_4,
-                              extra_bash_args_5=extra_bash_args_5,
-                              redownload_base_data=True)
+                    with patch.object(Sim_Exr, "_run_test", _run_test):
+                        print('Running test simulation')
+                        Simulator().run(percents,
+                                  num_trials,
+                                  exr_cls=exr_cls,
+                                  attack_types=attack_types,
+                                  adopt_policies=adopt_policies,
+                                  rounds=rounds,
+                                  extra_bash_args_1=extra_bash_args_1,
+                                  extra_bash_args_2=extra_bash_args_2,
+                                  extra_bash_args_3=extra_bash_args_3,
+                                  extra_bash_args_4=extra_bash_args_4,
+                                  extra_bash_args_5=extra_bash_args_5,
+                                  redownload_base_data=True)
 
 
     def validate_input(self, *args):
