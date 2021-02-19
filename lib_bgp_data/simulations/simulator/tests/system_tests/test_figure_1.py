@@ -40,7 +40,7 @@ class Test_Figure_1(Graph_Tester):
 
         attack_types = [Subprefix_Hijack]
         adopt_policies = [Non_Default_Policies.BGP]
-        peer_rows = [88, 77]
+        peer_rows = [[88, 77]]
         provider_customer_rows = [[44, 88],
                                   [88, 99],
                                   [77, 666]]
@@ -76,10 +76,6 @@ class Test_Figure_1(Graph_Tester):
                        "prefix": Attack.default_prefix,
                        "origin": 99,
                        "received_from_asn": 77},
-		      {"asn": 44,
-                       "prefix": Attack.default_subprefix,
-                       "origin": 666,
-                       "received_from_asn": 88},
                       {"asn": 88,
                        "prefix": Attack.default_subprefix,
                        "origin": 666,
@@ -91,7 +87,7 @@ class Test_Figure_1(Graph_Tester):
                       {"asn": 99,
                        "prefix": Attack.default_subprefix,
                        "origin": 666,
-                       "received_from_asn": 88},
+                       "received_from_asn": Conds.NOTHIJACKED.value},
                       {"asn": 666,
                        "prefix": Attack.default_subprefix,
                        "origin": 666,
@@ -165,7 +161,7 @@ class Test_Figure_1(Graph_Tester):
                       {"asn": 99,
                        "prefix": Attack.default_subprefix,
                        "origin": 666,
-                       "received_from_asn": 88},
+                       "received_from_asn": Conds.NOTHIJACKED.value},
                       {"asn": 666,
                        "prefix": Attack.default_subprefix,
                        "origin": 666,

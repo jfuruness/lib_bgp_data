@@ -65,7 +65,7 @@ class Graph_Tester:
         def _redownload_base_data_patch(*args, **kwargs):
             # forces new install of extrapolator
             print("Later should install exr every time!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-            #exr_cls(**self.sim.kwargs).install(force=True)
+            exr_cls(**self.sim.kwargs).install(force=True)
             path = os.path.join(self.sim.csv_dir, "rels.csv")
             utils.rows_to_db(peer_rows, path, Peers_Table)
             utils.rows_to_db(provider_customer_rows, path, Provider_Customers_Table)
@@ -120,17 +120,34 @@ class Graph_Tester:
                      "prefix": table_row.get("prefix"),
                      "origin": table_row.get("origin"),
                      "received_from_asn": table_row.get("received_from_asn")})
+
+
             # Make sure all test data is in raw data
             for test_row in exr_output:
-                from pprint import pprint
-                print("\n" * 10)
-                print(test_row)
-                pprint(formatted_table_rows)
-                print("\n" * 10)
-                assert test_row in formatted_table_rows
+                try:
+                    assert test_row in formatted_table_rows
+                except AssertionError as e:
+                    from pprint import pprint
+                    print("\n" * 10)
+                    print("test " + str(test_row))
+                    print("raw")
+                    pprint(formatted_table_rows)
+                    print("\n" * 10)
+                    raise e
+                        
             # Make sure all raw data is in test data
-            for raw_row in formatted_table:
-                assert raw_row in exr_output
+            for raw_row in formatted_table_rows:
+                try:
+                    assert raw_row in exr_output
+                except AssertionError as e:
+                    from pprint import pprint
+                    print("\n" * 10)
+                    print("test" + str(test_row))
+                    print("raw")
+                    pprint(formatted_table_rows)
+                    print("\n" * 10)
+                    raise e
+ 
 
         with patch.object(Simulator,
                           "_redownload_base_data",
