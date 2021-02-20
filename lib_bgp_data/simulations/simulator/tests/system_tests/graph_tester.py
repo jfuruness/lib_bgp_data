@@ -65,7 +65,7 @@ class Graph_Tester:
         def _redownload_base_data_patch(*args, **kwargs):
             # forces new install of extrapolator
             print("Later should install exr every time!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-            exr_cls(**self.sim.kwargs).install(force=True)
+            #exr_cls(**self.sim.kwargs).install(force=True)
             path = os.path.join(self.sim.csv_dir, "rels.csv")
             utils.rows_to_db(peer_rows, path, Peers_Table)
             utils.rows_to_db(provider_customer_rows, path, Provider_Customers_Table)
@@ -91,6 +91,10 @@ class Graph_Tester:
                 def fill_table(self, *args):
                     path = f"/tmp/{datetime.now()}{str(args)}.csv"
                     utils.rows_to_db(adptng_rows, path, self.__class__)
+                def change_routing_policies(self, *args):
+                    # We never need to call this func for these tests
+                    # This will allow us to mix multiple policies
+                    pass
 
             class Sim_Test_ASes_Forwarding_Table(Sim_Test_ASes_Table,
                                                  Subtable_Forwarding_Table):

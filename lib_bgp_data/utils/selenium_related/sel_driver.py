@@ -83,7 +83,7 @@ class Selenium_Driver:
             return True if chrome_version_number == driver_version_number else False
 
         # If there is an exception, that means the install is missing
-        except subprocess.CalledProcessEerror:
+        except subprocess.CalledProcessError:
             return False
 
     def __enter__(self):
