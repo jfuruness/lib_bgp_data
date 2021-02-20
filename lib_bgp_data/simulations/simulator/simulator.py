@@ -55,7 +55,7 @@ class Simulator(Parser):
         In depth explanation at top of module.
         """
 
-        self._validate_input(trials,
+        self._validate_input(num_trials,
                              rounds,
                              number_of_attackers,
                              extra_bash_args_1,
@@ -68,7 +68,7 @@ class Simulator(Parser):
         if redownload_base_data:
             # Download as rank, relationships, extrapolator
             # Separate function for development ease
-            self._redownload_base_data(exr_cls)
+            self._redownload_base_data()
 
         # Clear the table that stores all trial info
         with Simulation_Results_Table(clear=True) as _:
