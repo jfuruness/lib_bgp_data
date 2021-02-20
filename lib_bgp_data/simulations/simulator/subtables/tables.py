@@ -45,7 +45,7 @@ class ASes_Subtable(Generic_Table):
     def set_adopting_ases(self, percent, attack, random_seed):
         """Sets ases to impliment"""
 
-        attacker = attack.attacker
+        attacker = attack
         ases = set([x["asn"] for x in self.get_all()])
         # The attacker cannot adopt
         if attacker in ases:
