@@ -76,6 +76,7 @@ class Graph_Tester:
             adptng_rows = adopting_rows # needs to be available in this scope
             class Sim_Test_ASes_Table(ASes_Subtable):
                 input_name = name = "sim_test_ases"
+                columns = ["asn", "as_type", "impliment"]
                 def _create_tables(self):
                     sql = f"""CREATE UNLOGGED TABLE IF NOT EXISTS {self.name} (
                             asn bigint,
@@ -89,7 +90,7 @@ class Graph_Tester:
                 def Forwarding_Table(self):
                     return Sim_Test_ASes_Forwarding_Table
                 def fill_table(self, *args):
-                    path = f"/tmp/{datetime.now()}{str(args)}.csv"
+                    path = f"/tmp/{datetime.now()}_system_tests.csv"
                     utils.rows_to_db(adptng_rows, path, self.__class__)
                 def change_routing_policies(self, *args):
                     # We never need to call this func for these tests
@@ -136,6 +137,10 @@ class Graph_Tester:
                     print("test " + str(test_row))
                     print("raw")
                     pprint(formatted_table_rows)
+                    print("same asn")
+                    for row in formatted_table_rows:
+                        if test_row["asn"] == row["asn"]:
+                            print(row)
                     print("\n" * 10)
                     raise e
                         
@@ -146,9 +151,9 @@ class Graph_Tester:
                 except AssertionError as e:
                     from pprint import pprint
                     print("\n" * 10)
-                    print("test" + str(test_row))
-                    print("raw")
-                    pprint(formatted_table_rows)
+                    print("raw" + str(raw_row))
+                    print("test")
+                    pprint(exr_output)
                     print("\n" * 10)
                     raise e
  

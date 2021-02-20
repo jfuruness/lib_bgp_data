@@ -29,7 +29,7 @@ class Test_Figure_1(Graph_Tester):
     """Tests all example graphs within our paper."""
 
     def test_figure_1a(self):
-        """hidden hijack example with bgp
+        r"""hidden hijack example with bgp
 
           44
             \
@@ -49,7 +49,7 @@ class Test_Figure_1(Graph_Tester):
         adopting_ases = []
         adopting_rows = []
         for bgp_as in bgp_ases:
-            adopting_rows.append([bgp_as, Policies.DEFAULT.value, 0])
+            adopting_rows.append([bgp_as, Policies.DEFAULT.value, False])
         # for adopting_as in adopting_ases:
         #     adopting_rows.append([adopting_as, Policies.ROVPP_V3.value, 1])
 
@@ -104,7 +104,7 @@ class Test_Figure_1(Graph_Tester):
                          exr_output=exr_output)
 
     def test_figure_1b(self):
-        """hidden hijack example with ROV
+        r"""hidden hijack example with ROV
 
           44
             \
@@ -127,9 +127,9 @@ class Test_Figure_1(Graph_Tester):
         adopting_ases = [78]
         adopting_rows = []
         for bgp_as in bgp_ases:
-            adopting_rows.append([bgp_as, Policies.DEFAULT.value, 0])
+            adopting_rows.append([bgp_as, Policies.DEFAULT.value, False])
         for adopting_as in adopting_ases:
-            adopting_rows.append([adopting_as, Policies.ROV.value, 1])
+            adopting_rows.append([adopting_as, Policies.ROV.value, True])
 
         attacker = 666
         victim = 99

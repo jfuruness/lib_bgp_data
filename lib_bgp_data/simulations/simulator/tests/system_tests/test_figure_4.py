@@ -29,7 +29,7 @@ class Test_Figure_4(Graph_Tester):
     """Tests all example graphs within our paper."""
 
     def test_figure_4a(self):
-        """v3 example with ROV++v2
+        r"""v3 example with ROV++v2
 
               /44\
             53 |  666
@@ -58,21 +58,70 @@ class Test_Figure_4(Graph_Tester):
         adopting_ases = [33]
         adopting_rows = []
         for bgp_as in bgp_ases:
-            adopting_rows.append([bgp_as, Policies.DEFAULT.value, 0])
+            adopting_rows.append([bgp_as, Policies.DEFAULT.value, False])
         for adopting_as in adopting_ases:
-            adopting_rows.append([adopting_as, Policies.ROVPP_V2.value, 1])
+            adopting_rows.append([adopting_as, Policies.ROVPP_V2.value, True])
 
         attacker = 666
         victim = 99
 
-        #exr_output = [{"asn": 7,
-        #               "prefix": Attack.default_prefix,
-        #               "origin": 7,
-        #               "received_from_asn": Conds.NOTHIJACKED.value},
-        #              {"asn": 3,
-        #               "prefix": Attack.default_prefix,
-        #               "origin": 7,
-        #               "received_from_asn": 6},
+        exr_output = [{"asn": 44,
+                       "prefix": Attack.default_prefix,
+                       "origin": 99,
+                       "received_from_asn": 99},
+                      {"asn": 44,
+                       "prefix": Attack.default_subprefix,
+                       "origin": 666,
+                       "received_from_asn": 666},
+                      {"asn": 666,
+                       "prefix": Attack.default_prefix,
+                       "origin": 99,
+                       "received_from_asn": 44},
+                      {"asn": 666,
+                       "prefix": Attack.default_subprefix,
+                       "origin": 666,
+                       "received_from_asn": Conds.HIJACKED.value},
+                      {"asn": 53,
+                       "prefix": Attack.default_prefix,
+                       "origin": 99,
+                       "received_from_asn": 44},
+                      {"asn": 53,
+                       "prefix": Attack.default_subprefix,
+                       "origin": 666,
+                       "received_from_asn": 44},
+                      {"asn": 54,
+                       "prefix": Attack.default_prefix,
+                       "origin": 99,
+                       "received_from_asn": 53},
+                      {"asn": 54,
+                       "prefix": Attack.default_subprefix,
+                       "origin": 666,
+                       "received_from_asn": 53},
+                      {"asn": 22,
+                       "prefix": Attack.default_prefix,
+                       "origin": 99,
+                       "received_from_asn": 33},
+                      {"asn": 22,
+                       "prefix": Attack.default_subprefix,
+                       "origin": 666,
+                       "received_from_asn": 54},
+                      {"asn": 87,
+                       "prefix": Attack.default_prefix,
+                       "origin": 99,
+                       "received_from_asn": 99},
+                      {"asn": 33,
+                       "prefix": Attack.default_prefix,
+                       "origin": 99,
+                       "received_from_asn": 87},
+                      {"asn": 99,
+                       "prefix": Attack.default_prefix,
+                       "origin": 99,
+                       "received_from_asn": Conds.NOTHIJACKED.value },
+                      {"asn": 99,
+                       "prefix": Attack.default_subprefix,
+                       "origin": 666,
+                       "received_from_asn": Conds.NOTHIJACKED.value},
+		     ]
 
         self._test_graph(attack_types=attack_types,
                          adopt_policies=adopt_policies,
@@ -84,7 +133,7 @@ class Test_Figure_4(Graph_Tester):
                          exr_output=exr_output)
 
     def test_figure_4b(self):
-        """v3 example with ROV++v2
+        r"""v3 example with ROV++v2
 
               /44\
             53 |  666
@@ -113,21 +162,76 @@ class Test_Figure_4(Graph_Tester):
         adopting_ases = [33]
         adopting_rows = []
         for bgp_as in bgp_ases:
-            adopting_rows.append([bgp_as, Policies.DEFAULT.value, 0])
+            adopting_rows.append([bgp_as, Policies.DEFAULT.value, False])
         for adopting_as in adopting_ases:
-            adopting_rows.append([adopting_as, Policies.ROVPP_V3.value, 1])
+            adopting_rows.append([adopting_as, Policies.ROVPP_V3.value, True])
 
         attacker = 666
         victim = 99
 
-        #exr_output = [{"asn": 7,
-        #               "prefix": Attack.default_prefix,
-        #               "origin": 7,
-        #               "received_from_asn": Conds.NOTHIJACKED.value},
-        #              {"asn": 3,
-        #               "prefix": Attack.default_prefix,
-        #               "origin": 7,
-        #               "received_from_asn": 6},
+        exr_output = [{"asn": 44,
+                       "prefix": Attack.default_prefix,
+                       "origin": 99,
+                       "received_from_asn": 99},
+                      {"asn": 44,
+                       "prefix": Attack.default_subprefix,
+                       "origin": 666,
+                       "received_from_asn": 666},
+                      {"asn": 666,
+                       "prefix": Attack.default_prefix,
+                       "origin": 99,
+                       "received_from_asn": 44},
+                      {"asn": 666,
+                       "prefix": Attack.default_subprefix,
+                       "origin": 666,
+                       "received_from_asn": Conds.HIJACKED.value},
+                      {"asn": 53,
+                       "prefix": Attack.default_prefix,
+                       "origin": 99,
+                       "received_from_asn": 44},
+                      {"asn": 53,
+                       "prefix": Attack.default_subprefix,
+                       "origin": 666,
+                       "received_from_asn": 44},
+                      {"asn": 54,
+                       "prefix": Attack.default_prefix,
+                       "origin": 99,
+                       "received_from_asn": 53},
+                      {"asn": 54,
+                       "prefix": Attack.default_subprefix,
+                       "origin": 666,
+                       "received_from_asn": 53},
+                      {"asn": 22,
+                       "prefix": Attack.default_prefix,
+                       "origin": 99,
+                       "received_from_asn": 33},
+                      {"asn": 22,
+                       "prefix": Attack.default_subprefix,
+                       "origin": 99,
+                       "received_from_asn": 33},
+                      {"asn": 87,
+                       "prefix": Attack.default_prefix,
+                       "origin": 99,
+                       "received_from_asn": 99},
+                      {"asn": 33,
+                       "prefix": Attack.default_prefix,
+                       "origin": 99,
+                       "received_from_asn": 87},
+                      {"asn": 33,
+                       "prefix": Attack.default_subprefix,
+                       "origin": 99,
+                       "received_from_asn": 87},
+                      {"asn": 99,
+                       "prefix": Attack.default_prefix,
+                       "origin": 99,
+                       "received_from_asn": Conds.NOTHIJACKED.value },
+                      {"asn": 99,
+                       "prefix": Attack.default_subprefix,
+                       "origin": 666,
+                       "received_from_asn": Conds.NOTHIJACKED.value},
+		     ]
+
+
 
         self._test_graph(attack_types=attack_types,
                          adopt_policies=adopt_policies,

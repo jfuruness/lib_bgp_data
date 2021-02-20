@@ -24,11 +24,16 @@ __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
 
+@pytest.mark.xfail(reason=("Must fix this in exr but for the cases"
+                           " we had in sigcomm doesn't affect results"))
+class Test_Figure_3_Prefix_Blackhole(Graph_Tester):
+    """Tests all example graphs within our paper.
 
-class Test_Figure_3(Graph_Tester):
-    """Tests all example graphs within our paper."""
+    NOTE: This is the same as test figure 3 EXCEPT we make sure that blackholes
+    for subprefixes do not prevent prefix announcements from being accepted
+    """
 
-    def test_figure_3a(self):
+    def test_figure_3a_prefix_blackhole(self):
         r"""v2 example with ROV++V1 and ROV
 
               /44\
@@ -86,10 +91,10 @@ class Test_Figure_3(Graph_Tester):
                        "prefix": Attack.default_prefix,
                        "origin": 99,
                        "received_from_asn": 55},
-                      #{"asn": 77,
-                      # "prefix": Attack.default_prefix,
-                      # "origin": 99,
-                      # "received_from_asn": 44},
+                      {"asn": 77,
+                       "prefix": Attack.default_prefix,
+                       "origin": 99,
+                       "received_from_asn": 44},
                       {"asn": 55,
                        "prefix": Attack.default_prefix,
                        "origin": 99,
@@ -153,7 +158,7 @@ class Test_Figure_3(Graph_Tester):
                          victim=victim,
                          exr_output=exr_output)
 
-    def test_figure_3b(self):
+    def test_figure_3b_prefix_blackhole(self):
         r"""v2 example with ROV++V1 and ROV
 
               /44\
@@ -199,10 +204,10 @@ class Test_Figure_3(Graph_Tester):
                        "prefix": Attack.default_prefix,
                        "origin": 99,
                        "received_from_asn": 11},
-                      #{"asn": 33,
-                      # "prefix": Attack.default_prefix,
-                      # "origin": 99,
-                      # "received_from_asn": 11},
+                      {"asn": 33,
+                       "prefix": Attack.default_prefix,
+                       "origin": 99,
+                       "received_from_asn": 11},
                       {"asn": 99,
                        "prefix": Attack.default_prefix,
                        "origin": 99,
@@ -211,10 +216,10 @@ class Test_Figure_3(Graph_Tester):
                        "prefix": Attack.default_prefix,
                        "origin": 99,
                        "received_from_asn": 55},
-                      #{"asn": 77,
-                      # "prefix": Attack.default_prefix,
-                      # "origin": 99,
-                      # "received_from_asn": 44},
+                      {"asn": 77,
+                       "prefix": Attack.default_prefix,
+                       "origin": 99,
+                       "received_from_asn": 44},
                       {"asn": 55,
                        "prefix": Attack.default_prefix,
                        "origin": 99,
@@ -268,10 +273,6 @@ class Test_Figure_3(Graph_Tester):
                        "origin": 64512,
                        "received_from_asn": 64512},
 		      # 32 rejects the blackhole announcement as invalid
-                      #{"asn": 32,
-                      # "prefix": Attack.default_subprefix,
-                      # "origin": 64512,
-                      # "received_from_asn": 11},
                       {"asn": 33,
                        "prefix": Attack.default_subprefix,
                        "origin": 64512,

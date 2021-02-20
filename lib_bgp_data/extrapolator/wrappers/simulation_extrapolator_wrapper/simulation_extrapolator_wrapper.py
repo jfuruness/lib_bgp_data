@@ -28,6 +28,7 @@ from ..extrapolator_wrapper import Extrapolator_Wrapper
 from ....collectors.mrt.mrt_metadata.tables import MRT_W_Metadata_Table
 from ....utils.base_classes import Parser
 from ....utils.database import Database
+from ....utils.database import config
 from ....utils import utils
 
 
@@ -65,6 +66,7 @@ class Simulation_Extrapolator_Wrapper(Extrapolator_Wrapper):
         default_bash_args += f"-i 0 -b 0 -a {MRT_W_Metadata_Table.name} "
         default_bash_args += "".join(f" -t {x}" for x in table_names)
         default_bash_args += f" --rounds {rounds} "
+        default_bash_args += f" --config-section={config.global_section_header}"
 
         default_bash_args = self.append_extra_bash_args(default_bash_args,
                                                         extra_bash_arg_1,
