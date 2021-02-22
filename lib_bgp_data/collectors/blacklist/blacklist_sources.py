@@ -16,15 +16,15 @@ __status__ = "Development"
 import csv
 import re
 
-from .blacklist_source import Blacklist_Source, Blacklist_Source_IP
+from .blacklist_source import *
 from ...utils import utils
 
 class UCE_Blacklist(Blacklist_Source):
-    # Why am I using an IP for UCE's mirrors? The various mirrors
-    # of UCE's blacklists are not consistent with one another:
-    # Some will return a gzip, some just ISO-8859 text, and some
-    # just don't work. So, to ensure consistency, I'm using IP.
-    # This should return plaintext.
+    """Why am I using an IP for UCE's mirrors? The various mirrors
+    of UCE's blacklists are not consistent with one another:
+    Some will return a gzip, some just ISO-8859 text, and some
+    just don't work. So, to ensure consistency, I'm using IP.
+    This should return plaintext."""
 
     def download(self):
         temp_path = self.path + ".gz"
@@ -58,10 +58,10 @@ class UCE3_IP(UCE_Blacklist_IP):
 class Spamhaus_asndrop(Blacklist_Source):
     url = 'https://www.spamhaus.org/drop/asndrop.txt'
 
-class Spamhaus_drop(Blacklist_Source_IP):
+class Spamhaus_drop(Blacklist_Source_CIDR):
     url = 'https://www.spamhaus.org/drop/drop.txt'
 
-class Spamhaus_edrop(Blacklist_Source_IP):
+class Spamhaus_edrop(Blacklist_Source_CIDR):
     url = 'https://www.spamhaus.org/drop/edrop.txt'
 
 class MIT_Blacklist(Blacklist_Source):
