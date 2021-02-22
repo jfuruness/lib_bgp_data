@@ -28,6 +28,7 @@ class Test_MRT_Metadata_Parser:
         with pytest.raises(AssertionError):
             parser._validate()
 
+    @pytest.mark.po
     def test_add_prefix_origin_index(self, parser):
         """Tests indexes are created if they don't exist"""
         with MRT_Announcements_Table() as t:
@@ -41,10 +42,10 @@ class Test_MRT_Metadata_Parser:
     def test_get_p_o_table_w_indexes(self, parser):
         """Uh...you just pass the index is not made..."""
     
-    def test_create_blocks_table(self, parser):
+    def test_create_block_table(self, parser):
         """Tests blocks table is filled and has indexes"""
         with Blocks_Table(clear=True) as t:
-            parser.create_blocks_table(100)
+            parser._create_block_table(100)
             assert t.get_count() > 2
             for _id in ["block_id", "prefix"]:
                 self.assert_index_exists(f'{t.name}_{_id}')
@@ -69,6 +70,6 @@ class Test_MRT_Metadata_Parser:
 
     def assert_index_exists(self, index):
         with MRT_Announcements_Table() as db:
-            sql = f'SELECT indexname FROM pg_indexes WHERE indexname = {index}'
-            assert len(db.execute(sql)) == 0
+            sql = f"SELECT indexname FROM pg_indexes WHERE indexname = '{index}'"
+            assert len(db.execute(sql)) != 0
         
