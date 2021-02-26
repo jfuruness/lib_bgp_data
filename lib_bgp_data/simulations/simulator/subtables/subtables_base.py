@@ -31,6 +31,18 @@ class Subtables(Input_Subtables, Output_Subtables):
         # Note that if you want to change adoption percentage:
         # Simply change percents to a list of your choosing here
 
+        self.get_tables(percents, edge_atk, etc_atk, top_atk)
+
+        if connect:
+            for table in self.tables:
+                table.connect()
+
+            logging.info("Analyzing before beginning for speed")
+            # Without this the queries become messed up
+            with Database() as db:
+                db.execute("ANALYZE")
+
+    def get_tables(self, percents, edge_atk, etc_atk, top_atk):
         # Add any extra tables to this initial list
         self.tables = [Subtable(Top_100_ASes_Table,
                                 percents,
@@ -43,14 +55,6 @@ class Subtables(Input_Subtables, Output_Subtables):
                                     percents,
                                     possible_attacker=etc_atk))
 
-        if connect:
-            for table in self.tables:
-                table.connect()
-
-            logging.info("Analyzing before beginning for speed")
-            # Without this the queries become messed up
-            with Database() as db:
-                db.execute("ANALYZE")
 
     def fill_tables(self):
         """Fill the tables with ASes"""

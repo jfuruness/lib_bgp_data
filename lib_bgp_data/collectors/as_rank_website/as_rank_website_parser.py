@@ -7,7 +7,7 @@ see: https://github.com/jfuruness/lib_bgp_data/wiki/AS-Rank-Parser"""
 
 
 __author__ = "Abhinna Adhikari, Sam Kasbawala, Justin Furuness"
-__credits__ = ["Abhinna Adhikari", "Sam Kasbawala", "Justin Furuness"]
+__credits__ = ["Abhinna Adhikari", "Sam Kasbawala", "Justin Furuness", "Tony Zheng"]
 __Lisence__ = "BSD"
 __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
@@ -18,7 +18,7 @@ import random
 import re
 import time
 
-from tqdm import trange
+from tqdm import trange, tqdm
 
 from .tables import AS_Rank_Table
 
@@ -53,9 +53,16 @@ class AS_Rank_Website_Parser(Parser):
         if random_delay:
             time.sleep(random.random() * 20)
 
+        ### Sequential ###
         # Start from 1 because page 0 and page 1 are the same
-        for page in trange(1, self._total_pages, desc="Parsing AS Rank"):
-            self._parse_page(page)
+        #for page in trange(1, self._total_pages, desc="Parsing AS Rank"):
+        #    self._parse_page(page)
+
+        with utils.Pool(None, 1, "AS Rank Parser") as pool:
+            r = list(tqdm(pool.imap(self._parse_page,
+                                    [page for page in range(1, self._total_pages)]),
+                          total=self._total_pages-1,
+                          desc="AS Rank pages"))
 
     def _parse_page(self, page_num):
         """Parses a page, gets AS rank, ASN, org, country, cone size"""

@@ -26,7 +26,10 @@ def install_selenium_driver():
 
     print("Selenium driver dependencies are not installed. Installing now.")
 
-    installing_chrome_cmds = ['sudo apt-get update',
+    installing_chrome_cmds = ['wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb',
+                              'sudo apt install -y ./google-chrome-stable_current_amd64.deb',
+                              'rm google-chrome-stable_current_amd64.deb',
+                              'sudo apt-get update',
                               ('sudo apt-get install -y unzip'
                                ' xvfb libxi6 libgconf-2-4'),
                               'yes | sudo apt-get remove google-chrome-stable',

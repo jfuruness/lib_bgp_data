@@ -31,7 +31,7 @@ class Parser:
     See README for in depth explanation.
     """
 
-    __slots__ = ['path', 'csv_dir', 'kwargs', 'backup_dir']
+    __slots__ = ['path', 'csv_dir', 'kwargs', 'backup_dir', 'name']
     # This will add an error_catcher decorator to all methods
 
     parsers = []
@@ -68,7 +68,7 @@ class Parser:
         # The class name. This because when parsers are done,
         # they aggressively clean up. We do not want parser to clean up in
         # the same directories and delete files that others are using
-        name = f"{kwargs['section']}_{self.__class__.__name__}"
+        self.name = f"{kwargs['section']}_{self.__class__.__name__}"
         config_logging(kwargs.get("stream_level", logging.INFO),
                        kwargs["section"])
 
@@ -88,7 +88,7 @@ class Parser:
         # Recreates empty directories
         utils.clean_paths([self.path, self.csv_dir])
         self.kwargs = kwargs
-        logging.debug(f"Initialized {name} at {utils.now()}")
+        logging.debug(f"Initialized {self.name} at {utils.now()}")
         assert hasattr(self, "_run"), ("Needs _run, see Parser.py's run func "
                                        "Note that this is also used by default"
                                        " for running argparse. The main method"

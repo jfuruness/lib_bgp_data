@@ -12,13 +12,13 @@ import pytest
 from ..rpki_validator_parser import RPKI_Validator_Parser
 from ..rpki_validator_wrapper import RPKI_Validator_Wrapper
 from ..tables import ROV_Validity_Table
-from ...mrt_parser import MRT_Parser
-from ...mrt_parser import MRT_Sources
+from ...mrt.mrt_base import MRT_Parser, MRT_Sources
+from ...mrt.mrt_base.tables import MRT_Announcements_Table
 from ....utils import utils
 
 
-__authors__ = ["Justin Furuness"]
-__credits__ = ["Justin Furuness"]
+__authors__ = ["Justin Furuness, Tony Zheng"]
+__credits__ = ["Justin Furuness, Tony Zheng"]
 __Lisence__ = "BSD"
 __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
@@ -28,8 +28,11 @@ __status__ = "Development"
 class Test_RPKI_Validator_Parser:
     """Tests all local functions within the RPKI_Validator_Parser class."""
 
-    @pytest.mark.skip(reason="New hires will work on this")
-    def test_parser_test_data(self):
+    @pytest.fixture
+    def parser(self):
+        return RPKI_Validator_Parser()
+
+    def test_parser_test_data(self, test_table):
         """This is more of an overall system test,
 
         since most all of the functionality exists in the wrapper.
@@ -47,20 +50,23 @@ class Test_RPKI_Validator_Parser:
             assert db.execute(sql_val)[0]['validity'] == 1
             assert db.execute(sql_inval)[0]['validity'] == -2
 
-    @pytest.mark.skip(reason="new hire will work on this")
-    def test__format_asn_dict(self):
+    def test__format_asn_dict(self, parser):
         """Tests the format asn_dict function
 
         Confirms that the output is what we expect for a typical entry"""
+        for key, value in RPKI_Validator_Wrapper.get_validity_dict().items():
+            d = {'asn': 'AS198051', 'prefix': '1.2.0.0/16', 'validity': key}
+            assert parser._format_asn_dict(d) == [198051, '1.2.0.0/16', value]
 
-        pass
-
-    @pytest.mark.skip(reason="new hire will work on this")
     @pytest.mark.slow
     def test_comprehensive_system(self):
         """Tests the entire system on the MRT announcements.
 
         Assert that there are no mrt announcments missing.
+        # The API returns incomplete data. The following 
+        # origins paired with a prefix of 0.0.0.0/0
+        # don't show up:
+        # 2914, 3257, 3356, 6830, 9002, 30781, 33891
         NOTE: It's possible RPKI Validator removes duplicates
         of prefix origin pairs. Check for this.
 
@@ -72,30 +78,36 @@ class Test_RPKI_Validator_Parser:
         different func because this unit test will take hours.
         """
 
+        missing_origins = {2914, 3257, 3356, 6830, 9002, 30781, 33891}
 
         with ROV_Validity_Table() as db:
 
-            # use only one collector and remove isolario to make it a  little faster
+            # Run MRT_Parser to fill mrt_announcements table which will
+            # be used as the input table for RPKI_Validator.
+            # Use only one collector and remove isolario to make it faster.
+            input_table = MRT_Announcements_Table.name
             mods = {'collectors[]': ['route-views2', 'rrc03']}
             no_isolario = [MRT_Sources.RIPE, MRT_Sources.ROUTE_VIEWS]
+            MRT_Parser().run(api_param_mods=mods, sources=no_isolario)
             
-            MRT_Parser()._run(api_param_mods=mods, sources=no_isolario)
-                
-            RPKI_Validator_Parser()._run(table='mrt_announcements')
+            RPKI_Validator_Parser().run(table=input_table)
 
-            sql = 'SELECT COUNT(*) FROM rov_validity'
-            initial_count = db.get_count(sql)
+            initial_count = db.get_count()
 
-            # no mrt announcements missing in rov_validity
-            for pair in db.execute('SELECT * FROM mrt_announcements'):
-                prefix = pair['prefix']
-                origin = pair['origin']
-                count =  db.get_count('SELECT * FROM rov_validity WHERE '
-                                   f"prefix = '{prefix}' AND origin = {origin}")
-                # asserts for existance and removal of dupes
-                assert count == 1
+            # Any prefix-origin pair that exists in the 
+            # set of all prefix-origin pairs from input table but not in the
+            # set of unique prefix-origin pairs in ROV_Validity table
+            # has to be one of the acknowledged prefix-origin pairs
+            # that the API missed.
 
-            # no new data
+            def PO_pairs(table):
+                return {(row["prefix"], row["origin"])
+                        for row in
+                        db.execute(f"SELECT prefix, origin FROM {table}")}
+
+            for prefix, origin in PO_pairs(input_table) - PO_pairs(db.name):
+                assert prefix == '0.0.0.0/0' and origin in missing_origins
+
+            # There should be no new data straggling behind. 
             sleep(120)
-            final_count = db.get_count(sql)
-            assert initial_count == final_count
+            assert initial_count == db.get_count()

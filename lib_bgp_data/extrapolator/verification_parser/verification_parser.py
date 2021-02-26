@@ -16,6 +16,7 @@ __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
 from .dataset_statistics_generator import Dataset_Statistics_Generator
+from .extrapolator_analyzer import Extrapolator_Analyzer
 from .tables import Monitors_Table, Control_Monitors_Table
 
 from ...collectors import AS_Rank_Website_Parser, Relationships_Parser
@@ -45,6 +46,7 @@ class Verification_Parser(Parser):
              sample_selection=True,
              dataset_stats=True,
              block_size=100,
+             verification=True,
              ):
         if clear_db and not test:
             assert False, "Clear db, checkpoint, vaccum analyze"
@@ -72,3 +74,5 @@ class Verification_Parser(Parser):
                     db.fill_table()
         if dataset_stats:
             Dataset_Statistics_Generator(**self.kwargs)._run()
+        if verification:
+            Extrapolator_Analyzer(**self.kwargs)._run()
