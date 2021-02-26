@@ -29,16 +29,19 @@ class ROAs_Parser(Parser):
 
     __slots__ = []
 
-    def _run(self):
+    def _run(self, clear_table=True):
         """Downloads and stores roas from a json
 
         For more in depth explanation see README"""
 
-        with ROAs_Table(clear=True) as _roas_table:
+        with ROAs_Table(clear=clear_table) as _roas_table:
             roas = self._format_roas(self._get_json_roas())
             # Inserts the data into a CSV and then the database
             _csv_dir = f"{self.csv_dir}/roas.csv"
-            utils.rows_to_db(roas, _csv_dir, ROAs_Table)
+            utils.rows_to_db(roas,
+                             _csv_dir,
+                             ROAs_Table,
+                             clear_table=clear_table)
             # Creates an index on the roas table prefix
             _roas_table.create_index()
 

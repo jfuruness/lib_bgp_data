@@ -372,18 +372,20 @@ def replace_line(path, prepend, line_to_replace, replace_with):
         line = line.replace(*lines)
         sys.stdout.write(line)
 
-def send_email(subject, body):
+def send_email(subject, body, recipients=[]):
     """Sends an email notification"""
 
     # Get the adress and password from the environment variables
     email_address = os.environ.get("BGP_EMAIL_USER")
     password = os.environ.get("BGP_EMAIL_PASS")
 
+    assert isinstance(recipients, list)
+
     # Build the message
     message = EmailMessage()
     message["Subject"] = subject
     message["From"] = email_address
-    message["To"] = email_address
+    message["To"] = ", ".join([email_address] + recipients)
     message.set_content(body)
 
     # Send the message
