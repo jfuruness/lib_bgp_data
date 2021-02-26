@@ -3,7 +3,12 @@
 
 """This module contains the blacklist source
 
-this contains the base class for all blacklists
+this contains the base class for all blacklists.
+
+The base class handles initalization, downloading, and parsing of
+data from backlists.
+
+The base class will parse for ASNs. Blacklist_Source_IP checks for IPv4
 """
 
 __authors__ = ["Nicholas Shpetner", "Justin Furuness"]
@@ -75,3 +80,11 @@ class Blacklist_Source_IP(Blacklist_Source):
     def get_rows(self, prefix):
         """Returns prefixes for db insertion"""
         return [[None, pre, self.__class__.__name__] for pre in prefix]
+
+
+class Blacklist_Source_CIDR(Blacklist_Source_IP):
+    """This subclass of Blacklist_Source is made to handle blacklists
+    that use CIDR with a mask at the end instead of just IPv4
+    """
+    def parse_file(self, f):
+        return set(re.findall(r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/\d{1,3}', f.read()))

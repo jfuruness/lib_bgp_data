@@ -1,0 +1,9 @@
+UCE1: http://41.208.71.58/rbldnsd-all/dnsbl-1.uceprotect.net.gz
+UCE2: http://72.13.86.154/rbldnsd-all/dnsbl-2.uceprotect.net.gz
+UCE3: http://72.13.86.154/rbldnsd-all/dnsbl-3.uceprotect.net.gz
+UCE2_IP: http://72.13.86.154/rbldnsd-all/dnsbl-2.uceprotect.net.gz
+UCE3_IP: http://72.13.86.154/rbldnsd-all/dnsbl-3.uceprotect.net.gz
+Spamhaus_asndrop: https://www.spamhaus.org/drop/asndrop.txt
+Spamhaus_drop: https://www.spamhaus.org/drop/drop.txt
+Spamhaus_edrop: https://www.spamhaus.org/drop/edrop.txt
+MIT: https://raw.githubusercontent.com/ctestart/BGP-SerialHijackers/master/prediction_set_with_class.csv'
