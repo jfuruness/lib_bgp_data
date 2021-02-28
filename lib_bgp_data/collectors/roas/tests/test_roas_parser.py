@@ -48,7 +48,7 @@ class Test_ROAs_Parser:
         # Zip checks for same length
         for roa, json_roa in zip(roas, json_roas):
             # Checks if they have the same amount of keys
-            assert len(roa) == len(json_roa) - 1  # json has one extra key
+            assert len(roa) == len(json_roa)
             # Checks that each value is the same
             for key in json_roa:
                 # We don't save this value
@@ -112,7 +112,7 @@ class Test_ROAs_Parser:
         # Patch the format roas function in the _run function because we want
         # to have consistent time stamps. Every time the format roas function
         # is run, the timestamps for each row will change
-        func_path = ("lib_bgp_data.roas_parser.roas_parser.ROAs_Parser."
+        func_path = ("lib_bgp_data.collectors.roas.roas_parser.ROAs_Parser."
                      "_format_roas")
         with patch(func_path, return_value=formatted_roas) as mock:
             # Parses the roas and inserts them into the database
