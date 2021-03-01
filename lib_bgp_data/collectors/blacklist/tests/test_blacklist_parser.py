@@ -48,15 +48,20 @@ class Test_Blacklist_Parser:
             all_data = db.execute("SELECT * FROM blacklist")
         return all_data
 
+    @pytest.mark.inspect
     def test_inspect_rows(self):
         """This test makes sure that the blacklists were parsed
         correctly, i.e. each ASN is of format ####### or valid 
-        IPv4 addr"""
+        IPv4 addr or CIDR"""
         all_data = self.test_get_blacklists()
         for row in all_data:
             if row['prefix'] is None:
                 assert type(row['asn']) == int
             elif row['asn'] is None:
+                pre_row = row['prefix']
+                assert re.match(r"[0-9]*\.[0-9]*\.[0-9]*\.[0-9]*/[0-9]*", pre_row)
+            elif row['asn'] is not None and row['prefix'] is not None:
+                assert type(row['asn']) == int
                 pre_row = row['prefix']
                 assert re.match(r"[0-9]*\.[0-9]*\.[0-9]*\.[0-9]*/[0-9]*", pre_row)
             else:
