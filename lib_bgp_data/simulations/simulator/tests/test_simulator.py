@@ -61,6 +61,7 @@ class Test_Simulator:
         # OK, so ext_bash seems to affect a datapoint in data_point.py, which in get_data will use exr_bash in Parser.run
         # (see line 83)
         # But I don't have any further information beyond that, what am I working with here?
+        pass
 
     def test_deterministic(self):
         """Tests deterministic trials
@@ -86,6 +87,7 @@ class Test_Simulator:
 
         # Not sure how to use the seeded arg here, either
         # TODO: Should jump to a trial in deterministic
+        pass
 
     def test_all_scenarios(self):
         """Tests running of all attack types and adopt policies
@@ -144,5 +146,3 @@ class Test_Simulator:
             print(cur_db)
         exr_bash = '/usr/bin/rovpp_compat_modifications_extrapolator -v 1 -i 0 -b 0 -a mrt_w_metadata  -t top_100_ases -t edge_ases -t etc_ases --rounds 1 --config-section ' + cur_db
         return exr_bash
- 
-

@@ -134,8 +134,8 @@ class Graph_Tester:
                 except AssertionError as e:
                     from pprint import pprint
                     print("\n" * 10)
-                    print("test " + str(test_row))
-                    print("raw")
+                    print("Expected row that is not in raw" + str(test_row))
+                    print("raw rows")
                     pprint(formatted_table_rows)
                     print("same asn")
                     for row in formatted_table_rows:
@@ -151,8 +151,8 @@ class Graph_Tester:
                 except AssertionError as e:
                     from pprint import pprint
                     print("\n" * 10)
-                    print("raw" + str(raw_row))
-                    print("test")
+                    print("raw row that is not in expected rows" + str(raw_row))
+                    print("expected rows")
                     pprint(exr_output)
                     print("\n" * 10)
                     raise e
