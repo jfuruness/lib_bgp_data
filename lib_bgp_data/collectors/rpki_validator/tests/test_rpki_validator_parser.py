@@ -86,10 +86,11 @@ class Test_RPKI_Validator_Parser:
             # be used as the input table for RPKI_Validator.
             # Use only one collector and remove isolario to make it faster.
             input_table = MRT_Announcements_Table.name
-            mods = {'collectors[]': ['route-views2', 'rrc03']}
-            no_isolario = [MRT_Sources.RIPE, MRT_Sources.ROUTE_VIEWS]
-            MRT_Parser().run(api_param_mods=mods, sources=no_isolario)
-            
+            #mods = {'collectors[]': ['route-views2', 'rrc03']}
+            #no_isolario = [MRT_Sources.RIPE, MRT_Sources.ROUTE_VIEWS]
+            #MRT_Parser().run(api_param_mods=mods, sources=no_isolario)
+            MRT_Parser().run()
+
             RPKI_Validator_Parser().run(table=input_table)
 
             initial_count = db.get_count()
@@ -100,14 +101,33 @@ class Test_RPKI_Validator_Parser:
             # has to be one of the acknowledged prefix-origin pairs
             # that the API missed.
 
-            def PO_pairs(table):
-                return {(row["prefix"], row["origin"])
-                        for row in
-                        db.execute(f"SELECT prefix, origin FROM {table}")}
+            #db.cursor = db.conn.cursor('named_cursor')
+            #db.cursor.autocommit = False
 
-            for prefix, origin in PO_pairs(input_table) - PO_pairs(db.name):
-                assert prefix == '0.0.0.0/0' and origin in missing_origins
+            def PO_pairs(table):
+                db.cursor.execute(f"SELECT prefix, origin FROM {table}")
+                return {(row["prefix"], row["origin"]) for row in db.cursor}
+
+            sql = f"""SELECT * FROM {input_table} a
+                        LEFT JOIN {db.name} b
+                        ON a.prefix = b.prefix AND a.origin = b.origin
+                        WHERE b.prefix IS NULL;"""
+
+            #diff = []
+            with open('missing.txt', 'w+') as f:
+                for row in db.execute(sql):
+                    prefix, origin = row['prefix'], row['origin']
+                    f.write(f"{prefix} {origin}\n")
+
+                #diff.append((prefix, origin))
+
+            #diff = PO_pairs(input_table) - PO_pairs(db.name)
+            #for i in diff:
+            #    print(i)
+
+            #for prefix, origin in diff:
+                #assert prefix == '0.0.0.0/0' and origin in missing_origins
 
             # There should be no new data straggling behind. 
-            sleep(120)
+            sleep(1800) # 30 minutes
             assert initial_count == db.get_count()

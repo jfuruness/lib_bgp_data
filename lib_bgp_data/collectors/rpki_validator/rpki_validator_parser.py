@@ -41,6 +41,10 @@ class RPKI_Validator_Parser(Parser):
             _rpki_validator.load_trust_anchors()
             # Writes validator to database
             logging.debug("validator load completed")
+
+            from time import sleep
+            sleep(1800)
+
             rpki_data = _rpki_validator.get_validity_data()
             utils.rows_to_db([self._format_asn_dict(x) for x in rpki_data],
                              f"{self.csv_dir}/validity.csv",  # CSV

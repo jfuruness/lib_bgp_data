@@ -76,6 +76,7 @@ class MRT_File(File):
         args = self._bgpscanner_args() if bgpscanner else self._bgpdump_args()
         # writes to a csv
         args += '> ' + self.csv_name
+        logging.info(f"Now parsing {self.url}")
         utils.run_cmds(args)
         logging.debug(f"Wrote {self.csv_name}\n\tFrom {self.url}")
         utils.delete_paths(self.path)

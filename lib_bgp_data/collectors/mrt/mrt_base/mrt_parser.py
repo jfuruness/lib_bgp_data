@@ -50,7 +50,7 @@ class MRT_Parser(Parser):
             _ann_table._create_tables()
         if not os.path.exists("/usr/bin/bgpscanner"):
             logging.warning("Dependencies are not installed. Installing now.")
-            MRT_Installer.install_dependencies()
+            MRT_Installer().install_dependencies()
 
     def _run(self,
              *args,
@@ -146,7 +146,7 @@ class MRT_Parser(Parser):
         URL = 'https://bgpstream.caida.org/broker/data'
         # Request for data and conversion to json
         logging.debug(requests.get(url=URL, params=PARAMS).url)
-        data = requests.get(url=URL, params=PARAMS).json()
+        data = requests.get(url=URL, params=PARAMS, verify=False).json()
 
         # Returns the urls from the json
         return [x.get('url') for x in data.get('data').get('dumpFiles')]

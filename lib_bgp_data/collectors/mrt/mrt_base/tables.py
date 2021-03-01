@@ -33,7 +33,7 @@ class MRT_Announcements_Table(Generic_Table):
 
     __slots__ = []
 
-    name = "mrt_announcements"
+    name = "bgpdump"
 
     columns = ["prefix", "as_path", "origin", "time"]
 
@@ -44,7 +44,7 @@ class MRT_Announcements_Table(Generic_Table):
         """
 
         sql = f"""CREATE UNLOGGED TABLE IF NOT EXISTS {self.name} (
-                 prefix cidr,
+                 prefix inet,
                  as_path bigint ARRAY,
                  origin bigint,
                  time bigint
