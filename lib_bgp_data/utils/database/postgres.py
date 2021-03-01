@@ -263,7 +263,7 @@ class Postgres:
         """
 
         cmd = ("sudo -i -u postgres "
-               f"pg_restore -d {section} {file_path}")
+               f"pg_restore -c --if-exists -d {section} {file_path}")
         utils.run_cmds(cmd)
 
     @staticmethod

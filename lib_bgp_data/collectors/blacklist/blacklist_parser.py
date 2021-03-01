@@ -1,12 +1,25 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-"""This module contains the blacklist parser
+"""This module contains the blacklist parser.
 
-The purpose of this class is to download a list of blacklisted ASNs
-from UCEPROTECT's level 2 and 3 blacklists, Spamhaus's ASN blacklist,
-and the results from a MIT paper, and insert them into a database.
-For more information on sources, please see the readme
+The purpose of this module is to download a list of blacklisted ASNs
+and IPs from UCEPROTECT's blacklists, Spamhaus's blacklists,
+and the results from a MIT paper, and insert them into a table.
+For more information on sources, see sources.txt, located in this dir
+
+The table, blacklist, is made up of three columns:
+    - asn: The ASN of a blacklisted AS in the format ######
+    - prefix: the IP of a blacklisted IP or range in IPv4 or CIDR
+    - source: which blacklist the asn/prefix came from
+Either asn or prefix will be left blank with a value of None depending
+on if the blacklisted item was a asn or prefix, in which the other
+identifier will be set to None. 
+
+
+There are no known cavaets or issues with rate limits and the like
+over the course of normal usage with the sources given.
+
 """
 __authors__ = ["Nicholas Shpetner", "Justin Furuness"]
 __credits__ = ["Nicholas Shpetner", "Justin Furuness"]
