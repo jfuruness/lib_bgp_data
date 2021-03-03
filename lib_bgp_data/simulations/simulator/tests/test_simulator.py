@@ -36,9 +36,8 @@ class Test_Simulator:
     """Tests all functionality that the simulator class offers."""
 
     def setup(self):
-        """Should clear out the entire database every time
-
-        Perhaps use the postgres/database convenience funcs for this?
+        """Gets base data for  the tests
+        ideally this will save time if you're running all the tests.
         """
         Relationships_Parser()._run()
         AS_Rank_Website_Parser()._run()
