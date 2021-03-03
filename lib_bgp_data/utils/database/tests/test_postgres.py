@@ -39,6 +39,11 @@ class Test_Postgres:
         post.install('bgp')
         post.install('test')
 
+    @pytest.mark.meta
+    def test_meta(self):
+        #TODO: Temp pytest test function
+         print('foo')
+
     def test_install(self):
         """Tests install.
 
@@ -74,6 +79,7 @@ class Test_Postgres:
         Postgres()._run_sql_cmds(['DROP DATABASE test_new'])
         conf._remove_old_config_section('test_new')
 
+    @pytest.mark.mod
     def test_modify_database(self):
         """tests modifying the database
 
@@ -89,8 +95,10 @@ class Test_Postgres:
         creds = conf.get_db_creds(True)
         cpus = cpu_count() - 1
         ram = Config('test_new').ram
-        # shared = str(int(.4 * ram)) + 'MB'
-        # work_mem = str(int(ram / cpu_count() * 1.5)) + 'MB'
+        print('Ram in test: ' + str(ram))
+        shared = str(int(.4 * ram)) + 'MB'
+        print('Expected shared in test: ' + str(shared))
+        work_mem = str(int(ram / (cpu_count() * 1.5))) + 'MB'
         random_page_cost, ulimit = post._get_ulimit_random_page_cost()
         max_depth = str(int(int(8192/1000)-1)) + 'MB'
         post._modify_database('test_new')
@@ -104,9 +112,9 @@ class Test_Postgres:
                 ('SHOW wal_level;', 'minimal'),
                 ('SHOW archive_mode;', 'off'),
                 ('SHOW max_wal_senders;', 0),
-                #('SHOW shared_buffers;', shared),
-                #('SHOW work_mem;', work_mem),
-                #('SHOW effective_cache_size;', ram)
+                ('SHOW shared_buffers;', shared),
+                ('SHOW work_mem;', work_mem),
+                ('SHOW effective_cache_size;', ram),
                 # RAM changes mid-test....so setting this aside for now
                 ('SHOW random_page_cost;', random_page_cost),
                 ('SHOW max_stack_depth;', max_depth)]
@@ -194,4 +202,5 @@ class Test_Postgres:
             expected_result = str(sql[1])
             cur.execute(sql[0])
             result = cur.fetchone()[0]
+            print(str(sql[0]))
             assert result == expected_result

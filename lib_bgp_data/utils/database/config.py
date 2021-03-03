@@ -135,7 +135,7 @@ class Config:
             self.install()
             return self.get_db_creds()
 
-    def install(self) -> dict:
+    def install(self, large_db=False, restart=True) -> dict:
         """Installs the database section"""
 
         try:
@@ -144,7 +144,7 @@ class Config:
             # Database section is not installed, install it
             # Needed here due to circular imports
             from .postgres import Postgres
-            Postgres(section=self.section).install(self.section)
+            Postgres(section=self.section).install(self.section, large_db, restart)
             self.__init__(self.section)
             return self.get_db_creds()
 

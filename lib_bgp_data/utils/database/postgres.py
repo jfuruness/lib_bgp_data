@@ -78,15 +78,21 @@ class Postgres:
 ### Installation Functions ###
 ##############################
 
-    def install(self, section: str):
+    def install(self, section: str, large_db=False, restart=True):
         """Installs database and modifies it"""
 
         password = ''.join(random.SystemRandom().choice(
             string.ascii_letters + string.digits) for _ in range(24))
 
+        #TODO: Holy s h i t, do NOT RUN THIS UNTIL JUSTIN/GRAD LOOKS AT THIS
+        """if large_db:
+            self.erase_all()
+        """ 
         Config(section).create_config(password)
         self._create_database(section, password)
         self._modify_database(section)
+        """if restart:
+            self.restart_postgres()"""
 
     # Must delete postgres history after setting password
     @utils.delete_files("/var/lib/postgresql.psql_history")
@@ -123,6 +129,8 @@ class Postgres:
         """
 
         ram = Config(section).ram
+        print('Ram in postgres.py: ' + str(ram) + ' for section ' + section)
+        print('Expected shared in postgres: ' + str(.4*ram))
         random_page_cost, ulimit = self._get_ulimit_random_page_cost()
         cpus = cpu_count() - 1
         sqls = ["CREATE EXTENSION btree_gist;",
@@ -167,6 +175,7 @@ class Postgres:
                 f"'{int(int(ulimit)/1000)-1}MB';"]
 
         self._run_sql_cmds(sqls)
+        self.restart_postgres()
 
 ##########################################
 ### Unhinging functions used for speed ###
@@ -228,18 +237,15 @@ class Postgres:
         self.restart_postgres()
         logging.debug("rehinged db")
 
-    def restart_postgres(self):
+    @staticmethod
+    def restart_postgres():
         """Restarts postgres and all connections."""
 
         logging.debug("About to restart postgres")
-        if hasattr(self, "close"):
-            self.close()
         # access to section header
         utils.run_cmds(Config().restart_postgres_cmd)
         time.sleep(30)
         logging.debug("Restarted postgres")
-        if hasattr(self, "_connect"):
-            self._connect()
 
 #####################################
 ### Backup and Restore Functions ####

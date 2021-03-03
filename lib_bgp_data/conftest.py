@@ -6,7 +6,7 @@
 import pytest
 from subprocess import run, check_call
 from datetime import datetime
-from .utils.database import config
+from .utils.database import config 
 from .utils.database import Postgres
 from .utils import utils
 
@@ -28,7 +28,9 @@ def pytest_runtest_setup():
 
     # Underscores are like the only character I can use here that SQL allows
     section = test_prepend() + datetime.now().strftime(test_db_fmt())
-    config.Config(section).install()
+    large_db = pytest.config.getoption('--large_db')
+    print(large_db)
+    config.Config(section).install(large_db=large_db, restart=large_db)
  
 def pytest_runtest_teardown():
     drop_old_test_databases()
@@ -52,6 +54,11 @@ def drop_old_test_databases():
             if (datetime.now() - db_date).days >= 7:
                 check_call(Postgres.get_bash(f'DROP DATABASE {db_name};'),
                            shell=True)
+
+def pytest_addoption(parser):
+    parser.addoption('--large_db', action='store_true',
+                                   default=False,
+                                   help='Set pytest to drop databases, restart, install max database')
 
 def test_db_fmt():
     return '%Y_%m_%d_%H_%M_%S'
