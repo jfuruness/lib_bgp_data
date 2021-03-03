@@ -11,7 +11,7 @@ __status__ = "Development"
 from ...utils.database import Generic_Table
 
 
-class Historical_ROAS_Table(Generic_Table):
+class Historical_ROAs_Table(Generic_Table):
 
     name = "historical_roas"
 
@@ -58,7 +58,7 @@ class Historical_ROAS_Table(Generic_Table):
                     ON {self.name}(prefix, date_added)"""
         self.execute(sql)
 
-class Historical_ROAS_Parsed_Table(Generic_Table):
+class Historical_ROAs_Parsed_Table(Generic_Table):
 
     name = 'historical_roas_parsed'
     

@@ -53,6 +53,14 @@ def main():
                             nargs=0,
                             action=argparse_action_cls)
 
+    # Is this right? Can I name the class anything?
+    argparse_action_cls = type('Backer-upper',
+                               (Action, ),
+                               {'__call__': Parser.run_backupables()})
+    parser.add_argument('--backup',
+                        nargs=0,
+                        action=argparse_action_cls)
+
     # Configure logging to be debug if passed in
     # I know this should be done differently, but to make the module extendable
     # Sacrafices had to be made, and destroying argparse was one of them

@@ -288,7 +288,7 @@ def csv_to_db(Table, csv_path: str, clear_table=False):
     with Table() as t:
         if clear_table:
             t.clear_table()
-            t._create_tables()
+        t._create_tables()
         # No logging for mrt_announcements, overhead slows it down too much
         logging.debug(f"Copying {csv_path} into the database")
         try:
@@ -372,18 +372,20 @@ def replace_line(path, prepend, line_to_replace, replace_with):
         line = line.replace(*lines)
         sys.stdout.write(line)
 
-def send_email(subject, body):
+def send_email(subject, body, recipients=[]):
     """Sends an email notification"""
 
     # Get the adress and password from the environment variables
     email_address = os.environ.get("BGP_EMAIL_USER")
     password = os.environ.get("BGP_EMAIL_PASS")
 
+    assert isinstance(recipients, list)
+
     # Build the message
     message = EmailMessage()
     message["Subject"] = subject
     message["From"] = email_address
-    message["To"] = email_address
+    message["To"] = ", ".join([email_address] + recipients)
     message.set_content(body)
 
     # Send the message
@@ -398,8 +400,8 @@ def kill_port(port: int, wait: bool = True):
                 proc.send_signal(SIGTERM) # or SIGKILL
                 # Sometimes the above doesn't do it's job
                 run_cmds(f"sudo kill -9 $(lsof -t -i: {port})")
-                if wait:
-                    time.sleep(120)
+    if wait:
+        time.sleep(120)
 
 def add_cronjob(name, time, executable, overwrite=False):
     """Creates a cronjob of name, that runs executable at (cron) time."""

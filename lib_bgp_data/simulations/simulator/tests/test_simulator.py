@@ -68,6 +68,7 @@ class Test_Simulator:
         #captured = capsys.readouterr()
         #assert 'testing_exr_bash_now' in captured
 
+
     def test_deterministic(self):
         """Tests deterministic trials
 
@@ -99,6 +100,7 @@ class Test_Simulator:
             Simulator()._run(deterministic=True, redownload_base_data=False, exr_bash=exr_bash)
             run_two = table.get_all()
             assert run_one != run_two
+
 
     def test_all_scenarios(self):
         """Tests running of all attack types and adopt policies

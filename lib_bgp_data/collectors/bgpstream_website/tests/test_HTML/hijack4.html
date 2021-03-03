@@ -5,7 +5,7 @@
 <meta charset="utf-8"/>
 <!--[if IE]><meta http-equiv="X-UA-Compatible" content="IE=edge" /><![endif]-->
 <meta content="width=device-width, initial-scale=1" name="viewport"/>
-<title>BGPStream Event #236265</title>
+<title>BGPStream Event #268419</title>
 <link href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css" rel="stylesheet"/>
 <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
 <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
@@ -1107,36 +1107,36 @@
 </nav>
 </div>
 <div class="container">
-<h3>Possible BGP hijack </h3>
-        Beginning at 2020-05-12 16:17:58, we detected a possible BGP hijack.
+<h3>Possible BGP hijack</h3>
+        Beginning at 2021-02-16 18:14:11 UTC, we detected a possible BGP hijack.
         <p>
-        Prefix 170.25.0.0/16, Normally announced by AS13591 Mexico Red de Telecomunicaciones, S. de R.L. de C.V., MX
+        Prefix 45.88.139.0/24, is normally announced by AS43260 AS43260, TR.
         </p>
 <p>
-        Starting at 2020-05-12 16:17:58, a more specific route (170.25.223.104/31) was announced by ASN 577.
+        But beginning at 2021-02-16 18:14:11, the same prefix (45.88.139.0/24) was also announced by ASN 12695.
         </p>
 <p>
-        This was detected by 3 BGPMon peers.
+        This was detected by 4 BGPMon peers.
         </p>
 <table class="table">
 <th>Expected</th>
-<tr><td>Start time: 2020-05-12 16:17:58 UTC</td></tr>
-<tr><td>Expected prefix: 184.234.238.216/32</td></tr>
-<tr><td>Expected ASN: 13591 <img src="https://portal.bgpmon.net/images/flags/mx.gif"/>   (Mexico Red de Telecomunicaciones, S. de R.L. de C.V., MX)</td></tr>
+<tr><td>Start time: 2021-02-16 18:14:11 UTC</td></tr>
+<tr><td>Expected prefix: 154.186.165.143/32</td></tr>
+<tr><td>Expected ASN: 43260 (AS43260, TR)</td></tr>
 </table>
 <table class="table">
 <th>Event Details</th>
-<tr><td>Detected advertisement: 184.234.238.216/32</td></tr>
-<tr><td>Detected Origin ASN 577 <img src="https://portal.bgpmon.net/images/flags/ca.gif"/> (BACOM, CA)</td></tr>
-<tr><td>Detected AS Path 498597 451507 267666 359476 266302 123818 472575</td></tr>
-<tr><td>Detected by number of BGPMon peers: 126082</td></tr>
+<tr><td>Detected advertisement: 154.186.165.143/32</td></tr>
+<tr><td>Detected Origin ASN 12695 (DINET-AS, RU)</td></tr>
+<tr><td>Detected AS Path 714424 956552 177629 572877 846696 505276 404639</td></tr>
+<tr><td>Detected by number of BGPMon peers: 946452</td></tr>
 </table>
 <h2>Watch the replay of this event</h2>
 <div id="bgplay" style="width:1100px; margin: 0 auto;"></div>
 <script src="/static/bgplay/static/widget/bgplayjs-main-widget.js"></script>
 <script>
     var bgplay_config = {
-        "eventid" : '236265',
+        "eventid" : '268419',
         "ignoreReannouncements": "TRUE",
 
         "unix_timestamps": "TRUE",

@@ -85,7 +85,8 @@ class MRT_Installer:
                 "sudo apt-get -y install libbz2-dev",
                 "sudo apt-get -y install liblzma-dev",
                 "sudo apt-get -y install liblz4-dev",
-                "pip3 install --user meson",
+                #"pip3 install --user meson",
+                "pip3 install meson",
                 "sudo apt-get -y install cmake"]
         utils.run_cmds(cmds)
         # Ninja has to be installed 'manually', as doing it using apt
