@@ -20,6 +20,7 @@ import logging
 import os
 
 import pytest
+import configparser
 from configparser import NoSectionError, ConfigParser as SCP
 from psutil import virtual_memory
 
