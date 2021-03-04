@@ -112,13 +112,18 @@ class Config:
     def _read_config(self, section: str, tag: str, raw: bool = False):
         """Reads the specified section from the configuration file."""
 
-        _parser = SCP()
-        _parser.read(self.path)
-        string = _parser.get(section, tag, raw=raw)
-        try:
-            return int(string)
-        except ValueError:
-            return string
+        for i in range(10):
+            try:
+                _parser = SCP()
+                _parser.read(self.path)
+                string = _parser.get(section, tag, raw=raw)
+                try:
+                    return int(string)
+                except ValueError:
+                    return string
+            except configparser.ParsingError:
+                logging.warning("Config parsing error. Potentially someone else edited config. Retrying")
+                time.sleep(2)
 
     def get_db_creds(self, error=False) -> dict:
         """Returns database credentials from the config file."""
