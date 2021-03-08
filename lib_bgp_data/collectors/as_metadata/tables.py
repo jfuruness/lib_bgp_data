@@ -32,7 +32,7 @@ class ASN_Metadata_Table(Generic_Table):
 
     name = "asn_metadata"
     columns = ["asn",
-               "prefix",
+               "ip",
                "continent",
                "country",
                "most_specific_subdiv",
@@ -45,7 +45,7 @@ class ASN_Metadata_Table(Generic_Table):
 
         sql = f"""CREATE UNLOGGED TABLE IF NOT EXISTS {self.name} (
               asn bigint,
-              prefix cidr,
+              ip cidr,
               continent char(2),
               country char(2),
               most_specific_subdiv varchar(3),
