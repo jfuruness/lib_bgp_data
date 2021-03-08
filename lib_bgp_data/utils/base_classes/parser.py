@@ -77,7 +77,7 @@ class Parser:
         self.csv_dir = kwargs.get("csv_dir", f"/dev/shm/{self.name}")
 
         # IS THIS AN APPROPRIATE LOCATION TO STORE BACKUPS???
-        self.backup_dir = kwargs.get("backup_dir", f"/dev/shm/{self.name}_backups")
+        self.backup_dir = kwargs.get("backup_dir", f"/data/{self.name}_backups")
 
         # If parser can be backed up, make sure it has tables class attribute
         if self.backup is True:
