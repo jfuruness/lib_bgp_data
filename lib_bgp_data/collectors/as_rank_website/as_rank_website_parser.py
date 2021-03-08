@@ -51,6 +51,7 @@ class AS_Rank_Website_Parser(Parser):
 
         # If running lots in parallel, does this so as not to DOS asrank
         if random_delay:
+            print("Sleeping for ~1min")
             time.sleep(random.random() * 20)
 
         ### Sequential ###
