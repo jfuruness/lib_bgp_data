@@ -407,4 +407,4 @@ def add_cronjob(name, time, executable, overwrite=False):
     """Creates a cronjob of name, that runs executable at (cron) time."""
     cronjob = f'/etc/cron.d/{name}'
     if not os.path.exists(cronjob) or overwrite:
-        run_cmds(f'sudo echo "{time} root {executable}" > {cronjob}')
+        run_cmds(f'echo "{time} root {executable}" > {cronjob}')
