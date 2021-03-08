@@ -59,6 +59,7 @@ class ASN_Lookup(Parser):
             assert type(asn) is int, "asn kwarg must be an integer"
             asns = [asn]
         else:
+            assert type(input_table) is str, "input_table kwarg must be a string"
             with Database() as db:
                 sql = f"SELECT asn FROM {input_table};"
                 asns = [row['asn'] for row in db.execute(sql)]
@@ -130,7 +131,8 @@ class ASN_Lookup(Parser):
 
         cmds = ['add-apt-repository ppa:maxmind/ppa',
                 'apt update',
-                'apt install geoipupdate']
+                'apt install geoipupdate',
+                'geoipupdate']
 
         utils.run_cmds(cmds)
 
