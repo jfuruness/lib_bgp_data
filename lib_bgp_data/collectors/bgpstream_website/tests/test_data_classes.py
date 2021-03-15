@@ -20,7 +20,8 @@ from ..tables import Hijacks_Table, Leaks_Table, Outages_Table
 from ..event_types import BGPStream_Website_Event_Types
 from itertools import combinations
 from .create_HTML import HTML_Creator
-from .test_tables import Test_Hijacks_Table, Test_Leaks_Table, Test_Outages_Table
+# Importing actually runs the tests
+#from .test_tables import Test_Hijacks_Table, Test_Leaks_Table, Test_Outages_Table
 
 
 class Test_Data:
@@ -58,7 +59,6 @@ class Test_Data:
             return ['as_name', 'as_number',
                     'number_prefixes_affected', 'percent_prefixes_affected']
 
-
     def test_append(self, setup):
         """Tests the append function
 
@@ -72,11 +72,15 @@ class Test_Data:
             with patch('lib_bgp_data.utils.utils.get_tags') as mock:
                 mock.side_effect = setup.open_custom_HTML
                 data.append(event['row'])
-    
-            # start = -1 because id column is excluded
-            for i, column in enumerate(data._columns, -1):
-                if column != 'id':
-                    assert data.data[0][i] == event[column]
+
+            # Columns are retrieved from the Postgres table columns
+            # which has an 'id' column used as the primary key.
+            # Not part of row data, so must be removed 
+            cols = data._columns
+            cols.remove('id')
+ 
+            for i, c in enumerate(cols):
+                assert data.data[0][i] == event[c]
 
     def test_db_insert(self, setup):
         """Tests the db_insert function
@@ -93,26 +97,24 @@ class Test_Data:
                 mock.side_effect = setup.open_custom_HTML                
                 data.append(event['row']) 
 
-            type_ = event['event_type']
-            if type_ == BGPStream_Website_Event_Types.HIJACK.value:
-                 test_table = Test_Hijacks_Table()
-            if type_ == BGPStream_Website_Event_Types.LEAK.value:
-                test_table = Test_Leaks_Table()
-            if type_ == BGPStream_Website_Event_Types.OUTAGE.value:
-                test_table = Test_Outages_Table()
+            with data.table() as t:
+                for IPV4, IPV6 in combinations([True, False], 2):
+                    data.db_insert(IPV4, IPV6)
+                    
+                    # db_insert creates indexes
+                    sql = f"""SELECT * FROM pg_indexes
+                              WHERE indexname = '{t.name}_index'"""
+                    assert len(t.execute(sql)) == 1
 
-            for IPV4, IPV6 in combinations([True, False], 2):
-                data.db_insert(IPV4, IPV6)
-                
-                # db_insert calls functions from tables
-                test_table.test_create_index()
-                test_table.test_delete_duplicates()
+                    # db_insert deletes duplicates
+                    sql = f"SELECT DISTINCT * FROM {t.name}"
+                    assert t.get_all() == t.execute(sql) 
 
-                # checks that IPV filtering was successful
-                for IPV, num in zip([IPV4, IPV6], [4, 6]):
-                    with data.table() as t:
-                        if not IPV and type_ != BGPStream_Website_Event_Types.OUTAGE.value:
-                            sql = f"""SELECT COUNT({t.prefix_column}) FROM {t.name}
+                    # check IPV filtering was successful
+                    for IPV, num in zip([IPV4, IPV6], [4, 6]):
+                        if not IPV and event['event_type'] != BGPStream_Website_Event_Types.OUTAGE.value:
+                            sql = f"""SELECT COUNT({t.prefix_column})
+                                      FROM {t.name}
                                       WHERE family({t.prefix_column}) = {num}"""
                             assert t.get_count(sql) == 0
  

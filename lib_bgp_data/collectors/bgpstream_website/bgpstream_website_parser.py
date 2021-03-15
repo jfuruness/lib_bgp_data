@@ -33,7 +33,7 @@ class BGPStream_Website_Parser(Parser):
     For a more in depth explanation, read the top of the file.
     """
 
-    __slots__ = ['_data']
+    __slots__ = ['_data', 'name']
 
     def _run(self,
              row_limit: int = None,

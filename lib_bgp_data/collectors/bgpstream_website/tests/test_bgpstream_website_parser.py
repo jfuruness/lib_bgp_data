@@ -66,14 +66,13 @@ def row_count():
             count += t.get_count()
     return count
 
-@pytest.fixture
-def parser():
-    return BGPStream_Website_Parser()
-
-
 @pytest.mark.bgpstream_website_parser
 class Test_BGPStream_Website_Parser:
     """Tests all local functions within the BGPStream_Website_Parser class."""
+
+    @pytest.fixture
+    def parser(self):
+        return BGPStream_Website_Parser()
 
     @pytest.mark.slow(reason="Runs the parser many times. Will take hours.")
     @pytest.mark.parametrize('custom, row_limit, IPV4, IPV6, combination', generate_params())

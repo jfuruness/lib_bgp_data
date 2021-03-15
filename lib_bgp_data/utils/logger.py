@@ -21,8 +21,8 @@ import multiprocessing_logging
 def config_logging(level=logging.INFO, section=None, reconfigure=False):
     """Configures logging to log to a file"""
 
-
-    if len(logging.root.handlers) != 2 or reconfigure:
+    # should have 2 MultiprocessingHandlers and 1 LogCaptureHandler
+    if len(logging.root.handlers) == 0 or reconfigure:
         if reconfigure:
             # Must remove handlers here, or else it will leave them open
             for handler in logging.root.handlers[:]:
