@@ -85,14 +85,14 @@ class Postgres:
             string.ascii_letters + string.digits) for _ in range(24))
 
         #TODO: Holy s h i t, do NOT RUN THIS UNTIL JUSTIN/GRAD LOOKS AT THIS
-        """if large_db:
+        if large_db:
             self.erase_all()
-        """ 
+         
         Config(section).create_config(password)
         self._create_database(section, password)
         self._modify_database(section)
-        """if restart:
-            self.restart_postgres()"""
+        if restart:
+            self.restart_postgres()
 
     # Must delete postgres history after setting password
     @utils.delete_files("/var/lib/postgresql.psql_history")
@@ -129,8 +129,6 @@ class Postgres:
         """
 
         ram = Config(section).ram
-        print('Ram in postgres.py: ' + str(ram) + ' for section ' + section)
-        print('Expected shared in postgres: ' + str(.4*ram))
         random_page_cost, ulimit = self._get_ulimit_random_page_cost()
         cpus = cpu_count() - 1
         sqls = ["CREATE EXTENSION btree_gist;",
