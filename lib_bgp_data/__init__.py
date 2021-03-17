@@ -17,6 +17,7 @@ import os
 
 # Collectors
 from .collectors import AS_Rank_Website_Parser
+from .collectors import ASN_Lookup
 from .collectors import BGPStream_Website_Parser
 from .collectors.bgpstream_website import BGPStream_Website_Event_Types as BGPStream_Types
 from .collectors import Blacklist_Parser
