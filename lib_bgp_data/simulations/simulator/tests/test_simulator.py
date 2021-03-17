@@ -31,6 +31,10 @@ from ....collectors.as_rank_website.tables import AS_Rank_Table
 from ....collectors.relationships.tables import ASes_Table
 
 
+
+# TODO: remove all the exr_bash kwargs. Other than the one test that calls for
+# it, it should be left as the default
+
 @pytest.mark.simulator
 class Test_Simulator:
     """Tests all functionality that the simulator class offers."""
@@ -39,6 +43,8 @@ class Test_Simulator:
         """Gets base data for  the tests
         ideally this will save time if you're running all the tests.
         """
+
+        #TODO: Change this to the redownload base data function of the simulator
         Relationships_Parser()._run()
         AS_Rank_Website_Parser()._run()
 
@@ -51,6 +57,7 @@ class Test_Simulator:
         exr_bash = self.prep_exr()
         Simulator()._run(redownload_base_data=True, exr_bash=exr_bash)
 
+    # TODO: Complete this function
     def test_exr_bash(self, capsys):
         """Tests _run function with a different exr_bash
 
@@ -93,6 +100,8 @@ class Test_Simulator:
 
         exr_bash = self.prep_exr()
 
+        # TODO: fix this test. It should jump directly to trial two, and make sure it's the same in both cases
+        # TODO: The current test doesn't check that they are the same for that trial
         with Simulation_Results_Table() as table:
             Simulator()._run(deterministic=True, redownload_base_data=False, exr_bash=exr_bash, seeded_trial=2)
             run_one = table.get_all()
@@ -107,8 +116,10 @@ class Test_Simulator:
 
         percents should be 1, 50, 90. Trials should be 2
         """
+
         exr_bash = self.prep_exr()
         percents = [1, 50, 90]
+        # TODO: Don't use a for loop, use the trials kwarg
         for i in range(0, 2):
             Simulator().run(attack_types=Attack.runnable_attacks,
                             adopt_policies=list(Non_Default_Policies.__members__.values()),
@@ -119,6 +130,8 @@ class Test_Simulator:
         """Test with percents as [1, 25, 50, 75, 100] for 4 trials"""
         exr_bash = self.prep_exr()
         percents = [1, 25, 50, 75, 100]
+
+        # TODO: Don't use a for loop, use the trials kwarg
         for i in range(0, 4):
             Simulator()._run(percents=percents, exr_bash=exr_bash)
 
@@ -146,6 +159,8 @@ class Test_Simulator:
 
         Make sure the total is as expected for a small test case
         """
+
+        # TODO: name kwargs. What do all these Falses and Trues represent?
         parser = Simulator()
         tables = Subtables([1], False, False, False)
         tables.fill_tables()
@@ -160,6 +175,7 @@ class Test_Simulator:
     ##################
     #Helper functions#
     ##################
+    # TODO: Remove this func. Only the one pytest func that uses exr bash should ever have it changed
     def prep_exr(self):
         cur_db = ''
         with Database() as db:
