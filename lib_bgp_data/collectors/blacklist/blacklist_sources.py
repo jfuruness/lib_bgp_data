@@ -40,16 +40,39 @@ class UCE_Blacklist_IP(Blacklist_Source_IP):
     def parse_file(self, f):
         return set(re.findall(r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}', f.read()))
 
+class UCE_Blacklist_MULTI(Blacklist_Source):
+    def download(self):
+        temp_path = self.path + ".gz"
+        utils.download_file(self.url, temp_path)
+        utils.unzip_gz(temp_path)
+
+    def parse_file(self, f):
+        parsed = []
+        for line in f:
+            line_string = line
+            cidr = re.match(r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/\d{1,3}', line_string)
+            if cidr is not None:
+                cidr = cidr[0]
+            asn = re.findall(r'AS(\d+)', line_string)
+            if cidr is not None and asn is not None and asn != []:
+                asn = asn.pop()
+                parsed.append((asn, cidr))
+        return parsed
+
+    def get_rows(self, parsed):
+        """Returns ASNs and CIDRs for db insertion"""
+        return [[line[0], line[1], self.__class__.__name__] for line in parsed]
+
 class UCE1(UCE_Blacklist_IP):
     url = 'http://41.208.71.58/rbldnsd-all/dnsbl-1.uceprotect.net.gz'
 
-class UCE2(UCE_Blacklist):
+class UCE2(UCE_Blacklist_MULTI):
     url = 'http://72.13.86.154/rbldnsd-all/dnsbl-2.uceprotect.net.gz'
 
 class UCE2_IP(UCE_Blacklist_IP): 
     url = 'http://72.13.86.154/rbldnsd-all/dnsbl-2.uceprotect.net.gz'
 
-class UCE3(UCE_Blacklist):
+class UCE3(UCE_Blacklist_MULTI):
     url = 'http://72.13.86.154/rbldnsd-all/dnsbl-3.uceprotect.net.gz'
 
 class UCE3_IP(UCE_Blacklist_IP):

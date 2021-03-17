@@ -28,9 +28,10 @@ class Test_Blacklist_Parser:
     def setup(self):
         """Parser setup and table deleted before every test"""
         # List of sources:
-        self.lists = ['UCE1', 'UCE2', 'UCE2_IP', 'UCE3', 'UCE3_IP',
-                      'Spamhaus_asndrop', 'Spamhaus_drop',
-                      'Spamhaus_edrop', 'MIT_Blacklist']
+        self.lists = {'UCE1': 'IP', 'UCE2': 'MULTI', 'UCE2_IP': 'IP',
+                      'UCE3': 'MULTI', 'UCE3_IP': 'IP',
+                      'Spamhaus_asndrop': 'ASN', 'Spamhaus_drop': 'CIDR',
+                      'Spamhaus_edrop': 'CIDR', 'MIT_Blacklist': 'ASN'}
         with Database() as _db:
             _db.execute("DROP TABLE IF EXISTS blacklist")
         self.parser = Blacklist_Parser()
@@ -40,7 +41,7 @@ class Test_Blacklist_Parser:
         that there is some content or data."""
         all_data = ''
         self.test_run()
-        for src in self.lists:
+        for src in self.lists.keys():
             with Database() as db:
                 data = db.execute(f"SELECT source FROM blacklist WHERE source = '{src}'")
                 assert data is not None
@@ -51,16 +52,24 @@ class Test_Blacklist_Parser:
     def test_inspect_rows(self):
         """This test makes sure that the blacklists were parsed
         correctly, i.e. each ASN is of format ####### or valid 
-        IPv4 addr"""
+        IPv4 addr or CIDR"""
         all_data = self.test_get_blacklists()
         for row in all_data:
-            if row['prefix'] is None:
+            typ = self.lists[row['source']]
+            if typ == 'ASN':
                 assert type(row['asn']) == int
-            elif row['asn'] is None:
+            elif typ == 'IP':
+                pre_row = row['prefix']
+                assert re.match(r"[0-9]*\.[0-9]*\.[0-9]*\.[0-9]*[^/]", pre_row)
+            elif typ == 'CIDR':
+                pre_row = row['prefix']
+                assert re.match(r"[0-9]*\.[0-9]*\.[0-9]*\.[0-9]*/[0-9]*", pre_row)
+            elif typ == 'MULTI':
+                assert type(row['asn']) == int
                 pre_row = row['prefix']
                 assert re.match(r"[0-9]*\.[0-9]*\.[0-9]*\.[0-9]*/[0-9]*", pre_row)
             else:
-                raise RuntimeError(f"Formatting error in row {row}" )
+                raise RuntimeError(f"Parsed blacklist does not have associated type")
 
     def test_run(self):
         """Test that should make sure that there are no errors"""
