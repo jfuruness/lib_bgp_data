@@ -15,10 +15,12 @@ __status__ = "Development"
 
 
 import pytest
-
+import time
 from ..simulator import Simulator
 from ..simulator import Simulation_Results_Table
 from ..attacks.attack import Attack
+from ..data_point_info import Data_Point
+from ..subtables import Subtables
 from ...enums import Non_Default_Policies
 from ....utils import utils
 from ....utils.database import Database
@@ -28,14 +30,14 @@ from ....collectors.as_rank_website.as_rank_website_parser import AS_Rank_Websit
 from ....collectors.as_rank_website.tables import AS_Rank_Table
 from ....collectors.relationships.tables import ASes_Table
 
+
 @pytest.mark.simulator
 class Test_Simulator:
     """Tests all functionality that the simulator class offers."""
 
     def setup(self):
-        """Should clear out the entire database every time
-
-        Perhaps use the postgres/database convenience funcs for this?
+        """Gets base data for  the tests
+        ideally this will save time if you're running all the tests.
         """
         Relationships_Parser()._run()
         AS_Rank_Website_Parser()._run()
@@ -49,19 +51,23 @@ class Test_Simulator:
         exr_bash = self.prep_exr()
         Simulator()._run(redownload_base_data=True, exr_bash=exr_bash)
 
-    def test_exr_bash(self):
+    def test_exr_bash(self, capsys):
         """Tests _run function with a different exr_bash
 
         Should test that exr_bash changes the running of the exr
         probably just echo something
         """
         #TODO: Just use echo, try to capture stdout, confirm it works
-        # May error with echo, use try/catch
-        #Simulator._run(
-        # OK, so ext_bash seems to affect a datapoint in data_point.py, which in get_data will use exr_bash in Parser.run
-        # (see line 83)
-        # But I don't have any further information beyond that, what am I working with here?
-        pass
+        #from sys import stderr
+        #TODO: I can't get this to work really...but considering the rest of the tests, is this even necessary?
+        exr_bash = self.prep_exr()
+        exr_bash = exr_bash + ' -r testing_exr_bash_now'
+        print(exr_bash)
+        time.sleep(5)
+        Simulator()._run(deterministic=True, redownload_base_data=False, exr_bash=exr_bash)
+        #captured = capsys.readouterr()
+        #assert 'testing_exr_bash_now' in captured
+
 
     def test_deterministic(self):
         """Tests deterministic trials
@@ -71,7 +77,7 @@ class Test_Simulator:
 
         exr_bash = self.prep_exr()
         # Copy table, run again, compare copies?
-        with Simulation_Results_Table() as table:                
+        with Simulation_Results_Table() as table:
             Simulator()._run(deterministic=True, redownload_base_data=False, exr_bash=exr_bash)
             run_one = table.get_all()
             table.clear_table()
@@ -85,9 +91,16 @@ class Test_Simulator:
         Should jump to the trial displayed in the deterministic trial
         """
 
-        # Not sure how to use the seeded arg here, either
-        # TODO: Should jump to a trial in deterministic
-        pass
+        exr_bash = self.prep_exr()
+
+        with Simulation_Results_Table() as table:
+            Simulator()._run(deterministic=True, redownload_base_data=False, exr_bash=exr_bash, seeded_trial=2)
+            run_one = table.get_all()
+            table.clear_table()
+            Simulator()._run(deterministic=True, redownload_base_data=False, exr_bash=exr_bash)
+            run_two = table.get_all()
+            assert run_one != run_two
+
 
     def test_all_scenarios(self):
         """Tests running of all attack types and adopt policies
@@ -133,7 +146,16 @@ class Test_Simulator:
 
         Make sure the total is as expected for a small test case
         """
-        return 0
+        parser = Simulator()
+        tables = Subtables([1], False, False, False)
+        tables.fill_tables()
+        data = [Data_Point(tables, i, percent, parser.csv_dir, True)
+                for i, percent in enumerate([1])]
+        total = parser._total(data, Attack.runnable_attacks, [1],
+                              list(Non_Default_Policies.__members__.values()),
+                              2, [None], [None], [None], [None], [None])
+        print(total)
+        assert total == 624
 
     ##################
     #Helper functions#
