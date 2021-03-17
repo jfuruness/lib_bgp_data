@@ -20,7 +20,7 @@ import pytest
 import os
 from .test_mrt_file import Test_MRT_File
 from ..mrt_installer import MRT_Installer
-from ...utils import utils
+from .....utils import utils
 
 
 @pytest.mark.mrt_parser

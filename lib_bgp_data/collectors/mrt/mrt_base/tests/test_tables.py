@@ -10,7 +10,7 @@ from psycopg2.errors import UndefinedTable
 import pytest
 
 from ..tables import MRT_Announcements_Table
-from ...utils.database import Generic_Table_Test
+from .....utils.database import Generic_Table_Test
 
 __author__ = "Justin Furuness", "Matt Jaccino"
 __credits__ = ["Justin Furuness", "Matt Jaccino"]
