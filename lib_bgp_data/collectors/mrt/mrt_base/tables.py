@@ -44,9 +44,9 @@ class MRT_Announcements_Table(Generic_Table):
         """
 
         sql = f"""CREATE UNLOGGED TABLE IF NOT EXISTS {self.name} (
-                 prefix cidr,
+                 prefix INET,
                  as_path bigint ARRAY,
-                 origin bigint,
-                 time bigint
+                 origin BIGINT,
+                 time BIGINT
                  );"""
         self.execute(sql)

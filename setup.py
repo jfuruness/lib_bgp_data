@@ -57,6 +57,7 @@ setup(
         'multiprocessing_logging',
         'selenium>=3.141.0',
         'tikzplotlib',
+        'geoip2',
     ],
     classifiers=[
         'Environment :: Console',
