@@ -85,7 +85,6 @@ class MRT_Installer:
                 "sudo apt-get -y install libbz2-dev",
                 "sudo apt-get -y install liblzma-dev",
                 "sudo apt-get -y install liblz4-dev",
-                #"pip3 install --user meson",
                 "pip3 install meson",
                 "sudo apt-get -y install cmake"]
         utils.run_cmds(cmds)
@@ -135,11 +134,11 @@ class MRT_Installer:
         # We want to keep these because they are included in the monitors
         # Announcements, so they clearly are propogated throughout the
         # internet.
-        #path = "bgpscanner/src/mrtdataread.c"
-        #prepend = '                if ('
-        #replace = 'rib->peer->as_size == sizeof(uint32_t))'
-        #replace_with = 'true)'
-        #utils.replace_line(path, prepend, replace, replace_with)
+        path = "bgpscanner/src/mrtdataread.c"
+        prepend = '                if ('
+        replace = 'rib->peer->as_size == sizeof(uint32_t))'
+        replace_with = 'true)'
+        utils.replace_line(path, prepend, replace, replace_with)
 
     def _build_bgpscanner(self):
         """Builds bgpscanner.

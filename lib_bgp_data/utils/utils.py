@@ -166,12 +166,8 @@ def download_file(url: str,
 
     while retries > 0:
         try:
-            import ssl
-            ctx = ssl.create_default_context()
-            ctx.check_hostname = False
-            ctx.verify_mode = ssl.CERT_NONE
             # Code for downloading files off of the internet
-            with urllib.request.urlopen(url, context=ctx, timeout=60)\
+            with urllib.request.urlopen(url, timeout=60)\
                     as response, open(path, 'wb') as out_file:
                 # Copy the file into the specified file_path
                 shutil.copyfileobj(response, out_file)
@@ -322,6 +318,7 @@ def rows_to_db(rows: list, csv_path: str, Table, clear_table=True):
 def get_tags(url: str, tag: str):
     """Gets the html of a given url, and returns a list of tags"""
 
+    # SHOULD NOT HAVE NO VERIFY BUT ISOLARIO GIVING SSL ERRORS
     response = requests.get(url, verify=False)
     # Raises an exception if there was an error
     response.raise_for_status()
