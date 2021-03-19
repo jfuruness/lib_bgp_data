@@ -15,6 +15,7 @@ __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
 import logging
+from time import sleep
 
 from .rpki_validator_wrapper import RPKI_Validator_Wrapper
 from .tables import ROV_Validity_Table, Unique_Prefix_Origins_Table
@@ -33,7 +34,7 @@ class RPKI_Validator_Parser(Parser):
     wrapper. It's possible that later someone else will want to use it.
     """
 
-    def _run(self, table: str = MRT_Announcements_Table.name):
+    def _run(self, table: str = MRT_Announcements_Table.name, wait=False):
         """Downloads and stores roas from a json"""
 
         with RPKI_Validator_Wrapper(table_input=table) as _rpki_validator:
@@ -42,8 +43,8 @@ class RPKI_Validator_Parser(Parser):
             # Writes validator to database
             logging.debug("validator load completed")
 
-            from time import sleep
-            sleep(1800)
+            if wait:
+                sleep(3600)
 
             rpki_data = _rpki_validator.get_validity_data()
             utils.rows_to_db([self._format_asn_dict(x) for x in rpki_data],
