@@ -15,11 +15,11 @@ __status__ = "Development"
 import pytest
 
 from ....utils.database import Generic_Table_Test
-from ..tables import ASRankTable
+from ..tables import AS_Rank_Table
 
 
 @pytest.mark.asrank_website_parser
-class TestASRankTable(Generic_Table_Test):
-    """Tests all functions within the ASRankWebsiteParser class."""
+class Test_AS_Rank_Table(Generic_Table_Test):
+    """Tests AS_Rank_Table."""
 
-    table_class = ASRankTable
+    table_class = AS_Rank_Table

@@ -70,7 +70,7 @@ class Input_Subtable:
         self.Input_Table.clear_table()
         self.Input_Table.fill_table(names)
         self.Input_Table.set_adopting_ases(self.percents[iteration_num],
-                                           attack.attacker, random_seed)
+                                           attack, random_seed)
 
     def change_routing_policies(self, policy):
         """Changes routing policies of the subtable"""

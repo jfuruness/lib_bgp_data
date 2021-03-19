@@ -15,7 +15,7 @@ __status__ = "Development"
 from urllib3.exceptions import MaxRetryError
 import pytest
 
-from ..sel_driver import SeleniumDriver
+from ..sel_driver import Selenium_Driver
 
 
 def driver_is_closed(driver):
@@ -39,8 +39,8 @@ class TestSeleniumDriver:
     def test_init_driver(self):
         """Tests producing creating a headless selenium driver."""
 
-        driver = SeleniumDriver.init_driver()
-        assert driver is not None
+        with Selenium_Driver() as sel_driver:
+            assert sel_driver._driver is not None
 
     def test_get_page(self):
         """Tests getting the dynamic html of a url.
@@ -52,12 +52,14 @@ class TestSeleniumDriver:
         url = 'https://asrank.caida.org'
         timeout = 20
         dynamic_class = 'asrank-row-org'
-        soup = SeleniumDriver().get_page(url, timeout, dynamic_class)
+        soup = Selenium_Driver().get_page(url,
+                                          timeout=timeout,
+                                          dynamic_class_name=dynamic_class)
         assert soup.find_all("td", {'class': dynamic_class}) != []
 
     def test_close(self):
         """Test if the driver instance correctly closes."""
 
-        driver = SeleniumDriver()
+        driver = Selenium_Driver()
         driver.close()
         assert driver_is_closed(driver._driver)

@@ -29,7 +29,6 @@ class Test_Parser:
         Make sure that all inherited classes are in the parsers list.
         """
 
-    @pytest.mark.skip(reason="New hire work")
     def test__innit__(self):
         """Tests init function.
 
@@ -92,7 +91,6 @@ class Test_Parser:
         Make's sure that dirs are cleaned out. Don't worry about the time.
         """
 
-    @pytest.mark.skip(reason="New hire work")
     def test_argparse_call(self):
         """Tests argparse call method.
 

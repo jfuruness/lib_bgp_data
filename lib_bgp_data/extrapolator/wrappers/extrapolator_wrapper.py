@@ -23,6 +23,7 @@ from ...collectors.relationships.tables import Peers_Table
 from ...collectors.relationships.tables import Provider_Customers_Table
 from ...utils.base_classes import Parser
 from ...utils.database import Database
+from ...utils.database import config
 from ...utils import utils
 
 
@@ -54,7 +55,8 @@ class Extrapolator_Wrapper(Parser):
         default_bash_args = (f"{self.install_location}"
                              f" -a {input_table}"
                              f" -r {Extrapolator.default_results_table}"
-                             f" -d {Extrapolator.default_depref_table}")
+                             f" -d {Extrapolator.default_depref_table}"
+                             f" --config-section={config.global_section_header}")
         utils.run_cmds(bash_args if bash_args else default_bash_args)
 
     def _input_validation(self, input_tables: list):

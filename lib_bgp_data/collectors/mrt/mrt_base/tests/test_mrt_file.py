@@ -14,8 +14,8 @@ from .expected_output import Expected_Output
 from ..mrt_file import MRT_File
 from ..mrt_parser import MRT_Parser
 from ..tables import MRT_Announcements_Table
-from ...utils.database import Database
-from ...utils import utils
+from .....utils.database import Database
+from .....utils import utils
 
 __authors__ = ["Matt Jaccino", "Justin Furuness", "Nicholas Shpetner"]
 __credits__ = ["Matt Jaccino", "Justin Furuness"]

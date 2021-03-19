@@ -45,7 +45,7 @@ class Verification_Parser(Parser):
              as_rank=True,
              sample_selection=True,
              dataset_stats=True,
-             block_size=100,
+             block_size=50000,
              verification=True,
              ):
         if clear_db and not test:
