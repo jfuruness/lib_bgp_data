@@ -51,7 +51,7 @@ class Simulation_Extrapolator_Forwarding_Table(Generic_Table):
     def name(self):
         return "simulation_extrapolator_forwarding_round_{}".format(self.round_num)
 
-    def fill_table(self, attack_type):
+    def fill_table(self):
         """Creates tables if they do not exist.
 
         Called during initialization of the database class.
