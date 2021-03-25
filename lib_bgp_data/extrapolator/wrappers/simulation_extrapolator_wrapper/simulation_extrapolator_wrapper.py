@@ -99,7 +99,7 @@ class Simulation_Extrapolator_Wrapper(Extrapolator_Wrapper):
             with Simulation_Extrapolator_Forwarding_Table(clear=True,
                                                           round_num=_round) as _db:
                 logging.debug("Extrapolation complete, writing ribs out tables")
-                _db.fill_table()
+                _db.fill_table(attack)
                 _db.execute(f"ANALYZE {_db.name}")
 
     def _run_test(self, db):
