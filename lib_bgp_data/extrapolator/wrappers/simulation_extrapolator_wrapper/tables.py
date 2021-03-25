@@ -34,7 +34,7 @@ class Simulation_Extrapolator_Forwarding_Table(Generic_Table):
 
     name = "simulation_extrapolator_forwarding"
 
-    def fill_table(self, attack_type):
+    def fill_table(self):
         """Creates tables if they do not exist.
 
         Called during initialization of the database class.

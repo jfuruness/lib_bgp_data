@@ -82,6 +82,8 @@ class Output_Subtable:
         conds = {x: {y: 0 for y in AS_Types.list_values()}
                  for x in Data_Plane_Conditions.list_values()}
 
+        print(conds)
+
         # For all the ases in the subtable
         for og_asn, og_as_data in subtable_ases.items():
             asn, as_data = og_asn, og_as_data
