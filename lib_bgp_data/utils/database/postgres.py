@@ -129,7 +129,7 @@ class Postgres:
         """
 
         ram = Config(section).ram
-        random_page_cost, ulimit = self._get_ulimit_random_page_cost()
+        ulimit, random_page_cost = self._get_ulimit_random_page_cost()
         cpus = cpu_count() - 1
         sqls = ["CREATE EXTENSION btree_gist;",
                 f"ALTER DATABASE {section} SET timezone TO 'UTC';",
@@ -296,6 +296,7 @@ class Postgres:
         if "PYTEST_CURRENT_TEST" in os.environ:
                 random_page_cost = float(1)
                 ulimit = 8192
+                print('in test')
         # Otherwise get from user
         else:
             usr_input = input("If SSD, enter 1 or enter, else enter 2: ")
