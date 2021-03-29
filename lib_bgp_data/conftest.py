@@ -4,6 +4,7 @@
 """This file sets a pytest variable so that the logger doesn't exit nicely"""
 
 import pytest
+import sys
 from subprocess import run, check_call
 from datetime import datetime
 from .utils.database import config 
@@ -28,7 +29,7 @@ def pytest_runtest_setup():
 
     # Underscores are like the only character I can use here that SQL allows
     section = test_prepend() + datetime.now().strftime(test_db_fmt())
-    large_db = pytest.config.getoption('--large_db')
+    large_db = get_large_db()
     print(large_db)
     config.Config(section).install(large_db=large_db, restart=large_db)
  
@@ -59,6 +60,12 @@ def pytest_addoption(parser):
     parser.addoption('--large_db', action='store_true',
                                    default=False,
                                    help='Set pytest to drop databases, restart, install max database')
+
+def get_large_db():
+    for arg in sys.argv:
+        if '--large_db' == arg:
+            return True
+    return False
 
 def test_db_fmt():
     return '%Y_%m_%d_%H_%M_%S'
