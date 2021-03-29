@@ -89,9 +89,9 @@ class Simulation_Extrapolator_Wrapper(Extrapolator_Wrapper):
 
         for _round in range(1, rounds + 1):
             with Simulation_Extrapolator_Results_Table(round_num=_round) as db:
+                self._run_test(db)
                 try:
                     assert db.get_count() > 0
-                    self._run_test(db)
                 except (AssertionError, psycopg2.errors.UndefinedTable):
                     raise Exception("Extrapolator didn't populate")
 
