@@ -53,9 +53,7 @@ class Verification_Parser(Parser):
         if relationships:
             Relationships_Parser(**self.kwargs)._run()
         if mrt_announcements:
-            kwargs = {"sources": [MRT_Sources.RIPE, MRT_Sources.ROUTE_VIEWS],
-                      "IPV4": True,
-                      "IPV6": False}
+            kwargs = {"sources": [MRT_Sources.RIPE, MRT_Sources.ROUTE_VIEWS]}
             if test:
                 kwargs["api_param_mods"] = {"collectors[]": ["route-views2"]}
             MRT_Parser(**self.kwargs)._run(**kwargs)
