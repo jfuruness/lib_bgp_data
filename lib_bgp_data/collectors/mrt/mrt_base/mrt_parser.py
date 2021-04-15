@@ -146,7 +146,7 @@ class MRT_Parser(Parser):
         URL = 'https://bgpstream.caida.org/broker/data'
         # Request for data and conversion to json
         logging.debug(requests.get(url=URL, params=PARAMS).url)
-        data = requests.get(url=URL, params=PARAMS).json()
+        data = requests.get(url=URL, params=PARAMS, verify=False).json()
 
         # Returns the urls from the json
         return [x.get('url') for x in data.get('data').get('dumpFiles')]

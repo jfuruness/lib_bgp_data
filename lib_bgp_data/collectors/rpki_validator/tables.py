@@ -73,6 +73,6 @@ class ROV_Validity_Table(Generic_Table):
     def _create_tables(self):
         sql = """CREATE UNLOGGED TABLE IF NOT EXISTS rov_validity (
                  origin bigint,
-                 prefix cidr,
+                 prefix inet,
                  validity smallint);"""
         self.execute(sql)
