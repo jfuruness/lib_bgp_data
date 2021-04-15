@@ -71,11 +71,14 @@ def remove_list_format(l):
 
 class HTML_Creator:
 
-    bgpstream_url = 'https://bgpstream.com'
-    html_dir = os.path.dirname(os.path.realpath(__file__))
-    html_dir = os.path.join(html_dir, "test_HTML")
-    url_to_file = {bgpstream_url: html_dir + 'page.html'}
-    events = []
+    def __init__(self, path):
+        """arg path -- a pytest temporary directory, passed from conftest.py"""
+        self.bgpstream_url = 'https://bgpstream.com'
+        self.html_dir = path
+        # maps urls to paths where HTML is written
+        self.url_to_file = {self.bgpstream_url: self.html_dir + 'page.html'}
+        # list of all events created
+        self.events = []
 
     def get_event_tag(self, event):
         response = requests.get(self.bgpstream_url)
