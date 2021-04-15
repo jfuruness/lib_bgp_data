@@ -49,7 +49,7 @@ class ASN_Metadata_Table(Generic_Table):
               continent char(2),
               country char(2),
               most_specific_subdiv varchar(3),
-              city varchar(20),
+              city varchar(50),
               latitude real,
               longitude real
               ) ;"""
