@@ -33,7 +33,7 @@ class Monitors_Table(Generic_Table):
 
     def fill_table(self):
         logging.info("Getting Monitors and their statistics, ~37m")
-        with ASRankTable() as db:
+        with AS_Rank_Table() as db:
             largest_as_rank_plus_one = db.get_count() + 1
         # Yes, this takes a long time.
         # And if we were just taking best monitors, I'd agree it could be faster
@@ -64,9 +64,9 @@ class Monitors_Table(Generic_Table):
                     ON
                         distinct_prefixes.monitor_asn = total_anns.monitor_asn
                 LEFT JOIN
-                    {ASRankTable.name}
+                    {AS_Rank_Table.name} asrank
                 ON
-                    asrank.as_number = distinct_prefixes.monitor_asn
+                    asrank.asn = distinct_prefixes.monitor_asn
             );"""
         self.execute(sql)
 

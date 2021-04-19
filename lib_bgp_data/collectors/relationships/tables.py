@@ -156,10 +156,16 @@ class AS_Connectivity_Table(Generic_Table):
               as_connectivity AS (
               SELECT ases.asn AS asn,
               COALESCE(cp.connectivity, 0) +
+              COALESCE(pc.connectivity, 0) +
                 COALESCE(p1.connectivity, 0) +
                 COALESCE(p2.connectivity, 0)
                   AS connectivity
               FROM ases
+              LEFT JOIN (SELECT cp.customer_as AS asn,
+                         COUNT(cp.customer_as) AS connectivity
+                         FROM provider_customers cp
+                         GROUP BY cp.customer_as) pc
+              ON ases.asn = pc.asn
               LEFT JOIN (SELECT cp.provider_as AS asn,
                          COUNT(cp.provider_as) AS connectivity
                          FROM provider_customers cp

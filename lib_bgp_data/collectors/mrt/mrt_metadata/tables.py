@@ -395,7 +395,7 @@ class MRT_W_Metadata_Table(Generic_Table):
                        pom.block_id,
                        pom.roa_validity,
                        pom.block_prefix_id,
-                       NULL AS origin_hijack_asn,--,
+                       NULL AS origin_hijack_asn--,
                        --pom.block_origin_id,
                        --pom.block_prefix_group_id,
                        --pom.block_prefix_origin_id

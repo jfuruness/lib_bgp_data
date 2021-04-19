@@ -155,7 +155,7 @@ class Simulator(Parser):
         # Gets relationships table
         Relationships_Parser(**self.kwargs)._run()
         # Get as rank data
-        AS_Rank_Website_Parser().run(random_delay=True
+        AS_Rank_Website_Parser()._run(random_delay=True
 )
         # Index to speed up Top_100_ASes_Table.fill_table
         # The following indexes were considered:
