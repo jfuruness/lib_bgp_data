@@ -318,7 +318,8 @@ def rows_to_db(rows: list, csv_path: str, Table, clear_table=True):
 def get_tags(url: str, tag: str):
     """Gets the html of a given url, and returns a list of tags"""
 
-    response = requests.get(url)
+    # SHOULD NOT HAVE NO VERIFY BUT ISOLARIO GIVING SSL ERRORS
+    response = requests.get(url, verify=False)
     # Raises an exception if there was an error
     response.raise_for_status()
     # Get all tags within the beautiful soup from the html and return them

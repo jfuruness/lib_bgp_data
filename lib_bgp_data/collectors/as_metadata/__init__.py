@@ -1,4 +1,4 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from .asn_lookup import ASN_Lookup
+from .as_metadata import ASN_Lookup

@@ -15,6 +15,7 @@ from ..tables import ROV_Validity_Table
 from ...mrt.mrt_base import MRT_Parser, MRT_Sources
 from ...mrt.mrt_base.tables import MRT_Announcements_Table
 from ....utils import utils
+from ....utils.base_classes import ROA_Validity as Val
 
 
 __authors__ = ["Justin Furuness, Tony Zheng"]
@@ -43,12 +44,22 @@ class Test_RPKI_Validator_Parser:
         """
         
         with ROV_Validity_Table() as db:
-            RPKI_Validator_Parser()._run(table=test_table)
-            sql_val = f'SELECT validity FROM rov_validity WHERE origin = 0'
-            sql_inval = f'SELECT validity FROM rov_validity WHERE origin = 1'
 
-            assert db.execute(sql_val)[0]['validity'] == 1
-            assert db.execute(sql_inval)[0]['validity'] == -2
+            def _get_val_for_origin(origin):
+                sql = f"""SELECT validity FROM {db.name}
+                          WHERE origin = {origin};"""
+                return db.execute(sql)[0]['validity']
+
+            # see conftest.py in this dir for test_table details
+            RPKI_Validator_Parser()._run(table=test_table)
+
+            # sometimes unknown validity status is returned by the API
+            # and it doesn't get the correct one unless waited on
+            valid = _get_val_for_origin(0)
+            assert valid == Val.VALID.value or valid == Val.UNKNOWN.value
+
+            invalid = _get_val_for_origin(1)
+            assert invalid == Val.INVALID_BY_ORIGIN.value or invalid == Val.UNKNOWN.value
 
     def test__format_asn_dict(self, parser):
         """Tests the format asn_dict function
@@ -58,56 +69,44 @@ class Test_RPKI_Validator_Parser:
             d = {'asn': 'AS198051', 'prefix': '1.2.0.0/16', 'validity': key}
             assert parser._format_asn_dict(d) == [198051, '1.2.0.0/16', value]
 
+    @pytest.mark.xfail(strict=True)
     @pytest.mark.slow
     def test_comprehensive_system(self):
         """Tests the entire system on the MRT announcements.
 
-        Assert that there are no mrt announcments missing.
-        # The API returns incomplete data. The following 
-        # origins paired with a prefix of 0.0.0.0/0
-        # don't show up:
-        # 2914, 3257, 3356, 6830, 9002, 30781, 33891
-        NOTE: It's possible RPKI Validator removes duplicates
-        of prefix origin pairs. Check for this.
+        Test is expected to fail. RPKI Validator does not
+        have data on all prefix-origin pairs.
 
-        IN ADDITION: You should check that after you get data
-        initially, that if you wait longer you do not get more
-        data. In the past, we've had problems where the data
-        had not loaded in time. I think we figured out the fix,
-        but def need to test here. Don't want to test in a
-        different func because this unit test will take hours.
+        RPKI Validator also changes validity values if waited. 
         """
-
-        missing_origins = {2914, 3257, 3356, 6830, 9002, 30781, 33891}
 
         with ROV_Validity_Table() as db:
 
             # Run MRT_Parser to fill mrt_announcements table which will
             # be used as the input table for RPKI_Validator.
-            # Use only one collector and remove isolario to make it faster.
             input_table = MRT_Announcements_Table.name
-            mods = {'collectors[]': ['route-views2', 'rrc03']}
-            no_isolario = [MRT_Sources.RIPE, MRT_Sources.ROUTE_VIEWS]
-            MRT_Parser().run(api_param_mods=mods, sources=no_isolario)
-            
+            MRT_Parser().run()
+
             RPKI_Validator_Parser().run(table=input_table)
 
             initial_count = db.get_count()
+            initial_rows = db.get_all()
+ 
+            # all prefix-origin pairs from input should be in val table
+            sql = f"""SELECT * FROM {input_table} a
+                      LEFT JOIN {db.name} b
+                      USING (prefix, origin)
+                      WHERE b.prefix IS NULL;"""
+            assert len(db.execute(sql)) == 0
 
-            # Any prefix-origin pair that exists in the 
-            # set of all prefix-origin pairs from input table but not in the
-            # set of unique prefix-origin pairs in ROV_Validity table
-            # has to be one of the acknowledged prefix-origin pairs
-            # that the API missed.
+            # clear validity table and run with a wait before getting data
+            # should be the same with and without waiting
+            db.clear_table()
 
-            def PO_pairs(table):
-                return {(row["prefix"], row["origin"])
-                        for row in
-                        db.execute(f"SELECT prefix, origin FROM {table}")}
+            RPKI_Validator_Parser().run(table=input_table, wait=True)
 
-            for prefix, origin in PO_pairs(input_table) - PO_pairs(db.name):
-                assert prefix == '0.0.0.0/0' and origin in missing_origins
+            second_count = db.get_count()
+            second_rows = db.get_all()
 
-            # There should be no new data straggling behind. 
-            sleep(120)
-            assert initial_count == db.get_count()
+            assert initial_count == second_count
+            assert initial_rows == second_rows

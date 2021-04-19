@@ -146,7 +146,7 @@ class MRT_Parser(Parser):
         URL = 'https://bgpstream.caida.org/broker/data'
         # Request for data and conversion to json
         logging.debug(requests.get(url=URL, params=PARAMS).url)
-        data = requests.get(url=URL, params=PARAMS).json()
+        data = requests.get(url=URL, params=PARAMS, verify=False).json()
 
         # Returns the urls from the json
         return [x.get('url') for x in data.get('data').get('dumpFiles')]
@@ -179,7 +179,13 @@ class MRT_Parser(Parser):
         _start_file = f'rib.{_start.strftime("%Y%m%d.%H00")}.bz2'
 
         # Make a list of all possible file URLs
-        return [_url + _coll + _folder + _start_file for _coll in _collectors]
+        file_urls = [_url + _coll + _folder + _start_file for _coll in _collectors]
+
+        for i in range(len(file_urls)):
+            # HEAD request to check if URL exists
+            if requests.head(file_urls[i]).status_code == 404:
+                f = file_urls.pop(i)
+                log.warning(f"{f} doesn't exist. Will not attempt to download.")
 
     def _multiprocess_download(self, dl_threads: int, urls: list) -> list:
         """Downloads MRT files in parallel.
