@@ -49,7 +49,11 @@ __status__ = "Development"
 class Test_Tiny_Graph:
     """Tests all example graphs within our paper."""
 
-    def test_tiny_graph(self, max_conn=5, max_lv=2, percents=[1, 15, 30, 50, 80, 99]):
+    def test_tiny_graph(self,
+                        max_conn=5,
+                        max_lv=2,
+                        percents=[1, 15, 30, 50, 80, 99],
+                        adopt_policies=list(Non_Default_Policies.__members__.values())):
         """Gets the best top 100 AS and goes 1 level out
 
         max_conn is max number of peers + customers"""
@@ -57,7 +61,7 @@ class Test_Tiny_Graph:
         start = datetime.now()
         sim = Simulator()
         print("MUST REDOWNLOAD EXR HERE")
-        sim._redownload_base_data(exr_cls=None)
+        sim._redownload_base_data(Exr_Cls=None)
         with AS_Connectivity_Table() as db:
             ases = [x for x in db.get_all() if x["connectivity"] <= max_conn]
             best_row = max(ases, key=lambda x: x["connectivity"])
@@ -170,4 +174,5 @@ class Test_Tiny_Graph:
                           "get_tables",
                           subtables_get_tables_patch):
             sim._run(redownload_base_data=False,
+                     adopt_policies=adopt_policies,
                      percents=percents)
