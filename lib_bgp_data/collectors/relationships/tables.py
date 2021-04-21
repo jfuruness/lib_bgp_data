@@ -156,7 +156,7 @@ class AS_Connectivity_Table(Generic_Table):
               as_connectivity AS (
               SELECT ases.asn AS asn,
               COALESCE(cp.connectivity, 0) +
-              COALESCE(pc.connectivity, 0) +
+              --COALESCE(pc.connectivity, 0) +
                 COALESCE(p1.connectivity, 0) +
                 COALESCE(p2.connectivity, 0)
                   AS connectivity
