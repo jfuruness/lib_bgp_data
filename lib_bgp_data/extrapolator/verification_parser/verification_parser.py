@@ -24,6 +24,7 @@ from ...collectors.mrt import MRT_Parser, MRT_Metadata_Parser, MRT_Sources
 from ...collectors.mrt.mrt_metadata.tables import MRT_W_Metadata_Table
 from ...collectors.relationships.tables import Peers_Table
 from ...collectors.relationships.tables import Provider_Customers_Table
+from ...collectors.roas import ROAs_Parser
 from ...utils.base_classes import Parser
 from ...utils.database import Database
 
@@ -40,6 +41,7 @@ class Verification_Parser(Parser):
              test=False,
              clear_db=False,
              relationships=True,
+             roas=True,
              mrt_announcements=True,
              mrt_metadata=True,
              as_rank=True,
@@ -52,6 +54,8 @@ class Verification_Parser(Parser):
             assert False, "Clear db, checkpoint, vaccum analyze"
         if relationships:
             Relationships_Parser(**self.kwargs)._run()
+        if roas:
+            ROAs_Parser(**self.kwargs)._run()
         if mrt_announcements:
             kwargs = {"sources": [MRT_Sources.RIPE, MRT_Sources.ROUTE_VIEWS]}
             if test:
