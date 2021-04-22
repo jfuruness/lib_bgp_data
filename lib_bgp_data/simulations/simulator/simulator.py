@@ -150,7 +150,7 @@ class Simulator(Parser):
         Indexes: ASes_Table, AS_Rank_Table (for creating top_100_ases)
         """
 
-        if Exr_Cls:
+        if Exr_Cls is not None:
             # forces new install of extrapolator
             Exr_Cls(**self.kwargs).install(force=True)
         # Gets relationships table

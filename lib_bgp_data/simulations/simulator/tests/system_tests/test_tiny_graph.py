@@ -60,8 +60,7 @@ class Test_Tiny_Graph:
 
         start = datetime.now()
         sim = Simulator()
-        print("MUST REDOWNLOAD EXR HERE")
-        sim._redownload_base_data(Exr_Cls=None)
+        sim._redownload_base_data()
         with AS_Connectivity_Table() as db:
             ases = [x for x in db.get_all() if x["connectivity"] <= max_conn]
             best_row = max(ases, key=lambda x: x["connectivity"])
