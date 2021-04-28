@@ -125,7 +125,6 @@ class Simulator(Parser):
                         extra_bash_args_4,
                         extra_bash_args_5):
 
-        assert trials > 1, "Need at least 2 trials for conf intervals"
         assert rounds >= 1, "Need at least 1 round"
 
         assert number_of_attackers == [1], "No. Just no."

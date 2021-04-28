@@ -19,7 +19,17 @@ from ..tables import Simulation_Results_Table
 from ...enums import AS_Types
 from ...enums import Control_Plane_Conditions as C_Plane_Conds
 from ...enums import Data_Plane_Conditions
+from ...enums import Policies
 from ....extrapolator import Simulation_Extrapolator_Forwarding_Table
+
+
+v1_hijacked = set()
+v1_disconnected = set()
+v1_success = set()
+l1_hijacked = set()
+l1_disconnected = set()
+l1_success = set()
+
 
 
 class Output_Subtables:
@@ -115,6 +125,14 @@ class Output_Subtable:
         conds = {x: {y: 0 for y in AS_Types.list_values()}
                  for x in Data_Plane_Conditions.list_values()}
 
+        global v1_disconnected
+        global v1_hijacked
+        global v1_success
+        global l1_disconnected
+        global l1_hijacked
+        global l1_success
+
+
         # For all the ases in the subtable
         for og_asn, og_as_data in subtable_ases.items():
             asn, as_data = og_asn, og_as_data
@@ -125,6 +143,21 @@ class Output_Subtable:
                 # Conds are end conditions. See README.
                 if (condition := as_data["received_from_asn"]) in conds:
                     conds[condition][og_as_data["impliment"]] += 1
+                    if og_as_data["as_type"] == Policies.ROVPP_V1.value:
+                        if condition == Data_Plane_Conditions.BHOLED.value:
+                            v1_disconnected.add(og_asn)
+                        elif condition == Data_Plane_Conditions.HIJACKED.value:
+                            v1_hijacked.add(og_asn)
+                        elif condition == Data_Plane_Conditions.NOTHIJACKED.value:
+                            v1_success.add(og_asn)
+                    elif og_as_data["as_type"] == Policies.ROVPP_V1_LITE.value:
+                        if condition == Data_Plane_Conditions.BHOLED.value:
+                            l1_disconnected.add(og_asn)
+                        elif condition == Data_Plane_Conditions.HIJACKED.value:
+                            l1_hijacked.add(og_asn)
+                        elif condition == Data_Plane_Conditions.NOTHIJACKED.value:
+                            l1_success.add(og_asn)
+ 
                     looping = False
                     break
                 else:
@@ -136,6 +169,22 @@ class Output_Subtable:
             if looping:
                 loop_data = [all_ases, og_asn, og_as_data, attack]
                 self._print_loop_debug_data(*loop_data)
+        total_hijacked = 0
+        total_disconnected = 0
+        total_success = 0
+        for _as in v1_hijacked:
+            if _as in l1_hijacked:
+                total_hijacked += 1
+            elif _as in l1_success:
+                total_success += 1
+            else:
+                total_disconnected += 1
+        print("\n" * 8)
+        print(total_hijacked)
+        print(total_disconnected)
+        print(total_success)
+        print("\n" * 4)
+        
         return conds
 
     def _get_visible_hijack_data(self, t_names, attack, round_num):
