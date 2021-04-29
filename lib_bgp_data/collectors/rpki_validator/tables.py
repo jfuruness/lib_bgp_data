@@ -51,7 +51,7 @@ class Unique_Prefix_Origins_Table(Generic_Table):
 
     name = "unique_prefix_origins"
 
-    def fill_table(self, table_input="mrt_rpki"):
+    def fill_table(self, table_input="mrt_announcements"):
         """ Creates tables if they do not exist."""
         assert self.get_count(f"SELECT COUNT(*) FROM {table_input}") > 0,\
             "Input table has nothing in it"

@@ -21,24 +21,17 @@ from .output_subtables import Output_Subtables, Output_Subtable
 
 from ....utils.database import Database
 
+
 # This is probably not the best way to do this inheritance,
 # But they are all kind of messy anyways so whatever
 class Subtables(Input_Subtables, Output_Subtables):
 
-    def __init__(self, percents, connect=True):
+    def __init__(self, percents, edge_atk, etc_atk, top_atk, connect=True):
 
         # Note that if you want to change adoption percentage:
         # Simply change percents to a list of your choosing here
 
-        # Add any extra tables to this initial list
-        self.tables = [Subtable(Top_100_ASes_Table,
-                                percents,
-                                possible_attacker=False),
-                       Subtable(Edge_ASes_Table, percents)]
-        # Etc table must go at the end. It is all leftover ases
-        self.tables.append(Subtable(Etc_ASes_Table,
-                                    percents,
-                                    possible_attacker=False))
+        self.get_tables(percents, edge_atk, etc_atk, top_atk)
 
         if connect:
             for table in self.tables:
@@ -48,6 +41,20 @@ class Subtables(Input_Subtables, Output_Subtables):
             # Without this the queries become messed up
             with Database() as db:
                 db.execute("ANALYZE")
+
+    def get_tables(self, percents, edge_atk, etc_atk, top_atk):
+        # Add any extra tables to this initial list
+        self.tables = [Subtable(Top_100_ASes_Table,
+                                percents,
+                                possible_attacker=top_atk),
+                       Subtable(Edge_ASes_Table,
+                                percents,
+                                possible_attacker=edge_atk)]
+        # Etc table must go at the end. It is all leftover ases
+        self.tables.append(Subtable(Etc_ASes_Table,
+                                    percents,
+                                    possible_attacker=etc_atk))
+
 
     def fill_tables(self):
         """Fill the tables with ASes"""
@@ -67,6 +74,7 @@ class Subtables(Input_Subtables, Output_Subtables):
         """Returns the names of the tables"""
 
         return [x.table.name for x in self.tables]
+
 
 class Subtable(Input_Subtable, Output_Subtable):
     """Subtable that we divide results into"""

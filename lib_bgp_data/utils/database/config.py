@@ -20,27 +20,40 @@ import logging
 import os
 
 import pytest
+import configparser
 from configparser import NoSectionError, ConfigParser as SCP
 from psutil import virtual_memory
 
+
+
 def set_global_section_header(section=None):
     global global_section_header
-    global_section_header = section if section is not None else "bgp"
+    if section is not None:
+        global_section_header = section
+    # More readable to write it this way imo
+    elif "global_section_header" in globals() and global_section_header is not None:
+        pass
+    else:
+        global_section_header = "bgp"
     return global_section_header
 
 class Config:
     """Interact with config file"""
 
-    __slots__ = ["section"]
+    __slots__ = []
 
     path = "/etc/bgp/bgp.conf"
     
-    def __init__(self, section: str):
+    def __init__(self, section: str = None):
         """Initializes path for config file."""
 
-        self.section = section
         # Declare the section header to be global so Database can refer to it
         set_global_section_header(section)
+
+    @property
+    def section(self):
+        global global_section_header
+        return global_section_header
 
     def create_config(self, _password: str):
         """Creates the default config file."""
@@ -78,14 +91,15 @@ class Config:
         except FileExistsError:
             logging.debug(f"{os.path.split(self.path)[0]} exists, "
                           "not creating new directory")
-    
-    def _remove_old_config_section(self, section: str):
+
+    @classmethod    
+    def _remove_old_config_section(cls, section: str):
         """Removes the old config file if it exists."""
 
         # Initialize ConfigParser
         _conf = SCP()
         # Read from .conf file
-        _conf.read(self.path)
+        _conf.read(cls.path)
         # Try to delete the section
         try:
             del _conf[section]
@@ -93,19 +107,24 @@ class Config:
         except KeyError:
             return
         # Otherwise, write the change to the file
-        with open(self.path, "w+") as configfile:
+        with open(cls.path, "w+") as configfile:
             _conf.write(configfile)
         
     def _read_config(self, section: str, tag: str, raw: bool = False):
         """Reads the specified section from the configuration file."""
 
-        _parser = SCP()
-        _parser.read(self.path)
-        string = _parser.get(section, tag, raw=raw)
-        try:
-            return int(string)
-        except ValueError:
-            return string
+        for i in range(10):
+            try:
+                _parser = SCP()
+                _parser.read(self.path)
+                string = _parser.get(section, tag, raw=raw)
+                try:
+                    return int(string)
+                except ValueError:
+                    return string
+            except configparser.ParsingError:
+                logging.warning("Config parsing error. Potentially someone else edited config. Retrying")
+                time.sleep(2)
 
     def get_db_creds(self, error=False) -> dict:
         """Returns database credentials from the config file."""
@@ -159,9 +178,10 @@ class Config:
             prompt = ("Enter the command to restart postgres\n"
                       f"Enter: {typical_cmd}\n"
                       "Custom: Enter cmd for your machine\n")
-            if hasattr(pytest, "global_running_test") and\
-                 pytest.global_running_test:
+            # https://stackoverflow.com/a/58866220
+            if "PYTEST_CURRENT_TEST" in os.environ:
                  return typical_cmd
+            print(os.environ)
             cmd = input(prompt)
             if cmd == "":
                 cmd = typical_cmd

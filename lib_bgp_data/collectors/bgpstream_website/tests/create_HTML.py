@@ -15,10 +15,11 @@ patching over utils.get_tags
 Usage of this module is in conftest.py
 """
 
+import os
 from bs4 import BeautifulSoup as Soup, NavigableString
 import requests
 from ..event_types import BGPStream_Website_Event_Types
-from ...utils import utils
+from ....utils import utils
 import re
 from random import getrandbits, choices, randrange
 from ipaddress import IPv4Address, IPv6Address
@@ -27,9 +28,9 @@ from time import strftime, gmtime, time
 from itertools import product
 
 
-######################
-### Helper methods ###
-######################
+########################
+### Helper functions ###
+########################
 
 def random_IP(v: int):
     if v == 4:
@@ -71,8 +72,9 @@ def remove_list_format(l):
 class HTML_Creator:
 
     bgpstream_url = 'https://bgpstream.com'
-    dir = './test_HTML/'
-    url_to_file = {bgpstream_url: dir + 'page.html'}
+    html_dir = os.path.dirname(os.path.realpath(__file__))
+    html_dir = os.path.join(html_dir, "test_HTML")
+    url_to_file = {bgpstream_url: html_dir + 'page.html'}
     events = []
 
     def get_event_tag(self, event):
@@ -184,7 +186,7 @@ class HTML_Creator:
             # add to the event_info_keys for this type
             #self.event_info_keys[event_type].append(file_name)
             # write out and make open_custom_HTML able to open this file
-            file_path = self.dir + file_name + '.html'
+            file_path = self.html_dir + file_name + '.html'
             self.url_to_file[self.bgpstream_url + new_url] = file_path
 
             # append the front page row HTML

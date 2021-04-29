@@ -13,5 +13,6 @@ __status__ = "Development"
 
 from .extrapolator_wrapper import Extrapolator_Wrapper
 from .simulation_extrapolator_wrapper import Simulation_Extrapolator_Wrapper
+from .simulation_extrapolator_wrapper import EZ_BGP_Extrapolator_Wrapper
 from .simulation_extrapolator_wrapper import\
     Simulation_Extrapolator_Forwarding_Table

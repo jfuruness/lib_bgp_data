@@ -16,21 +16,20 @@ import os
 
 import multiprocessing_logging
 
+
+
 def config_logging(level=logging.INFO, section=None, reconfigure=False):
     """Configures logging to log to a file"""
 
-
-    if len(logging.root.handlers) != 2 or reconfigure:
+    # should have 2 MultiprocessingHandlers and 1 LogCaptureHandler
+    if len(logging.root.handlers) == 0 or reconfigure:
         if reconfigure:
             # Must remove handlers here, or else it will leave them open
             for handler in logging.root.handlers[:]:
                 handler.close()
                 logging.root.removeHandler(handler)
-        try:
-            from .database.config import global_section_header
-        except ImportError:
-            from .database.config import set_global_section_header
-            global_section_header = set_global_section_header(section)
+        from .database import config
+        global_section_header = config.set_global_section_header(section)
     
         # Makes log path and returns it
         path = _get_log_path(global_section_header)

@@ -11,7 +11,8 @@ __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
 
-from .asrank_website import ASRankWebsiteParser
+from .as_metadata import ASN_Lookup
+from .as_rank_website import AS_Rank_Website_Parser
 from .bgpstream_website import BGPStream_Website_Parser, BGPStream_Website_Event_Types
 from .blacklist import Blacklist_Parser
 from .cdn_whitelist import CDN_Whitelist_Parser

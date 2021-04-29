@@ -20,8 +20,12 @@ import psycopg2
 from psycopg2.extras import RealDictCursor
 
 from .config import Config
+from . import config
 from .postgres import Postgres
-from .. import utils, logger
+
+from ..logger import config_logging
+from .. import utils
+
 
 class Database(Postgres):
     """Interact with the database"""
@@ -32,7 +36,7 @@ class Database(Postgres):
         """Create a new connection with the database"""
 
         # Initializes self.logger
-        logger.config_logging()
+        config_logging()
         self._connect(cursor_factory)
         self._clear = clear
 
@@ -62,11 +66,8 @@ class Database(Postgres):
 
         Note that RealDictCursor returns everything as a dictionary."""
 
-        # Gets the global section header to connect to that db
-        from .config import global_section_header
-        assert global_section_header is not None
         # Database needs access to the section header
-        kwargs = Config(global_section_header).get_db_creds()
+        kwargs = Config().get_db_creds()
         if cursor_factory:
             kwargs["cursor_factory"] = cursor_factory
         # In case the database is somehow off we wait
@@ -105,7 +106,7 @@ class Database(Postgres):
 
         # Must close so connection isn't duplicated
         self.close()
-        with utils.utils.Pool(None, 1, "database execute") as db_pool:
+        with utils.Pool(None, 1, "database execute") as db_pool:
             db_pool.map(lambda self, sql: self._reconnect_execute(sql),
                         [self]*len(sqls),
                         sqls)

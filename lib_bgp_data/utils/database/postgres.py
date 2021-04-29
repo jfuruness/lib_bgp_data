@@ -11,8 +11,8 @@ restart postgres
 erase all database configurations
 """
 
-__authors__ = ["Justin Furuness", "Matt Jaccino"]
-__credits__ = ["Justin Furuness", "Matt Jaccino", "Cameron Morris"]
+__authors__ = ["Justin Furuness", "Matt Jaccino", "Tony Zheng"]
+__credits__ = ["Justin Furuness", "Matt Jaccino", "Tony Zheng", "Cameron Morris"]
 __Lisence__ = "BSD"
 __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
@@ -30,7 +30,9 @@ from configparser import ConfigParser as SCP
 import pytest
 
 from .config import Config
-from .. import utils, logger
+from . import config
+from ..logger import config_logging
+from .. import utils
 
 
 SQL_FILE_PATH = "/tmp/db_modify.sql"
@@ -43,7 +45,7 @@ class Postgres:
     sql_file_path = SQL_FILE_PATH
 
     def __init__(self, stream_level=logging.INFO, section=None):
-        logger.config_logging(stream_level, section)
+        config_logging(stream_level, section)
 
     def erase_all(self):
         """Deletes config and all database sections"""
@@ -54,23 +56,24 @@ class Postgres:
         if _ans.lower() != "yes":
             print("Did not drop databases")
             return
-        # Use default path (get from Config?)
+
+        # Use default path
         path = Config.path
-        # First delete the databases
         _conf = SCP()
         _conf.read(path)
+
         # Database names correspond to section headers
         # Exclude first since ConfigParser reserves for 'DEFAULT'
         _db_names = [x for x in _conf][1:]
-        cmds = [f'sudo -u postgres psql -c "DROP DATABASE {db}"'
-                for db in _db_names]
-        utils.run_cmds(cmds)
-        # Now remove the section from the config file
-        # Fastest way to do this is create a new object
-        # and write to the same location
-        new_conf = SCP()
-        with open(path, 'w+') as configfile:
-            new_conf.write(configfile)
+        for _db in _db_names:
+            self.erase_db(_db)
+
+    @staticmethod
+    def erase_db(name: str):
+        """Drop a db section in Postgres and delete its configuration"""
+        
+        utils.run_cmds(Postgres.get_bash(f"DROP DATABASE {name}"))
+        Config._remove_old_config_section(name)
 
 ##############################
 ### Installation Functions ###
@@ -174,9 +177,8 @@ class Postgres:
         """Enhances database, but doesn't allow for writing to disk."""
 
         logging.info("unhinging db")
-        from .config import global_section_header
         # access to section header
-        ram = Config(global_section_header).ram
+        ram = Config().ram
         # This will make it so that your database never writes to
         # disk unless you tell it to. It's faster, but harder to use
         sqls = [  # https://www.2ndquadrant.com/en/blog/
@@ -205,7 +207,6 @@ class Postgres:
 
 
         logging.info("rehinging db")
-        from .config import global_section_header
         # This will make it so that your database never writes to
         # disk unless you tell it to. It's faster, but harder to use
         sqls = [  # https://www.2ndquadrant.com/en/blog/
@@ -236,7 +237,7 @@ class Postgres:
         if hasattr(self, "close"):
             self.close()
         # access to section header
-        utils.run_cmds(Config(global_section_header).restart_postgres_cmd)
+        utils.run_cmds(Config().restart_postgres_cmd)
         time.sleep(30)
         logging.debug("Restarted postgres")
         if hasattr(self, "_connect"):
@@ -262,8 +263,13 @@ class Postgres:
         """
 
         cmd = ("sudo -i -u postgres "
-               f"pg_restore -d {section} {file_path}")
+               f"pg_restore -c --if-exists -d {section} {file_path}")
         utils.run_cmds(cmd)
+
+    @staticmethod
+    def get_bash(query: str, section:str = None):
+        section_arg = f"-d {section}" if section else ""
+        return f"sudo -i -u postgres psql {section_arg} -c '{query}'"
 
 ########################
 ### Helper Functions ###
@@ -284,8 +290,8 @@ class Postgres:
     def _get_ulimit_random_page_cost(self) -> tuple:
         """Gets ulimit and random page cost"""
 
-        if hasattr(pytest, 'global_running_test') \
-           and pytest.global_running_test:
+        # https://stackoverflow.com/a/58866220
+        if "PYTEST_CURRENT_TEST" in os.environ:
                 random_page_cost = float(1)
                 ulimit = 8192
         # Otherwise get from user

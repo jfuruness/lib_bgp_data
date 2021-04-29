@@ -50,7 +50,7 @@ class MRT_Parser(Parser):
             _ann_table._create_tables()
         if not os.path.exists("/usr/bin/bgpscanner"):
             logging.warning("Dependencies are not installed. Installing now.")
-            MRT_Installer.install_dependencies()
+            MRT_Installer().install_dependencies()
 
     def _run(self,
              *args,
@@ -60,8 +60,8 @@ class MRT_Parser(Parser):
              download_threads=None,
              parse_threads=None,
              IPV4=True,
-             IPV6=False,
-             bgpscanner=True,
+             IPV6=True,
+             bgpscanner=False,
              sources=MRT_Sources.__members__.values()):
         """Downloads and parses files using multiprocessing.
 

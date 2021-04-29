@@ -20,21 +20,56 @@ class Policies(Enum):
     """The possible routing policies"""
 
     DEFAULT = 0
-    ROV = 1
-    ROVPP = 2
-    ROVPPB = 3
-    ROVPPBP = 4
-    ROVPPBIS = 5
-    BGP = 6
-    ROVPP_V0 = 7
-    ROVPP_LITE = 8
-    ROVPPB_LITE = 9
-    ROVPPBP_LITE = 10
-    ROVPPBIS_LITE = 11
-    # V2a but also shorten
+
+    ### Current policies seen on the internet ###
+    BGP = 1
+    ROV = 2
+
+    ### Standard ROV++ policies ###
+    ROVPP_V0 = 3
+    ROVPP_V1 = 4
+    # Announces to only customers
+    ROVPP_V2 = 5
+    # Announces according to gao rexford
+    ROVPP_V2_AGGRESSIVE = 6
+    ROVPP_V3 = 7
+
+    ### LITE version of ROV++ policies ###
+    ROVPP_V1_LITE = 8
+    # Announces only to customers
+    ROVPP_V2_LITE = 9
+    # Announces according to gao rexford
+    ROVPP_V2_AGGRESSIVE_LITE = 10
+    ROVPP_V3_LITE = 11
+
+    ### SHORTEN versions of standard ROV++ policies ###
+    # Announces to only customers
     ROVPP_V2_SHORTEN = 12
-    # V2s but announce to all connections
-    ROVPP_V2_SHORTEN_EXPLODE = 13
+    # Announces according to gao rexford
+    ROVPP_V2_AGGRESSIVE_SHORTEN = 13
+    ROVPP_V3_SHORTEN = 14
+
+    ### SHORTEN versions of standard ROV++ LITE policies ###
+    ROVPP_V1_SHORTEN_LITE = 15
+    # Announces only to customers
+    ROVPP_V2_SHORTEN_LITE = 16
+    # Announces according to gao rexford
+    ROVPP_V2_SHORTEN_AGGRESSIVE_LITE = 17
+    ROVPP_V3_SHORTEN_LITE = 18
+
+    ### SHORTEN EXPLODE versions of ROV++ policies ###
+    ROVPP_V2_SHORTEN_EXPLODE = 19
+    ROVPP_V3_SHORTEN_EXPLODE = 20
+
+    ### SHORTEN EXPLODE versions of ROV++ LITE policies ###
+    ROVPP_V2_SHORTEN_EXPLODE_LITE = 21
+    ROVPP_V3_SHORTEN_EXPLODE_LITE = 22
+
+    ### EZ_BGP_SEC policies ###
+    EZ_BGP_SEC_DIRECTORY_ONLY = 64
+    EZ_BGP_SEC_COMMUNITY_DETECTION_LOCAL = 65
+    EZ_BGP_SEC_COMMUNITY_DETECTION_GLOBAL = 66
+    EZ_BGP_SEC_COMMUNITY_DETECTION_GLOBAL_LOCAL = 67
 
 # This creates an enum that is for non bgp policies
 _non_default_policies_dict = {x[0]: x[1].value
@@ -59,6 +94,7 @@ class Data_Plane_Conditions(Enumerable_Enum):
     BHOLED = 64512
     HIJACKED = 64513
     NOTHIJACKED = 64514
+
 
 class Control_Plane_Conditions(Enumerable_Enum):
     """Conditions you see in the control plane"""

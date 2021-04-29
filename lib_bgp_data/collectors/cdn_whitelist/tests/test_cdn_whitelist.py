@@ -19,7 +19,7 @@ import pytest
 from os import path
 from unittest.mock import patch
 
-from ..cdn_whitelist import CDN_Whitelist_Parser
+from ..cdn_whitelist_parser import CDN_Whitelist_Parser
 from ..tables import CDN_Whitelist_Table
 from ....utils import utils
 
@@ -38,17 +38,21 @@ class Test_CDN_Whitelist:
 
         # Downloads data and inserts into the database 
         # Table should have entries after run
+        try:
+            parser._run()
+            with CDN_Whitelist_Table() as t:
+                assert t.get_count() > 0
+        # raises runtime error if API returns an error msg
+        # likely the API rate limit was hit.
+        # happens easily if you run the parser back to back
+        except RuntimeError:
+            pass
 
-        parser._run()
-
-        with CDN_Whitelist_Table() as t:
-            assert t.get_count() > 0
-
-    @patch.object(CDN_Whitelist, '_get_cdns', return_value=['urfgurf'])
+    @patch.object(CDN_Whitelist_Parser, '_get_cdns', return_value=['urfgurf'])
     def test_bad_CDN(self, mock, parser):
         """Tests that an error occurs with a CDN that doesn't exist"""
 
-        with pytest.raises(ValueError):
+        with pytest.raises(RuntimeError):
             parser._run()
 
     def test_get_cdns(self, parser):
@@ -56,8 +60,30 @@ class Test_CDN_Whitelist:
         Tests that the CDN organisations are correctly
         being retrieved from the text file.
         """
-        test_file = './test_cdns.txt'
+        test_file = '/tmp/test_cdns.txt'
+        utils.delete_paths(test_file)
+
         with open(test_file, 'w+') as f:
             f.write('IMACDN')
-        assert parser._get_cdns(test_file) == ['IMACDN']
-        utils.delete_paths(test_file)
+
+        try:
+            assert parser._get_cdns(test_file) == ['IMACDN']
+        finally:
+            utils.delete_paths(test_file)
+
+    def test_api_limit(self, parser):
+        """
+        Tests that the parser rejects input files with more than 100 CDNs.
+        """
+
+        test_file = '/tmp/test_api_limit.txt'
+        with open(test_file, 'w+') as f:
+            for i in range(102):
+                f.write('TESLA\n')
+
+        try:
+            with pytest.raises(AssertionError):
+                parser._run(input_file=test_file)
+        finally:
+            utils.delete_paths(test_file)
+

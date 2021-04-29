@@ -2,8 +2,17 @@
 # -*- coding: utf-8 -*-
 
 """
-This module downloads all the roas from ftp.ripe.net/rpki to the database.
-HTML parsing and multiprocessing is the fastest way to do this.
+This module downloads all the ROAs from ftp.ripe.net/rpki or all the ROAs
+that exist for a specific date.
+
+Processing the HTML from the server has been tested to be faster than
+using Python's built-in FTP library.
+
+Guidelines:
+1. Maintain a table of files that have been parsed.
+2. Extract the URLs. This step is not multiprocessed.
+3. Use the URLs to multiprocess the downloading, reformatting, and insertion
+of all roas.csv files.
 """
 
 __author__ = "Tony Zheng"
@@ -17,75 +26,87 @@ import os
 from pathos.multiprocessing import ProcessPool
 import requests
 from bs4 import BeautifulSoup as Soup
+from datetime import datetime
 
 from ...utils.base_classes import Parser
 from ...utils import utils
-from .tables import Historical_ROAS_Table, Historical_ROAS_Parsed_Table
+from .tables import Historical_ROAs_Table, Historical_ROAs_Parsed_Table
 
 
 class Historical_ROAs_Parser(Parser):
 
-    def _run(self):
-        """Collect the paths to all the csvs to download. Multithread the
-           downloading of all the csvs, insert into db if not seen before."""
+    session = requests.Session()
+    root = 'https://ftp.ripe.net/rpki'
+
+    def _run(self, date: datetime = None):
+        """Pass a datetime object to get ROAs for specified date
+         or default to getting all ROAs."""
+
+        if date is None:
+            urls = self._get_csvs()
+        else:
+            urls = self._get_csvs_date(date)
 
         parsed = self._get_parsed_files()
 
-        s = requests.Session()
-        headers = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) '\
-                         'AppleWebKit/537.36 (KHTML, like Gecko) '\
-                       'Chrome/75.0.3770.80 Safari/537.36'}
-        s.headers.update(headers)
+        urls = [url for url in urls if url not in parsed]
 
-        paths = self._get_csvs(s)
-        paths = [p for p in paths if p not in parsed]
+        download_paths = self._create_local_download_paths(urls)
 
-        # generate the list of all download_paths
-        # mkdir all the dirs starting with parent dir 'rpki'
-        download_paths = []
-        for path in paths:
-            download_path = path[path.index('rpki'):]
-            utils.run_cmds(f'mkdir -p {download_path[:-8]}')
-            download_paths.append(download_path)
+        # Multiprocessingly download/format/insert all csvs
+        # using four times # of CPUs
+        with utils.Pool(0, 4, self.name) as pool:
+            pool.map(utils.download_file, urls, download_paths)
+            pool.map(self._reformat_csv, download_paths)
+            pool.map(self._db_insert, download_paths)
 
-        # Multiprocessingly download all csvs (nodes = 4 x # CPUS)
-        pool = ProcessPool(nodes=48)
-        pool.map(utils.download_file, paths, download_paths)
-        pool.map(self._reformat_csv, download_paths)
-        pool.map(self._db_insert, download_paths)
-        pool.close()
-        pool.join()
-
-        with Historical_ROAS_Table() as t:
+        with Historical_ROAs_Table() as t:
             t.delete_duplicates()
 
-        self._add_parsed_files(paths)
+        self._add_parsed_files(urls)
 
-        utils.delete_paths('./rpki')
+        utils.delete_files(self.path)
 
     def _get_parsed_files(self):
         """Return the csvs that have already been parsed and inserted into db"""
 
         parsed = []
-        with Historical_ROAS_Parsed_Table() as t:
+        with Historical_ROAs_Parsed_Table() as t:
             for row in t.execute(f'SELECT * FROM {t.name}'):
                 parsed.append(row['file'])
         return parsed
 
     def _add_parsed_files(self, files):
         """Adds newly parsed csvs to the parsed table"""
-        path = './roas_parsed.csv'
+        path = os.path.join(self.path, 'roas_parsed.csv')
         with open(path, 'w+') as f:
             for line in files:
                 f.write(line + '\n')
-        utils.csv_to_db(Historical_ROAS_Parsed_Table, path)
+        utils.csv_to_db(Historical_ROAs_Parsed_Table, path)
+
+    def _create_local_download_paths(self, urls):
+        """Create the local directories where csvs will be downloaded to."""
+
+        # URL: https://ftp.ripe.net/rpki/afrinic.tal/2019/08/01/roas.csv
+        # Path: /tmp/bgp_Historical_ROAs_Parser/rpki/2019/08/01/
+
+        download_paths = []
+        for url in urls:
+            download_path = os.path.join(self.path, url[url.index('rpki'):])
+            # p flag creates necessary parent directories
+            # slicing off the 'roas.csv'
+            utils.run_cmds(f'mkdir -p {download_path[:-8]}')
+            download_paths.append(download_path)
+
+        return download_paths
 
     def _reformat_csv(self, csv):
         """Delete URI (1st) column using cut,
            delete the first row (column names),
            delete 'AS', add the date, replace commas with tabs using sed"""
 
-        date = '-'.join(csv[-19:-9].split('/'))
+        # avoid using extra backslashes because sed uses them as delimiter
+        date = csv[-19:-9].replace('/', '-')
         cmds = [f'cut -d , -f 1 --complement <{csv} >{csv}.new',
                 f'mv {csv}.new {csv}',
                 f'sed -i "1d" {csv}',
@@ -96,33 +117,54 @@ class Historical_ROAs_Parser(Parser):
         utils.run_cmds(cmds)
 
     def _db_insert(self, csv):
-        utils.csv_to_db(Historical_ROAS_Table, csv)
+        utils.csv_to_db(Historical_ROAs_Table, csv)
 
-    def _get_csvs(self, s, root='https://ftp.ripe.net/rpki', paths=None):
+    def _get_csvs(self):
         """
         Returns the paths to all the csvs that exist under root.
-        Pass a requests session s for speed.
         """
 
-        if paths is None:
-            paths = []
+        stack = [self.root]
+        urls = []
 
-        r = s.get(root)
+        while stack:
+            curr_dir = stack.pop()
+
+            # skip first link which is always the parent dir    
+            for link in self._soup(curr_dir)('a')[1:]:
+                href = link['href']
+                next_link = os.path.join(curr_dir, href)
+
+                # Case 1: found the csv, add it to the list of URLs we return
+                # Case 2: Empty dir or repo.tar.giz. Ignore.
+                # Case 3: DFS further down
+                if 'csv' in href:
+                    urls.append(next_link)
+                elif href != '/' and href != 'repo.tar.gz':
+                    stack.append(next_link)
+
+        return urls
+
+    def _get_csvs_date(self, date):
+        """Get all the paths to roas.csv for a specific date."""
+
+        # from the root page, get the links to each internet registry
+        paths = []
+        for registry in self._soup(self.root)('a')[1:]:
+            paths.append(os.path.join(self.root, registry['href']))
+
+        # complete the url by adding the date and 'roas.csv'
+        date_as_url = date.strftime('%Y/%m/%d/') 
+        for i in range(len(paths)):
+            paths[i] = os.path.join(paths[i], date_as_url, 'roas.csv')
+        
+        # return the paths that exists
+        return [p for p in paths if self.session.get(p).status_code == 200]
+            
+    def _soup(self, url):
+        """Returns BeautifulSoup object of url."""
+        r = self.session.get(url)
         r.raise_for_status()
-        html = Soup(r.text, 'lxml')
+        html = Soup(r.text, 'lxml') # lxml is fastert than html.parser
         r.close()
-
-        # the first link is the parent directory
-        for link in html('a')[1:]:
-
-            href = link['href']
-            path = os.path.join(root, href)
-
-            if href == '/' or href == 'repo.tar.gz':
-                pass
-            elif 'csv' in href:
-                paths.append(path)
-            else:
-                self._get_csvs(s, path, paths)
-
-        return paths
+        return html

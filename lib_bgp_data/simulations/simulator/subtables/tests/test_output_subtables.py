@@ -9,12 +9,10 @@ __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
 import pytest
-import copy
 from ..tables import Top_100_ASes_Table
-from ..... import Relationships_Parser, AS_Rank_Website_Parser, MRT_Parser, MRT_Metadata_Parser
 from ..subtables_base import Subtable
 from ..output_subtables import Output_Subtables, Output_Subtable
-from .....extrapolator import Simulation_Extrapolator_Wrapper, Simulation_Extrapolator_Forwarding_Table
+from .....extrapolator import Simulation_Extrapolator_Forwarding_Table
 from ...attacks import Subprefix_Hijack
 from ....enums import AS_Types
 from .....collectors import Relationships_Parser, AS_Rank_Website_Parser
@@ -28,8 +26,6 @@ class Test_Output_Subtable:
            5000: {'received_from_asn': 64514, 'impliment': 0},
            64514: {'received_from_asn': 64514, 'impliment':0}}
     attack = Subprefix_Hijack(5000, 3000)
-
-    # tables = [Top_100_ASes_table, Edges, etc]
 
     # likely move to conftest.py
     @pytest.fixture(scope="class")
@@ -81,6 +77,21 @@ class Test_Output_Subtable:
         #{64512: {0: 0, 1: 0}, 64513: {0: 0, 1: 0}, 64514: {0: 2, 1: 1}}
 
     @pytest.mark.skip()
+    def test_get_traceback_data(self, subtable):
+        """actually no clue yet"""
+        with Simulation_Extrapolator_Forwarding_Table(round_num=0) as _db:
+            #_db.fill_table()
+            all_ases = {x["asn"]: x for x in _db.get_all()}
+
+        subtable_ases = {x["asn"]: x for x in subtable.table.Forwarding_Table.get_all()}
+        # We don't want to track the attacker, faster than filtering dict comp
+        for uncountable_asn in [attack.attacker, attack.victim]:
+            if uncountable_asn in subtable_ases:
+                del subtable_ases[uncountable_asn]
+
+        attack = Subprefix_Hijack(55, 66)
+        print(subtable._get_traceback_data(subtable_ases, all_ases, attack))
+
     def test_get_visible_hijack_data(self):
         """return dict of adopting and non-adopting count"""
 

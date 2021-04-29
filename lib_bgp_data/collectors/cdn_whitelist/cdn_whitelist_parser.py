@@ -58,13 +58,21 @@ class CDN_Whitelist_Parser(Parser):
 
         whitelist_rows = []
 
+        api_call_count = 0
         api = 'https://api.hackertarget.com/aslookup/?q='
+        err_msg = "Can't look up more than 100 CDNs at a time!"
         with Session() as session:
+
+            cdns = self._get_cdns(input_file)
+            assert len(cdns) <= 100, err_msg
+
             for cdn in self._get_cdns(input_file):
                 # Try the request a number of times
                 max_tries = 3
                 for i in range(max_tries):
+                    assert api_call_count < 100, err_msg
                     response = session.get(api + cdn)
+                    api_call_count += 1
                     response.raise_for_status()
                     result = response.text
                     response.close()
@@ -82,10 +90,10 @@ class CDN_Whitelist_Parser(Parser):
                             whitelist_rows.append([cdn, asn])
                         break
                     else:
-                        if i == max_tries - 1:
-                            # use different exception?
-                            raise ValueError((f'Failed to get ASNs for {cdn}'
-                                             f' with error msg: {result}'))
+                        # Design choice?: Error or insert nulls into db
+                        raise RuntimeError((f'Failed to get ASNs for {cdn}'
+                                            f' with error msg: {result}'))
+                        # Usually rate limit or bad CDN name
 
             utils.rows_to_db(whitelist_rows, self.csv_dir, CDN_Whitelist_Table)
 

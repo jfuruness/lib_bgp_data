@@ -135,8 +135,4 @@ class Test_RPKI_File:
         with self.rpki_file as rpki_file:
             self.test_spawn_process(True)
         self.test_close_process(True)
-<<<<<<< HEAD:lib_bgp_data/rpki_validator/tests/test_rpki_file.py
 
-
-=======
->>>>>>> 2f14c6e7eb215317e488d7862987d7a10554a2de:lib_bgp_data/collectors/rpki_validator/tests/test_rpki_file.py

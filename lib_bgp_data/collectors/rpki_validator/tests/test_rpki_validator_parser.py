@@ -12,8 +12,8 @@ import pytest
 from ..rpki_validator_parser import RPKI_Validator_Parser
 from ..rpki_validator_wrapper import RPKI_Validator_Wrapper
 from ..tables import ROV_Validity_Table
-from ...mrt_parser import MRT_Parser
-from ...mrt_parser import MRT_Sources
+from ...mrt.mrt_base import MRT_Parser, MRT_Sources
+from ...mrt.mrt_base.tables import MRT_Announcements_Table
 from ....utils import utils
 
 
@@ -63,6 +63,10 @@ class Test_RPKI_Validator_Parser:
         """Tests the entire system on the MRT announcements.
 
         Assert that there are no mrt announcments missing.
+        # The API returns incomplete data. The following 
+        # origins paired with a prefix of 0.0.0.0/0
+        # don't show up:
+        # 2914, 3257, 3356, 6830, 9002, 30781, 33891
         NOTE: It's possible RPKI Validator removes duplicates
         of prefix origin pairs. Check for this.
 
@@ -73,48 +77,37 @@ class Test_RPKI_Validator_Parser:
         but def need to test here. Don't want to test in a
         different func because this unit test will take hours.
         """
+
+        missing_origins = {2914, 3257, 3356, 6830, 9002, 30781, 33891}
+
         with ROV_Validity_Table() as db:
 
-            # use only one collector and remove isolario to make it a little faster
+            # Run MRT_Parser to fill mrt_announcements table which will
+            # be used as the input table for RPKI_Validator.
+            # Use only one collector and remove isolario to make it faster.
+            input_table = MRT_Announcements_Table.name
             mods = {'collectors[]': ['route-views2', 'rrc03']}
             no_isolario = [MRT_Sources.RIPE, MRT_Sources.ROUTE_VIEWS]
+            MRT_Parser().run(api_param_mods=mods, sources=no_isolario)
             
-            MRT_Parser()._run(api_param_mods=mods, sources=no_isolario)
-                
-            RPKI_Validator_Parser()._run(table='mrt_announcements')
+            RPKI_Validator_Parser().run(table=input_table)
 
-            sql = 'SELECT COUNT(*) FROM rov_validity'
-            initial_count = db.get_count(sql)
+            initial_count = db.get_count()
 
-            print('Initial count', initial_count)
-            sample = db.execute('SELECT * FROM rov_validity LIMIT 10;')
-            print(sample)
-            for i in range(len(sample)):
-                print(sample[i]['prefix'])
-                print(sample[i]['origin'])
-            # no mrt announcements missing in rov_validity
-            c = 0
-            for pair in db.execute('SELECT * FROM mrt_announcements'):
-                prefix = pair['prefix']
-                origin = pair['origin']
+            # Any prefix-origin pair that exists in the 
+            # set of all prefix-origin pairs from input table but not in the
+            # set of unique prefix-origin pairs in ROV_Validity table
+            # has to be one of the acknowledged prefix-origin pairs
+            # that the API missed.
 
-                print(prefix)
-                print(origin)
-                print(db.execute(f"SELECT * FROM rov_validity WHERE prefix = '{prefix}'"))
-                print(db.execute(f"SELECT * FROM rov_validity WHERE origin = {origin}"))
-                try:
-                    count =  db.get_count(('SELECT * FROM rov_validity WHERE '
-                                    f"prefix = '{prefix}' AND origin = {origin}"))
-                    # asserts for existance and removal of dupes
-                    count += 1
-                    print(f"WE FOUND ONE {c}")
-                    assert count == 1
-                except:
-                    print(f'not found')
+            def PO_pairs(table):
+                return {(row["prefix"], row["origin"])
+                        for row in
+                        db.execute(f"SELECT prefix, origin FROM {table}")}
 
-            # no new data
+            for prefix, origin in PO_pairs(input_table) - PO_pairs(db.name):
+                assert prefix == '0.0.0.0/0' and origin in missing_origins
+
+            # There should be no new data straggling behind. 
             sleep(120)
-            final_count = db.get_count(sql)
-            assert initial_count == final_count
-
-
+            assert initial_count == db.get_count()
