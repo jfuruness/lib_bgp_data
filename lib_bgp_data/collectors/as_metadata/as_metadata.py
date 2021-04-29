@@ -54,20 +54,12 @@ class ASN_Lookup(Parser):
         assert not(asn is not None and input_table is not None), \
                "Enter either specific asn or input table, not both"
 
-        # Get the asns to lookup
-        if asn is not None:
-            assert type(asn) is int, "asn kwarg must be an integer"
-            asns = [asn]
-        else:
-            assert type(input_table) is str, "input_table kwarg must be a string"
-            with Database() as db:
-                sql = f"SELECT asn FROM {input_table};"
-                asns = [row['asn'] for row in db.execute(sql)]
-
-        # Check config and install
-        assert os.path.exists(self.geoip_config_path), "Follow setup guide!"
-        if not os.path.exists(self.geoip_db):
+        # Check the install
+        if not self._check_install():
             self._install()
+
+        # Get the asns
+        asns = self._get_asns(asn, input_table)
 
         # Multiprocessing to speedup
         with utils.Pool(None, 1, "ASN Lookup") as pool:
@@ -79,6 +71,20 @@ class ASN_Lookup(Parser):
         utils.rows_to_db([row for row in asn_metadata if row is not None],
                          _csv_dir,
                          ASN_Metadata_Table)
+
+    def _get_asns(self, asn, input_table):
+        """Method to get the asns to be looked up in a list format"""
+
+        if asn is not None:
+            assert type(asn) is int, "asn kwarg must be an integer"
+            asns = [asn]
+        else:
+            assert type(input_table) is str, "input_table kwarg must be a string"
+            with Database() as db:
+                sql = f"SELECT asn FROM {input_table};"
+                asns = [row['asn'] for row in db.execute(sql)]
+
+        return asns
 
     def _get_row(self, asn):
         """Returns the row to be inserted for particular asn"""
@@ -98,19 +104,19 @@ class ASN_Lookup(Parser):
 
         ripe = ('https://stat.ripe.net/data/announced-prefixes/'
                 f'data.json?resource=AS{asn}')
-        r = requests.get(ripe)
-        r.raise_for_status()
-        ip = r.json()['data']['prefixes'][0]['prefix'].split('/')[0]
-        r.close()
+        with requests.get(ripe) as r:
+            r.raise_for_status()
+            ip = r.json()['data']['prefixes'][0]['prefix'].split('/')[0]
 
         return ip
 
     def _get_response(self, ip):
         """Method to return geoip2 model (city)"""
 
-        reader = geoip2.database.Reader(self.geoip_db)
-        response = reader.city(ip)
-        reader.close()
+        with geoip2.database.Reader(self.geoip_db) as reader:
+            response = reader.city(ip)
+            reader.close()
+
         return response
 
     def _get_metadata(self, asn, response):
@@ -125,9 +131,25 @@ class ASN_Lookup(Parser):
                 response.location.latitude,
                 response.location.longitude]
 
+    def _check_install(self):
+        """Method to check the install"""
+
+        # Check config and install
+        assert os.path.exists(self.geoip_config_path), \
+               ("Follow setup guide! It can be found here: "
+                "https://www.maxmind.com/en/geolite2/signup")
+        if (not os.path.exists(self.geoip_db) or 
+            not os.path.exists("/usr/bin/geoipupdate") or
+            not os.path.exists("/etc/cron.d/GeoIP_Update")):
+            return False
+        
+        return True
+
     def _install(self):
         """Installs the GeoIP Update tool (assuming Ubuntu system).
-           Also adds a cronjob to keep the database updated."""
+        Also adds a cronjob to keep the database updated. This cronjob
+        runs the GeoIP Update tool on Wednesdays so that the most
+        up-to-date databases can be used."""
 
         cmds = ['add-apt-repository ppa:maxmind/ppa',
                 'apt update',

@@ -150,12 +150,13 @@ class Simulator(Parser):
         Indexes: ASes_Table, AS_Rank_Table (for creating top_100_ases)
         """
 
-        # forces new install of extrapolator
-        Exr_Cls(**self.kwargs).install(force=True)
+        if Exr_Cls is not None:
+            # forces new install of extrapolator
+            Exr_Cls(**self.kwargs).install(force=True)
         # Gets relationships table
         Relationships_Parser(**self.kwargs)._run()
         # Get as rank data
-        AS_Rank_Website_Parser().run(random_delay=True
+        AS_Rank_Website_Parser()._run(random_delay=True
 )
         # Index to speed up Top_100_ASes_Table.fill_table
         # The following indexes were considered:

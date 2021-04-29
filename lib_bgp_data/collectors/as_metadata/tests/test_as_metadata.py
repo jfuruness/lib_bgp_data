@@ -23,9 +23,9 @@ import geoip2
 
 from unittest.mock import Mock, patch
 from ..tables import ASN_Metadata_Table
-from ..asn_lookup import ASN_Lookup
-from ...roas.roas_parser import ROAs_Parser
-from ...roas.tables import ROAs_Table
+from ..as_metadata import ASN_Lookup
+from ...relationships.relationships_parser import Relationships_Parser
+from ...relationships.tables import ASes_Table
 from ....utils import utils
 from ....utils.database import Database
 
@@ -41,28 +41,35 @@ class Test_ASN_Lookup:
         self.test_asn = 1
         self.parser = ASN_Lookup()
 
+    def test__check_install(self):
+        """Tests the _check_install function"""
+
+        self._uninstall()
+        assert self.parser._check_install() is False
+
     def test__install(self):
         """Tests the _install function"""
 
-        # If the db exists, delete it
-        if os.path.exists(self.parser.geoip_db):
-            utils.run_cmds(f"rm {self.parser.geoip_db}")
-        assert not os.path.exists(self.parser.geoip_db)
-
-        # Uninstall geoipupdate
-        try:
-            utils.run_cmds("apt-get remove geoipupdate -y")
-        except Exception as e:
-            # If it's not installed, don't do anything
-            pass
-
-        assert not os.path.exists("/usr/bin/geoipupdate")
-
         # Install geoipupdate and ensure the db is installed
+        self._uninstall()
+        assert self.parser._check_install() is False
+
         self.parser._install()
-        assert os.path.exists(self.parser.geoip_db)
-        assert os.path.exists("/usr/bin/geoipupdate")
-        assert os.path.exists("/etc/cron.d/GeoIP_Update")
+        assert self.parser._check_install() is True
+
+    def test__get_asns(self):
+        """Tests the _get_asns method. Assumes a valid input."""
+
+        # Return a list with one integer if only an integer is passed
+        assert self.parser._get_asns(self.test_asn, None) == [self.test_asn]
+
+        # Run relationships parser
+        self._run_rel_parser()
+
+        # Check return value
+        asns = self.parser._get_asns(None, "first_100_ases")
+        assert isinstance(asns, list)
+        assert len(asns) > 0
 
     def test__get_ip(self):
         """Test getting an ip given an asn using ripe api"""
@@ -101,7 +108,7 @@ class Test_ASN_Lookup:
 
         row = self.parser._get_row(self.test_asn)
         assert type(row) is list
-        assert len(row) is 8
+        assert len(row) == 8
 
     def test__run_single_asn(self):
         """Tests the _run function on a singular asn input"""
@@ -114,15 +121,7 @@ class Test_ASN_Lookup:
     def test__run_tabular_input(self):
         """Tests the _run function on tabular input"""
 
-        # Run a parser so we can test tabular input
-        ROAs_Parser().run()
-
-        # Get top 100 ases, don't want this test to be too long
-        with ROAs_Table() as roas_table:
-            sql = f"""CREATE UNLOGGED TABLE IF NOT EXISTS first_100_ases
-                   AS SELECT * FROM {roas_table.name} LIMIT 100;
-                   """
-            roas_table.execute(sql)
+        self._run_rel_parser()
 
         self.parser._run(asn=None, input_table="first_100_ases")
 
@@ -138,6 +137,23 @@ class Test_ASN_Lookup:
             self.parser._run(asn=self.test_asn, input_table="test")
             self.parser._run(asn=1, input_table=None)
             self.parser._run(asn=None, input_table=1)
+
+    def _uninstall(self):
+        """Utility function to uninstall geoipupdate"""
+
+        # If the db exists, delete it
+        if os.path.exists(self.parser.geoip_db):
+            utils.run_cmds(f"rm {self.parser.geoip_db}")
+        assert not os.path.exists(self.parser.geoip_db)
+
+        # Uninstall geoipupdate
+        try:
+            utils.run_cmds("apt-get remove geoipupdate -y")
+        except Exception as e:
+            # If it's not installed, don't do anything
+            pass
+
+        assert not os.path.exists("/usr/bin/geoipupdate")
 
     def _is_ipv4(self, ip):
         """Utility function to tell if ip is ipv4"""
@@ -156,4 +172,17 @@ class Test_ASN_Lookup:
             return True
         except socket.error:
             return False
+
+    def _run_rel_parser(self):
+        """Utility function to run Relationships Parser"""
+
+        # Run a parser so we can test tabular input
+        Relationships_Parser().run()
+
+        # Get top 100 ases, don't want this test to be too long
+        with ASes_Table() as ases_table:
+            sql = f"""CREATE UNLOGGED TABLE IF NOT EXISTS first_100_ases
+                   AS SELECT * FROM {ases_table.name} LIMIT 100;
+                   """
+            ases_table.execute(sql)
 
