@@ -133,7 +133,7 @@ class Test_Figure_4(Graph_Tester):
                          exr_output=exr_output)
 
     def test_figure_4b(self):
-        r"""v3 example with ROV++v2
+        r"""v3 example with ROV++v3
 
               /44\
             53 |  666
