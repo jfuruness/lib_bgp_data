@@ -42,7 +42,7 @@ class BGPStream_Website_Parser(Parser):
     def _run(self,
              row_limit: int = None,
              IPV4=True,
-             IPV6=False,
+             IPV6=True,
              data_types: list = BGPStream_Website_Event_Types.list_values(),
              refresh=False):
         """Parses rows in the bgpstream website.
