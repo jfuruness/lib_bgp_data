@@ -40,7 +40,7 @@ class Subtables(Input_Subtables, Output_Subtables):
             logging.info("Analyzing before beginning for speed")
             # Without this the queries become messed up
             with Database() as db:
-                db.execute("ANALYZE")
+                db.execute("ANALYZE peers, provider_customers, ases, as_connectivity")
 
     def get_tables(self, percents, edge_atk, etc_atk, top_atk):
         # Add any extra tables to this initial list

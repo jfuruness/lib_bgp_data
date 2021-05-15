@@ -125,6 +125,8 @@ class Output_Subtable:
                 # Conds are end conditions. See README.
                 if (condition := as_data["received_from_asn"]) in conds:
                     conds[condition][og_as_data["impliment"]] += 1
+                    if condition == 64513 and og_as_data["impliment"] and "Edge" in str(self.Input_Table) and attack.attacker == 138781:
+                        print('\n' * 10 + str(og_asn) + '\n' * 10)
                     looping = False
                     break
                 else:
