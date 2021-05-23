@@ -60,7 +60,7 @@ class MRT_Parser(Parser):
              download_threads=None,
              parse_threads=None,
              IPV4=True,
-             IPV6=True,
+             IPV6=False,
              bgpscanner=False,
              sources=MRT_Sources.__members__.values()):
         """Downloads and parses files using multiprocessing.

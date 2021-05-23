@@ -53,7 +53,7 @@ class MRT_Metadata_Parser(Parser):
 
     __slots__ = []
 
-    def _run(self, *args, max_block_size=50000):
+    def _run(self, *args, max_block_size=400):
         """Adds metadata to MRT files and prepares for EXR insertion
 
         1. Adds ROA state
