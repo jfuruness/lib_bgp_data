@@ -15,7 +15,6 @@ __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
 
-from datetime import datetime
 import time
 import logging
 import os

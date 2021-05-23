@@ -203,6 +203,8 @@ class Dataset_Statistics_Generator(Parser):
         6. Number of provider_customer relationship (w/num on top)
         """
 
+
+        return
         with Peers_Table() as db:
             logging.debug("Getting number of ases")
             # Number of ASes
@@ -277,9 +279,10 @@ class Dataset_Statistics_Generator(Parser):
                         )
                 SELECT COUNT(*) FROM totals WHERE total > 1;"""
 
+            return
             db.execute(f"ANALYZE {Peers_Table.name}")
             db.execute(f"ANALYZE provider_customers")
-            assert False, "Check test.sql change query to be fast"
+            #assert False, "Check test.sql change query to be fast"
             ixps: int = db.get_count(sql)
  
 

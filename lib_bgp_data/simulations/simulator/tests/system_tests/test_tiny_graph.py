@@ -60,7 +60,8 @@ class Test_Tiny_Graph:
 
         start = datetime.now()
         sim = Simulator()
-        sim._redownload_base_data()
+        print("SHOULD REDOWNLOAD EXR!!!!! (temporarily omitted for speed)")
+        sim._redownload_base_data(Exr_Cls=None)
         with AS_Connectivity_Table() as db:
             ases = [x for x in db.get_all() if x["connectivity"] <= max_conn]
             best_row = max(ases, key=lambda x: x["connectivity"])
@@ -95,7 +96,7 @@ class Test_Tiny_Graph:
 		);"""
             db.execute(sql)
             print("created final links")
-            db.execute("ANALYZE")
+            db.execute("ANALYZE final_links, peers, provider_customers, as_rank, ases, as_connectivity")
             print("analyzed")
         # NOTE: this will break if cols are swapped
         with Peers_Table() as db:
