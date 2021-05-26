@@ -152,8 +152,10 @@ def download_file(url: str,
                   file_num=1,
                   total_files=1,
                   sleep_time=0,
-                  progress_bar=False):
-    """Downloads a file from a url into a path."""
+                  progress_bar=False,
+                  verify=True):
+    """Downloads a file from a url into a path.
+       Verify: SSL certificate"""
 
     log_level = logging.root.level
     if progress_bar:  # mrt_parser or multithreaded app running, disable log
@@ -167,7 +169,11 @@ def download_file(url: str,
     while retries > 0:
         try:
             # Code for downloading files off of the internet
-            with urllib.request.urlopen(url, timeout=60)\
+            import ssl
+            ctx = ssl._create_unverified_context() if verify \
+                    else ssl.create_default_context()
+
+            with urllib.request.urlopen(url, timeout=60, context=ctx)\
                     as response, open(path, 'wb') as out_file:
                 # Copy the file into the specified file_path
                 shutil.copyfileobj(response, out_file)
@@ -315,11 +321,11 @@ def rows_to_db(rows: list, csv_path: str, Table, clear_table=True):
     csv_to_db(Table, csv_path, clear_table)
 
 
-def get_tags(url: str, tag: str):
+def get_tags(url: str, tag: str, verify=True):
     """Gets the html of a given url, and returns a list of tags"""
 
     # SHOULD NOT HAVE NO VERIFY BUT ISOLARIO GIVING SSL ERRORS
-    response = requests.get(url, verify=False)
+    response = requests.get(url, verify=verify)
     # Raises an exception if there was an error
     response.raise_for_status()
     # Get all tags within the beautiful soup from the html and return them

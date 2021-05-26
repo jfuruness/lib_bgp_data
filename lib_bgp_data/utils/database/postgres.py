@@ -124,7 +124,7 @@ class Postgres:
         """
 
         ram = Config(section).ram
-        random_page_cost, ulimit = self._get_ulimit_random_page_cost()
+        ulimit, random_page_cost = self._get_ulimit_random_page_cost()
         cpus = cpu_count() - 1
         sqls = ["CREATE EXTENSION btree_gist;",
                 f"ALTER DATABASE {section} SET timezone TO 'UTC';",
@@ -233,15 +233,12 @@ class Postgres:
     def restart_postgres():
         """Restarts postgres and all connections."""
 
-        logging.debug("About to restart postgres")
-        if hasattr(self, "close"):
-            self.close()
+        logging.info("About to restart postgres")
         # access to section header
         utils.run_cmds(Config().restart_postgres_cmd)
+        logging.info("Sleeping while postgres reboot")
         time.sleep(30)
         logging.debug("Restarted postgres")
-        if hasattr(self, "_connect"):
-            self._connect()
 
 #####################################
 ### Backup and Restore Functions ####
