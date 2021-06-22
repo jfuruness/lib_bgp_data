@@ -157,7 +157,7 @@ class Test_Figure_3(Graph_Tester):
                          exr_output=exr_output)
 
     def test_figure_3b(self):
-        r"""v2 example with ROV++V1 and ROV
+        r"""v2 example with ROV++V2 and ROV
 
               /44\
              / / \\666
@@ -171,7 +171,7 @@ class Test_Figure_3(Graph_Tester):
         """
 
         attack_types = [Subprefix_Hijack]
-        adopt_policies = [Non_Default_Policies.ROVPP_V1]
+        adopt_policies = [Non_Default_Policies.ROVPP_V2]
         peer_rows = []
         provider_customer_rows = [[44, 77],
                                   [44, 54],
@@ -194,6 +194,270 @@ class Test_Figure_3(Graph_Tester):
             adopting_rows.append([adopting_as, Policies.ROV.value, True])
         for adopting_as in rovpp_v2_adopting_ases:
             adopting_rows.append([adopting_as, Policies.ROVPP_V2.value, True])
+
+        attacker = 666
+        victim = 99
+
+        exr_output = [{"asn": 32,
+                       "prefix": Attack.default_prefix,
+                       "origin": 99,
+                       "received_from_asn": 11},
+                      {"asn": 33,
+                       "prefix": Attack.default_prefix,
+                       "origin": 99,
+                       "received_from_asn": 11},
+                      {"asn": 99,
+                       "prefix": Attack.default_prefix,
+                       "origin": 99,
+                       "received_from_asn": Conds.NOTHIJACKED.value},
+                      {"asn": 11,
+                       "prefix": Attack.default_prefix,
+                       "origin": 99,
+                       "received_from_asn": 77},
+                      {"asn": 77,
+                       "prefix": Attack.default_prefix,
+                       "origin": 99,
+                       "received_from_asn": 44},
+                      {"asn": 55,
+                       "prefix": Attack.default_prefix,
+                       "origin": 99,
+                       "received_from_asn": 54},
+                      {"asn": 56,
+                       "prefix": Attack.default_prefix,
+                       "origin": 99,
+                       "received_from_asn": 99},
+                      {"asn": 54,
+                       "prefix": Attack.default_prefix,
+                       "origin": 99,
+                       "received_from_asn": 44},
+                      {"asn": 44,
+                       "prefix": Attack.default_prefix,
+                       "origin": 99,
+                       "received_from_asn": 56},
+                      {"asn": 666,
+                       "prefix": Attack.default_prefix,
+                       "origin": 99,
+                       "received_from_asn": 44},
+                      {"asn": 99,
+                       "prefix": Attack.default_subprefix,
+                       "origin": 666,
+                       "received_from_asn": Conds.NOTHIJACKED.value},
+                      {"asn": 11,
+                       "prefix": Attack.default_subprefix,
+                       "origin": 64512,
+                       "received_from_asn": 77},
+                      {"asn": 55,
+                       "prefix": Attack.default_subprefix,
+                       "origin": 666,
+                       "received_from_asn": 54},
+                      {"asn": 56,
+                       "prefix": Attack.default_subprefix,
+                       "origin": 666,
+                       "received_from_asn": 44},
+                      {"asn": 54,
+                       "prefix": Attack.default_subprefix,
+                       "origin": 666,
+                       "received_from_asn": 44},
+                      {"asn": 44,
+                       "prefix": Attack.default_subprefix,
+                       "origin": 666,
+                       "received_from_asn": 666},
+                      {"asn": 666,
+                       "prefix": Attack.default_subprefix,
+                       "origin": 666,
+                       "received_from_asn": Conds.HIJACKED.value},
+                      {"asn": 77,
+                       "prefix": Attack.default_subprefix,
+                       "origin": 64512,
+                       "received_from_asn": 64512},
+		      # 32 rejects the blackhole announcement as invalid
+                      {"asn": 33,
+                       "prefix": Attack.default_subprefix,
+                       "origin": 64512,
+                       "received_from_asn": 64512},
+		     ]
+
+
+        self._test_graph(attack_types=attack_types,
+                         adopt_policies=adopt_policies,
+                         peer_rows=peer_rows,
+                         provider_customer_rows=provider_customer_rows,
+                         adopting_rows=adopting_rows,
+                         attacker=attacker,
+                         victim=victim,
+                         exr_output=exr_output)
+
+
+
+    def test_figure_3b_v2_lite(self):
+        r"""v2 example with ROV++V2 Lite and ROV
+
+              /44\
+             / / \\666
+            /  54 \ 
+           /  /    56
+          77  55    \
+           | /       99
+          11    
+          / \
+         32 33  
+        """
+
+        attack_types = [Subprefix_Hijack]
+        adopt_policies = [Non_Default_Policies.ROVPP_V2_LITE]
+        peer_rows = []
+        provider_customer_rows = [[44, 77],
+                                  [44, 54],
+                                  [44, 56],
+                                  [44, 666],
+                                  [77, 11],
+                                  [11, 32],
+                                  [11, 33],
+                                  [54, 55],
+                                  [55, 11],
+                                  [56, 99]]
+        # Set adopting rows
+        bgp_ases = [11, 54, 55, 44, 666, 56, 99]
+        rov_adopting_ases = [32]
+        rovpp_v2_adopting_ases = [77, 33]
+        adopting_rows = []
+        for bgp_as in bgp_ases:
+            adopting_rows.append([bgp_as, Policies.DEFAULT.value, False])
+        for adopting_as in rov_adopting_ases:
+            adopting_rows.append([adopting_as, Policies.ROV.value, True])
+        for adopting_as in rovpp_v2_adopting_ases:
+            adopting_rows.append([adopting_as, Policies.ROVPP_V2_LITE.value, True])
+
+        attacker = 666
+        victim = 99
+
+        exr_output = [{"asn": 32,
+                       "prefix": Attack.default_prefix,
+                       "origin": 99,
+                       "received_from_asn": 11},
+                      {"asn": 33,
+                       "prefix": Attack.default_prefix,
+                       "origin": 99,
+                       "received_from_asn": 11},
+                      {"asn": 99,
+                       "prefix": Attack.default_prefix,
+                       "origin": 99,
+                       "received_from_asn": Conds.NOTHIJACKED.value},
+                      {"asn": 11,
+                       "prefix": Attack.default_prefix,
+                       "origin": 99,
+                       "received_from_asn": 77},
+                      {"asn": 77,
+                       "prefix": Attack.default_prefix,
+                       "origin": 99,
+                       "received_from_asn": 44},
+                      {"asn": 55,
+                       "prefix": Attack.default_prefix,
+                       "origin": 99,
+                       "received_from_asn": 54},
+                      {"asn": 56,
+                       "prefix": Attack.default_prefix,
+                       "origin": 99,
+                       "received_from_asn": 99},
+                      {"asn": 54,
+                       "prefix": Attack.default_prefix,
+                       "origin": 99,
+                       "received_from_asn": 44},
+                      {"asn": 44,
+                       "prefix": Attack.default_prefix,
+                       "origin": 99,
+                       "received_from_asn": 56},
+                      {"asn": 666,
+                       "prefix": Attack.default_prefix,
+                       "origin": 99,
+                       "received_from_asn": 44},
+                      {"asn": 99,
+                       "prefix": Attack.default_subprefix,
+                       "origin": 666,
+                       "received_from_asn": Conds.NOTHIJACKED.value},
+                      {"asn": 11,
+                       "prefix": Attack.default_subprefix,
+                       "origin": 64512,
+                       "received_from_asn": 77},
+                      {"asn": 55,
+                       "prefix": Attack.default_subprefix,
+                       "origin": 666,
+                       "received_from_asn": 54},
+                      {"asn": 56,
+                       "prefix": Attack.default_subprefix,
+                       "origin": 666,
+                       "received_from_asn": 44},
+                      {"asn": 54,
+                       "prefix": Attack.default_subprefix,
+                       "origin": 666,
+                       "received_from_asn": 44},
+                      {"asn": 44,
+                       "prefix": Attack.default_subprefix,
+                       "origin": 666,
+                       "received_from_asn": 666},
+                      {"asn": 666,
+                       "prefix": Attack.default_subprefix,
+                       "origin": 666,
+                       "received_from_asn": Conds.HIJACKED.value},
+                      {"asn": 77,
+                       "prefix": Attack.default_subprefix,
+                       "origin": 64512,
+                       "received_from_asn": 64512},
+		      # 32 rejects the blackhole announcement as invalid
+                      {"asn": 33,
+                       "prefix": Attack.default_subprefix,
+                       "origin": 64512,
+                       "received_from_asn": 64512},
+		     ]
+
+
+        self._test_graph(attack_types=attack_types,
+                         adopt_policies=adopt_policies,
+                         peer_rows=peer_rows,
+                         provider_customer_rows=provider_customer_rows,
+                         adopting_rows=adopting_rows,
+                         attacker=attacker,
+                         victim=victim,
+                         exr_output=exr_output)
+
+    def test_figure_3b_v2a_lite(self):
+        r"""v2 example with ROV++V2 Lite and ROV
+
+              /44\
+             / / \\666
+            /  54 \ 
+           /  /    56
+          77  55    \
+           | /       99
+          11    
+          / \
+         32 33  
+        """
+
+        attack_types = [Subprefix_Hijack]
+        adopt_policies = [Non_Default_Policies.ROVPP_V2_AGGRESSIVE_LITE]
+        peer_rows = []
+        provider_customer_rows = [[44, 77],
+                                  [44, 54],
+                                  [44, 56],
+                                  [44, 666],
+                                  [77, 11],
+                                  [11, 32],
+                                  [11, 33],
+                                  [54, 55],
+                                  [55, 11],
+                                  [56, 99]]
+        # Set adopting rows
+        bgp_ases = [11, 54, 55, 44, 666, 56, 99]
+        rov_adopting_ases = [32]
+        rovpp_v2_adopting_ases = [77, 33]
+        adopting_rows = []
+        for bgp_as in bgp_ases:
+            adopting_rows.append([bgp_as, Policies.DEFAULT.value, False])
+        for adopting_as in rov_adopting_ases:
+            adopting_rows.append([adopting_as, Policies.ROV.value, True])
+        for adopting_as in rovpp_v2_adopting_ases:
+            adopting_rows.append([adopting_as, Policies.ROVPP_V2_AGGRESSIVE_LITE.value, True])
 
         attacker = 666
         victim = 99
