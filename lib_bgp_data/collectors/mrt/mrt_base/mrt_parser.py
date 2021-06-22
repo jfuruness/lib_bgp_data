@@ -61,7 +61,7 @@ class MRT_Parser(Parser):
              parse_threads=None,
              IPV4=True,
              IPV6=False,
-             bgpscanner=False,
+             bgpscanner=True,
              sources=MRT_Sources.__members__.values()):
         """Downloads and parses files using multiprocessing.
 
@@ -77,6 +77,9 @@ class MRT_Parser(Parser):
             IPV4 defaults to True, so IPV4 results are included
             IPV6 defaults to False, so IP6 results are not included
         """
+
+        if not bgpscanner:
+            raise NotImplementedError("bgpdump seems to fail for some reason")
 
         # If start/end not default:
         logging.warning(("Caida api doesn't work as you'd expect."

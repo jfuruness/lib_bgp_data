@@ -45,8 +45,6 @@ class Extrapolator_Wrapper(Parser):
         Installs if necessary. See README for in depth instructions.
         """
 
-        assert False, "Not yet implimented"
-
         self._input_validation([input_table])
 
         logging.info("About to run the forecast extrapolator")
@@ -54,8 +52,8 @@ class Extrapolator_Wrapper(Parser):
         # People who are in charge of extrapolator need to change this
         default_bash_args = (f"{self.install_location}"
                              f" -a {input_table}"
-                             f" -r {Extrapolator.default_results_table}"
-                             f" -d {Extrapolator.default_depref_table}"
+                             f" -r {self.default_results_table}"
+                             f" -d {self.default_depref_table}"
                              f" --config-section={config.global_section_header}")
         utils.run_cmds(bash_args if bash_args else default_bash_args)
 
