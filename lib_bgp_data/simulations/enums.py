@@ -72,6 +72,7 @@ class Policies(Enum):
     EZ_BGP_SEC_COMMUNITY_DETECTION_GLOBAL_LOCAL = 67
     BGPSEC = 68
     BGPSEC_TRANSITIVE = 69
+    PATH_END = 70
 
 # This creates an enum that is for non bgp policies
 _non_default_policies_dict = {x[0]: x[1].value
