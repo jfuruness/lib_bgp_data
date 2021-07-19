@@ -64,9 +64,14 @@ class Postgres:
         # Database names correspond to section headers
         # Exclude first since ConfigParser reserves for 'DEFAULT'
         _db_names = [x for x in _conf][1:]
-        cmds = [f'sudo -u postgres psql -c "DROP DATABASE {db}"'
+        cmds = [f'sudo -u postgres psql -c "DROP DATABASE {db};"'
                 for db in _db_names]
-        utils.run_cmds(cmds)
+        for cmd in cmds:
+            try:
+                utils.run_cmds(cmd)
+                print(f"Succesfully removed with: {cmd}")
+            except Exception as e:
+                print(f"Failure to remove: {cmd} {e}")
         # Now remove the section from the config file
         # Fastest way to do this is create a new object
         # and write to the same location
@@ -87,7 +92,6 @@ class Postgres:
         #TODO: Holy s h i t, do NOT RUN THIS UNTIL JUSTIN/GRAD LOOKS AT THIS
         if large_db:
             self.erase_all()
-         
         Config(section).create_config(password)
         self._create_database(section, password)
         self._modify_database(section)
@@ -100,7 +104,7 @@ class Postgres:
         """Creates database for specific section"""
 
         # SQL commands to write
-        sqls = [f"DROP DATABASE {section};",
+        sqls = [f"DROP DATABASE IF EXISTS {section};",
                 f"DROP OWNED BY {section}_user;",
                 f"DROP USER {section}_user;",
                 f"CREATE DATABASE {section};",
@@ -296,7 +300,6 @@ class Postgres:
         if "PYTEST_CURRENT_TEST" in os.environ:
                 random_page_cost = float(1)
                 ulimit = 8192
-                print('in test')
         # Otherwise get from user
         else:
             usr_input = input("If SSD, enter 1 or enter, else enter 2: ")
