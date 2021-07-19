@@ -25,7 +25,6 @@ from .fake_table import Fake_Table
 @pytest.mark.database
 class Test_Database:
     """Tests all local functions within the Database class."""
-
     def test_context_manager(self):
         """Tests enter and exit functions
 
@@ -49,7 +48,6 @@ class Test_Database:
     @pytest.mark.parametrize("cursor, typ", [(RealDictCursor, OrderedDict), (DictCursor, list), (NamedTupleCursor, tuple)])
     def test_connect(self, cursor, typ):
         """Tests connect.
-
         Try with different cursor factory and check expected output
         Make sure connects to different sections correctly
         Try it with postgres down, should loop

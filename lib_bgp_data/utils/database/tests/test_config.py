@@ -65,6 +65,7 @@ class Test_Config:
             read = conf._read_config('test', tag[0])
             assert type(read) == tag[1]
 
+    @pytest.mark.creds
     def test_get_db_creds(self):
         """tests get_db_creds
 
