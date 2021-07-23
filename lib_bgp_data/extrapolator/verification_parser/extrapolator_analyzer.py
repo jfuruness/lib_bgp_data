@@ -41,7 +41,7 @@ class Extrapolator_Analyzer(Parser):
             if test:
                 db.execute("DROP TABLE IF EXISTS mrt_verif_test")
                 db.execute(f"""CREATE TABLE mrt_verif_test AS (
-                            SELECT * FROM mrt_w_metadata WHERE block_id <= 10);""")
+                            SELECT * FROM mrt_w_metadata WHERE block_id <= 100);""")
                 table = "mrt_verif_test"
             rows = db.get_all()
             final_results = {}

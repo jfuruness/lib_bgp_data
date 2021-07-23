@@ -9,7 +9,7 @@ insert the data into a database. See README for detailed steps.
 
 import warnings
 from .relationships_file import Rel_File
-from .tables import ASes_Table, AS_Connectivity_Table, Provider_Customers_Table
+from .tables import ASes_Table, AS_Connectivity_Table, Provider_Customers_Table, Relationships_Table
 from ...utils.base_classes import Parser
 from ...utils.database import config
 from ...utils import utils
@@ -51,6 +51,9 @@ class Relationships_Parser(Parser):
         # creates and closes table
         with AS_Connectivity_Table(clear=True) as _conn_table:
             _conn_table.fill_table()
+
+        with Relationships_Table(clear=True) as db:
+            db.fill_table()
 
 ########################
 ### Helper Functions ###
