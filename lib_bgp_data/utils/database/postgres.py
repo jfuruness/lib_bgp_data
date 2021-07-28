@@ -56,23 +56,24 @@ class Postgres:
         if _ans.lower() != "yes":
             print("Did not drop databases")
             return
-        # Use default path (get from Config?)
+
+        # Use default path
         path = Config.path
-        # First delete the databases
         _conf = SCP()
         _conf.read(path)
+
         # Database names correspond to section headers
         # Exclude first since ConfigParser reserves for 'DEFAULT'
         _db_names = [x for x in _conf][1:]
-        cmds = [f'sudo -u postgres psql -c "DROP DATABASE {db}"'
-                for db in _db_names]
-        utils.run_cmds(cmds)
-        # Now remove the section from the config file
-        # Fastest way to do this is create a new object
-        # and write to the same location
-        new_conf = SCP()
-        with open(path, 'w+') as configfile:
-            new_conf.write(configfile)
+        for _db in _db_names:
+            self.erase_db(_db)
+
+    @staticmethod
+    def erase_db(name: str):
+        """Drop a db section in Postgres and delete its configuration"""
+        
+        utils.run_cmds(Postgres.get_bash(f"DROP DATABASE {name}"))
+        Config._remove_old_config_section(name)
 
 ##############################
 ### Installation Functions ###
@@ -123,7 +124,7 @@ class Postgres:
         """
 
         ram = Config(section).ram
-        random_page_cost, ulimit = self._get_ulimit_random_page_cost()
+        ulimit, random_page_cost = self._get_ulimit_random_page_cost()
         cpus = cpu_count() - 1
         sqls = ["CREATE EXTENSION btree_gist;",
                 f"ALTER DATABASE {section} SET timezone TO 'UTC';",
@@ -232,15 +233,12 @@ class Postgres:
     def restart_postgres():
         """Restarts postgres and all connections."""
 
-        logging.debug("About to restart postgres")
-        if hasattr(self, "close"):
-            self.close()
+        logging.info("About to restart postgres")
         # access to section header
         utils.run_cmds(Config().restart_postgres_cmd)
+        logging.info("Sleeping while postgres reboot")
         time.sleep(30)
         logging.debug("Restarted postgres")
-        if hasattr(self, "_connect"):
-            self._connect()
 
 #####################################
 ### Backup and Restore Functions ####
@@ -262,7 +260,7 @@ class Postgres:
         """
 
         cmd = ("sudo -i -u postgres "
-               f"pg_restore -d {section} {file_path}")
+               f"pg_restore -c --if-exists -d {section} {file_path}")
         utils.run_cmds(cmd)
 
     @staticmethod

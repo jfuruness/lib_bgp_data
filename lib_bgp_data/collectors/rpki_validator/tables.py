@@ -53,7 +53,6 @@ class Unique_Prefix_Origins_Table(Generic_Table):
 
     def fill_table(self, table_input="mrt_announcements"):
         """ Creates tables if they do not exist."""
-
         assert self.get_count(f"SELECT COUNT(*) FROM {table_input}") > 0,\
             "Input table has nothing in it"
         logging.info(f"Creating file for RPKI Validator from {table_input}")
@@ -74,6 +73,6 @@ class ROV_Validity_Table(Generic_Table):
     def _create_tables(self):
         sql = """CREATE UNLOGGED TABLE IF NOT EXISTS rov_validity (
                  origin bigint,
-                 prefix cidr,
+                 prefix inet,
                  validity smallint);"""
         self.execute(sql)

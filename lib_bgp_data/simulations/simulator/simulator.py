@@ -40,6 +40,7 @@ class Simulator(Parser):
              deterministic=False,
              attack_types=Attack.runnable_attacks[:1],
              adopt_policies=list(Non_Default_Policies.__members__.values())[:1],
+             # These args prob don't change for most cases
              number_of_attackers=[1],
              rounds=1,
              extra_bash_args_1=[None],
@@ -55,7 +56,9 @@ class Simulator(Parser):
         In depth explanation at top of module.
         """
 
-        self._validate_input(number_of_attackers,
+        self._validate_input(num_trials,
+                             rounds,
+                             number_of_attackers,
                              extra_bash_args_1,
                              extra_bash_args_2,
                              extra_bash_args_3,
@@ -66,7 +69,7 @@ class Simulator(Parser):
         if redownload_base_data:
             # Download as rank, relationships, extrapolator
             # Separate function for development ease
-            self._redownload_base_data(exr_cls)
+            self._redownload_base_data()
 
         # Clear the table that stores all trial info
         with Simulation_Results_Table(clear=True) as _:
@@ -112,13 +115,18 @@ class Simulator(Parser):
                                      extra_bash_args_5=extra_bash_args_5)
         tables.close()
 
-    def _validate_input(self, 
+    def _validate_input(self,
+                        trials,
+                        rounds, 
                         number_of_attackers,
                         extra_bash_args_1,
                         extra_bash_args_2,
                         extra_bash_args_3,
                         extra_bash_args_4,
                         extra_bash_args_5):
+
+        assert trials > 1, "Need at least 2 trials for conf intervals"
+        assert rounds >= 1, "Need at least 1 round"
 
         assert number_of_attackers == [1], "No. Just no."
 
@@ -134,7 +142,7 @@ class Simulator(Parser):
                 for x in extra_bash_args:
                     assert isinstance(x, int)
 
-    def _redownload_base_data(self, Exr_Cls):
+    def _redownload_base_data(self, Exr_Cls=Sim_Exr):
         """Downloads/creates data, tools, and indexes for simulator
 
         Tools: Extrapolator with speficied branch
@@ -142,20 +150,22 @@ class Simulator(Parser):
         Indexes: ASes_Table, AS_Rank_Table (for creating top_100_ases)
         """
 
-        # forces new install of extrapolator
-        Exr_Cls(**self.kwargs).install(force=True)
+        if Exr_Cls is not None:
+            # forces new install of extrapolator
+            Exr_Cls(**self.kwargs).install(force=True)
         # Gets relationships table
         Relationships_Parser(**self.kwargs)._run()
         # Get as rank data
-        AS_Rank_Website_Parser().run(random_delay=True)
-        # I don't know which of these are used,
-        # But they only take a second to make so for now it will be left
-        # They are intended for the join for the top 100 ases
-        with ASes_Table() as db:
-            db.execute(f"CREATE INDEX ON {db.name}(asn);")
+        AS_Rank_Website_Parser()._run(random_delay=True
+)
+        # Index to speed up Top_100_ASes_Table.fill_table
+        # The following indexes were considered:
+        # ases(asn), as_rank(asn), as_rank(as_rank), as_rank(asn, as_rank)
+        # Analysis concluded any one of the above would be sufficient.
+        # Could change in the future if they become useful elsewhere.
+
         with AS_Rank_Table() as db:
-            for attr in ["asn", "as_rank", "asn, as_rank"]:
-                db.execute(f"CREATE INDEX ON {db.name}({attr});")
+            db.execute(f"CREATE INDEX ON {db.name}(as_rank);")
 
     def _total(self,
                data_pts,

@@ -28,6 +28,7 @@ from ..extrapolator_wrapper import Extrapolator_Wrapper
 from ....collectors.mrt.mrt_metadata.tables import MRT_W_Metadata_Table
 from ....utils.base_classes import Parser
 from ....utils.database import Database
+from ....utils.database import config
 from ....utils import utils
 
 
@@ -65,6 +66,7 @@ class Simulation_Extrapolator_Wrapper(Extrapolator_Wrapper):
         default_bash_args += f"-i 0 -b 0 -a {MRT_W_Metadata_Table.name} "
         default_bash_args += "".join(f" -t {x}" for x in table_names)
         default_bash_args += f" --rounds {rounds} "
+        default_bash_args += f" --config-section={config.global_section_header}"
 
         default_bash_args = self.append_extra_bash_args(default_bash_args,
                                                         extra_bash_arg_1,
@@ -87,6 +89,7 @@ class Simulation_Extrapolator_Wrapper(Extrapolator_Wrapper):
 
         for _round in range(1, rounds + 1):
             with Simulation_Extrapolator_Results_Table(round_num=_round) as db:
+                self._run_test(db)
                 try:
                     assert db.get_count() > 0
                 except (AssertionError, psycopg2.errors.UndefinedTable):
@@ -98,6 +101,10 @@ class Simulation_Extrapolator_Wrapper(Extrapolator_Wrapper):
                 logging.debug("Extrapolation complete, writing ribs out tables")
                 _db.fill_table(attack)
                 _db.execute(f"ANALYZE {_db.name}")
+
+    def _run_test(self, db):
+        # Done for easy inheritance in test section
+        pass
 
     def append_extra_bash_args(self, bash, arg_1, arg_2, arg_3, arg_4, arg_5):
         return bash

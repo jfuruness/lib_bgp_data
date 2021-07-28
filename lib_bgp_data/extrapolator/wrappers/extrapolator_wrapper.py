@@ -23,6 +23,7 @@ from ...collectors.relationships.tables import Peers_Table
 from ...collectors.relationships.tables import Provider_Customers_Table
 from ...utils.base_classes import Parser
 from ...utils.database import Database
+from ...utils.database import config
 from ...utils import utils
 
 
@@ -38,24 +39,23 @@ class Extrapolator_Wrapper(Parser):
     default_depref_table = "exr_results_depref"
     branch = "master"
 
-    def _run(self, input_table="filtered_mrt_announcements"):
+    def _run(self, input_table="mrt_w_metadata", bash_args=None):
         """Runs the bgp-extrapolator and verifies input.
 
         Installs if necessary. See README for in depth instructions.
         """
-
-        assert False, "Not yet implimented"
 
         self._input_validation([input_table])
 
         logging.info("About to run the forecast extrapolator")
 
         # People who are in charge of extrapolator need to change this
-        bash_args = (f"{self.install_location}"
-                     f" -a {input_table}"
-                     f" -r {Extrapolator.default_results_table}"
-                     f" -d {Extrapolator.default_depref_table}")
-        utils.run_cmds(bash_args)
+        default_bash_args = (f"{self.install_location}"
+                             f" -a {input_table}"
+                             f" -r {self.default_results_table}"
+                             f" -d {self.default_depref_table}"
+                             f" --config-section={config.global_section_header}")
+        utils.run_cmds(bash_args if bash_args else default_bash_args)
 
     def _input_validation(self, input_tables: list):
         """Validates proper tables exist and exr is installed"""

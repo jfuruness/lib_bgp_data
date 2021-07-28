@@ -320,7 +320,7 @@ class Prefix_Origin_Metadata_Table(Generic_Table):
                 INNER JOIN (
                     --must do lateral rather than partition to get proper distinct
                     SELECT DISTINCT prefix,
-                           DENSE_RANK() OVER (PARTITION BY block_id) - 1 AS block_prefix_id
+                           DENSE_RANK() OVER (PARTITION BY block_id ORDER BY prefix) - 1 AS block_prefix_id
                         FROM {Prefix_Origin_Blocks_Metadata_Table.name}
                 ) bp_ids
                     ON bp_ids.prefix = dpo.prefix
@@ -329,20 +329,20 @@ class Prefix_Origin_Metadata_Table(Generic_Table):
                 --we omit them here for speed.
                 --INNER JOIN (
                 --    SELECT DISTINCT origin,
-                --           DENSE_RANK() OVER (PARTITION BY block_id) - 1 AS block_origin_id
+                --           DENSE_RANK() OVER (PARTITION BY block_id ORDER BY origin) - 1 AS block_origin_id
                 --        FROM {Prefix_Origin_Blocks_Metadata_Table.name}
                 --) bo_ids
                 --    ON bo_ids.origin = dpo.origin
                 --INNER JOIN (
                 --    SELECT DISTINCT prefix_group_id,
-                --           DENSE_RANK() OVER (PARTITION BY block_id) - 1
+                --           DENSE_RANK() OVER (PARTITION BY block_id ORDER BY prefix_group_id) - 1
                 --                AS block_prefix_group_id
                 --        FROM {Prefix_Origin_Blocks_Metadata_Table.name}
                 --) bpg_ids
                 --    ON bpg_ids.prefix_group_id = dpo.prefix_group_id
                 --INNER JOIN (
                 --    SELECT prefix, origin,
-                --           DENSE_RANK() OVER (PARTITION BY block_id) - 1
+                --           DENSE_RANK() OVER (PARTITION BY block_id ORDER BY prefix, origin) - 1
                 --                AS block_prefix_origin_id
                 --        FROM {Prefix_Origin_Blocks_Metadata_Table.name}
                 --) bpo_ids

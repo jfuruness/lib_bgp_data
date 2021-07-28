@@ -1,3 +1,4 @@
+ripe.atlas.tools
 validators>=0.14.1
 tqdm>=4.40.2
 pytest>=4.6.6
@@ -18,3 +19,4 @@ matplotlib
 multiprocessing_logging
 selenium>=3.141.0
 tikzplotlib
+geoip2

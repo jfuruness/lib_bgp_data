@@ -1,8 +1,8 @@
 import pytest
 from ..tables import Unique_Prefix_Origins_Table
 
-@pytest.fixture
-def test_table(scope='session'):
+@pytest.fixture(scope='session')
+def test_table():
     test_table_name = 'a_test_table'
     with Unique_Prefix_Origins_Table() as _db:
         sql = f'DROP TABLE IF EXISTS {test_table_name}'

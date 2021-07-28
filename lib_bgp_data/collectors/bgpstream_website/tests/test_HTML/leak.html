@@ -5,7 +5,7 @@
 <meta charset="utf-8"/>
 <!--[if IE]><meta http-equiv="X-UA-Compatible" content="IE=edge" /><![endif]-->
 <meta content="width=device-width, initial-scale=1" name="viewport"/>
-<title>BGPStream Event #236277</title>
+<title>BGPStream Event #268404</title>
 <link href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css" rel="stylesheet"/>
 <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
 <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
@@ -1108,31 +1108,32 @@
 </div>
 <div class="container">
 <h3> BGP Leak</h3>
-        Beginning at 2020-05-12 20:58:54 UTC, we detected a possible BGP Leak
+        Beginning at 2021-02-15 23:48:47 UTC, we detected a possible BGP Leak
         <p>
-        Prefix 185.226.75.0/24, Normally announced by AS395800 GBTCLOUD, US <br/>
-		Leaked by AS56582  NETFACTOR-ASN, TR
+        Prefix 138.186.100.0/22, Normally announced by AS262927 ELARA COMUNICACIONES SAPI DE CV, MX <br/>
+		Leaked by AS19332  Marcatel Com, S.A. de C.V., MX
         </p>
 <p>
-        This was detected by 10 BGPMon peers.
+        This was detected by 12 BGPMon peers.
         </p>
 <table class="table">
 <th>Leak Details</th>
-<tr><td>Start time: 2020-05-12 20:58:54 UTC</td></tr>
-<tr><td>Leaked prefix: 86.199.186.245/32(AS175399 PQNPIAF - PVVJVWZ, ZI</td></tr>
-<tr><td>Leaked By: AS56582 <img src="https://portal.bgpmon.net/images/flags/tr.gif"/> (NETFACTOR-ASN, TR)</td></tr>
+<tr><td>Start time: 2021-02-15 23:48:47 UTC</td></tr>
+<tr><td>Leaked prefix: 184.252.48.120/32(AS100405 CYSOMRU - RRROHPG, ZV</td></tr>
+<tr><td>Leaked By: AS19332 <img src="https://portal.bgpmon.net/images/flags/mx.gif"/> (Marcatel Com, S.A. de C.V., MX)</td></tr>
 <tr><td>Leaked To:<br/>
-<li>863802 (ORHDQVI - HLMZNUK, GH)</li>
+<li>683853 (DWPREOO - YXRIFOY, WY)</li>
+<li>651215 (GESJYQS - DUTHUGQ, KI)</li>
 </td></tr>
-<tr><td>Example AS path: 896723 476321 947383 240631 131537 472077 765509 969442 521916 434193 782054</td></tr>
-<tr><td>Number of BGPMon peers that saw it: 971531</td></tr>
+<tr><td>Example AS path: 355118 933213 987607 427789 78980 637615 100089 783623 718126 403658 321008 875594 251335 832236 898621 475877 518950 941851 472962 331172 146236 739349 184387 600653 718325</td></tr>
+<tr><td>Number of BGPMon peers that saw it: 707618</td></tr>
 </table>
 <h2>Watch the replay of this event</h2>
 <div id="bgplay" style="width:1100px; margin: 0 auto;"></div>
 <script src="/static/bgplay/static/widget/bgplayjs-main-widget.js"></script>
 <script>
     var bgplay_config = {
-        "eventid" : '236277',
+        "eventid" : '268404',
         "ignoreReannouncements": "TRUE",
 
         "unix_timestamps": "TRUE",

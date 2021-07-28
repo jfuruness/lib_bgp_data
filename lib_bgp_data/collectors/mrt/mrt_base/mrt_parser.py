@@ -50,7 +50,7 @@ class MRT_Parser(Parser):
             _ann_table._create_tables()
         if not os.path.exists("/usr/bin/bgpscanner"):
             logging.warning("Dependencies are not installed. Installing now.")
-            MRT_Installer.install_dependencies()
+            MRT_Installer().install_dependencies()
 
     def _run(self,
              *args,
@@ -77,6 +77,9 @@ class MRT_Parser(Parser):
             IPV4 defaults to True, so IPV4 results are included
             IPV6 defaults to False, so IP6 results are not included
         """
+
+        if not bgpscanner:
+            raise NotImplementedError("bgpdump seems to fail for some reason")
 
         # If start/end not default:
         logging.warning(("Caida api doesn't work as you'd expect."
@@ -164,7 +167,9 @@ class MRT_Parser(Parser):
         _url = "http://isolario.it/Isolario_MRT_data/"
         # Get the collectors from the page
         # Slice out the parent directory link and sorting links
-        _collectors = [x["href"] for x in utils.get_tags(_url, 'a')][5:]
+        # Isolario SSL certificate expired, so verify is False here.
+        # Should change if they get it back.
+        _collectors = [x["href"] for x in utils.get_tags(_url, 'a', verify=False)][5:]
         _start = datetime.datetime.fromtimestamp(start)
 
         # Get the folder name according to the start parameter
@@ -179,7 +184,19 @@ class MRT_Parser(Parser):
         _start_file = f'rib.{_start.strftime("%Y%m%d.%H00")}.bz2'
 
         # Make a list of all possible file URLs
-        return [_url + _coll + _folder + _start_file for _coll in _collectors]
+        file_urls = [_url + _coll + _folder + _start_file for _coll in _collectors]
+
+        # Remove non-existent urls
+        filtered_urls = []
+        for f in file_urls:
+            # Tried doing a HEAD request here before, but that gave a code 302.
+            # 404 is more commonly understood so I decided to keep GET requests.
+            if requests.get(f, verify=False).status_code != 404:
+                filtered_urls.append(f)
+            else:
+                logging.warning(f"{f} doesn't exist. Will not attempt to download.")
+
+        return filtered_urls
 
     def _multiprocess_download(self, dl_threads: int, urls: list) -> list:
         """Downloads MRT files in parallel.
@@ -196,9 +213,10 @@ class MRT_Parser(Parser):
             with utils.Pool(dl_threads, 4, "download") as dl_pool:
 
                 # Download files in parallel
+                # Again verify is False because Isolario
                 dl_pool.map(lambda f: utils.download_file(
                         f.url, f.path, f.num, len(urls),
-                        f.num/5, progress_bar=True), mrt_files)
+                        f.num/5, progress_bar=True), mrt_files, verify=False)
         return mrt_files
 
     def _multiprocess_parse_dls(self,

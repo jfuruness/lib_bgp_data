@@ -55,8 +55,10 @@ setup(
         'psycopg2>=2.8.4',
         'matplotlib',
         'multiprocessing_logging',
+        'ripe.atlas.tools',
         'selenium>=3.141.0',
         'tikzplotlib',
+        'geoip2',
     ],
     classifiers=[
         'Environment :: Console',

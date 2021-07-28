@@ -152,8 +152,10 @@ def download_file(url: str,
                   file_num=1,
                   total_files=1,
                   sleep_time=0,
-                  progress_bar=False):
-    """Downloads a file from a url into a path."""
+                  progress_bar=False,
+                  verify=True):
+    """Downloads a file from a url into a path.
+       Verify: SSL certificate"""
 
     log_level = logging.root.level
     if progress_bar:  # mrt_parser or multithreaded app running, disable log
@@ -167,7 +169,11 @@ def download_file(url: str,
     while retries > 0:
         try:
             # Code for downloading files off of the internet
-            with urllib.request.urlopen(url, timeout=60)\
+            import ssl
+            ctx = ssl._create_unverified_context() if verify \
+                    else ssl.create_default_context()
+
+            with urllib.request.urlopen(url, timeout=60, context=ctx)\
                     as response, open(path, 'wb') as out_file:
                 # Copy the file into the specified file_path
                 shutil.copyfileobj(response, out_file)
@@ -288,7 +294,7 @@ def csv_to_db(Table, csv_path: str, clear_table=False):
     with Table() as t:
         if clear_table:
             t.clear_table()
-            t._create_tables()
+        t._create_tables()
         # No logging for mrt_announcements, overhead slows it down too much
         logging.debug(f"Copying {csv_path} into the database")
         try:
@@ -315,10 +321,11 @@ def rows_to_db(rows: list, csv_path: str, Table, clear_table=True):
     csv_to_db(Table, csv_path, clear_table)
 
 
-def get_tags(url: str, tag: str):
+def get_tags(url: str, tag: str, verify=True):
     """Gets the html of a given url, and returns a list of tags"""
 
-    response = requests.get(url)
+    # SHOULD NOT HAVE NO VERIFY BUT ISOLARIO GIVING SSL ERRORS
+    response = requests.get(url, verify=verify)
     # Raises an exception if there was an error
     response.raise_for_status()
     # Get all tags within the beautiful soup from the html and return them
@@ -372,18 +379,20 @@ def replace_line(path, prepend, line_to_replace, replace_with):
         line = line.replace(*lines)
         sys.stdout.write(line)
 
-def send_email(subject, body):
+def send_email(subject, body, recipients=[]):
     """Sends an email notification"""
 
     # Get the adress and password from the environment variables
     email_address = os.environ.get("BGP_EMAIL_USER")
     password = os.environ.get("BGP_EMAIL_PASS")
 
+    assert isinstance(recipients, list)
+
     # Build the message
     message = EmailMessage()
     message["Subject"] = subject
     message["From"] = email_address
-    message["To"] = email_address
+    message["To"] = ", ".join([email_address] + recipients)
     message.set_content(body)
 
     # Send the message
@@ -398,11 +407,11 @@ def kill_port(port: int, wait: bool = True):
                 proc.send_signal(SIGTERM) # or SIGKILL
                 # Sometimes the above doesn't do it's job
                 run_cmds(f"sudo kill -9 $(lsof -t -i: {port})")
-                if wait:
-                    time.sleep(120)
+    if wait:
+        time.sleep(120)
 
 def add_cronjob(name, time, executable, overwrite=False):
     """Creates a cronjob of name, that runs executable at (cron) time."""
     cronjob = f'/etc/cron.d/{name}'
-    if not os.path.exists or overwrite:
-        run_cmds(f'echo "{time} root {executable} > {cronjob}')
+    if not os.path.exists(cronjob) or overwrite:
+        run_cmds(f'echo "{time} root {executable}" > {cronjob}')

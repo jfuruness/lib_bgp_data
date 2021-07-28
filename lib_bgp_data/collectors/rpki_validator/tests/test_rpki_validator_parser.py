@@ -12,13 +12,14 @@ import pytest
 from ..rpki_validator_parser import RPKI_Validator_Parser
 from ..rpki_validator_wrapper import RPKI_Validator_Wrapper
 from ..tables import ROV_Validity_Table
-from ...mrt_parser import MRT_Parser
-from ...mrt_parser import MRT_Sources
+from ...mrt.mrt_base import MRT_Parser, MRT_Sources
+from ...mrt.mrt_base.tables import MRT_Announcements_Table
 from ....utils import utils
+from ....utils.base_classes import ROA_Validity as Val
 
 
-__authors__ = ["Justin Furuness"]
-__credits__ = ["Justin Furuness"]
+__authors__ = ["Justin Furuness, Tony Zheng"]
+__credits__ = ["Justin Furuness, Tony Zheng"]
 __Lisence__ = "BSD"
 __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
@@ -28,8 +29,11 @@ __status__ = "Development"
 class Test_RPKI_Validator_Parser:
     """Tests all local functions within the RPKI_Validator_Parser class."""
 
-    @pytest.mark.skip(reason="New hires will work on this")
-    def test_parser_test_data(self):
+    @pytest.fixture
+    def parser(self):
+        return RPKI_Validator_Parser()
+
+    def test_parser_test_data(self, test_table):
         """This is more of an overall system test,
 
         since most all of the functionality exists in the wrapper.
@@ -40,62 +44,69 @@ class Test_RPKI_Validator_Parser:
         """
         
         with ROV_Validity_Table() as db:
+
+            def _get_val_for_origin(origin):
+                sql = f"""SELECT validity FROM {db.name}
+                          WHERE origin = {origin};"""
+                return db.execute(sql)[0]['validity']
+
+            # see conftest.py in this dir for test_table details
             RPKI_Validator_Parser()._run(table=test_table)
-            sql_val = f'SELECT validity FROM rov_validity WHERE origin = 0'
-            sql_inval = f'SELECT validity FROM rov_validity WHERE origin = 1'
 
-            assert db.execute(sql_val)[0]['validity'] == 1
-            assert db.execute(sql_inval)[0]['validity'] == -2
+            # sometimes unknown validity status is returned by the API
+            # and it doesn't get the correct one unless waited on
+            valid = _get_val_for_origin(0)
+            assert valid == Val.VALID.value or valid == Val.UNKNOWN.value
 
-    @pytest.mark.skip(reason="new hire will work on this")
-    def test__format_asn_dict(self):
+            invalid = _get_val_for_origin(1)
+            assert invalid == Val.INVALID_BY_ORIGIN.value or invalid == Val.UNKNOWN.value
+
+    def test__format_asn_dict(self, parser):
         """Tests the format asn_dict function
 
         Confirms that the output is what we expect for a typical entry"""
+        for key, value in RPKI_Validator_Wrapper.get_validity_dict().items():
+            d = {'asn': 'AS198051', 'prefix': '1.2.0.0/16', 'validity': key}
+            assert parser._format_asn_dict(d) == [198051, '1.2.0.0/16', value]
 
-        pass
-
-    @pytest.mark.skip(reason="new hire will work on this")
+    @pytest.mark.xfail(strict=True)
     @pytest.mark.slow
     def test_comprehensive_system(self):
         """Tests the entire system on the MRT announcements.
 
-        Assert that there are no mrt announcments missing.
-        NOTE: It's possible RPKI Validator removes duplicates
-        of prefix origin pairs. Check for this.
+        Test is expected to fail. RPKI Validator does not
+        have data on all prefix-origin pairs.
 
-        IN ADDITION: You should check that after you get data
-        initially, that if you wait longer you do not get more
-        data. In the past, we've had problems where the data
-        had not loaded in time. I think we figured out the fix,
-        but def need to test here. Don't want to test in a
-        different func because this unit test will take hours.
+        RPKI Validator also changes validity values if waited. 
         """
-
 
         with ROV_Validity_Table() as db:
 
-            # use only one collector and remove isolario to make it a  little faster
-            mods = {'collectors[]': ['route-views2', 'rrc03']}
-            no_isolario = [MRT_Sources.RIPE, MRT_Sources.ROUTE_VIEWS]
-            
-            MRT_Parser()._run(api_param_mods=mods, sources=no_isolario)
-                
-            RPKI_Validator_Parser()._run(table='mrt_announcements')
+            # Run MRT_Parser to fill mrt_announcements table which will
+            # be used as the input table for RPKI_Validator.
+            input_table = MRT_Announcements_Table.name
+            MRT_Parser().run()
 
-            sql = 'SELECT COUNT(*) FROM rov_validity'
-            initial_count = db.get_count(sql)
+            RPKI_Validator_Parser().run(table=input_table)
 
-            # no mrt announcements missing in rov_validity
-            for pair in db.execute('SELECT * FROM mrt_announcements'):
-                prefix = pair['prefix']
-                origin = pair['origin']
-                count =  db.get_count('SELECT * FROM rov_validity WHERE '
-                                   f"prefix = '{prefix}' AND origin = {origin}")
-                # asserts for existance and removal of dupes
-                assert count == 1
+            initial_count = db.get_count()
+            initial_rows = db.get_all()
+ 
+            # all prefix-origin pairs from input should be in val table
+            sql = f"""SELECT * FROM {input_table} a
+                      LEFT JOIN {db.name} b
+                      USING (prefix, origin)
+                      WHERE b.prefix IS NULL;"""
+            assert len(db.execute(sql)) == 0
 
-            # no new data
-            sleep(120)
-            final_count = db.get_count(sql)
-            assert initial_count == final_count
+            # clear validity table and run with a wait before getting data
+            # should be the same with and without waiting
+            db.clear_table()
+
+            RPKI_Validator_Parser().run(table=input_table, wait=True)
+
+            second_count = db.get_count()
+            second_rows = db.get_all()
+
+            assert initial_count == second_count
+            assert initial_rows == second_rows

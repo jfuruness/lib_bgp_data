@@ -33,12 +33,16 @@ class BGPStream_Website_Parser(Parser):
     For a more in depth explanation, read the top of the file.
     """
 
-    __slots__ = ['_data']
+    __slots__ = ['_data', 'name']
+
+    backup = True
+    tables = [Hijacks_Table, Leaks_Table, Outages_Table]
+    crontime = '0 4 * * *' # 4am every day
 
     def _run(self,
              row_limit: int = None,
              IPV4=True,
-             IPV6=False,
+             IPV6=True,
              data_types: list = BGPStream_Website_Event_Types.list_values(),
              refresh=False):
         """Parses rows in the bgpstream website.

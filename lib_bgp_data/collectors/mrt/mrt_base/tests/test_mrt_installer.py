@@ -20,7 +20,7 @@ import pytest
 import os
 from .test_mrt_file import Test_MRT_File
 from ..mrt_installer import MRT_Installer
-from ...utils import utils
+from .....utils import utils
 
 
 @pytest.mark.mrt_parser
@@ -43,11 +43,11 @@ class Test_MRT_Installer:
         test_installer._install_bgpscanner_deps()
         for pkg in bin_pkgs:
             out = os.popen("ls /usr/bin | grep " + pkg).read()
-            assert out is not ''
+            assert out != ''
         for pkg in dpkg_pkgs:
             out = os.popen("dpkg -l | grep " + pkg).read()
-            assert out is not ''
-        assert os.popen("ls /usr/local/bin | grep ninja").read() is not ''
+            assert out != ''
+        assert os.popen("ls /usr/local/bin | grep ninja").read() != ''
 
     def test_debug_scaninstall(self):
         test_installer = MRT_Installer()
@@ -85,5 +85,4 @@ class Test_MRT_Installer:
         installer = MRT_Installer()
         filetest = Test_MRT_File()
         installer._install_bgpdump()
-        print("Testing bgpdump")
         filetest.test_bgpdump_regex()

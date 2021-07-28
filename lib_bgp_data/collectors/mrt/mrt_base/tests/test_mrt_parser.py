@@ -26,8 +26,8 @@ from ..mrt_file import MRT_File
 from ..mrt_parser import MRT_Parser
 from ..mrt_sources import MRT_Sources
 from ..tables import MRT_Announcements_Table
-from ...utils import utils
-from ...utils.database import Database
+from .....utils import utils
+from .....utils.database import Database
 
 
 @pytest.mark.mrt_parser
