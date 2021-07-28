@@ -11,13 +11,14 @@ __status__ = "Production"
 import pytest
 from ..mrt_metadata_parser import MRT_Metadata_Parser
 from ..tables import Blocks_Table, MRT_W_Metadata_Table, Distinct_Prefix_Origins_Table
-from ...mrt_base.tables import MRT_Announcements_Table 
-from ....roas.tables  import ROAs_Table
+from ...mrt_base.tables import MRT_Announcements_Table
+from ....roas.tables import ROAs_Table
 
 
 @pytest.fixture
 def parser():
     return MRT_Metadata_Parser()
+
 
 class Test_MRT_Metadata_Parser:
 
@@ -39,7 +40,7 @@ class Test_MRT_Metadata_Parser:
             parser._add_prefix_origin_index()
             for i in indexes:
                 self.assert_index_exists(i)
-    
+
     @pytest.mark.indexes
     def test_get_p_o_table_w_indexes(self, parser):
         """Tests that indexes exist"""
@@ -47,8 +48,8 @@ class Test_MRT_Metadata_Parser:
             pass
         parser._get_p_o_table_w_indexes(Distinct_Prefix_Origins_Table)
         with Distinct_Prefix_Origins_Table() as db:
-            indexes = ["dpo_index", "dist_p_index", "dist_o_index", 
-                        "g_index", "pbtree_index", "po_btree_index"]
+            indexes = ["dpo_index", "dist_p_index", "dist_o_index",
+                       "g_index", "pbtree_index", "po_btree_index"]
             for ind in indexes:
                 self.assert_index_exists_p_o(f'{db.name}_{ind}')
 
@@ -85,7 +86,7 @@ class Test_MRT_Metadata_Parser:
         with MRT_Announcements_Table() as db:
             sql = f"SELECT indexname FROM pg_indexes WHERE indexname = '{index}'"
             assert len(db.execute(sql)) != 0
-        
+
     def assert_index_exists_p_o(self, index):
         with Distinct_Prefix_Origins_Table() as db:
             sql = f"SELECT indexname FROM pg_indexes WHERE indexname = '{index}'"
