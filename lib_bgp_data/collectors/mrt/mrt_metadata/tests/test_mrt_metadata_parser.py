@@ -21,15 +21,21 @@ def parser():
 
 class Test_MRT_Metadata_Parser:
 
+    @pytest.mark.validate
     def test_validate(self, parser):
         """Test empty tables raise exception."""
-        MRT_Announcements_Table(clear=True)
-        ROAs_Table(clear=True)
+        # TODO: Done, with duct tape fix. We need to use the context manager as 
+        # self.clear_table() only runs when using the context manager
+        with MRT_Announcements_Table(clear=True) as db:
+            pass
+        with ROAs_Table(clear=True) as db:
+            pass
         with pytest.raises(AssertionError):
             parser._validate()
 
     @pytest.mark.po
     def test_add_prefix_origin_index(self, parser):
+        #TODO: Done
         """Tests indexes are created if they don't exist"""
         with MRT_Announcements_Table() as t:
             indexes = [f'{t.name}_po_index', f'{t.name}_po_btree_i']
@@ -41,22 +47,44 @@ class Test_MRT_Metadata_Parser:
     
     def test_get_p_o_table_w_indexes(self, parser):
         """Uh...you just pass the index is not made..."""
-    
+        with MRT_Announcements_Table(clear=True) as db:
+            pass
+        parser._get_p_o_table_w_indexes(MRT_Announcements_Table)
+        with MRT_Announcements_Table() as db:
+            result = db.execute("SELECT 
+                                    i.relname AS index_name,
+                                    t.relname AS table_name
+                                 FROM 
+                                    pg_class i,
+                                    pg_class t
+                                 WHERE 
+                                    table_name = mrt_announcements")
+            _indexes = ["dpo_index", "_dist_p_index", "dist_o_index", 
+                        "g_index", "pbtree_index", "po_btree_index"]
+            for _id in _indexes:
+                self.assert_index_exists(f'{db.name}_{_id}')
+
+    @pytest.mark.block
     def test_create_block_table(self, parser):
         """Tests blocks table is filled and has indexes"""
+        #TODO: Done
         with Blocks_Table(clear=True) as t:
             parser._create_block_table(100)
             assert t.get_count() > 2
             for _id in ["block_id", "prefix"]:
                 self.assert_index_exists(f'{t.name}_{_id}')
 
+    @pytest.mark.roas
     def test_add_roas_index(self, parser):
+        #TODO: Done
         index = 'roas_index'
         self.drop_index(index)
         parser._add_roas_index()
         self.assert_index_exists(index)
 
+    @pytest.mark.add
     def test_add_metadata(self, parser):
+        #TODO: SQL here is all f'd up somehow
         parser._add_metadata()
         self.assert_index_exists(f'{MRT_W_Metadata_Table.name}_block_index')
 
