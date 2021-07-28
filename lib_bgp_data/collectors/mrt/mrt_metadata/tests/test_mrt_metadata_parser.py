@@ -10,7 +10,7 @@ __status__ = "Production"
 
 import pytest
 from ..mrt_metadata_parser import MRT_Metadata_Parser
-from ..tables import Blocks_Table, MRT_W_Metadata_Table
+from ..tables import Blocks_Table, MRT_W_Metadata_Table, Distinct_Prefix_Origins_Table
 from ...mrt_base.tables import MRT_Announcements_Table 
 from ....roas.tables  import ROAs_Table
 
@@ -45,24 +45,17 @@ class Test_MRT_Metadata_Parser:
             for i in indexes:
                 self.assert_index_exists(i)
     
+    @pytest.mark.indexes
     def test_get_p_o_table_w_indexes(self, parser):
         """Uh...you just pass the index is not made..."""
-        with MRT_Announcements_Table(clear=True) as db:
+        with Distinct_Prefix_Origins_Table(clear=True) as db:
             pass
-        parser._get_p_o_table_w_indexes(MRT_Announcements_Table)
-        with MRT_Announcements_Table() as db:
-            result = db.execute("SELECT 
-                                    i.relname AS index_name,
-                                    t.relname AS table_name
-                                 FROM 
-                                    pg_class i,
-                                    pg_class t
-                                 WHERE 
-                                    table_name = mrt_announcements")
-            _indexes = ["dpo_index", "_dist_p_index", "dist_o_index", 
+        parser._get_p_o_table_w_indexes(Distinct_Prefix_Origins_Table)
+        with Distinct_Prefix_Origins_Table() as db:
+            indexes = ["dpo_index", "dist_p_index", "dist_o_index", 
                         "g_index", "pbtree_index", "po_btree_index"]
-            for _id in _indexes:
-                self.assert_index_exists(f'{db.name}_{_id}')
+            for ind in indexes:
+                self.assert_index_exists_p_o(f'{db.name}_{ind}')
 
     @pytest.mark.block
     def test_create_block_table(self, parser):
@@ -101,3 +94,11 @@ class Test_MRT_Metadata_Parser:
             sql = f"SELECT indexname FROM pg_indexes WHERE indexname = '{index}'"
             assert len(db.execute(sql)) != 0
         
+    def assert_index_exists_p_o(self, index):
+        with Distinct_Prefix_Origins_Table() as db:
+            sql = f"SELECT indexname FROM pg_indexes WHERE indexname = '{index}'"
+            result = db.execute(sql)
+            try:
+                assert len(result) != 0
+            except(AssertionError):
+                print('Failed to find index for ' + index)
