@@ -391,14 +391,10 @@ class MRT_W_Metadata_Table(Generic_Table):
                        pom.prefix_id,
                        pom.origin_id,
                        pom.prefix_origin_id,
-                       --pom.prefix_group_id,
                        pom.block_id,
                        pom.roa_validity,
                        pom.block_prefix_id,
-                       NULL AS origin_hijack_asn,--,
-                       --pom.block_origin_id,
-                       --pom.block_prefix_group_id,
-                       --pom.block_prefix_origin_id
+                       NULL AS origin_hijack_asn
                 FROM {MRT_Announcements_Table.name} mrt
                 INNER JOIN {Prefix_Origin_Metadata_Table.name} pom
                     ON pom.prefix = mrt.prefix AND pom.origin = mrt.origin
