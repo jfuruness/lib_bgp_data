@@ -12,4 +12,4 @@ __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Production"
 
-from .as_rank_v2 import AS_Rank_V2
+from .as_rank_v2_parser import AS_Rank_Parser_V2
