@@ -34,7 +34,8 @@ class AS_Rank_Parser_V2(Parser):
     __slots__ = []
 
     #TODO: Modify this, use as base URL
-    url = 'https://asrank.caida.org/'
+    url_base = 'https://api.asrank.caida.org/v2/restful/'
+    header_base = {'accept': 'application/json'}
 
     def _run(self, random_delay=False):
         """Parses the AS rank data from https://asrank.caida.org/
@@ -51,28 +52,28 @@ class AS_Rank_Parser_V2(Parser):
         offset = 0
         first = 5000
 
-        # Time that we wait between calls to API, prevent accidental abuse
-        wait_time = 5
         rows = []
 
         while(next_page):
-            url = f"https://api.asrank.caida.org/v2/restful/asns/?first={first}&offset={offset}"
-            header = {'accept': 'application/json'}
-            req = urllib.request.Request(url, None, header)
+            url = url_base + f"asns/?first={first}&offset={offset}"
+            req = urllib.request.Request(url, None, header_base)
             with urllib.request.urlopen(req) as response:
                 page = response.read()
                 data = json.loads(page.decode('utf-8'))
+
                 for asn in data['data']['asns']['edges']:
                     node = asn['node']
                     asn = int(node['asn'])
                     links = self._get_links(asn)
                     rows.append([asn, node['asnName'], links])
+
                 if data['data']['asns']['pageInfo']['hasNextPage'] == False:
                     next_page = False
                 else:
                     offset = offset + 5000
                     first = first + 5000
                     time.sleep(2)
+
         path = os.path.join(self.csv_dir, 'as_rank_v2.csv')
         utils.rows_to_db(rows, path, AS_Rank_V2, clear_table = False)
 
@@ -80,20 +81,21 @@ class AS_Rank_Parser_V2(Parser):
         offset = 0
         first = 100
         next_page = True
+
+        rows = []
+
         while(next_page):
-            header = {'accept': 'application/json'}
-            url = f"https://api.asrank.caida.org/v2/restful/asnLinks/{asn}?first={first}&offset={offset}"
-            req = urllib.request.Request(url, None, header)
+            url = url_base + f"asnLinks/{asn}?first={first}&offset={offset}"
+            req = urllib.request.Request(url, None, header_base)
             with urllib.request.url(req) as response:
-                rows = []
                 page = response.read()
                 data = json.loads(page.decode('utf-8'))
+                if data['data']['asnLinks']['edges'] == []:
+                    return []
                 for link in data['data']['asnLinks']['edges']:
-                    #TODO: Test what if no links
                     rows.append(link['node']['asn1']['asn'])
                 if data['data']['asnLinks']['pageInfo']['hasNextPage'] == False:
-                    next_page = False
+                    return rows
                 else:
                     offset = offset + 100
                     first = first + 100
-
