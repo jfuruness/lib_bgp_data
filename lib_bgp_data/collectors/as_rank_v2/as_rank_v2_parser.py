@@ -57,11 +57,11 @@ class AS_Rank_Parser_V2(Parser):
         cur_rank = 1
         if first_rank is not None:
             offset = first_rank
-            rank = first_rank
+            cur_rank = first_rank
 
         if last_rank is not None:
             if (last_rank - first_rank) < 10000:
-                first = last_rank - first_rank
+                first = last_rank - first_rank + 1
         
         rows = []
 
@@ -75,7 +75,7 @@ class AS_Rank_Parser_V2(Parser):
                 for asn in data['data']['asns']['edges']:
                     node = asn['node']
                     asn = int(node['asn'])
-                    print(f"Getting info for ASN {asn}")
+                    print(f"Getting info for ASN {asn} rank {cur_rank}")
                     links = self._get_links(asn)
                     rows.append([cur_rank, asn, node['asnName'], links])
                     cur_rank += 1
@@ -85,7 +85,7 @@ class AS_Rank_Parser_V2(Parser):
                 elif cur_rank >= last_rank:
                     next_page = False
                 elif (first + cur_rank) >= last_rank:
-                    first = last_rank - cur_rank
+                    first = last_rank - cur_rank + 1 
                 offset += cur_rank
 
         path = os.path.join(self.csv_dir, 'as_rank_v2.csv')
