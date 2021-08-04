@@ -75,7 +75,6 @@ class AS_Rank_Parser_V2(Parser):
                 for asn in data['data']['asns']['edges']:
                     node = asn['node']
                     asn = int(node['asn'])
-                    print(f"Getting info for ASN {asn} rank {cur_rank}")
                     links = self._get_links(asn)
                     rows.append([cur_rank, asn, node['asnName'], links])
                     cur_rank += 1
@@ -109,10 +108,8 @@ class AS_Rank_Parser_V2(Parser):
                     return '{}'
                 for link in data['data']['asnLinks']['edges']:
                     rows += link['node']['asn1']['asn'] + ','
-                    # print("Added link ASN " + link['node']['asn1']['asn'])
                 if data['data']['asnLinks']['pageInfo']['hasNextPage'] == False:
                     rows = rows[:-1] + '}'
-                    print(rows)
                     return rows
                 else:
                     offset = offset + 1000
