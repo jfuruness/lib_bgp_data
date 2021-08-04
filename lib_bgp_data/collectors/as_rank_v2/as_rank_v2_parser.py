@@ -96,7 +96,8 @@ class AS_Rank_Parser_V2(Parser):
         first = 1000
         next_page = True
 
-        rows = []
+        # Can't use a python array due to psql not accepting it easy
+        rows = '{'
 
         while(next_page):
             url = self.url_base + f"asnLinks/{asn}?first={first}&offset={offset}"
@@ -105,12 +106,13 @@ class AS_Rank_Parser_V2(Parser):
                 page = response.read()
                 data = json.loads(page.decode('utf-8'))
                 if data['data']['asnLinks']['edges'] == []:
-                    return []
+                    return '{}'
                 for link in data['data']['asnLinks']['edges']:
-                    rows.append(int(link['node']['asn1']['asn']))
+                    rows += link['node']['asn1']['asn'] + ','
                     # print("Added link ASN " + link['node']['asn1']['asn'])
                 if data['data']['asnLinks']['pageInfo']['hasNextPage'] == False:
+                    rows = rows[:-1] + '}'
+                    print(rows)
                     return rows
                 else:
                     offset = offset + 1000
-                    first = first + 1000
