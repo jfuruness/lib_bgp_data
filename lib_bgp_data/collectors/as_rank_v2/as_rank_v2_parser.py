@@ -85,7 +85,7 @@ class AS_Rank_Parser_V2(Parser):
                 elif rank >= last_rank:
                     next_page = False
                 elif (first + cur_rank) >= last_rank:
-                    first = last_rank - cur_rank - 1
+                    first = last_rank - cur_rank
                 offset += cur_rank + 1
 
         path = os.path.join(self.csv_dir, 'as_rank_v2.csv')
