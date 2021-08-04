@@ -82,7 +82,7 @@ class AS_Rank_Parser_V2(Parser):
 
                 if data['data']['asns']['pageInfo']['hasNextPage'] == False:
                     next_page = False
-                elif rank >= last_rank:
+                elif cur_rank >= last_rank:
                     next_page = False
                 elif (first + cur_rank) >= last_rank:
                     first = last_rank - cur_rank
