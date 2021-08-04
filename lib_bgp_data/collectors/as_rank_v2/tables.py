@@ -26,7 +26,7 @@ class AS_Rank_V2(Generic_Table):
     __slots__ = []
 
     name = 'as_rank_v2'
-    columns = ['asn', 'organization', 'links']
+    columns = ["rank", 'asn', 'organization', 'links']
 
     def _create_tables(self):
         """Creates new table if it doesn't already exist. The contents will
@@ -35,6 +35,7 @@ class AS_Rank_V2(Generic_Table):
         """
 
         sql = f"""CREATE UNLOGGED TABLE IF NOT EXISTS {self.name} (
+              rank bigint,
               asn bigint,
               organization varchar (250),
               links bigint[]
