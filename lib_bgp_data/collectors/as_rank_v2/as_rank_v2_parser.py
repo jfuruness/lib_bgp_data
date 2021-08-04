@@ -86,7 +86,7 @@ class AS_Rank_Parser_V2(Parser):
                     next_page = False
                 elif (first + cur_rank) >= last_rank:
                     first = last_rank - cur_rank
-                offset += cur_rank + 1
+                offset += cur_rank
 
         path = os.path.join(self.csv_dir, 'as_rank_v2.csv')
         utils.rows_to_db(rows, path, AS_Rank_V2, clear_table = False)
