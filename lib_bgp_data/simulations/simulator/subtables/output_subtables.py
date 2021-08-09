@@ -20,7 +20,7 @@ from ...enums import AS_Types
 from ...enums import Control_Plane_Conditions as C_Plane_Conds
 from ...enums import Data_Plane_Conditions
 from ....extrapolator import Simulation_Extrapolator_Forwarding_Table
-
+from ....utils.database import Database
 
 class Output_Subtables:
     """Subtables that deal with the output functions from the extrapolator"""
@@ -104,16 +104,28 @@ class Output_Subtable:
                       extra_bash_arg_5,
                       self._get_traceback_data(subtable_ases,
                                                all_ases,
+                                               round_num,
                                                attack),
                       self._get_control_plane_data(attack),
                       self._get_visible_hijack_data(table_names, attack, round_num))
 
-    def _get_traceback_data(self, subtable_ases, all_ases, attack):
+    def _get_traceback_data(self, subtable_ases, all_ases, round_num, attack):
         """Gets the data plane data through tracing back"""
 
         # NOTE: this can easily be changed to SQL. See super optimized folder.
         conds = {x: {y: 0 for y in AS_Types.list_values()}
                  for x in Data_Plane_Conditions.list_values()}
+        
+        with Database() as db:
+            db.execute("""CREATE TABLE IF NOT EXISTS v1_hijacked_ases (
+                            asn INT,
+                            round_num INT
+                        )""")
+            db.execute("""CREATE TABLE IF NOT EXISTS v2_hijacked_ases (
+                            asn INT,
+                            round_num INT
+                        )""")
+            
 
         # For all the ases in the subtable
         for og_asn, og_as_data in subtable_ases.items():
@@ -126,7 +138,23 @@ class Output_Subtable:
                 if (condition := as_data["received_from_asn"]) in conds:
                     conds[condition][og_as_data["impliment"]] += 1
                     if condition == 64513 and og_as_data["impliment"] and "Edge" in str(self.Input_Table):
-                        print('\n' * 10 + str(og_asn) + '\n' * 10)
+                        #print('\n' * 10 + str(og_asn) + '\n' * 10)
+                        # If AS type is v1
+                        if og_as_data["as_type"] == 4:
+                            with Database() as db:
+                                sql_str = """
+                                    INSERT INTO v1_hijacked_ases(asn, round_num)
+                                    VALUES ({0}, {1})
+                                """.format(og_asn, round_num)
+                                db.execute(sql_str)
+                        # If AS type is v2
+                        if og_as_data["as_type"] == 5:
+                            with Database() as db:
+                                sql_str = """
+                                    INSERT INTO v2_hijacked_ases(asn, round_num)
+                                    VALUES ({0}, {1})
+                                """.format(og_asn, round_num)
+                                db.execute(sql_str)
                     looping = False
                     break
                 else:
