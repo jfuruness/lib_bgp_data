@@ -18,6 +18,7 @@ from unittest.mock import patch
 from datetime import datetime
 
 from ...simulator import Simulator
+from ...tables import Simulation_Results_Table
 from ...subtables.subtables_base import Subtables, Subtable
 from ...subtables.tables import ASes_Subtable, Subtable_Forwarding_Table
 
@@ -28,7 +29,7 @@ from .....utils import utils
 class Graph_Tester:
     def _test_graph(self,
                     percents=[1],
-                    num_trials=2,
+                    num_trials=1,
                     exr_cls=Sim_Exr,  # For development only
                     attack_types=[],
                     adopt_policies=[],
@@ -47,7 +48,8 @@ class Graph_Tester:
                     adopting_rows=[],
                     attacker: int = None,
                     victim: int = None,
-                    exr_output=[]):
+                    exr_output=[],
+                    results_dict={}):
 
         self.sim = Simulator()
 
@@ -59,7 +61,6 @@ class Graph_Tester:
                             extra_bash_args_3,
                             extra_bash_args_4,
                             extra_bash_args_5)
- 
         # TODO: patch redownload base data
         #       pass in relationships table, redownload exr
         def _redownload_base_data_patch(*args, **kwargs):
@@ -168,7 +169,7 @@ class Graph_Tester:
                     with patch.object(Sim_Exr, "_run_test", _run_test):
                         print('Running test simulation')
                         Simulator().run(percents,
-                                  num_trials,
+                                  num_trials=num_trials,
                                   exr_cls=exr_cls,
                                   attack_types=attack_types,
                                   adopt_policies=adopt_policies,
@@ -179,6 +180,11 @@ class Graph_Tester:
                                   extra_bash_args_4=extra_bash_args_4,
                                   extra_bash_args_5=extra_bash_args_5,
                                   redownload_base_data=True)
+        with Simulation_Results_Table() as db:
+            assert num_trials == 1, "Must be one for this. Can extend later"
+            result = db.get_all()[0]
+            for k, v in results_dict.items():
+                assert result[k] == v
 
 
     def validate_input(self, *args):

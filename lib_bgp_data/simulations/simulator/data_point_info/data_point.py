@@ -22,7 +22,6 @@ from ....collectors.mrt.mrt_metadata.tables import MRT_W_Metadata_Table
 from ....utils import utils
 from ....utils.base_classes import Parser
 
-
 class Data_Point(Parser):
     """Represents a data point on the graph"""
 

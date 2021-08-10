@@ -94,6 +94,15 @@ class Test_Figure_1(Graph_Tester):
                        "received_from_asn": Conds.HIJACKED.value},
                      ]
 
+        results_dict = {"trace_hijacked_collateral": 3,
+                        "trace_nothijacked_collateral": 0,
+                        "trace_blackholed_collateral": 0,
+                        "trace_total_collateral": 3,
+                        "trace_hijacked_adopting": 0,
+                        "trace_nothijacked_adopting": 0,
+                        "trace_blackholed_adopting": 0,
+                        "trace_total_adopting": 0}
+
         self._test_graph(attack_types=attack_types,
                          adopt_policies=adopt_policies,
                          peer_rows=peer_rows,
@@ -101,7 +110,8 @@ class Test_Figure_1(Graph_Tester):
                          adopting_rows=adopting_rows,
                          attacker=attacker,
                          victim=victim,
-                         exr_output=exr_output)
+                         exr_output=exr_output,
+                         results_dict=results_dict)
 
     def test_figure_1b(self):
         r"""hidden hijack example with ROV
@@ -169,6 +179,15 @@ class Test_Figure_1(Graph_Tester):
                      ]
 
 
+        results_dict = {"trace_hijacked_collateral": 2,
+                        "trace_nothijacked_collateral": 0,
+                        "trace_blackholed_collateral": 0,
+                        "trace_total_collateral": 2,
+                        "trace_hijacked_adopting": 1,
+                        "trace_nothijacked_adopting": 0,
+                        "trace_blackholed_adopting": 0,
+                        "trace_total_adopting": 1}
+
 
         self._test_graph(attack_types=attack_types,
                          adopt_policies=adopt_policies,
@@ -177,4 +196,5 @@ class Test_Figure_1(Graph_Tester):
                          adopting_rows=adopting_rows,
                          attacker=attacker,
                          victim=victim,
-                         exr_output=exr_output)
+                         exr_output=exr_output,
+                         results_dict=results_dict)

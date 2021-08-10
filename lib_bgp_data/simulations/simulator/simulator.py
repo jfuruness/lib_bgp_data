@@ -12,6 +12,8 @@ __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
+import logging
+
 from .attacks import Attack
 from .data_point_info import Data_Point
 from .multiline_tqdm import Multiline_TQDM
@@ -125,7 +127,8 @@ class Simulator(Parser):
                         extra_bash_args_4,
                         extra_bash_args_5):
 
-        assert trials > 1, "Need at least 2 trials for conf intervals"
+        if trials <= 1:
+            logging.warning("Need at least 2 trials for conf intervals")
         assert rounds >= 1, "Need at least 1 round"
 
         assert number_of_attackers == [1], "No. Just no."
