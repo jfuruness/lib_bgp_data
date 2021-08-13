@@ -12,11 +12,12 @@ from lib_bgp_data.simulations.simulator.subtables.subtables_base import Subtable
 from lib_bgp_data.simulations.simulator.subtables.tables import ASes_Subtable, Subtable_Forwarding_Table
 
 from copy import deepcopy
-
+import random
+random.seed(0)
 percents = [60]
 
 og_test_run = deepcopy(Test.run)
-
+counter = 0
 def test_run_patch(self, *args, **kwargs):
     """Func to be run once test finishes
 
@@ -24,19 +25,24 @@ def test_run_patch(self, *args, **kwargs):
     If end condition is reached, do something else
     """
 
+    global counter
+    counter += 1
+    self.extra_bash_arg_1 = str(counter).zfill(10)
+
     og_test_run(self, *args, **kwargs)
 
     sql = """SELECT s1.attacker_asn, s1.victim, s1.trace_hijacked_adopting AS v1_hj, s2.trace_hijacked_adopting AS v2_hj, s1.extra_bash_arg_1 FROM simulation_results s1
             INNER JOIN simulation_results s2
                 ON s1.attacker_asn = s2.attacker_asn AND s2.victim = s1.victim
-            WHERE s1.subtable_name = 'edge_ases' AND s2.subtable_name = 'edge_ases' AND s1.adopt_pol = 'ROVPP_V1' AND s2.adopt_pol = 'ROVPP_V2'
+                    AND s1.trace_total_adopting = s2.trace_total_adopting
+                    AND s1.trace_total_collateral = s2.trace_total_collateral
+            WHERE s1.adopt_pol = 'ROVPP_V1' AND s2.adopt_pol = 'ROVPP_V2'
             ORDER BY s1.extra_bash_arg_1 DESC
           """
     with Database() as db:
         results = db.execute(sql)
         for result in results:
             # IF v1 has less hijacks than v2
-            counter = 0
             if result["v1_hj"] < result["v2_hj"]:
                 ases_left = [x["asn"] for x in db.execute("SELECT asn FROM sim_test_ases")]
 
@@ -46,37 +52,37 @@ def test_run_patch(self, *args, **kwargs):
                     db.execute(f"CREATE UNLOGGED TABLE saved_{table_name} AS (SELECT * FROM {table_name});")
                     ases_left_saved = deepcopy(ases_left)
 
-                for num_to_remove in [20000,10000,5000,2500,1000,500,100,50,10,5,1]:
+                for num_to_remove in [10, 1]:#[20000,10000,5000,2500,1000,500,100,50,10,5,1]:
                     for i in range(10):
-                        removal_ases = list(random.sample(ases_to_remove, num_to_remove))
+                        removal_ases = list(random.sample(ases_left, num_to_remove))
                         for asn in removal_ases:
                             db.execute(f"DELETE FROM peers WHERE peer_as_1 = {asn} OR peer_as_2 = {asn}")
                             db.execute(f"DELETE FROM provider_customers WHERE provider_as = {asn} OR customer_as = {asn}")
                             db.execute(f"DELETE FROM sim_test_ases WHERE asn = {asn}")
-                        ases_left = list(sorted(set(ases_left).difference(set(ases_to_remove))))
-                        for adopt_pol in [Non_Default_Policies.ROVPP_V1, Non_Default_Policies_ROVPP_V2]:
-                            max_count = 10 ** 6
-                            self.extra_bash_arg_1 = str(counter).zfill(max_count)
-                            self.run(*args, **kwargs)
+                        ases_left = list(sorted(set(ases_left).difference(set(removal_ases))))
+                        for adopt_pol in [Non_Default_Policies.ROVPP_V1, Non_Default_Policies.ROVPP_V2]:
+                            self.adopt_pol = adopt_pol
+                            max_count = 10
                             counter += 1
-                            assert counter < max_count, "zfill will fail"
+                            self.extra_bash_arg_1 = str(counter).zfill(max_count)
+                            og_test_run(self, *args, **kwargs)
+                            assert counter < max_count ** 10, "zfill will fail"
                         result = db.execute(sql)[0]
-                        input("result is highest counter")
+                        input(f"\n\n\n\n\n\n\n\n{result} is highest counter\n\n\n\n\n\n\n\n\n")
                         # If alter is successful (v1 still better than v2), save new peers, customer providers, sim test ases, ases left
                         if result["v1_hj"] < result["v2_hj"]:
                             for table in ["peers", "provider_customers", "sim_test_ases"]:
                                 db.execute(f"DROP TABLE IF EXISTS saved_{table}")
                                 db.execute(f"CREATE TABLE saved_{table} AS (SELECT * FROM {table})")
-                            saved_ases_left = deepcopy(ases_left)
+                            ases_left_saved = deepcopy(ases_left)
                         else:
                             # reset to the old savings
                             for table in ["peers", "provider_customers", "sim_test_ases"]:
                                 db.execute(f"DROP TABLE IF EXISTS {table}")
                                 db.execute(f"CREATE TABLE {table} AS( SELECT * FROM  saved_{table})")
-                            ases_left = deepcopy(saved_ases_left)
- 
+                            ases_left = deepcopy(ases_left_saved)
+                break
 
-                input(f"!\n\n\n\n\n\n\n\n\n\n\n{result}\n\n\n\n\n\n\n!")
 
 ############################################################################################
 # TODO: patch subtables get_tables
