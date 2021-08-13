@@ -1,6 +1,7 @@
 from unittest.mock import patch
 
 from lib_bgp_data import Simulator
+from lib_bgp_data import Relationships_Parser
 from lib_bgp_data.utils.database import Database, Generic_Table
 from lib_bgp_data.utils import utils
 from lib_bgp_data import Non_Default_Policies
@@ -28,6 +29,8 @@ class RemovalASesTable(Generic_Table):
                 asn BIGINT
             );"""
         self.execute(sql)
+        sql = f"CREATE INDEX IF NOT EXISTS rmas ON {self.name}(asn)"
+        self.execute(sql)
 
 def test_run_patch(self, *args, **kwargs):
     """Func to be run once test finishes
@@ -51,6 +54,7 @@ def test_run_patch(self, *args, **kwargs):
             ORDER BY s1.extra_bash_arg_1 DESC
           """
     with Database() as db:
+        db.execute("CREATE INDEX IF NOT EXISTS simp_index ON sim_test_ases(asn)")
         results = db.execute(sql)
         for result in results:
             # IF v1 has less hijacks than v2
@@ -64,18 +68,18 @@ def test_run_patch(self, *args, **kwargs):
                     db.execute(f"CREATE UNLOGGED TABLE saved_{table_name} AS (SELECT * FROM {table_name});")
                     ases_left_saved = deepcopy(ases_left)
 
-                for num_to_remove in [10000, 5000, 2000, 1000,500,100,50,10,5,1]:
-                    for i in range(10):
+                for (num_to_remove, times_to_trie) in [[10000, 5], [5000, 5], [2000, 5], [1000, 10], [500, 20], [100, 50], [50, 100], [10, 100], [5, 100], [1, 100]]:
+                    for i in range(times_to_trie):
                         removal_ases = list(random.sample(ases_left, num_to_remove))
                         csv_path = "/tmp/shrinktest.csv"
                         utils.rows_to_db([[x] for x in removal_ases], csv_path, RemovalASesTable)
                         with RemovalASesTable() as db2:
                             print("Removing")
-                            db2.execute(f"DELETE FROM peers USING {db.name} WHERE peer_as_1 = {db.name}.asn OR peer_as_2 = {db.name}.asn")
+                            db2.execute(f"DELETE FROM peers USING {db2.name} WHERE peer_as_1 = {db2.name}.asn OR peer_as_2 = {db2.name}.asn")
                             print("Removed from peers")
-                            db2.execute(f"DELETE FROM provider_customers pc USING {db.name} r WHERE provider_as = asn OR customer_as = asn")
+                            db2.execute(f"DELETE FROM provider_customers pc USING {db2.name} r WHERE provider_as = asn OR customer_as = asn")
                             print("Removed from provider customers")
-                            db2.execute(f"DELETE FROM sim_test_ases s USING {db.name} WHERE {db.name}.asn = s.asn")
+                            db2.execute(f"DELETE FROM sim_test_ases s USING {db2.name} WHERE {db2.name}.asn = s.asn")
                             print("Removal complete")
                         ases_left = list(sorted(set(ases_left).difference(set(removal_ases))))
                         for adopt_pol in [Non_Default_Policies.ROVPP_V1, Non_Default_Policies.ROVPP_V2]:
@@ -138,12 +142,25 @@ def subtables_get_tables_patch(subtable_self, percents, *args, **kwargs):
                                      percents, #)] #edge_atk, etc_atk, top_atk,
                                      possible_attacker=True)]
 
+og_redownload = deepcopy(Simulator._redownload_base_data)
+def _redownload_base_data_patch(self, *args, **kwargs):
+    # forces new install of extrapolator
+    print("Later should install exr every time!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+    #exr_cls(**self.sim.kwargs).install(force=True)
+    Relationships_Parser(**self.kwargs)._run()
+    with Database() as db3:
+        for sql in ["CREATE INDEX ON peers(peer_as_1)",
+                    "CREATE INDEX ON peers(peer_as_2)",
+                    "CREATE INDEX ON provider_customers(provider_as)",
+                    "CREATE INDEX ON provider_customers(customer_as)"]:
+            db3.execute(sql)
 
 with patch.object(Test, "run", test_run_patch):
     with patch.object(Subtables, "get_tables", subtables_get_tables_patch):
-        Simulator().run(percents=percents,
-                        num_trials=20,
-                        deterministic=True,
-                        attack_types=[Subprefix_Hijack],
-                        adopt_policies=[Non_Default_Policies.ROVPP_V1, Non_Default_Policies.ROVPP_V2],
-                        redownload_base_data=True)
+        with patch.object(Simulator, "_redownload_base_data", _redownload_base_data_patch):
+            Simulator().run(percents=percents,
+                            num_trials=20,
+                            deterministic=True,
+                            attack_types=[Subprefix_Hijack],
+                            adopt_policies=[Non_Default_Policies.ROVPP_V1, Non_Default_Policies.ROVPP_V2],
+                            redownload_base_data=True)
