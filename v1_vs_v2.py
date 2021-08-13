@@ -1,7 +1,7 @@
 from unittest.mock import patch
 
 from lib_bgp_data import Simulator
-from lib_bgp_data.utils.database import Database
+from lib_bgp_data.utils.database import Database, Generic_Table
 from lib_bgp_data.utils import utils
 from lib_bgp_data import Non_Default_Policies
 from lib_bgp_data.simulations.simulator.data_point_info.test import Test
@@ -10,7 +10,7 @@ from lib_bgp_data.simulations.simulator.attacks.attack_classes import Subprefix_
 from datetime import datetime
 from lib_bgp_data.simulations.simulator.subtables.subtables_base import Subtables, Subtable
 from lib_bgp_data.simulations.simulator.subtables.tables import ASes_Subtable, Subtable_Forwarding_Table
-
+from tqdm import tqdm
 from copy import deepcopy
 import random
 random.seed(0)
@@ -18,6 +18,17 @@ percents = [60]
 
 og_test_run = deepcopy(Test.run)
 counter = 0
+
+
+class RemovalASesTable(Generic_Table):
+    name = "removal_ases"
+
+    def _create_tables(self):
+        sql = f"""CREATE UNLOGGED TABLE IF NOT EXISTS {self.name}(
+                asn BIGINT
+            );"""
+        self.execute(sql)
+
 def test_run_patch(self, *args, **kwargs):
     """Func to be run once test finishes
 
@@ -44,7 +55,8 @@ def test_run_patch(self, *args, **kwargs):
         for result in results:
             # IF v1 has less hijacks than v2
             if result["v1_hj"] < result["v2_hj"]:
-                ases_left = [x["asn"] for x in db.execute("SELECT asn FROM sim_test_ases")]
+                ases_left = [x["asn"] for x in db.execute("SELECT asn FROM sim_test_ases")
+                            if x["asn"] not in [self.attack.attacker, self.attack.victim]]
 
                 # Save a reference
                 for table_name in ["peers", "provider_customers", "sim_test_ases"]:
@@ -52,13 +64,19 @@ def test_run_patch(self, *args, **kwargs):
                     db.execute(f"CREATE UNLOGGED TABLE saved_{table_name} AS (SELECT * FROM {table_name});")
                     ases_left_saved = deepcopy(ases_left)
 
-                for num_to_remove in [10, 1]:#[20000,10000,5000,2500,1000,500,100,50,10,5,1]:
+                for num_to_remove in [10000, 5000, 2000, 1000,500,100,50,10,5,1]:
                     for i in range(10):
                         removal_ases = list(random.sample(ases_left, num_to_remove))
-                        for asn in removal_ases:
-                            db.execute(f"DELETE FROM peers WHERE peer_as_1 = {asn} OR peer_as_2 = {asn}")
-                            db.execute(f"DELETE FROM provider_customers WHERE provider_as = {asn} OR customer_as = {asn}")
-                            db.execute(f"DELETE FROM sim_test_ases WHERE asn = {asn}")
+                        csv_path = "/tmp/shrinktest.csv"
+                        utils.rows_to_db([[x] for x in removal_ases], csv_path, RemovalASesTable)
+                        with RemovalASesTable() as db2:
+                            print("Removing")
+                            db2.execute(f"DELETE FROM peers USING {db.name} WHERE peer_as_1 = {db.name}.asn OR peer_as_2 = {db.name}.asn")
+                            print("Removed from peers")
+                            db2.execute(f"DELETE FROM provider_customers pc USING {db.name} r WHERE provider_as = asn OR customer_as = asn")
+                            print("Removed from provider customers")
+                            db2.execute(f"DELETE FROM sim_test_ases s USING {db.name} WHERE {db.name}.asn = s.asn")
+                            print("Removal complete")
                         ases_left = list(sorted(set(ases_left).difference(set(removal_ases))))
                         for adopt_pol in [Non_Default_Policies.ROVPP_V1, Non_Default_Policies.ROVPP_V2]:
                             self.adopt_pol = adopt_pol
@@ -68,20 +86,24 @@ def test_run_patch(self, *args, **kwargs):
                             og_test_run(self, *args, **kwargs)
                             assert counter < max_count ** 10, "zfill will fail"
                         result = db.execute(sql)[0]
-                        input(f"\n\n\n\n\n\n\n\n{result} is highest counter\n\n\n\n\n\n\n\n\n")
+                        print(f"\n\n\n\n\n\n\n\n{len(ases_left_saved)} left\n\n\n\n\n\n\n\n\n")
                         # If alter is successful (v1 still better than v2), save new peers, customer providers, sim test ases, ases left
                         if result["v1_hj"] < result["v2_hj"]:
+                            print(f"\n\n\n\n\n\n\n\nSUCCESSFULLY REMOVED {len(removal_ases)}\n\n\n\n\n\n\n\n\n")
                             for table in ["peers", "provider_customers", "sim_test_ases"]:
                                 db.execute(f"DROP TABLE IF EXISTS saved_{table}")
                                 db.execute(f"CREATE TABLE saved_{table} AS (SELECT * FROM {table})")
                             ases_left_saved = deepcopy(ases_left)
                         else:
+
+                            print(f"\n\n\n\n\n\n\n\nFAILED TO REMOVE{len(removal_ases)}\n\n\n\n\n\n\n\n\n")
                             # reset to the old savings
                             for table in ["peers", "provider_customers", "sim_test_ases"]:
                                 db.execute(f"DROP TABLE IF EXISTS {table}")
                                 db.execute(f"CREATE TABLE {table} AS( SELECT * FROM  saved_{table})")
                             ases_left = deepcopy(ases_left_saved)
-                break
+                import sys
+                sys.exit()
 
 
 ############################################################################################
@@ -124,4 +146,4 @@ with patch.object(Test, "run", test_run_patch):
                         deterministic=True,
                         attack_types=[Subprefix_Hijack],
                         adopt_policies=[Non_Default_Policies.ROVPP_V1, Non_Default_Policies.ROVPP_V2],
-                        redownload_base_data=False)
+                        redownload_base_data=True)
