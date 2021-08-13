@@ -68,8 +68,13 @@ def test_run_patch(self, *args, **kwargs):
                     db.execute(f"CREATE UNLOGGED TABLE saved_{table_name} AS (SELECT * FROM {table_name});")
                     ases_left_saved = deepcopy(ases_left)
 
-                for (num_to_remove, times_to_trie) in [[10000, 5], [5000, 5], [2000, 5], [1000, 10], [500, 20], [100, 50], [50, 100], [10, 100], [5, 100], [1, 100]]:
-                    for i in range(times_to_trie):
+                for num_to_remove in [10000, 5000, 2000, 1000, 500, 100, 50, 10, 5, 1]:
+                    count_failures = 0
+                    while ((count_failures < 10 and num_to_remove >= 5000)
+                            or (count_failures < 20 and num_to_remove >= 1000)
+                            or (count_failures < 100 and num_to_remove >= 100)
+                            or (count_failures < 500 and num_to_remove >= 50)
+                            or (count_failures < 1000)):
                         removal_ases = list(random.sample(ases_left, num_to_remove))
                         csv_path = "/tmp/shrinktest.csv"
                         utils.rows_to_db([[x] for x in removal_ases], csv_path, RemovalASesTable)
@@ -94,18 +99,21 @@ def test_run_patch(self, *args, **kwargs):
                         # If alter is successful (v1 still better than v2), save new peers, customer providers, sim test ases, ases left
                         if result["v1_hj"] < result["v2_hj"]:
                             print(f"\n\n\n\n\n\n\n\nSUCCESSFULLY REMOVED {len(removal_ases)}\n\n\n\n\n\n\n\n\n")
+                            count_failures = 0
                             for table in ["peers", "provider_customers", "sim_test_ases"]:
                                 db.execute(f"DROP TABLE IF EXISTS saved_{table}")
                                 db.execute(f"CREATE TABLE saved_{table} AS (SELECT * FROM {table})")
                             ases_left_saved = deepcopy(ases_left)
                         else:
-
+                            count_failures += 1
                             print(f"\n\n\n\n\n\n\n\nFAILED TO REMOVE{len(removal_ases)}\n\n\n\n\n\n\n\n\n")
                             # reset to the old savings
                             for table in ["peers", "provider_customers", "sim_test_ases"]:
                                 db.execute(f"DROP TABLE IF EXISTS {table}")
                                 db.execute(f"CREATE TABLE {table} AS( SELECT * FROM  saved_{table})")
                             ases_left = deepcopy(ases_left_saved)
+                        import sys
+                        sys.stdout.flush()
                 import sys
                 sys.exit()
 
