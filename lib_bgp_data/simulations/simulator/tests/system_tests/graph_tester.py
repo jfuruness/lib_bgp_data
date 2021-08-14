@@ -13,13 +13,17 @@ __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
 __status__ = "Development"
 
+from copy import deepcopy
 import os
 from unittest.mock import patch
 from datetime import datetime
 
+from ....enums import Data_Plane_Conditions
 from ...simulator import Simulator
 from ...tables import Simulation_Results_Table
+from ...subtables.output_subtables import Output_Subtable, Output_Subtables
 from ...subtables.subtables_base import Subtables, Subtable
+
 from ...subtables.tables import ASes_Subtable, Subtable_Forwarding_Table
 
 from .....extrapolator import Simulation_Extrapolator_Wrapper as Sim_Exr
@@ -49,7 +53,8 @@ class Graph_Tester:
                     attacker: int = None,
                     victim: int = None,
                     exr_output=[],
-                    results_dict={}):
+                    results_dict={},
+                    traceback_dict={}):
 
         self.sim = Simulator()
 
@@ -157,7 +162,35 @@ class Graph_Tester:
                     pprint(exr_output)
                     print("\n" * 10)
                     raise e
- 
+
+        og_traceback = deepcopy(Output_Subtable._get_traceback_data)
+        def _get_traceback_data_patch(self, *args, **kwargs):
+
+
+            conditions = {x.value: x for x in list(Data_Plane_Conditions)}
+            # This is for the professor convenience
+            ases = {x["asn"]: x for x in self.Forwarding_Table.get_all()}
+            traceback_results = {}
+            for og_asn, og_as_data in ases.items():
+                asn, as_data = og_asn, og_as_data
+                looping = True
+                # Path should never be longer than 64
+                for _ in range(64):
+                    # Conds are end conditions. See README.
+                    if as_data["received_from_asn"] in conditions:
+                        traceback_results[og_asn] = conditions[as_data["received_from_asn"]]
+                        looping = False
+                        break
+                    else:
+                        asn = as_data["received_from_asn"]
+                        as_data = ases[asn]
+                assert not looping, "Traceback is looping"
+            for asn, condition in traceback_dict.items():
+                if asn not in traceback_results:
+                    raise Exception(f"{asn} not tracked in traceback? Was it an attacker/victim?")
+                err = f"{asn} was {traceback_results[asn].name}, not {condition.name}"
+                assert traceback_results[asn] == condition, err
+            return og_traceback(self, *args, **kwargs)
 
         with patch.object(Simulator,
                           "_redownload_base_data",
@@ -167,19 +200,22 @@ class Graph_Tester:
                               subtables_get_tables_patch):
                 with patch("random.sample", random_sample_patch):
                     with patch.object(Sim_Exr, "_run_test", _run_test):
-                        print('Running test simulation')
-                        Simulator().run(percents,
-                                  num_trials=num_trials,
-                                  exr_cls=exr_cls,
-                                  attack_types=attack_types,
-                                  adopt_policies=adopt_policies,
-                                  rounds=rounds,
-                                  extra_bash_args_1=extra_bash_args_1,
-                                  extra_bash_args_2=extra_bash_args_2,
-                                  extra_bash_args_3=extra_bash_args_3,
-                                  extra_bash_args_4=extra_bash_args_4,
-                                  extra_bash_args_5=extra_bash_args_5,
-                                  redownload_base_data=True)
+                        with patch.object(Output_Subtable,
+                                          "_get_traceback_data",
+                                          _get_traceback_data_patch):
+                            print('Running test simulation')
+                            Simulator().run(percents,
+                                      num_trials=num_trials,
+                                      exr_cls=exr_cls,
+                                      attack_types=attack_types,
+                                      adopt_policies=adopt_policies,
+                                      rounds=rounds,
+                                      extra_bash_args_1=extra_bash_args_1,
+                                      extra_bash_args_2=extra_bash_args_2,
+                                      extra_bash_args_3=extra_bash_args_3,
+                                      extra_bash_args_4=extra_bash_args_4,
+                                      extra_bash_args_5=extra_bash_args_5,
+                                      redownload_base_data=True)
         with Simulation_Results_Table() as db:
             assert num_trials == 1, "Must be one for this. Can extend later"
             result = db.get_all()[0]

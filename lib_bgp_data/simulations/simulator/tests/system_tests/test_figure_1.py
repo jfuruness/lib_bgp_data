@@ -102,6 +102,12 @@ class Test_Figure_1(Graph_Tester):
                         "trace_nothijacked_adopting": 0,
                         "trace_blackholed_adopting": 0,
                         "trace_total_adopting": 0}
+        # Other condition is Conds.BHOLED for blackholed
+        traceback_dict = {44: Conds.HIJACKED,
+                          88: Conds.HIJACKED,
+                          77: Conds.HIJACKED,
+                          666: Conds.HIJACKED,
+                          99: Conds.NOTHIJACKED}
 
         self._test_graph(attack_types=attack_types,
                          adopt_policies=adopt_policies,
@@ -111,7 +117,8 @@ class Test_Figure_1(Graph_Tester):
                          attacker=attacker,
                          victim=victim,
                          exr_output=exr_output,
-                         results_dict=results_dict)
+                         results_dict=results_dict,
+                         traceback_dict=traceback_dict)
 
     def test_figure_1b(self):
         r"""hidden hijack example with ROV
