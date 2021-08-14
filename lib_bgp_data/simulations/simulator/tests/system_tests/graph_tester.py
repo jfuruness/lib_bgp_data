@@ -121,6 +121,8 @@ class Graph_Tester:
 
         # Checks the output
         def _run_test(self, exr_table):
+            if not exr_output:
+                return
             table_rows = exr_table.get_all()
             
             # Format rows to get rid of defaultdict
