@@ -39,9 +39,11 @@ class Test_Superprefix_prefix_hijack(Graph_Tester):
         provider_customer_rows = [[88, 33],
                                   [88, 86],
                                   [88, 666],
-                                  [33, 12]]
+                                  [33, 12],
+                                  [86, 22],
+                                  [86, 11]]
         # Set adopting rows
-        bgp_ases = [88, 33, 12, 666]
+        bgp_ases = [88, 33, 12, 666, 22, 11]
         rov_adopting_ases = []
         rovpp_adopting_ases = [86]
         adopting_rows = []
@@ -64,17 +66,27 @@ class Test_Superprefix_prefix_hijack(Graph_Tester):
                 {'asn': 88, 'origin': 666, 'prefix': '1.0.0.0/8', 'received_from_asn': 666},
                 {'asn': 88, 'origin': 666, 'prefix': '1.2.0.0/16', 'received_from_asn': 666},
                 {'asn': 666, 'origin': 666, 'prefix': '1.0.0.0/8', 'received_from_asn': 64513},
-                {'asn': 666, 'origin': 666, 'prefix': '1.2.0.0/16', 'received_from_asn': 64513}                
+                {'asn': 666, 'origin': 666, 'prefix': '1.2.0.0/16', 'received_from_asn': 64513},
+                {'asn': 11, 'origin': 666, 'prefix': '1.0.0.0/8', 'received_from_asn': 86},
+                {'asn': 22, 'origin': 666, 'prefix': '1.0.0.0/8', 'received_from_asn': 86},
              ]
 
-        results_dict = {"trace_hijacked_collateral": 1,
+        results_dict = {"trace_hijacked_collateral": 3,
                         "trace_nothijacked_collateral": 1,
                         "trace_blackholed_collateral": 0,
-                        "trace_total_collateral": 2,
+                        "trace_total_collateral": 4,
                         "trace_hijacked_adopting": 1,
                         "trace_nothijacked_adopting": 0,
                         "trace_blackholed_adopting": 0,
                         "trace_total_adopting": 1}
+        
+        traceback_dict = {12: Conds.NOTHIJACKED,
+                          33: Conds.NOTHIJACKED,
+                          88: Conds.HIJACKED,
+                          86: Conds.HIJACKED,
+                          666: Conds.HIJACKED,
+                          11: Conds.HIJACKED,
+                          22: Conds.HIJACKED}
 
         self._test_graph(attack_types=attack_types,
                      adopt_policies=adopt_policies,
@@ -84,11 +96,12 @@ class Test_Superprefix_prefix_hijack(Graph_Tester):
                      attacker=attacker,
                      victim=victim,
                      exr_output=exr_output,
-                     results_dict=results_dict)
+                     results_dict=results_dict,
+                     traceback_dict=traceback_dict)
 
     @pytest.mark.parametrize("adopt_pol",
                              [Non_Default_Policies.ROVPP_V1,
-							  Non_Default_Policies.ROVPP_V2_AGGRESSIVE,
+                              Non_Default_Policies.ROVPP_V2_AGGRESSIVE,
                               Non_Default_Policies.ROVPP_V2]) 
     def test_smaller_scenario_v1(self, adopt_pol):
         r"""
@@ -102,9 +115,11 @@ class Test_Superprefix_prefix_hijack(Graph_Tester):
         provider_customer_rows = [[88, 33],
                                   [88, 86],
                                   [88, 666],
-                                  [33, 12]]
+                                  [33, 12],
+                                  [86, 11],
+                                  [86, 22]]
         # Set adopting rows
-        bgp_ases = [88, 33, 12, 666]
+        bgp_ases = [88, 33, 12, 666, 11, 22]
         rov_adopting_ases = []
         rovpp_adopting_ases = [86]
         adopting_rows = []
@@ -118,27 +133,39 @@ class Test_Superprefix_prefix_hijack(Graph_Tester):
         attacker = 666
         victim = 12
 
-        exr_output = [
-                {'asn': 12, 'origin': 666, 'prefix': '1.0.0.0/8', 'received_from_asn': 33},
-                {'asn': 12, 'origin': 12, 'prefix': '1.2.0.0/16', 'received_from_asn': 64514},
-                {'asn': 33, 'origin': 666, 'prefix': '1.0.0.0/8', 'received_from_asn': 88},
-                {'asn': 33, 'origin': 12, 'prefix': '1.2.0.0/16', 'received_from_asn': 12},
-                {'asn': 86, 'origin': 666, 'prefix': '1.0.0.0/8', 'received_from_asn': 88},
-                {'asn': 86, 'origin': 64512, 'prefix': '1.2.0.0/16', 'received_from_asn': 64512},
-                {'asn': 88, 'origin': 666, 'prefix': '1.0.0.0/8', 'received_from_asn': 666},
-                {'asn': 88, 'origin': 666, 'prefix': '1.2.0.0/16', 'received_from_asn': 666},
-                {'asn': 666, 'origin': 666, 'prefix': '1.0.0.0/8', 'received_from_asn': 64513},
-                {'asn': 666, 'origin': 666, 'prefix': '1.2.0.0/16', 'received_from_asn': 64513}                
-             ]
+        #exr_output = [
+        #        {'asn': 12, 'origin': 666, 'prefix': '1.0.0.0/8', 'received_from_asn': 33},
+        #        {'asn': 12, 'origin': 12, 'prefix': '1.2.0.0/16', 'received_from_asn': 64514},
+        #        {'asn': 33, 'origin': 666, 'prefix': '1.0.0.0/8', 'received_from_asn': 88},
+        #        {'asn': 33, 'origin': 12, 'prefix': '1.2.0.0/16', 'received_from_asn': 12},
+        #        {'asn': 86, 'origin': 666, 'prefix': '1.0.0.0/8', 'received_from_asn': 88},
+        #        {'asn': 86, 'origin': 64512, 'prefix': '1.2.0.0/16', 'received_from_asn': 64512},
+        #        {'asn': 88, 'origin': 666, 'prefix': '1.0.0.0/8', 'received_from_asn': 666},
+        #        {'asn': 88, 'origin': 666, 'prefix': '1.2.0.0/16', 'received_from_asn': 666},
+        #        {'asn': 666, 'origin': 666, 'prefix': '1.0.0.0/8', 'received_from_asn': 64513},
+        #        {'asn': 666, 'origin': 666, 'prefix': '1.2.0.0/16', 'received_from_asn': 64513},
+        #        {'asn': 11, 'origin': 666, 'prefix': '1.0.0.0/8', 'received_from_asn': 86},
+        #        {'asn': 22, 'origin': 666, 'prefix': '1.0.0.0/8', 'received_from_asn': 86},
+        #     ]
+        exr_output = None
 
         results_dict = {"trace_hijacked_collateral": 1,
                         "trace_nothijacked_collateral": 1,
-                        "trace_blackholed_collateral": 0,
-                        "trace_total_collateral": 2,
+                        "trace_blackholed_collateral": 2,
+                        "trace_total_collateral": 4,
                         "trace_hijacked_adopting": 0,
                         "trace_nothijacked_adopting": 0,
                         "trace_blackholed_adopting": 1,
                         "trace_total_adopting": 1}
+
+        traceback_dict = {12: Conds.NOTHIJACKED,
+                          33: Conds.NOTHIJACKED,
+                          88: Conds.HIJACKED,
+                          86: Conds.BHOLED,
+                          666: Conds.HIJACKED,
+                          11: Conds.BHOLED,
+                          22: Conds.BHOLED}
+
 
         self._test_graph(attack_types=attack_types,
                          adopt_policies=adopt_policies,
@@ -148,7 +175,8 @@ class Test_Superprefix_prefix_hijack(Graph_Tester):
                          attacker=attacker,
                          victim=victim,
                          exr_output=exr_output,
-                         results_dict=results_dict)
+                         results_dict=results_dict,
+                         traceback_dict=traceback_dict)
 
     def test_bug_scenario_v1(self):
         r"""
