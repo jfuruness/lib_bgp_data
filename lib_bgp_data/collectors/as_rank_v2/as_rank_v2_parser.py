@@ -54,10 +54,10 @@ class AS_Rank_Parser_V2(Parser):
         next_page = True
         first = 10000
         offset = 0
-        cur_rank = 1
+        count = 1
         if first_rank is not None:
             offset = first_rank
-            cur_rank = first_rank
+            count = first_rank
 
         if last_rank is not None:
             if (last_rank - first_rank) < 10000:
@@ -75,17 +75,23 @@ class AS_Rank_Parser_V2(Parser):
                 for asn in data['data']['asns']['edges']:
                     node = asn['node']
                     asn = int(node['asn'])
+                    rank = int(node['rank'])
                     links = self._get_links(asn)
-                    rows.append([cur_rank, asn, node['asnName'], links])
-                    cur_rank += 1
+                    print(f'Adding {asn} which is the {count}th asn')
+                    rows.append([rank, asn, node['asnName'], links])
+                    count += 1
 
                 if data['data']['asns']['pageInfo']['hasNextPage'] == False:
                     next_page = False
-                elif cur_rank >= last_rank:
-                    next_page = False
-                elif (first + cur_rank) >= last_rank:
-                    first = last_rank - cur_rank + 1 
-                offset += cur_rank
+                    #for debugging
+                    print('Hit last page, aborting')
+                    print(f'First = {first} offset = {offset}')
+                if last_rank is not None:
+                    if count >= last_rank:
+                        next_page = False
+                    elif (first + count) >= last_rank:
+                        first = last_rank - count + 1 
+                offset += count
 
         path = os.path.join(self.csv_dir, 'as_rank_v2.csv')
         utils.rows_to_db(rows, path, AS_Rank_V2, clear_table = False)
