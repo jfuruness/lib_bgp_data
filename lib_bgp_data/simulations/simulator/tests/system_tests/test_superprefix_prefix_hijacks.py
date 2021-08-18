@@ -331,3 +331,202 @@ class Test_Superprefix_prefix_hijack(Graph_Tester):
                          victim=victim,
                          exr_output=exr_output)
 
+
+
+
+    @pytest.mark.parametrize("adopt_pol",
+                             [Non_Default_Policies.ROV,
+                              Non_Default_Policies.ROVPP_V1,
+                              Non_Default_Policies.ROVPP_V2_AGGRESSIVE,
+                              Non_Default_Policies.ROVPP_V2]) 
+    def test_bug_scenario_13_ases(self, adopt_pol):
+            r"""
+            TODO: create a png of scenario and keep in this directory.
+            Link to scenario depiction (last slide)
+            https://docs.google.com/presentation/d/14N7Jifs5ExPKrdWTabSjjbG8QW6R8us91bJpK8ZkRXk/edit?usp=sharing
+            """
+
+            attack_types = [Prefix_Superprefix_Hijack]
+            adopt_policies = [adopt_pol]
+            peer_rows = [[4, 5],
+                         [3, 7],
+                         [7, 6]]
+            provider_customer_rows = [[11, 2],
+                                      [2, 1],
+                                      [3, 2],
+                                      [4, 3],
+                                      [7, 8],
+                                      [8, 9],
+                                      [9, 99],
+                                      [11, 10],
+                                      [10, 5],
+                                      [5, 6],
+                                      [6, 666]]
+            # Set adopting rows
+            bgp_ases = [11, 10, 5, 4, 7, 6, 666]
+            adopting_ases = [1, 2, 3, 8, 9, 99]
+            adopting_rows = []
+            for bgp_as in bgp_ases:
+                adopting_rows.append([bgp_as, Policies.DEFAULT.value, False])
+            for adopting_as in adopting_ases:
+                adopting_rows.append([adopting_as, adopt_pol.value, True])
+
+            attacker = 666
+            victim = 99
+            
+            exr_output = None
+
+            traceback_dict = {11: Conds.HIJACKED,
+                              10: Conds.HIJACKED,
+                              5: Conds.HIJACKED,
+                              6: Conds.HIJACKED,
+                              4: Conds.HIJACKED,
+                              1: Conds.NOTHIJACKED,
+                              2: Conds.NOTHIJACKED,
+                              3: Conds.NOTHIJACKED,
+                              7: Conds.NOTHIJACKED,
+                              8: Conds.NOTHIJACKED,
+                              9: Conds.NOTHIJACKED,
+                              99: Conds.NOTHIJACKED}
+
+            self._test_graph(attack_types=attack_types,
+                             adopt_policies=adopt_policies,
+                             peer_rows=peer_rows,
+                             provider_customer_rows=provider_customer_rows,
+                             adopting_rows=adopting_rows,
+                             attacker=attacker,
+                             victim=victim,
+                             exr_output=exr_output,
+                             traceback_dict=traceback_dict)
+
+
+    @pytest.mark.parametrize("adopt_pol",
+                             [Non_Default_Policies.ROV])
+    def test_bug_scenario_more_interesting_rov(self, adopt_pol):
+            r"""
+            TODO: create a png of scenario and keep in this directory.
+            Link to scenario depiction (last slide)
+            https://docs.google.com/presentation/d/14N7Jifs5ExPKrdWTabSjjbG8QW6R8us91bJpK8ZkRXk/edit?usp=sharing
+            """
+
+            attack_types = [Prefix_Superprefix_Hijack]
+            adopt_policies = [adopt_pol]
+            peer_rows = [[4, 5],
+                         [3, 7],
+                         [7, 6]]
+            provider_customer_rows = [[11, 12],
+                                      [12, 2],
+                                      [2, 1],
+                                      [3, 2],
+                                      [4, 3],
+                                      [7, 8],
+                                      [8, 9],
+                                      [9, 99],
+                                      [11, 10],
+                                      [10, 5],
+                                      [5, 6],
+                                      [6, 666]]
+            # Set adopting rows
+            bgp_ases = [11, 12, 10, 5, 7, 6, 666, 1, 3, 8, 9]
+            adopting_ases = [2, 99, 4]
+            adopting_rows = []
+            for bgp_as in bgp_ases:
+                adopting_rows.append([bgp_as, Policies.DEFAULT.value, False])
+            for adopting_as in adopting_ases:
+                adopting_rows.append([adopting_as, adopt_pol.value, True])
+
+            attacker = 666
+            victim = 99
+            
+            exr_output = None
+
+            traceback_dict = {11: Conds.HIJACKED,
+                              10: Conds.HIJACKED,
+                              5: Conds.HIJACKED,
+                              6: Conds.HIJACKED,
+                              4: Conds.HIJACKED,
+                              1: Conds.NOTHIJACKED,
+                              2: Conds.NOTHIJACKED,
+                              3: Conds.NOTHIJACKED,
+                              7: Conds.NOTHIJACKED,
+                              8: Conds.NOTHIJACKED,
+                              9: Conds.NOTHIJACKED,
+                              99: Conds.NOTHIJACKED}
+
+            self._test_graph(attack_types=attack_types,
+                             adopt_policies=adopt_policies,
+                             peer_rows=peer_rows,
+                             provider_customer_rows=provider_customer_rows,
+                             adopting_rows=adopting_rows,
+                             attacker=attacker,
+                             victim=victim,
+                             exr_output=exr_output,
+                             traceback_dict=traceback_dict)
+
+
+
+    @pytest.mark.parametrize("adopt_pol",
+                             [Non_Default_Policies.ROVPP_V1,
+                              Non_Default_Policies.ROVPP_V2_AGGRESSIVE,
+                              Non_Default_Policies.ROVPP_V2]) 
+    def test_bug_scenario_more_interesting_rovpp(self, adopt_pol):
+            r"""
+            TODO: create a png of scenario and keep in this directory.
+            Link to scenario depiction (last slide)
+            https://docs.google.com/presentation/d/14N7Jifs5ExPKrdWTabSjjbG8QW6R8us91bJpK8ZkRXk/edit?usp=sharing
+            """
+
+            attack_types = [Prefix_Superprefix_Hijack]
+            adopt_policies = [adopt_pol]
+            peer_rows = [[4, 5],
+                         [3, 7],
+                         [7, 6]]
+            provider_customer_rows = [[11, 12],
+                                      [12, 2],
+                                      [2, 1],
+                                      [3, 2],
+                                      [4, 3],
+                                      [7, 8],
+                                      [8, 9],
+                                      [9, 99],
+                                      [11, 10],
+                                      [10, 5],
+                                      [5, 6],
+                                      [6, 666]]
+            # Set adopting rows
+            bgp_ases = [11, 12, 10, 5, 7, 6, 666, 1, 3, 8, 9]
+            adopting_ases = [2, 99, 4]
+            adopting_rows = []
+            for bgp_as in bgp_ases:
+                adopting_rows.append([bgp_as, Policies.DEFAULT.value, False])
+            for adopting_as in adopting_ases:
+                adopting_rows.append([adopting_as, adopt_pol.value, True])
+
+            attacker = 666
+            victim = 99
+            
+            exr_output = None
+
+            traceback_dict = {11: Conds.HIJACKED,
+                              10: Conds.HIJACKED,
+                              5: Conds.HIJACKED,
+                              6: Conds.HIJACKED,
+                              4: Conds.BHOLED,
+                              1: Conds.NOTHIJACKED,
+                              2: Conds.NOTHIJACKED,
+                              3: Conds.NOTHIJACKED,
+                              7: Conds.NOTHIJACKED,
+                              8: Conds.NOTHIJACKED,
+                              9: Conds.NOTHIJACKED,
+                              99: Conds.NOTHIJACKED}
+
+            self._test_graph(attack_types=attack_types,
+                             adopt_policies=adopt_policies,
+                             peer_rows=peer_rows,
+                             provider_customer_rows=provider_customer_rows,
+                             adopting_rows=adopting_rows,
+                             attacker=attacker,
+                             victim=victim,
+                             exr_output=exr_output,
+                             traceback_dict=traceback_dict)
+
