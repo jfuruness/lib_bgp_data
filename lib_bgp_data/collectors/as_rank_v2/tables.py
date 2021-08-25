@@ -19,7 +19,7 @@ from ...utils.database import Generic_Table
 
 
 class AS_Rank_V2(Generic_Table):
-    """ASRankTable class, inherits from Generic_Table.
+    """AS_Rank_V2, inherits from Generic_Table.
     For a more in depth explanation see the top of the file.
     """
 
