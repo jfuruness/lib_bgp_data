@@ -17,6 +17,7 @@ import pytest
 from ..as_rank_v2_parser import AS_Rank_Parser_V2
 from ..tables import AS_Rank_V2
 
+
 @pytest.mark.asrank_parser_v2
 class Test_AS_Rank_Parser_V2:
 
@@ -49,4 +50,3 @@ class Test_AS_Rank_Parser_V2:
         with AS_Rank_V2() as db:
             result = db.execute('SELECT count(*) FROM as_rank_v2')
             assert result[0]['count'] == count
-

@@ -33,7 +33,7 @@ class AS_Rank_Parser_V2(Parser):
     url_base = 'https://api.asrank.caida.org/v2/restful/'
     header_base = {'accept': 'application/json'}
 
-    def _run(self, first_rank = None, last_rank = None):
+    def _run(self, first_rank=None, last_rank=None):
         """Parses the AS rank data from https://asrank.caida.org/
         """
         # Clear the table before every run
@@ -57,7 +57,7 @@ class AS_Rank_Parser_V2(Parser):
         if last_rank is not None:
             if (last_rank - first_rank) < 10000:
                 first = last_rank - first_rank
-        
+
         rows = []
 
         while(next_page):
@@ -75,7 +75,7 @@ class AS_Rank_Parser_V2(Parser):
                     rows.append([rank, asn, node['asnName'], links])
                     count += 1
 
-                if asns['pageInfo']['hasNextPage'] == False:
+                if asns['pageInfo']['hasNextPage'] is False:
                     next_page = False
                     final_count = asns['totalCount']
                 if last_rank is not None:
@@ -83,11 +83,11 @@ class AS_Rank_Parser_V2(Parser):
                         next_page = False
                         final_count = asns['totalCount']
                     elif (first + count) >= last_rank:
-                        first = last_rank - count + 1 
+                        first = last_rank - count + 1
                 offset = count
 
         path = os.path.join(self.csv_dir, 'as_rank_v2.csv')
-        utils.rows_to_db(rows, path, AS_Rank_V2, clear_table = False)
+        utils.rows_to_db(rows, path, AS_Rank_V2, clear_table=False)
         return final_count
 
     def _get_links(self, asn):
@@ -104,11 +104,12 @@ class AS_Rank_Parser_V2(Parser):
             with urllib.request.urlopen(req) as response:
                 page = response.read()
                 data = json.loads(page.decode('utf-8'))
-                if data['data']['asnLinks']['edges'] == []:
+                asn_links = data['data']['asnLinks']
+                if asn_links['edges'] == []:
                     return '{}'
-                for link in data['data']['asnLinks']['edges']:
+                for link in asn_links['edges']:
                     rows += link['node']['asn1']['asn'] + ','
-                if data['data']['asnLinks']['pageInfo']['hasNextPage'] == False:
+                if asn_links['pageInfo']['hasNextPage'] is False:
                     rows = rows[:-1] + '}'
                     return rows
                 else:
