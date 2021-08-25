@@ -2,12 +2,12 @@
 # -*- coding: utf-8 -*-
 
 """Contains AS_Rank_V2 which parses AS Rank data using the Restful API
-
-see: https://github.com/jfuruness/lib_bgp_data/wiki/AS-Rank-Parser"""
+In contrast to the previous parser this also gets organization, rank,
+and links to other ASNs"""
 
 
 __author__ = "Nicholas Shpetner"
-__credits__ = ["Nicholas Shpetner"]
+__credits__ = ["Nicholas Shpetner", "Abhinna Adhikari", "Justin Furuness"]
 __Lisence__ = "BSD"
 __maintainer__ = "Justin Furuness"
 __email__ = "jfuruness@gmail.com"
@@ -26,24 +26,16 @@ from ...utils.base_classes import Parser
 
 class AS_Rank_Parser_V2(Parser):
     """Parses the AS rank data from https://asrank.caida.org/
-
-    For a more in depth explanation:
-    https://github.com/jfuruness/lib_bgp_data/wiki/AS-Rank-Parser
     """
 
     __slots__ = []
 
-    #TODO: Modify this, use as base URL
     url_base = 'https://api.asrank.caida.org/v2/restful/'
     header_base = {'accept': 'application/json'}
 
     def _run(self, first_rank = None, last_rank = None):
         """Parses the AS rank data from https://asrank.caida.org/
-
-        For a more in depth explanation:
-        nick add a link
         """
-
         # Clear the table before every run
         with AS_Rank_V2(clear=True) as db:
             pass
@@ -52,16 +44,19 @@ class AS_Rank_Parser_V2(Parser):
             assert last_rank > first_rank
 
         next_page = True
+        # Defaults
         first = 10000
         offset = 0
         count = 1
+        final_count = 0
+
         if first_rank is not None:
             offset = first_rank
             count = first_rank
 
         if last_rank is not None:
             if (last_rank - first_rank) < 10000:
-                first = last_rank - first_rank + 1
+                first = last_rank - first_rank
         
         rows = []
 
@@ -71,30 +66,29 @@ class AS_Rank_Parser_V2(Parser):
             with urllib.request.urlopen(req) as response:
                 page = response.read()
                 data = json.loads(page.decode('utf-8'))
-
-                for asn in data['data']['asns']['edges']:
+                asns = data['data']['asns']
+                for asn in asns['edges']:
                     node = asn['node']
                     asn = int(node['asn'])
                     rank = int(node['rank'])
                     links = self._get_links(asn)
-                    print(f'Adding {asn} which is the {count}th asn')
                     rows.append([rank, asn, node['asnName'], links])
                     count += 1
 
-                if data['data']['asns']['pageInfo']['hasNextPage'] == False:
+                if asns['pageInfo']['hasNextPage'] == False:
                     next_page = False
-                    #for debugging
-                    print('Hit last page, aborting')
-                    print(f'First = {first} offset = {offset}')
+                    final_count = asns['totalCount']
                 if last_rank is not None:
                     if count >= last_rank:
                         next_page = False
+                        final_count = asns['totalCount']
                     elif (first + count) >= last_rank:
                         first = last_rank - count + 1 
-                offset += count
+                offset = count
 
         path = os.path.join(self.csv_dir, 'as_rank_v2.csv')
         utils.rows_to_db(rows, path, AS_Rank_V2, clear_table = False)
+        return final_count
 
     def _get_links(self, asn):
         offset = 0
