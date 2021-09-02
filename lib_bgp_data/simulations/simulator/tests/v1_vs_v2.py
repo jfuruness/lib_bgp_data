@@ -67,7 +67,7 @@ def test_run_patch(self, *args, **kwargs):
                 for row in db.execute(f"SELECT peer_as_2 FROM peers WHERE peer_as_1 = {self.attack.attacker} OR peer_as_1 = {self.attack.victim}"):
                     dont_delete.add(row["peer_as_2"])
                 for row in db.execute(f"SELECT provider_as FROM provider_customers WHERE customer_as = {self.attack.attacker} OR customer_as = {self.attack.victim}"):
-                    dont_delete.add(row["peer_as_2"])
+                    dont_delete.add(row["provider_as"])
                 dont_delete.add(self.attack.attacker)
                 dont_delete.add(self.attack.victim)
                 ases_left = ases_left.difference(dont_delete)
