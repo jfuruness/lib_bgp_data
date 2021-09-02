@@ -93,7 +93,7 @@ class Test_Figure_1(Graph_Tester):
                        "origin": 666,
                        "received_from_asn": Conds.HIJACKED.value},
                      ]
-
+        # Does NOT count the victim or attacker
         results_dict = {"trace_hijacked_collateral": 3,
                         "trace_nothijacked_collateral": 0,
                         "trace_blackholed_collateral": 0,
