@@ -59,9 +59,19 @@ def test_run_patch(self, *args, **kwargs):
         for result in results:
             # IF v1 has less hijacks than v2
             if result["v1_hj"] < result["v2_hj"]:
-                ases_left = [x["asn"] for x in db.execute("SELECT asn FROM sim_test_ases")
-                            if x["asn"] not in [self.attack.attacker, self.attack.victim]]
+                ases_left = set([x["asn"] for x in db.execute("SELECT asn FROM sim_test_ases")])
 
+                dont_delete = set()
+                for row in db.execute(f"SELECT peer_as_1 FROM peers WHERE peer_as_2 = {self.attack.attacker} OR peer_as_2 = {self.attack.victim}"):
+                    dont_delete.add(row["peer_as_1"])
+                for row in db.execute(f"SELECT peer_as_2 FROM peers WHERE peer_as_1 = {self.attack.attacker} OR peer_as_1 = {self.attack.victim}"):
+                    dont_delete.add(row["peer_as_2"])
+                for row in db.execute(f"SELECT provider_as FROM provider_customers WHERE customer_as = {self.attack.attacker} OR customer_as = {self.attack.victim}"):
+                    dont_delete.add(row["peer_as_2"])
+                dont_delete.add(self.attack.attacker)
+                dont_delete.add(self.attack.victim)
+                ases_left = ases_left.difference(dont_delete)
+ 
                 # Save a reference
                 for table_name in ["peers", "provider_customers", "sim_test_ases"]:
                     db.execute(f"DROP TABLE IF EXISTS saved_{table_name}")
@@ -75,6 +85,9 @@ def test_run_patch(self, *args, **kwargs):
                             or (count_failures < 100 and num_to_remove >= 100)
                             or (count_failures < 500 and num_to_remove >= 50)
                             or (count_failures < 1000)):
+                        # Not sure if this line will break my fragile script lol
+                        #if len(ases_left) < num_to_remove:
+                        #    continue
                         removal_ases = list(random.sample(ases_left, num_to_remove))
                         csv_path = "/tmp/shrinktest.csv"
                         utils.rows_to_db([[x] for x in removal_ases], csv_path, RemovalASesTable)
