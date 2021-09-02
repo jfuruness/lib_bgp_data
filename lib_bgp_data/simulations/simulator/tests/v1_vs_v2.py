@@ -80,7 +80,7 @@ def test_run_patch(self, *args, **kwargs):
 
                 for num_to_remove in [10000, 5000, 2000, 1000, 500, 100, 50, 10, 5, 1]:
                     count_failures = 0
-                    while ((count_failures < 10 and num_to_remove >= 5000)
+                    while ((count_failures < 20 and num_to_remove >= 5000)
                             or (count_failures < 20 and num_to_remove >= 1000)
                             or (count_failures < 100 and num_to_remove >= 100)
                             or (count_failures < 500 and num_to_remove >= 50)
