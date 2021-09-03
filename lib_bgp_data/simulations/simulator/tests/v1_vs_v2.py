@@ -120,7 +120,7 @@ def test_run_patch(self, *args, **kwargs):
                             ases_left_saved = deepcopy(ases_left)
                         else:
                             count_failures += 1
-                            print(f"\n\n\n\n\n\n\n\nFAILED TO REMOVE {len(removal_ases)} {count_Failures} times\n\n\n\n\n\n\n\n\n")
+                            print(f"\n\n\n\n\n\n\n\nFAILED TO REMOVE {len(removal_ases)} {count_failures} times\n\n\n\n\n\n\n\n\n")
                             # reset to the old savings
                             for table in ["peers", "provider_customers", "sim_test_ases"]:
                                 db.execute(f"DROP TABLE IF EXISTS {table}")
