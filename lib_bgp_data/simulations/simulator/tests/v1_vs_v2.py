@@ -82,13 +82,13 @@ def test_run_patch(self, *args, **kwargs):
                     count_failures = 0
                     while ((count_failures < 20 and num_to_remove >= 5000)
                             or (count_failures < 20 and num_to_remove >= 1000)
-                            or (count_failures < 100 and num_to_remove >= 100)
-                            or (count_failures < 500 and num_to_remove >= 50)
-                            or (count_failures < 1000)):
-                        # Not sure if this line will break my fragile script lol
-                        # NOTE: THIS LINE MigHt BREAK THINGS????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????
+                            or (count_failures < 20 and num_to_remove >= 100)
+                            or (count_failures < 20 and num_to_remove >= 50)
+                            or (count_failures < 100)):
+                        # this is necessary to make sure that we don't try to remove more than what's left
                         if len(ases_left) < num_to_remove:
-                            continue
+                            # Note that this only breaks out of the inner while loop, which is what we want
+                            break
                         removal_ases = list(random.sample(ases_left, num_to_remove))
                         csv_path = "/tmp/shrinktest.csv"
                         utils.rows_to_db([[x] for x in removal_ases], csv_path, RemovalASesTable)
@@ -120,7 +120,7 @@ def test_run_patch(self, *args, **kwargs):
                             ases_left_saved = deepcopy(ases_left)
                         else:
                             count_failures += 1
-                            print(f"\n\n\n\n\n\n\n\nFAILED TO REMOVE{len(removal_ases)}\n\n\n\n\n\n\n\n\n")
+                            print(f"\n\n\n\n\n\n\n\nFAILED TO REMOVE {len(removal_ases)} {count_Failures} times\n\n\n\n\n\n\n\n\n")
                             # reset to the old savings
                             for table in ["peers", "provider_customers", "sim_test_ases"]:
                                 db.execute(f"DROP TABLE IF EXISTS {table}")
