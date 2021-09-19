@@ -148,7 +148,7 @@ class Data_Point(Parser):
     def get_set_random_seed(self, attack_cls, trial_num):
         if self.deterministic:
             random.seed(f"{attack_cls}{self.percent_iter}{trial_num}")
-            return random.random()
+        return random.random()
 
     def fill_attacks(self, ases, Attack_Cls, number_of_attackers, trial_num):
         """Sets up the attack, inserts into the db"""
