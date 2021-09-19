@@ -185,8 +185,7 @@ with patch.object(Test, "run", test_run_patch):
         with patch.object(Simulator, "_redownload_base_data", _redownload_base_data_patch):
             with open("test.txt", "w") as f:
                 for i in range(50):
-                    # + 5 just because I already tried 0
-                    random.seed(i + 5)
+                    random.seed(i)
                     try:
                         Simulator().run(percents=percents,
                                         num_trials=300,
