@@ -84,7 +84,7 @@ def test_run_patch(self, *args, **kwargs):
 
                         if count_failures > 40 and num_to_remove >= 500:
                             break
-                        if count_failures > 500:
+                        if count_failures > 100:
                             break
                         # this is necessary to make sure that we don't try to remove more than what's left
                         if len(ases_left) < num_to_remove:
@@ -181,8 +181,10 @@ def _redownload_base_data_patch(self, *args, **kwargs):
 
 
 
-with open("test.txt", "w") as f:
-    for i in range(2, 50):
+with open("test.txt", "a+") as f:
+    # 2 got all the way down to 663
+    # 3 or 4 or 5 got down to 313
+    for i in range(3, 50):
         random.seed(i)
         try:
             with patch.object(Test, "run", test_run_patch):
@@ -193,6 +195,8 @@ with open("test.txt", "w") as f:
                                         # This is False but it shouldn't matter
                                         # Since I seed up above
                                         # And set deterministic hash rate
+                                        # In fact if this is True it messes stuff up I'm pretty sure
+                                        # Since my seeding up above wwon't do anything I think
                                         deterministic=False,
                                         attack_types=[Subprefix_Hijack],
                                         adopt_policies=[Non_Default_Policies.ROVPP_V1, Non_Default_Policies.ROVPP_V2],
@@ -204,7 +208,7 @@ with open("test.txt", "w") as f:
                 results = db.execute("SELECT * FROM sim_test_ases")
                 f.write(str(len(results)) + "\n")
                 print(len(results))
-                if len(results) < 500:
+                if len(results) < 100:
                     import sys
                     sys.exit()
                 else:
