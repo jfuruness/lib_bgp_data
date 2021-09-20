@@ -90,6 +90,8 @@ def test_run_patch(self, *args, **kwargs):
                         if len(ases_left) < num_to_remove:
                             # Note that this only breaks out of the inner while loop, which is what we want
                             break
+                        if len(ases_left) > 1000 and num_to_remove < 100:
+                            break
                         removal_ases = list(random.sample(ases_left, num_to_remove))
                         csv_path = "/tmp/shrinktest.csv"
                         utils.rows_to_db([[x] for x in removal_ases], csv_path, RemovalASesTable)
@@ -179,14 +181,13 @@ def _redownload_base_data_patch(self, *args, **kwargs):
 
 
 
-
-with patch.object(Test, "run", test_run_patch):
-    with patch.object(Subtables, "get_tables", subtables_get_tables_patch):
-        with patch.object(Simulator, "_redownload_base_data", _redownload_base_data_patch):
-            with open("test.txt", "w") as f:
-                for i in range(50):
-                    random.seed(i)
-                    try:
+with open("test.txt", "w") as f:
+    for i in range(2, 50):
+        random.seed(i)
+        try:
+            with patch.object(Test, "run", test_run_patch):
+                with patch.object(Subtables, "get_tables", subtables_get_tables_patch):
+                    with patch.object(Simulator, "_redownload_base_data", _redownload_base_data_patch):
                         Simulator().run(percents=percents,
                                         num_trials=300,
                                         # This is False but it shouldn't matter
@@ -196,14 +197,15 @@ with patch.object(Test, "run", test_run_patch):
                                         attack_types=[Subprefix_Hijack],
                                         adopt_policies=[Non_Default_Policies.ROVPP_V1, Non_Default_Policies.ROVPP_V2],
                                         redownload_base_data=True)
-                    except Exception:
-                        # If we got it small enough, stop. Else, keep going
-                        with Database() as db:
-                            results = db.execute("SELECT * FROM sim_test_ases")
-                            f.write(len(results) + "\n")
-                            print(len(results))
-                            if len(results) < 500:
-                                import sys
-                                sys.exit()
-                            else:
-                                pass
+        except:
+            print("\n" * 10 + "Raised exception. Checking success" + "\n" * 10)
+            # If we got it small enough, stop. Else, keep going
+            with Database() as db:
+                results = db.execute("SELECT * FROM sim_test_ases")
+                f.write(str(len(results)) + "\n")
+                print(len(results))
+                if len(results) < 500:
+                    import sys
+                    sys.exit()
+                else:
+                    pass
