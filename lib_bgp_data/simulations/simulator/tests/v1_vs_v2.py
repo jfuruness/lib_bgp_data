@@ -206,7 +206,7 @@ with open("test.txt", "a+") as f:
     20: 813
     21: 63
     """
-    for i in range(21, 50):
+    for i in range(21, 500):
         random.seed(i)
         try:
             with patch.object(Test, "run", test_run_patch):
@@ -229,6 +229,7 @@ with open("test.txt", "a+") as f:
             with Database() as db:
                 results = db.execute("SELECT * FROM sim_test_ases")
                 f.write(str(len(results)) + "\n")
+                f.flush()
                 print(len(results))
                 if len(results) < 50:
                     import sys
