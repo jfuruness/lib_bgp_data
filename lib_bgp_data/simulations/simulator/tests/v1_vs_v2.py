@@ -184,7 +184,29 @@ def _redownload_base_data_patch(self, *args, **kwargs):
 with open("test.txt", "a+") as f:
     # 2 got all the way down to 663
     # 3 or 4 or 5 got down to 313
-    for i in range(3, 50):
+    """
+
+    3: 1813
+    4: 2813
+    5: 10813
+    6: 2813
+    7: 2813
+    8: 2813
+    9: 313
+    10: 3813
+    11: 113
+    12: 2813
+    13: 2813
+    14: 17813
+    15: 813
+    16: 2813
+    17: 2813
+    18: 7813
+    19: 12813
+    20: 813
+    21: 63
+    """
+    for i in range(21, 50):
         random.seed(i)
         try:
             with patch.object(Test, "run", test_run_patch):
@@ -208,7 +230,7 @@ with open("test.txt", "a+") as f:
                 results = db.execute("SELECT * FROM sim_test_ases")
                 f.write(str(len(results)) + "\n")
                 print(len(results))
-                if len(results) < 100:
+                if len(results) < 50:
                     import sys
                     sys.exit()
                 else:
