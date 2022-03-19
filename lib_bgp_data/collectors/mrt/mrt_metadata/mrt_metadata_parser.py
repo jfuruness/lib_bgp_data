@@ -106,6 +106,8 @@ class MRT_Metadata_Parser(Parser):
         with MRT_Announcements_Table() as db:
             sql = f"""CREATE INDEX IF NOT EXISTS {db.name}_po_index ON
                   {db.name} USING GIST(prefix inet_ops, origin)"""
+            #print(db.execute("SELECT table_name FROM information_schema.tables WHERE table_name = 'mrt_announcements'"))
+            #print(db.execute("SELECT indexname, indexdef FROM pg_indexes WHERE indexname = 'mrt_announcements_po_index'"))
             self._create_index(sql, db)
             sql = f"""CREATE INDEX IF NOT EXISTS {db.name}_po_btree_i ON
                     {db.name}(prefix inet_ops, origin);"""
